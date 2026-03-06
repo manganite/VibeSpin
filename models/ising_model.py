@@ -41,8 +41,9 @@ def ising_step_numba(spins: np.ndarray, beta: float, J: float) -> np.ndarray:
                 j_prev = N - 1 if j == 0 else j - 1
                 j_next = 0 if j == N - 1 else j + 1
 
-                neighbor_sum = (spins[i_prev, j] + spins[i_next, j] +
-                                spins[i, j_prev] + spins[i, j_next])
+                neighbor_sum = (
+                    spins[i_prev, j] + spins[i_next, j] + spins[i, j_prev] + spins[i, j_next]
+                )
 
                 dE = 2 * J * spins[i, j] * neighbor_sum
 
@@ -54,6 +55,7 @@ def ising_step_numba(spins: np.ndarray, beta: float, J: float) -> np.ndarray:
                     if np.random.random() < p:
                         spins[i, j] *= -1
     return spins
+
 
 @njit
 def ising_energy_numba(spins: np.ndarray, J: float) -> float:
@@ -76,6 +78,7 @@ def ising_energy_numba(spins: np.ndarray, J: float) -> float:
             # Sum unique pairs (right and down) to avoid double counting
             energy -= J * spins[i, j] * (spins[i_next, j] + spins[i, j_next])
     return energy / (N * N)
+
 
 @njit
 def ising_step_random_numba(spins: np.ndarray, beta: float, J: float) -> np.ndarray:
@@ -115,8 +118,9 @@ def ising_step_random_numba(spins: np.ndarray, beta: float, J: float) -> np.ndar
         j_prev = N - 1 if j == 0 else j - 1
         j_next = 0 if j == N - 1 else j + 1
 
-        neighbor_sum = (spins[i_prev, j] + spins[i_next, j] +
-                        spins[i, j_prev] + spins[i, j_next])
+        neighbor_sum = (
+            spins[i_prev, j] + spins[i_next, j] + spins[i, j_prev] + spins[i, j_next]
+        )
         dE = 2 * J * spins[i, j] * neighbor_sum
 
         if dE <= 0:
@@ -132,10 +136,17 @@ class IsingSimulation(MonteCarloSimulation):
     """
     Simulation of the 2D Ising model on a square lattice.
     """
+
     _VALID_UPDATES: frozenset = frozenset({'checkerboard', 'random'})
 
-    def __init__(self, size: int, temp: float, J: float = 1.0,
-                 update: str = 'checkerboard'):
+    def __init__(
+        self,
+        size: int,
+        temp: float,
+        J: float = 1.0,
+        update: str = 'checkerboard',
+        seed: int | None = None,
+    ):
         """
         Initialize the Ising simulation.
 
@@ -146,24 +157,30 @@ class IsingSimulation(MonteCarloSimulation):
             update: Update scheme — ``'checkerboard'`` (default, faster) or
                 ``'random'`` (random sequential Metropolis, more physical
                 stochastic dynamics for coarsening studies).
+            seed: Optional random seed for reproducibility.
 
         Raises:
             ValueError: If ``update`` is not one of the recognised schemes.
         """
-        super().__init__(size, temp)
+        super().__init__(size, temp, seed=seed)
         if update not in self._VALID_UPDATES:
             raise ValueError(
-                f"Unknown update scheme {update!r}. "
-                f"Valid options: {sorted(self._VALID_UPDATES)}"
+                f"Unknown update scheme {update!r}. " f"Valid options: {sorted(self._VALID_UPDATES)}"
             )
         self.J = J
         self.update = update
         # Initialize random spins +1 or -1
-        self.spins = np.random.choice(np.array([-1, 1], dtype=np.int8), size=(size, size))
+        self.spins = self.rng.choice(np.array([-1, 1], dtype=np.int8), size=(size, size))
 
     def step(self) -> None:
         """Perform one Monte Carlo sweep using the configured update scheme."""
         if self.spins is not None:
+            # For Numba compatibility with reproducibility, we seed numba's
+            # random generator if a seed was provided.
+            if self.seed is not None:
+                from .simulation_base import _seed_numba
+                _seed_numba(self.seed + self.steps)
+
             if self.update == 'random':
                 self.spins = ising_step_random_numba(self.spins, self.beta, self.J)
             else:
@@ -179,20 +196,21 @@ class IsingSimulation(MonteCarloSimulation):
     def _get_energy(self) -> float:
         """Calculate energy per spin of the lattice."""
         if self.spins is not None:
-            return ising_energy_numba(self.spins, self.J)
+            return float(ising_energy_numba(self.spins, self.J))  # type: ignore[no-any-return]
         return 0.0
 
     def _get_structure_factor_squared_unshifted(self) -> np.ndarray:
         """Calculate the unshifted squared magnitude of the Fourier transform."""
         if self.spins is not None:
             Sk = np.fft.fft2(self.spins)
-            return np.abs(Sk)**2
+            return np.abs(Sk) ** 2
         return np.array([])
+
 
 if __name__ == "__main__":
     # Parameters
-    L = 50      # Lattice size (L x L)
-    T = 2.269    # Temperature (critical point approx 2.269)
+    L = 50  # Lattice size (L x L)
+    T = 2.269  # Temperature (critical point approx 2.269)
     STEPS = 1000
 
     print(f"Initializing Ising Model (L={L}, T={T})...")

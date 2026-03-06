@@ -42,10 +42,18 @@ def xy_step_numba(spins: np.ndarray, beta: float, J: float) -> np.ndarray:
                 j_next = 0 if j == N - 1 else j + 1
 
                 # Neighbor sum vector
-                nx = (spins[i_prev, j, 0] + spins[i_next, j, 0] +
-                      spins[i, j_prev, 0] + spins[i, j_next, 0])
-                ny = (spins[i_prev, j, 1] + spins[i_next, j, 1] +
-                      spins[i, j_prev, 1] + spins[i, j_next, 1])
+                nx = (
+                    spins[i_prev, j, 0]
+                    + spins[i_next, j, 0]
+                    + spins[i, j_prev, 0]
+                    + spins[i, j_next, 0]
+                )
+                ny = (
+                    spins[i_prev, j, 1]
+                    + spins[i_next, j, 1]
+                    + spins[i, j_prev, 1]
+                    + spins[i, j_next, 1]
+                )
 
                 # Current spin
                 sx = spins[i, j, 0]
@@ -71,6 +79,7 @@ def xy_step_numba(spins: np.ndarray, beta: float, J: float) -> np.ndarray:
                     spins[i, j, 1] = sy_new
     return spins
 
+
 @njit
 def xy_energy_numba(spins: np.ndarray, J: float) -> float:
     """
@@ -90,16 +99,22 @@ def xy_energy_numba(spins: np.ndarray, J: float) -> float:
             i_next = 0 if i == N - 1 else i + 1
             j_next = 0 if j == N - 1 else j + 1
             # Sum unique pairs (right and down)
-            dot_right = spins[i, j, 0]*spins[i, j_next, 0] + spins[i, j, 1]*spins[i, j_next, 1]
-            dot_down = spins[i, j, 0]*spins[i_next, j, 0] + spins[i, j, 1]*spins[i_next, j, 1]
+            dot_right = (
+                spins[i, j, 0] * spins[i, j_next, 0] + spins[i, j, 1] * spins[i, j_next, 1]
+            )
+            dot_down = (
+                spins[i, j, 0] * spins[i_next, j, 0] + spins[i, j, 1] * spins[i_next, j, 1]
+            )
             energy -= J * (dot_right + dot_down)
     return energy / (N * N)
+
 
 class XYSimulation(MonteCarloSimulation):
     """
     Simulation of the 2D XY model on a square lattice.
     """
-    def __init__(self, size: int, temp: float, J: float = 1.0):
+
+    def __init__(self, size: int, temp: float, J: float = 1.0, seed: int | None = None):
         """
         Initialize the XY simulation.
 
@@ -107,18 +122,22 @@ class XYSimulation(MonteCarloSimulation):
             size: Linear dimension L of the L x L lattice.
             temp: Temperature T.
             J: Coupling constant (default 1.0).
+            seed: Optional random seed for reproducibility.
         """
-        super().__init__(size, temp)
+        super().__init__(size, temp, seed=seed)
         self.J = J
 
         # Initialize random spins as 2D unit vectors
         # spin = (spin_x, spin_y)
-        angles = np.random.uniform(0, 2*np.pi, size=(size, size))
+        angles = self.rng.uniform(0, 2 * np.pi, size=(size, size))
         self.spins = np.stack([np.cos(angles), np.sin(angles)], axis=-1)
 
     def step(self) -> None:
         """Perform one Monte Carlo step using Numba."""
         if self.spins is not None:
+            if self.seed is not None:
+                from .simulation_base import _seed_numba
+                _seed_numba(self.seed + self.steps)
             self.spins = xy_step_numba(self.spins, self.beta, self.J)
         self.steps += 1
 
@@ -132,19 +151,20 @@ class XYSimulation(MonteCarloSimulation):
     def _get_energy(self) -> float:
         """Calculate energy per spin."""
         if self.spins is not None:
-            return xy_energy_numba(self.spins, self.J)
+            return float(xy_energy_numba(self.spins, self.J))  # type: ignore[no-any-return]
         return 0.0
 
     def _calculate_vorticity(self) -> np.ndarray:
         """Calculate the vorticity (winding number) of each plaquette."""
         if self.spins is not None:
-            return calculate_vorticity_numba(self.spins)
+            return np.asarray(calculate_vorticity_numba(self.spins))  # type: ignore[no-any-return]
         return np.array([])
 
     def _get_helicity_data(self) -> tuple[float, float]:
         """Calculate sum of cos and sin of angle differences in x-direction."""
         if self.spins is not None:
-            return get_helicity_data_numba(self.spins)
+            cos_sum, sin_sum = get_helicity_data_numba(self.spins)
+            return float(cos_sum), float(sin_sum)  # type: ignore[no-any-return]
         return 0.0, 0.0
 
     def _get_structure_factor_squared_unshifted(self) -> np.ndarray:
@@ -154,13 +174,14 @@ class XYSimulation(MonteCarloSimulation):
             sy = self.spins[..., 1]
             Sk_x = np.fft.fft2(sx)
             Sk_y = np.fft.fft2(sy)
-            return np.abs(Sk_x)**2 + np.abs(Sk_y)**2
+            return np.asarray(np.abs(Sk_x) ** 2 + np.abs(Sk_y) ** 2)  # type: ignore[no-any-return]
         return np.array([])
+
 
 if __name__ == "__main__":
     # Parameters
-    L = 50      # Lattice size (L x L)
-    T = 0.89    # Temperature (BKT transition approx 0.89)
+    L = 50  # Lattice size (L x L)
+    T = 0.89  # Temperature (BKT transition approx 0.89)
     STEPS = 1000
 
     print(f"Initializing XY Model (L={L}, T={T})...")

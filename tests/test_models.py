@@ -150,3 +150,37 @@ def test_invalid_initialization():
     # Test Clock model q-state validation
     with pytest.raises(ValueError):
         ClockSimulation(size=10, temp=1.0, q=1)
+
+def test_reproducibility():
+    """Verify that simulations with the same seed produce identical results."""
+    seed = 42
+    size = 10
+    temp = 2.0
+    n_steps = 10
+
+    # Test Ising
+    sim1 = IsingSimulation(size, temp, seed=seed)
+    sim2 = IsingSimulation(size, temp, seed=seed)
+    m1, e1 = sim1.run(n_steps)
+    m2, e2 = sim2.run(n_steps)
+    np.testing.assert_array_equal(sim1.spins, sim2.spins)
+    np.testing.assert_array_almost_equal(m1, m2)
+    np.testing.assert_array_almost_equal(e1, e2)
+
+    # Test XY
+    sim1_xy = XYSimulation(size, temp, seed=seed)
+    sim2_xy = XYSimulation(size, temp, seed=seed)
+    m1_xy, e1_xy = sim1_xy.run(n_steps)
+    m2_xy, e2_xy = sim2_xy.run(n_steps)
+    np.testing.assert_array_almost_equal(sim1_xy.spins, sim2_xy.spins)
+    np.testing.assert_array_almost_equal(m1_xy, m2_xy)
+    np.testing.assert_array_almost_equal(e1_xy, e2_xy)
+
+    # Test Clock
+    sim1_c = ClockSimulation(size, temp, seed=seed)
+    sim2_c = ClockSimulation(size, temp, seed=seed)
+    m1_c, e1_c = sim1_c.run(n_steps)
+    m2_c, e2_c = sim2_c.run(n_steps)
+    np.testing.assert_array_almost_equal(sim1_c.spins, sim2_c.spins)
+    np.testing.assert_array_almost_equal(m1_c, m2_c)
+    np.testing.assert_array_almost_equal(e1_c, e2_c)

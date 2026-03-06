@@ -9,6 +9,12 @@ from numba import njit
 
 
 @njit
+def _seed_numba(seed: int) -> None:
+    """Helper to seed Numba's internal random number generator."""
+    np.random.seed(seed)
+
+
+@njit
 def calculate_vorticity_numba(spins: np.ndarray) -> np.ndarray:
     """
     Calculate the vorticity (winding number) of each plaquette for 2D vector spins.
@@ -68,13 +74,15 @@ class MonteCarloSimulation(ABC):
     Abstract base class for 2D lattice Monte Carlo simulations.
     Provides infrastructure for equilibration, measurement runs, and statistical analysis.
     """
-    def __init__(self, size: int, temp: float):
+
+    def __init__(self, size: int, temp: float, seed: int | None = None):
         """
         Initialize the simulation.
 
         Args:
             size: Linear dimension L of the N x N lattice.
             temp: Temperature T of the system.
+            seed: Optional random seed for reproducibility.
 
         Raises:
             ValueError: If ``size`` is not a positive integer or ``temp`` is not positive.
@@ -87,7 +95,10 @@ class MonteCarloSimulation(ABC):
         self.temp = temp
         self.beta = 1.0 / temp
         self.steps = 0
+        self.seed = seed
+        self.rng = np.random.default_rng(seed)
         self.spins: np.ndarray | None = None  # To be initialized by subclasses
+
 
     @abstractmethod
     def step(self) -> None:

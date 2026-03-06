@@ -43,10 +43,18 @@ def clock_step_numba(spins: np.ndarray, beta: float, J: float, A: float, q: int)
                 j_next = 0 if j == N - 1 else j + 1
 
                 # Neighbor sum
-                nx = (spins[i_prev, j, 0] + spins[i_next, j, 0] +
-                      spins[i, j_prev, 0] + spins[i, j_next, 0])
-                ny = (spins[i_prev, j, 1] + spins[i_next, j, 1] +
-                      spins[i, j_prev, 1] + spins[i, j_next, 1])
+                nx = (
+                    spins[i_prev, j, 0]
+                    + spins[i_next, j, 0]
+                    + spins[i, j_prev, 0]
+                    + spins[i, j_next, 0]
+                )
+                ny = (
+                    spins[i_prev, j, 1]
+                    + spins[i_next, j, 1]
+                    + spins[i, j_prev, 1]
+                    + spins[i, j_next, 1]
+                )
 
                 sx, sy = spins[i, j, 0], spins[i, j, 1]
 
@@ -74,6 +82,7 @@ def clock_step_numba(spins: np.ndarray, beta: float, J: float, A: float, q: int)
                     spins[i, j, 1] = sy_new
     return spins
 
+
 @njit
 def clock_energy_numba(spins: np.ndarray, J: float, A: float, q: int) -> float:
     """
@@ -95,8 +104,12 @@ def clock_energy_numba(spins: np.ndarray, J: float, A: float, q: int) -> float:
             i_next = 0 if i == N - 1 else i + 1
             j_next = 0 if j == N - 1 else j + 1
             # Interaction
-            dot_right = spins[i, j, 0]*spins[i, j_next, 0] + spins[i, j, 1]*spins[i, j_next, 1]
-            dot_down = spins[i, j, 0]*spins[i_next, j, 0] + spins[i, j, 1]*spins[i_next, j, 1]
+            dot_right = (
+                spins[i, j, 0] * spins[i, j_next, 0] + spins[i, j, 1] * spins[i, j_next, 1]
+            )
+            dot_down = (
+                spins[i, j, 0] * spins[i_next, j, 0] + spins[i, j, 1] * spins[i_next, j, 1]
+            )
             energy -= J * (dot_right + dot_down)
 
             # Anisotropy
@@ -104,11 +117,15 @@ def clock_energy_numba(spins: np.ndarray, J: float, A: float, q: int) -> float:
             energy -= A * np.cos(q * phi)
     return energy / (N * N)
 
+
 class ClockSimulation(MonteCarloSimulation):
     """
     Simulation of the 2D q-state clock model on a square lattice.
     """
-    def __init__(self, size: int, temp: float, J: float = 1.0, A: float = 1.0, q: int = 6):
+
+    def __init__(
+        self, size: int, temp: float, J: float = 1.0, A: float = 1.0, q: int = 6, seed: int | None = None
+    ):
         """
         Initialize the Clock Model simulation.
 
@@ -118,11 +135,12 @@ class ClockSimulation(MonteCarloSimulation):
             J: Coupling constant (default 1.0).
             A: Anisotropy strength (default 1.0).
             q: Number of clock states (default 6). Must be ≥ 2.
+            seed: Optional random seed for reproducibility.
 
         Raises:
             ValueError: If ``q`` is less than 2.
         """
-        super().__init__(size, temp)
+        super().__init__(size, temp, seed=seed)
         if q < 2:
             raise ValueError(f"q must be >= 2 (number of clock states), got {q}")
         self.J = J
@@ -131,12 +149,15 @@ class ClockSimulation(MonteCarloSimulation):
 
         # Initialize random spins as 2D unit vectors
         # spin = (spin_x, spin_y)
-        angles = np.random.uniform(0, 2*np.pi, size=(size, size))
+        angles = self.rng.uniform(0, 2 * np.pi, size=(size, size))
         self.spins = np.stack([np.cos(angles), np.sin(angles)], axis=-1)
 
     def step(self) -> None:
         """Perform one Monte Carlo step using Numba."""
         if self.spins is not None:
+            if self.seed is not None:
+                from .simulation_base import _seed_numba
+                _seed_numba(self.seed + self.steps)
             self.spins = clock_step_numba(self.spins, self.beta, self.J, self.A, self.q)
         self.steps += 1
 
@@ -150,19 +171,20 @@ class ClockSimulation(MonteCarloSimulation):
     def _get_energy(self) -> float:
         """Calculate energy per spin."""
         if self.spins is not None:
-            return clock_energy_numba(self.spins, self.J, self.A, self.q)
+            return float(clock_energy_numba(self.spins, self.J, self.A, self.q))  # type: ignore[no-any-return]
         return 0.0
 
     def _calculate_vorticity(self) -> np.ndarray:
         """Calculate the vorticity (winding number) of each plaquette."""
         if self.spins is not None:
-            return calculate_vorticity_numba(self.spins)
+            return np.asarray(calculate_vorticity_numba(self.spins))  # type: ignore[no-any-return]
         return np.array([])
 
     def _get_helicity_data(self) -> tuple[float, float]:
         """Calculate sum of cos and sin of angle differences in x-direction."""
         if self.spins is not None:
-            return get_helicity_data_numba(self.spins)
+            cos_sum, sin_sum = get_helicity_data_numba(self.spins)
+            return float(cos_sum), float(sin_sum)  # type: ignore[no-any-return]
         return 0.0, 0.0
 
     def _get_structure_factor_squared_unshifted(self) -> np.ndarray:
@@ -172,16 +194,17 @@ class ClockSimulation(MonteCarloSimulation):
             sy = self.spins[..., 1]
             Sk_x = np.fft.fft2(sx)
             Sk_y = np.fft.fft2(sy)
-            return np.abs(Sk_x)**2 + np.abs(Sk_y)**2
+            return np.asarray(np.abs(Sk_x) ** 2 + np.abs(Sk_y) ** 2)  # type: ignore[no-any-return]
         return np.array([])
+
 
 if __name__ == "__main__":
     # Parameters
-    L = 50      # Lattice size (L x L)
-    T = 0.5     # Temperature
+    L = 50  # Lattice size (L x L)
+    T = 0.5  # Temperature
     STEPS = 1000
-    A = 1.0     # Anisotropy strength
-    q = 6       # q-state clock model
+    A = 1.0  # Anisotropy strength
+    q = 6  # q-state clock model
 
     print(f"Initializing {q}-state Clock Model (L={L}, T={T}, A={A})...")
     sim = ClockSimulation(L, T, A=A, q=q)
