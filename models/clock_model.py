@@ -2,11 +2,18 @@
 2D q-state Clock Model simulation using the Metropolis-Hastings algorithm.
 """
 
-import numpy as np
-import matplotlib.pyplot as plt
 import os
+
+import matplotlib.pyplot as plt
+import numpy as np
 from numba import njit
-from .simulation_base import MonteCarloSimulation, calculate_vorticity_numba, get_helicity_data_numba
+
+from .simulation_base import (
+    MonteCarloSimulation,
+    calculate_vorticity_numba,
+    get_helicity_data_numba,
+)
+
 
 @njit
 def clock_step_numba(spins: np.ndarray, beta: float, J: float, A: float, q: int) -> np.ndarray:

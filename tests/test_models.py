@@ -2,11 +2,13 @@
 Unit tests for the Monte Carlo simulation models (Ising, XY, Clock).
 """
 
-import pytest
 import numpy as np
+import pytest
+
+from models.clock_model import ClockSimulation
 from models.ising_model import IsingSimulation
 from models.xy_model import XYSimulation
-from models.clock_model import ClockSimulation
+
 
 @pytest.fixture
 def standard_params():
@@ -44,7 +46,7 @@ def test_ising_low_temp_magnetization():
     size = 20
     sim = IsingSimulation(size=size, temp=0.1)
     sim.spins = np.ones((size, size), dtype=np.int8)
-    
+
     sim.equilibrate(100)
     mags, _ = sim.run(100)
     # At T=0.1, it should stay very close to M=1
@@ -83,7 +85,7 @@ def test_xy_vorticity_detection():
     # Create a simple vortex at the center of a 4x4 lattice
     size = 4
     sim = XYSimulation(size, temp=1.0)
-    
+
     # Angles arranged in a loop around the first plaquette (0,0)
     # s(0,0)=0, s(0,1)=pi/2, s(1,1)=pi, s(1,0)=3pi/2
     angles = np.zeros((size, size))
@@ -91,10 +93,10 @@ def test_xy_vorticity_detection():
     angles[0, 1] = np.pi/2
     angles[1, 1] = np.pi
     angles[1, 0] = 1.5 * np.pi
-    
+
     sim.spins = np.stack([np.cos(angles), np.sin(angles)], axis=-1)
     vorticity = sim._calculate_vorticity()
-    
+
     # The (0,0) plaquette should have winding number 1
     assert vorticity[0, 0] == 1.0
 

@@ -3,12 +3,12 @@ Comparison of spin-spin correlation functions G(r) for the XY model.
 Contrasts power-law decay (low T) with exponential decay (high T).
 """
 
-import numpy as np
 import matplotlib.pyplot as plt
+import numpy as np
 
 from models.xy_model import XYSimulation
-from utils.system_helpers import save_plot, ensure_results_dir, parallel_sweep
 from utils.physics_helpers import get_averaged_correlation
+from utils.system_helpers import ensure_results_dir, parallel_sweep, save_plot
 
 # Global Parameters
 L: int = 50

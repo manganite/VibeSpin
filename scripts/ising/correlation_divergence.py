@@ -3,11 +3,12 @@ Analysis of correlation length divergence in the 2D Ising model.
 Extracts the critical exponent nu by fitting correlation lengths near Tc.
 """
 
-import numpy as np
 import matplotlib.pyplot as plt
+import numpy as np
+
 from models.ising_model import IsingSimulation
-from utils.system_helpers import ensure_results_dir, parallel_sweep, save_plot
 from utils.physics_helpers import get_averaged_correlation
+from utils.system_helpers import ensure_results_dir, parallel_sweep, save_plot
 
 # Global Parameters
 L: int = 128
@@ -64,7 +65,7 @@ def run_divergence_analysis() -> None:
 
     results: list[tuple[float, float]] = parallel_sweep(get_correlation_length, TEMPERATURES)
 
-    temps_list, xis_list = zip(*results)
+    temps_list, xis_list = zip(*results, strict=True)
     temps: np.ndarray = np.array(temps_list)
     xis: np.ndarray = np.array(xis_list)
 
@@ -102,11 +103,13 @@ def run_divergence_analysis() -> None:
     if nu is not None:
         # Plot fit line
         fit_x: np.ndarray = np.linspace(min(reduced_T), max(reduced_T), 100)
-        fit_y: np.ndarray = np.exp(intercept) * fit_x**(-nu)
+        fit_y: np.ndarray = np.exp(intercept) * fit_x ** (-nu)
         ax2.loglog(fit_x, fit_y, 'r--', label=f'Fit ($\\nu \\approx {nu:.2f}$)')
 
         # Plot theoretical slope (nu=1) for comparison
-        theory_y: np.ndarray = fit_y[len(fit_y)//2] * (fit_x / fit_x[len(fit_x)//2])**(-1)
+        theory_y: np.ndarray = fit_y[len(fit_y) // 2] * (
+            fit_x / fit_x[len(fit_x) // 2]
+        ) ** (-1)
         ax2.loglog(fit_x, theory_y, 'g:', label=r'Theory ($\nu=1$)')
 
     ax2.set_xlabel(r'$T - T_c$')
@@ -117,8 +120,7 @@ def run_divergence_analysis() -> None:
 
     output_dir: str = ensure_results_dir('results/ising')
     save_plot('correlation_divergence.png', directory=output_dir)
-    print(f"Analysis finished. Plot saved to {output_dir}/correlation_divergence.png")
-    print(f"Estimated critical exponent nu: {nu:.4f}")
+    print(f"Analysis finished. Plot saved to {output_dir}")
 
 
 if __name__ == "__main__":

@@ -13,14 +13,12 @@ On a log-log plot the Allen-Cahn (Model A) growth law predicts:
     R(t) ~ t^(1/2)
 """
 
-import numpy as np
 import matplotlib.pyplot as plt
-
-from models.ising_model import IsingSimulation
-from utils.system_helpers import ensure_results_dir, save_plot
-from utils.system_helpers import _BAR_FORMAT
+import numpy as np
 from tqdm import tqdm
 
+from models.ising_model import IsingSimulation
+from utils.system_helpers import _BAR_FORMAT, ensure_results_dir, save_plot
 
 # ---------------------------------------------------------------------------
 # Physical analysis
@@ -203,7 +201,7 @@ def main() -> None:
     R_sk = np.zeros(N_steps, dtype=float)
     R_mil = np.zeros(N_steps, dtype=float)
     R_xi = np.zeros(N_steps, dtype=float)
-    
+
     current_step: int = 0
 
     for i, target in enumerate(tqdm(step_targets, bar_format=_BAR_FORMAT, desc='Sweeping')):

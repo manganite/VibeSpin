@@ -2,9 +2,11 @@
 Base classes and shared Numba-accelerated kernels for Monte Carlo simulations.
 """
 
-import numpy as np
 from abc import ABC, abstractmethod
+
+import numpy as np
 from numba import njit
+
 
 @njit
 def calculate_vorticity_numba(spins: np.ndarray) -> np.ndarray:

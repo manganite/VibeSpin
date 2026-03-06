@@ -11,8 +11,8 @@ Row 3 – Real-space pair correlation G(r) along the x-direction, averaged over
          all rows and normalised so G(0) = 1.
 """
 
-import numpy as np
 import matplotlib.pyplot as plt
+import numpy as np
 
 from models.ising_model import IsingSimulation
 from utils.system_helpers import ensure_results_dir, save_plot

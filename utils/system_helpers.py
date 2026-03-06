@@ -3,11 +3,13 @@ Technical utility functions for file system operations, plotting, and parallel e
 """
 
 import os
-import numpy as np
-import matplotlib.pyplot as plt
 from collections.abc import Callable, Iterable, Sequence, Sized
 from multiprocessing import Pool
+
+import matplotlib.pyplot as plt
+import numpy as np
 from tqdm import tqdm
+
 # No typing import needed for modern syntax
 
 def ensure_results_dir(directory: str = 'results') -> str:
@@ -42,7 +44,9 @@ def save_plot(filename: str, directory: str = 'results', tight_layout: bool = Tr
 # tqdm bar format that always shows rate as iterations/s (never inverts to s/it).
 _BAR_FORMAT = '{l_bar}{bar}| {n_fmt}/{total_fmt} [{elapsed}<{remaining}, {rate_noinv_fmt}{postfix}]'
 
-def parallel_sweep(worker_func: Callable, params: Iterable, num_processes: int | None = None) -> list:
+def parallel_sweep(
+    worker_func: Callable, params: Iterable, num_processes: int | None = None
+) -> list:
     """
     Run a parallel sweep over a set of parameters using a worker function.
     Uses multiprocessing.Pool and tqdm for progress tracking.

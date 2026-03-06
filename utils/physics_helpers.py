@@ -3,9 +3,13 @@ Physics-related utility functions for calculating thermodynamic observables and 
 """
 
 import numpy as np
+
 from models.simulation_base import MonteCarloSimulation
 
-def calculate_thermodynamics(mags: np.ndarray, engs: np.ndarray, T: float, L: int) -> tuple[float, float, float, float]:
+
+def calculate_thermodynamics(
+    mags: np.ndarray, engs: np.ndarray, T: float, L: int
+) -> tuple[float, float, float, float]:
     """
     Calculate average magnetization, energy, susceptibility, and specific heat.
 
@@ -37,7 +41,10 @@ def calculate_thermodynamics(mags: np.ndarray, engs: np.ndarray, T: float, L: in
 
     return avg_mag, avg_eng, susceptibility, specific_heat
 
-def get_averaged_correlation(sim: MonteCarloSimulation, total_steps: int, sample_interval: int) -> tuple[np.ndarray, np.ndarray]:
+
+def get_averaged_correlation(
+    sim: MonteCarloSimulation, total_steps: int, sample_interval: int
+) -> tuple[np.ndarray, np.ndarray]:
     """
     Run simulation and average the correlation function over multiple configurations.
 

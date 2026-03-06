@@ -2,17 +2,25 @@
 Unit tests for utility functions in utils/physics_helpers.py and utils/system_helpers.py.
 """
 
-import pytest
 import os
 import shutil
-import numpy as np
+
 import matplotlib
+import numpy as np
+import pytest
+
 matplotlib.use('Agg')  # Non-interactive backend — no display required
 import matplotlib.pyplot as plt
 
-from utils.physics_helpers import calculate_thermodynamics, get_averaged_correlation
-from utils.system_helpers import ensure_results_dir, plot_temperature_sweep, parallel_sweep, save_plot
 from models.ising_model import IsingSimulation
+from utils.physics_helpers import calculate_thermodynamics, get_averaged_correlation
+from utils.system_helpers import (
+    ensure_results_dir,
+    parallel_sweep,
+    plot_temperature_sweep,
+    save_plot,
+)
+
 
 def _square_worker(x: int) -> int:
     """Module-level worker function for parallel_sweep test."""
