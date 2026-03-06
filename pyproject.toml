@@ -12,8 +12,14 @@ dependencies = [
     "matplotlib",
     "tqdm",
     "numba",
+    "pytest",
 ]
 
 [tool.setuptools.packages.find]
 where = ["."]
 include = ["models*", "utils*", "scripts*"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = "test_*.py"
+addopts = "-ra --showlocals"
