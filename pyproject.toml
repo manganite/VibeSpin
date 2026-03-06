@@ -1,0 +1,19 @@
+[build-system]
+requires = ["setuptools>=64"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "multiferroic"
+version = "0.1.0"
+description = "High-performance Monte Carlo simulation framework for 2D lattice models"
+requires-python = ">=3.9"
+dependencies = [
+    "numpy",
+    "matplotlib",
+    "tqdm",
+    "numba",
+]
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["models*", "utils*", "scripts*"]
