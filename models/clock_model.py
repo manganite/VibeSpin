@@ -15,7 +15,7 @@ from .simulation_base import (
 )
 
 
-@njit
+@njit(cache=True)
 def clock_step_numba(spins: np.ndarray, beta: float, J: float, A: float, q: int) -> np.ndarray:
     """
     Perform one full Monte Carlo sweep of the Clock Model lattice.
@@ -83,7 +83,7 @@ def clock_step_numba(spins: np.ndarray, beta: float, J: float, A: float, q: int)
     return spins
 
 
-@njit
+@njit(cache=True)
 def clock_energy_numba(spins: np.ndarray, J: float, A: float, q: int) -> float:
     """
     Calculate the total energy of the Clock Model lattice.
@@ -197,7 +197,6 @@ class ClockSimulation(MonteCarloSimulation):
             return np.asarray(np.abs(Sk_x) ** 2 + np.abs(Sk_y) ** 2)  # type: ignore[no-any-return]
         return np.array([])
 
-
 if __name__ == "__main__":
     # Parameters
     L = 50  # Lattice size (L x L)
@@ -244,3 +243,4 @@ if __name__ == "__main__":
     output_file = os.path.join(output_dir, 'clock_simulation.png')
     plt.savefig(output_file)
     print(f"Simulation finished. Plot saved to {output_file}")
+

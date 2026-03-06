@@ -8,13 +8,13 @@ import numpy as np
 from numba import njit
 
 
-@njit
+@njit(cache=True)
 def _seed_numba(seed: int) -> None:
     """Helper to seed Numba's internal random number generator."""
     np.random.seed(seed)
 
 
-@njit
+@njit(cache=True)
 def calculate_vorticity_numba(spins: np.ndarray) -> np.ndarray:
     """
     Calculate the vorticity (winding number) of each plaquette for 2D vector spins.
@@ -45,7 +45,7 @@ def calculate_vorticity_numba(spins: np.ndarray) -> np.ndarray:
             vorticity[i, j] = np.round((d1 + d2 + d3 + d4) / (2 * np.pi))
     return vorticity
 
-@njit
+@njit(cache=True)
 def get_helicity_data_numba(spins: np.ndarray) -> tuple[float, float]:
     """
     Calculate sum of cos and sin of angle differences in x-direction for helicity modulus.

@@ -11,7 +11,7 @@ from numba import njit
 from .simulation_base import MonteCarloSimulation
 
 
-@njit
+@njit(cache=True)
 def ising_step_numba(spins: np.ndarray, beta: float, J: float) -> np.ndarray:
     """
     Perform one full Monte Carlo sweep of the Ising lattice.
@@ -57,7 +57,7 @@ def ising_step_numba(spins: np.ndarray, beta: float, J: float) -> np.ndarray:
     return spins
 
 
-@njit
+@njit(cache=True)
 def ising_energy_numba(spins: np.ndarray, J: float) -> float:
     """
     Calculate the total energy of the Ising lattice.
@@ -80,7 +80,7 @@ def ising_energy_numba(spins: np.ndarray, J: float) -> float:
     return energy / (N * N)
 
 
-@njit
+@njit(cache=True)
 def ising_step_random_numba(spins: np.ndarray, beta: float, J: float) -> np.ndarray:
     """
     Perform one full Monte Carlo sweep of the Ising lattice using random
@@ -179,6 +179,7 @@ class IsingSimulation(MonteCarloSimulation):
             # random generator if a seed was provided.
             if self.seed is not None:
                 from .simulation_base import _seed_numba
+
                 _seed_numba(self.seed + self.steps)
 
             if self.update == 'random':

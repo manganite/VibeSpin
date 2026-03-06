@@ -16,7 +16,7 @@ from .simulation_base import (
 )
 
 
-@njit
+@njit(cache=True)
 def xy_step_numba(spins: np.ndarray, beta: float, J: float) -> np.ndarray:
     """
     Perform one full Monte Carlo sweep of the XY lattice.
@@ -80,7 +80,7 @@ def xy_step_numba(spins: np.ndarray, beta: float, J: float) -> np.ndarray:
     return spins
 
 
-@njit
+@njit(cache=True)
 def xy_energy_numba(spins: np.ndarray, J: float) -> float:
     """
     Calculate the total energy of the XY lattice.
@@ -107,7 +107,6 @@ def xy_energy_numba(spins: np.ndarray, J: float) -> float:
             )
             energy -= J * (dot_right + dot_down)
     return energy / (N * N)
-
 
 class XYSimulation(MonteCarloSimulation):
     """
@@ -177,7 +176,6 @@ class XYSimulation(MonteCarloSimulation):
             return np.asarray(np.abs(Sk_x) ** 2 + np.abs(Sk_y) ** 2)  # type: ignore[no-any-return]
         return np.array([])
 
-
 if __name__ == "__main__":
     # Parameters
     L = 50  # Lattice size (L x L)
@@ -232,3 +230,4 @@ if __name__ == "__main__":
     plt.tight_layout()
     plt.savefig(output_file)
     print(f"Simulation finished. Plot saved to {output_file}")
+
