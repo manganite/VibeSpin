@@ -96,3 +96,15 @@ pytest tests/
 - **Modularity**: When adding a new model, inherit from `MonteCarloSimulation` in `models/simulation_base.py` and implement all `@abstractmethod` methods (`step`, `_get_magnetization`, `_get_energy`, `_get_structure_factor_squared_unshifted`).
 - **Parallelism**: Use `parallel_sweep` from `utils.system_helpers` for sweeps over independent parameters (temperatures, correlation runs, etc.). Worker functions must be defined at module level for multiprocessing pickling.
 - **Error handling**: Use specific exception types in `except` clauses — never use bare `except:`.
+
+## Git & Workflow
+
+- **Commit Style**: Use [Conventional Commits](https://www.conventionalcommits.org/) for all messages (e.g., `feat:`, `fix:`, `chore:`, `docs:`, `refactor:`). Keep messages concise and focused on "why" rather than "what".
+- **Ignored Files**: Never commit build artifacts, local configurations, or IDE-specific files. This includes:
+  - `**/__pycache__/`: Python bytecode.
+  - `results/`: Simulation outputs and plots.
+  - `.vscode/` & `.idea/`: Local IDE settings.
+  - `*.egg-info/`: Package distribution metadata.
+- **Environment Consistency**: Always keep `.devcontainer/` tracked in the repository. It defines the "source of truth" for the development environment.
+- **Branching**: For small maintenance tasks or documentation updates, working directly on `master` is acceptable. For new features or significant model changes, use descriptive feature branches.
+- **Validation**: Before committing any code changes, ensure the test suite passes by running `pytest tests/`.
