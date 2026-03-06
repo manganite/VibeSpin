@@ -90,7 +90,7 @@ pytest tests/
 
 ## Development Conventions
 
-- **Performance**: Always use `@njit` (Numba) for nested loops involving lattice updates or energy calculations. Keep these functions outside of classes to ensure Numba can optimize them effectively. Use pre-allocated NumPy arrays (not Python lists) for any measurement loop.
+- **Performance**: Always use `@njit(cache=True)` (Numba) for nested loops involving lattice updates or energy calculations. Caching ensures that compiled machine code is saved to disk, significantly reducing startup time for subsequent runs. Keep these functions outside of classes to ensure Numba can optimize them effectively. Use pre-allocated NumPy arrays (not Python lists) for any measurement loop.
 - **Type Safety**: Use Python type hints project-wide. Prefer modern built-in generic syntax (`list[x]`, `tuple[x, y]`) and union syntax (`X | None`) over the legacy `typing` module equivalents (`List`, `Tuple`, `Optional`). For abstract types such as `Callable`, `Iterable`, `Sequence`, and `Sized`, import from `collections.abc` rather than `typing`.
 - **Documentation**: Provide comprehensive docstrings for all modules, classes, and functions. Follow a consistent style (e.g., Google or NumPy style) to describe arguments, return values, and physical formulas where applicable.
 - **Shared Utilities**: Place model-independent logic in the `utils/` package. Separate technical system operations (`system_helpers.py`) from physical calculation logic (`physics_helpers.py`). Use `plot_temperature_sweep` from `system_helpers` for the standard 4-panel sweep plot.

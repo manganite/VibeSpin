@@ -90,7 +90,7 @@ ruff format .
 
 ## Development Conventions
 
-- **Performance**: Use `@njit` (Numba) for nested loops involving lattice updates or energy calculations.
+- **Performance**: Always use `@njit(cache=True)` (Numba) for nested loops involving lattice updates or energy calculations. Caching reduces startup time by saving compiled code to disk.
 - **Type Safety**: Use Python type hints project-wide.
 - **Documentation**: Provide comprehensive docstrings for all modules, classes, and functions.
 - **Modularity**: When adding a new model, inherit from `MonteCarloSimulation` in `models/simulation_base.py`.
