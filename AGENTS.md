@@ -18,6 +18,8 @@ The codebase provides a modular architecture for Monte Carlo simulations:
 - **Numba**: Just-In-Time compilation for the Monte Carlo kernels.
 - **Matplotlib**: Visualization of results and spin configurations.
 - **tqdm**: Progress tracking for long-running simulations.
+- **pytest**: Modern testing framework for unit and integration tests.
+- **Ruff**: Extremely fast Python linter and code formatter.
 - **setuptools**: Project is installable as an editable package via `pyproject.toml`.
 
 ## Project Structure
@@ -107,4 +109,6 @@ pytest tests/
   - `*.egg-info/`: Package distribution metadata.
 - **Environment Consistency**: Always keep `.devcontainer/` tracked in the repository. It defines the "source of truth" for the development environment.
 - **Branching**: For small maintenance tasks or documentation updates, working directly on `master` is acceptable. For new features or significant model changes, use descriptive feature branches.
-- **Validation**: Before committing any code changes, ensure the test suite passes by running `pytest tests/`.
+- **Validation & Quality**:
+  - Run the full test suite using `pytest tests/` before committing.
+  - Ensure code quality by running `ruff check .` and format the code using `ruff format .` to maintain consistency with project standards.
