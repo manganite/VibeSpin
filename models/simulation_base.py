@@ -99,6 +99,10 @@ class MonteCarloSimulation(ABC):
         self.rng = np.random.default_rng(seed)
         self.spins: np.ndarray | None = None  # To be initialized by subclasses
 
+        # Pre-calculate neighbor indices for Periodic Boundary Conditions (PBC)
+        self.idx_next = np.roll(np.arange(size), -1)
+        self.idx_prev = np.roll(np.arange(size), 1)
+
 
     @abstractmethod
     def step(self) -> None:

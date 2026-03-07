@@ -16,7 +16,9 @@ from .simulation_base import (
 
 
 @njit(cache=True)
-def clock_step_numba(spins: np.ndarray, beta: float, J: float, A: float, q: int) -> np.ndarray:
+def clock_step_numba(
+    spins: np.ndarray, beta: float, J: float, A: float, q: int, idx_next: np.ndarray, idx_prev: np.ndarray
+) -> np.ndarray:
     """
     Perform one full Monte Carlo sweep of the Clock Model lattice.
     Uses a checkerboard update pattern for better Numba optimization.
@@ -27,6 +29,8 @@ def clock_step_numba(spins: np.ndarray, beta: float, J: float, A: float, q: int)
         J: Coupling constant.
         A: Anisotropy strength.
         q: Number of clock states.
+        idx_next: Pre-calculated next-neighbor indices.
+        idx_prev: Pre-calculated previous-neighbor indices.
 
     Returns:
         Updated spins array.
@@ -36,24 +40,24 @@ def clock_step_numba(spins: np.ndarray, beta: float, J: float, A: float, q: int)
         for i in range(N):
             # Use striding to avoid 'if' condition in the inner loop
             start_j = (parity + i) % 2
+            inxt = idx_next[i]
+            iprv = idx_prev[i]
             for j in range(start_j, N, 2):
-                i_prev = N - 1 if i == 0 else i - 1
-                i_next = 0 if i == N - 1 else i + 1
-                j_prev = N - 1 if j == 0 else j - 1
-                j_next = 0 if j == N - 1 else j + 1
+                jnxt = idx_next[j]
+                jprv = idx_prev[j]
 
                 # Neighbor sum
                 nx = (
-                    spins[i_prev, j, 0]
-                    + spins[i_next, j, 0]
-                    + spins[i, j_prev, 0]
-                    + spins[i, j_next, 0]
+                    spins[iprv, j, 0]
+                    + spins[inxt, j, 0]
+                    + spins[i, jprv, 0]
+                    + spins[i, jnxt, 0]
                 )
                 ny = (
-                    spins[i_prev, j, 1]
-                    + spins[i_next, j, 1]
-                    + spins[i, j_prev, 1]
-                    + spins[i, j_next, 1]
+                    spins[iprv, j, 1]
+                    + spins[inxt, j, 1]
+                    + spins[i, jprv, 1]
+                    + spins[i, jnxt, 1]
                 )
 
                 sx, sy = spins[i, j, 0], spins[i, j, 1]
@@ -84,7 +88,7 @@ def clock_step_numba(spins: np.ndarray, beta: float, J: float, A: float, q: int)
 
 
 @njit(cache=True)
-def clock_energy_numba(spins: np.ndarray, J: float, A: float, q: int) -> float:
+def clock_energy_numba(spins: np.ndarray, J: float, A: float, q: int, idx_next: np.ndarray) -> float:
     """
     Calculate the total energy of the Clock Model lattice.
 
@@ -93,6 +97,7 @@ def clock_energy_numba(spins: np.ndarray, J: float, A: float, q: int) -> float:
         J: Coupling constant.
         A: Anisotropy strength.
         q: Number of clock states.
+        idx_next: Pre-calculated next-neighbor indices.
 
     Returns:
         energy: Total energy per site.
@@ -100,15 +105,15 @@ def clock_energy_numba(spins: np.ndarray, J: float, A: float, q: int) -> float:
     N = spins.shape[0]
     energy = 0.0
     for i in range(N):
+        inxt = idx_next[i]
         for j in range(N):
-            i_next = 0 if i == N - 1 else i + 1
-            j_next = 0 if j == N - 1 else j + 1
+            jnxt = idx_next[j]
             # Interaction
             dot_right = (
-                spins[i, j, 0] * spins[i, j_next, 0] + spins[i, j, 1] * spins[i, j_next, 1]
+                spins[i, j, 0] * spins[i, jnxt, 0] + spins[i, j, 1] * spins[i, jnxt, 1]
             )
             dot_down = (
-                spins[i, j, 0] * spins[i_next, j, 0] + spins[i, j, 1] * spins[i_next, j, 1]
+                spins[i, j, 0] * spins[inxt, j, 0] + spins[i, j, 1] * spins[inxt, j, 1]
             )
             energy -= J * (dot_right + dot_down)
 
@@ -157,8 +162,11 @@ class ClockSimulation(MonteCarloSimulation):
         if self.spins is not None:
             if self.seed is not None:
                 from .simulation_base import _seed_numba
+
                 _seed_numba(self.seed + self.steps)
-            self.spins = clock_step_numba(self.spins, self.beta, self.J, self.A, self.q)
+            self.spins = clock_step_numba(
+                self.spins, self.beta, self.J, self.A, self.q, self.idx_next, self.idx_prev
+            )
         self.steps += 1
 
     def _get_magnetization(self) -> float:
@@ -171,7 +179,9 @@ class ClockSimulation(MonteCarloSimulation):
     def _get_energy(self) -> float:
         """Calculate energy per spin."""
         if self.spins is not None:
-            return float(clock_energy_numba(self.spins, self.J, self.A, self.q))  # type: ignore[no-any-return]
+            return float(
+                clock_energy_numba(self.spins, self.J, self.A, self.q, self.idx_next)
+            )  # type: ignore[no-any-return]
         return 0.0
 
     def _calculate_vorticity(self) -> np.ndarray:
@@ -196,6 +206,7 @@ class ClockSimulation(MonteCarloSimulation):
             Sk_y = np.fft.fft2(sy)
             return np.asarray(np.abs(Sk_x) ** 2 + np.abs(Sk_y) ** 2)  # type: ignore[no-any-return]
         return np.array([])
+
 
 if __name__ == "__main__":
     # Parameters
@@ -243,4 +254,5 @@ if __name__ == "__main__":
     output_file = os.path.join(output_dir, 'clock_simulation.png')
     plt.savefig(output_file)
     print(f"Simulation finished. Plot saved to {output_file}")
+
 

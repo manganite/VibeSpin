@@ -12,7 +12,9 @@ from .simulation_base import MonteCarloSimulation
 
 
 @njit(cache=True)
-def ising_step_numba(spins: np.ndarray, beta: float, J: float) -> np.ndarray:
+def ising_step_numba(
+    spins: np.ndarray, beta: float, J: float, idx_next: np.ndarray, idx_prev: np.ndarray
+) -> np.ndarray:
     """
     Perform one full Monte Carlo sweep of the Ising lattice.
     Uses a checkerboard update pattern for better Numba optimization.
@@ -21,6 +23,8 @@ def ising_step_numba(spins: np.ndarray, beta: float, J: float) -> np.ndarray:
         spins: (N, N) array of spins (+1 or -1).
         beta: Inverse temperature 1/kT.
         J: Coupling constant.
+        idx_next: Pre-calculated next-neighbor indices.
+        idx_prev: Pre-calculated previous-neighbor indices.
 
     Returns:
         Updated spins array.
@@ -36,13 +40,14 @@ def ising_step_numba(spins: np.ndarray, beta: float, J: float) -> np.ndarray:
             # Use striding to avoid 'if' condition in the inner loop
             start_j = (parity + i) % 2
             for j in range(start_j, N, 2):
-                i_prev = N - 1 if i == 0 else i - 1
-                i_next = 0 if i == N - 1 else i + 1
-                j_prev = N - 1 if j == 0 else j - 1
-                j_next = 0 if j == N - 1 else j + 1
+                # Using pre-calculated indices for PBCs
+                inxt = idx_next[i]
+                iprv = idx_prev[i]
+                jnxt = idx_next[j]
+                jprv = idx_prev[j]
 
                 neighbor_sum = (
-                    spins[i_prev, j] + spins[i_next, j] + spins[i, j_prev] + spins[i, j_next]
+                    spins[iprv, j] + spins[inxt, j] + spins[i, jprv] + spins[i, jnxt]
                 )
 
                 dE = 2 * J * spins[i, j] * neighbor_sum
@@ -58,13 +63,14 @@ def ising_step_numba(spins: np.ndarray, beta: float, J: float) -> np.ndarray:
 
 
 @njit(cache=True)
-def ising_energy_numba(spins: np.ndarray, J: float) -> float:
+def ising_energy_numba(spins: np.ndarray, J: float, idx_next: np.ndarray) -> float:
     """
     Calculate the total energy of the Ising lattice.
 
     Args:
         spins: (N, N) array of spins.
         J: Coupling constant.
+        idx_next: Pre-calculated next-neighbor indices.
 
     Returns:
         energy: Total energy per site.
@@ -72,16 +78,18 @@ def ising_energy_numba(spins: np.ndarray, J: float) -> float:
     N = spins.shape[0]
     energy = 0.0
     for i in range(N):
+        inxt = idx_next[i]
         for j in range(N):
-            i_next = 0 if i == N - 1 else i + 1
-            j_next = 0 if j == N - 1 else j + 1
+            jnxt = idx_next[j]
             # Sum unique pairs (right and down) to avoid double counting
-            energy -= J * spins[i, j] * (spins[i_next, j] + spins[i, j_next])
+            energy -= J * spins[i, j] * (spins[inxt, j] + spins[i, jnxt])
     return energy / (N * N)
 
 
 @njit(cache=True)
-def ising_step_random_numba(spins: np.ndarray, beta: float, J: float) -> np.ndarray:
+def ising_step_random_numba(
+    spins: np.ndarray, beta: float, J: float, idx_next: np.ndarray, idx_prev: np.ndarray
+) -> np.ndarray:
     """
     Perform one full Monte Carlo sweep of the Ising lattice using random
     sequential updates (N^2 randomly chosen single-spin flip attempts).
@@ -98,14 +106,14 @@ def ising_step_random_numba(spins: np.ndarray, beta: float, J: float) -> np.ndar
         spins: (N, N) array of spins (+1 or -1).
         beta: Inverse temperature 1/kT.
         J: Coupling constant.
+        idx_next: Pre-calculated next-neighbor indices.
+        idx_prev: Pre-calculated previous-neighbor indices.
 
     Returns:
         Updated spins array.
     """
     N = spins.shape[0]
     # Pre-calculate the two possible acceptance probabilities for dE > 0.
-    # On a 2-D square lattice dE = 2*J*s_i*Σneighbours ∈ {-8J,-4J,0,4J,8J},
-    # so only prob4 and prob8 are ever needed.
     prob4 = np.exp(-4.0 * J * beta)
     prob8 = np.exp(-8.0 * J * beta)
 
@@ -113,13 +121,14 @@ def ising_step_random_numba(spins: np.ndarray, beta: float, J: float) -> np.ndar
         idx = np.random.randint(0, N * N)
         i = idx // N
         j = idx % N
-        i_prev = N - 1 if i == 0 else i - 1
-        i_next = 0 if i == N - 1 else i + 1
-        j_prev = N - 1 if j == 0 else j - 1
-        j_next = 0 if j == N - 1 else j + 1
+
+        inxt = idx_next[i]
+        iprv = idx_prev[i]
+        jnxt = idx_next[j]
+        jprv = idx_prev[j]
 
         neighbor_sum = (
-            spins[i_prev, j] + spins[i_next, j] + spins[i, j_prev] + spins[i, j_next]
+            spins[iprv, j] + spins[inxt, j] + spins[i, jprv] + spins[i, jnxt]
         )
         dE = 2 * J * spins[i, j] * neighbor_sum
 
@@ -183,9 +192,13 @@ class IsingSimulation(MonteCarloSimulation):
                 _seed_numba(self.seed + self.steps)
 
             if self.update == 'random':
-                self.spins = ising_step_random_numba(self.spins, self.beta, self.J)
+                self.spins = ising_step_random_numba(
+                    self.spins, self.beta, self.J, self.idx_next, self.idx_prev
+                )
             else:
-                self.spins = ising_step_numba(self.spins, self.beta, self.J)
+                self.spins = ising_step_numba(
+                    self.spins, self.beta, self.J, self.idx_next, self.idx_prev
+                )
         self.steps += 1
 
     def _get_magnetization(self) -> float:
@@ -197,7 +210,9 @@ class IsingSimulation(MonteCarloSimulation):
     def _get_energy(self) -> float:
         """Calculate energy per spin of the lattice."""
         if self.spins is not None:
-            return float(ising_energy_numba(self.spins, self.J))  # type: ignore[no-any-return]
+            return float(
+                ising_energy_numba(self.spins, self.J, self.idx_next)
+            )  # type: ignore[no-any-return]
         return 0.0
 
     def _get_structure_factor_squared_unshifted(self) -> np.ndarray:
