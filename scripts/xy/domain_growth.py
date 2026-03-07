@@ -140,6 +140,8 @@ def main() -> None:
 
     # Plotting
     fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(14, 6))
+    title = f'2D XY Domain Growth — $T = {T}$ ($< T_{{BKT}} \\approx {T_BKT}$), $L = {L}$'
+    fig.suptitle(title, fontsize=13)
     
     # 1. Domain Growth R(t)
     ax1.loglog(t, R_sk, 'o', label='$R_{S(k)}$ (Structure Factor)')
