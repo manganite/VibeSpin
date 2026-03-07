@@ -176,6 +176,8 @@ def plot_ordering_kinetics(
     filename: str,
     directory: str,
     y_label: str = 'Characteristic Length Scale $L(t)$ (lattice units)',
+    left_title: str = 'Domain Coarsening',
+    right_title: str = 'Defect/Boundary Evolution',
 ) -> None:
     """
     Generate and save a 2-panel figure showing ordering kinetics.
@@ -196,6 +198,8 @@ def plot_ordering_kinetics(
         filename: Output filename.
         directory: Output directory.
         y_label: Y-axis label for the left panel.
+        left_title: Title for the left subplot.
+        right_title: Title for the right subplot.
     """
     fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(14, 6))
     fig.suptitle(title, fontsize=13)
@@ -215,7 +219,7 @@ def plot_ordering_kinetics(
 
     ax1.set_xlabel('Time t (Monte Carlo sweeps)')
     ax1.set_ylabel(y_label)
-    ax1.set_title('Domain Coarsening')
+    ax1.set_title(left_title)
     ax1.grid(True, which='both', alpha=0.3)
     ax1.legend()
 
@@ -228,7 +232,7 @@ def plot_ordering_kinetics(
                        label=f'Fit: $t^{{{exp:.2f}}}$')
         ax2.set_xlabel('Time t (Monte Carlo sweeps)')
         ax2.set_ylabel(third_metric_label)
-        ax2.set_title('Defect/Boundary Evolution')
+        ax2.set_title(right_title)
         ax2.grid(True, which='both', alpha=0.3)
         ax2.legend()
     else:

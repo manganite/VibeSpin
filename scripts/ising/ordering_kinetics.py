@@ -97,7 +97,9 @@ def main() -> None:
         title=f'2D Ising Ordering Kinetics — $T = {T}$ ($< T_c \\approx {T_CRIT}$), $L = {L}$',
         filename='ordering_kinetics.png',
         directory=ensure_results_dir(args.output_dir),
-        y_label='Domain Size Scale (lattice units)'
+        y_label='Domain Size Scale (lattice units)',
+        left_title='Domain Coarsening',
+        right_title='Boundary Wall Decay'
     )
 
 
