@@ -14,13 +14,14 @@ On a log-log plot the Allen-Cahn (Model A) growth law predicts:
 """
 
 import argparse
+import logging
 
 import matplotlib.pyplot as plt
 import numpy as np
 from tqdm import tqdm
 
 from models.ising_model import IsingSimulation
-from utils.system_helpers import _BAR_FORMAT, ensure_results_dir, save_plot
+from utils.system_helpers import _BAR_FORMAT, ensure_results_dir, save_plot, setup_logging
 
 # ---------------------------------------------------------------------------
 # Physical analysis
@@ -184,8 +185,14 @@ def main() -> None:
     parser.add_argument('--samples', type=int, default=10, help='Number of measurement points')
     parser.add_argument('--fit-min', type=int, default=20, help='Min step for power-law fit')
     parser.add_argument('--output-dir', type=str, default='results/ising', help='Output directory')
+    parser.add_argument('--log-file', type=str, default=None, help='Optional log file path')
+    parser.add_argument('--verbose', action='store_true', help='Enable verbose logging')
 
     args = parser.parse_arguments() if hasattr(parser, 'parse_arguments') else parser.parse_args()
+
+    # Configure logging
+    log_level = logging.DEBUG if args.verbose else logging.INFO
+    logger = setup_logging(level=log_level, log_file=args.log_file)
 
     L = args.size
     T = args.temp
@@ -194,14 +201,14 @@ def main() -> None:
     FIT_MIN_STEP = args.fit_min
     T_CRIT: float = 2.269   # Critical temperature for reference
 
-    print(f"Ising domain growth analysis (L={L}, T={T:.3f} < T_c={T_CRIT})")
-    print(f"Measuring R(t) at {N_SAMPLES} log-spaced steps up to t={MAX_STEPS} ...")
+    logger.info(f"Ising domain growth analysis (L={L}, T={T:.3f} < T_c={T_CRIT})")
+    logger.info(f"Measuring R(t) at {N_SAMPLES} log-spaced steps up to t={MAX_STEPS} ...")
 
     # Logarithmically-spaced integer step targets (unique, sorted)
     step_targets: np.ndarray = np.unique(
         np.logspace(0, np.log10(MAX_STEPS), num=N_SAMPLES).astype(int)
     )
-    print(step_targets)
+    logger.debug(f"Step targets: {step_targets}")
 
     # Start from a fully disordered state and quench to T < T_c
     sim = IsingSimulation(size=L, temp=T, update='random')
@@ -224,6 +231,7 @@ def main() -> None:
         R_mil[i] = compute_mean_intercept_length(sim)
         R_xi[i]  = compute_correlation_length(sim)
         t[i]     = float(current_step)
+        logger.debug(f"Step {current_step}: R_sk={R_sk[i]:.2f}, R_mil={R_mil[i]:.2f}, R_xi={R_xi[i]:.2f}")
 
     # Power-law fits in log-log space (skip early transient)
     fit_mask = t >= FIT_MIN_STEP
@@ -242,11 +250,11 @@ def main() -> None:
     exp_xi,  pre_xi  = power_fit(t, R_xi,  fit_mask)
 
     if exp_sk  is not None:
-        print(f"\nS(k) first-moment exponent : {exp_sk:.3f}  (Allen–Cahn: 0.500)")
+        logger.info(f"S(k) first-moment exponent : {exp_sk:.3f}  (Allen–Cahn: 0.500)")
     if exp_mil is not None:
-        print(f"MIL exponent               : {exp_mil:.3f}  (Allen–Cahn: 0.500)")
+        logger.info(f"MIL exponent               : {exp_mil:.3f}  (Allen–Cahn: 0.500)")
     if exp_xi  is not None:
-        print(f"G(r) ξ exponent            : {exp_xi:.3f}  (Allen–Cahn: 0.500)")
+        logger.info(f"G(r) ξ exponent            : {exp_xi:.3f}  (Allen–Cahn: 0.500)")
 
     # -----------------------------------------------------------------------
     # Plot — left: linear scale, right: log-log scale

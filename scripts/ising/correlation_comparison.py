@@ -3,47 +3,66 @@ Comparison of spin-spin correlation functions for the 2D Ising model.
 Analyzes correlation behavior in ferromagnetic, critical, and paramagnetic phases.
 """
 
+import argparse
+import logging
+
 import matplotlib.pyplot as plt
 import numpy as np
 
 from models.ising_model import IsingSimulation
 from utils.physics_helpers import get_averaged_correlation
-from utils.system_helpers import ensure_results_dir, parallel_sweep, save_plot
-
-# Global Parameters
-L: int = 64
-STEPS: int = 10000
-EQUILIBRATION_STEPS: int = 2000
-SAMPLE_INTERVAL: int = 20
-
-# Ising 2D Critical Temperature approx 2.269
-T_FERRO: float = 1.8   # Below Tc (Long range order)
-T_CRIT: float = 2.269  # At Tc (Power law decay)
-T_PARA: float = 3.0    # Above Tc (Exponential decay)
-
-# Fitting Parameters
-FIT_START_R: int = 2
-FIT_END_R: int = 15
+from utils.system_helpers import ensure_results_dir, parallel_sweep, save_plot, setup_logging
 
 
-def simulate_correlation(T: float) -> tuple[np.ndarray, np.ndarray]:
+def simulate_correlation(params: tuple[float, int, int, int, int]) -> tuple[np.ndarray, np.ndarray]:
     """Worker function: simulate and return the averaged correlation function at temperature T.
 
     Args:
-        T: Temperature.
+        params: Tuple of (T, L, steps, eq_steps, sample_interval).
 
     Returns:
         A tuple of (r, G_r) — radial distances and averaged correlations.
     """
-    print(f"Collecting data for T={T}...")
+    T, L, steps, eq_steps, sample_interval = params
+    logger = logging.getLogger('multiferroic')
+    logger.debug(f"Collecting data for T={T}...")
     sim = IsingSimulation(L, T)
-    sim.equilibrate(EQUILIBRATION_STEPS)
-    return get_averaged_correlation(sim, STEPS, SAMPLE_INTERVAL)
+    sim.equilibrate(eq_steps)
+    return get_averaged_correlation(sim, steps, sample_interval)
 
 
-if __name__ == "__main__":
+def main() -> None:
+    """Run the correlation comparison analysis."""
+    parser = argparse.ArgumentParser(description='2D Ising Model Correlation Comparison')
+    parser.add_argument('--size', type=int, default=64, help='Linear lattice size L')
+    parser.add_argument('--steps', type=int, default=10000, help='Measurement steps')
+    parser.add_argument('--eq-steps', type=int, default=2000, help='Equilibration steps')
+    parser.add_argument('--interval', type=int, default=20, help='Sample interval')
+    parser.add_argument('--output-dir', type=str, default='results/ising', help='Output directory')
+    parser.add_argument('--log-file', type=str, default=None, help='Optional log file path')
+    parser.add_argument('--verbose', action='store_true', help='Enable verbose logging')
+
+    args = parser.parse_arguments() if hasattr(parser, 'parse_arguments') else parser.parse_args()
+
+    # Configure logging
+    log_level = logging.DEBUG if args.verbose else logging.INFO
+    logger = setup_logging(level=log_level, log_file=args.log_file)
+
+    # Ising 2D Critical Temperature approx 2.269
+    T_FERRO: float = 1.8   # Below Tc (Long range order)
+    T_CRIT: float = 2.269  # At Tc (Power law decay)
+    T_PARA: float = 3.0    # Above Tc (Exponential decay)
+
+    # Fitting Parameters
+    FIT_START_R: int = 2
+    FIT_END_R: int = 15
+
+    logger.info(f"Starting Ising correlation comparison (L={args.size})...")
     temperatures = [T_FERRO, T_CRIT, T_PARA]
-    (r, G_ferro), (_, G_crit), (_, G_para) = parallel_sweep(simulate_correlation, temperatures)
+    sweep_params = [(T, args.size, args.steps, args.eq_steps, args.interval) for T in temperatures]
+
+    results = parallel_sweep(simulate_correlation, sweep_params)
+    (r, G_ferro), (_, G_crit), (_, G_para) = results
 
     # --- Fit for correlation length xi in paramagnetic phase ---
     r_fit: np.ndarray = r[FIT_START_R:FIT_END_R]
@@ -60,10 +79,10 @@ if __name__ == "__main__":
             if slope == 0.0:
                 raise ValueError("Fitted slope is zero; cannot compute correlation length.")
             xi: float = -1.0 / slope
-            print(f"\nFitted correlation length for T={T_PARA} (paramagnetic): xi = {xi:.4f}")
+            logger.info(f"Fitted correlation length for T={T_PARA} (paramagnetic): xi = {xi:.4f}")
             fit_line: np.ndarray = np.exp(intercept + slope * r)
         except (np.linalg.LinAlgError, ValueError) as exc:
-            print(f"Warning: exponential fit failed for T={T_PARA}: {exc}")
+            logger.warning(f"Exponential fit failed for T={T_PARA}: {exc}")
 
     # Plotting
     fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(14, 6))
@@ -91,6 +110,9 @@ if __name__ == "__main__":
     ax2.legend()
     ax2.grid(True, which="both", ls="-", alpha=0.5)
 
-    output_dir: str = ensure_results_dir('results/ising')
+    output_dir: str = ensure_results_dir(args.output_dir)
     save_plot('correlation_comparison.png', directory=output_dir)
-    print(f"Comparison plot saved to {output_dir}/correlation_comparison.png")
+
+
+if __name__ == "__main__":
+    main()

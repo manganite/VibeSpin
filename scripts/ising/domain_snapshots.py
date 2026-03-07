@@ -12,12 +12,13 @@ Row 3 – Real-space pair correlation G(r) along the x-direction, averaged over
 """
 
 import argparse
+import logging
 
 import matplotlib.pyplot as plt
 import numpy as np
 
 from models.ising_model import IsingSimulation
-from utils.system_helpers import ensure_results_dir, save_plot
+from utils.system_helpers import ensure_results_dir, save_plot, setup_logging
 
 
 def radial_average_sk(spins: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
@@ -100,16 +101,22 @@ def main() -> None:
     parser.add_argument('--targets', type=int, nargs='+', default=[1, 10, 100, 1000],
                         help='MC steps at which to take snapshots')
     parser.add_argument('--output-dir', type=str, default='results/ising', help='Output directory')
+    parser.add_argument('--log-file', type=str, default=None, help='Optional log file path')
+    parser.add_argument('--verbose', action='store_true', help='Enable verbose logging')
 
     args = parser.parse_arguments() if hasattr(parser, 'parse_arguments') else parser.parse_args()
+
+    # Configure logging
+    log_level = logging.DEBUG if args.verbose else logging.INFO
+    logger = setup_logging(level=log_level, log_file=args.log_file)
 
     L = args.size
     T = args.temp
     STEP_TARGETS = sorted(args.targets)
     T_CRIT: float = 2.269
 
-    print(f"Ising domain snapshots (L={L}, T={T})")
-    print(f"Recording snapshots at steps {STEP_TARGETS} ...")
+    logger.info(f"Ising domain snapshots (L={L}, T={T})")
+    logger.info(f"Recording snapshots at steps {STEP_TARGETS} ...")
 
     sim = IsingSimulation(size=L, temp=T, update='random')
     n_targets: int = len(STEP_TARGETS)
@@ -125,8 +132,9 @@ def main() -> None:
         if sim.spins is not None:
             snapshots_spins[i] = sim.spins.copy()
             snapshots_t[i] = target
+            logger.debug(f"Captured snapshot at step {target}")
 
-    print(f"Collected {n_targets} snapshots. Saving figure ...")
+    logger.info(f"Collected {n_targets} snapshots. Saving figure ...")
 
     # --- 3 × N layout: row 0 = spins, row 1 = S(|k|), row 2 = G(r) ---------
     n_cols = n_targets

@@ -3,42 +3,61 @@ Comparison of spin-spin correlation functions G(r) for the XY model.
 Contrasts power-law decay (low T) with exponential decay (high T).
 """
 
+import argparse
+import logging
+
 import matplotlib.pyplot as plt
 import numpy as np
 
 from models.xy_model import XYSimulation
 from utils.physics_helpers import get_averaged_correlation
-from utils.system_helpers import ensure_results_dir, parallel_sweep, save_plot
-
-# Global Parameters
-L: int = 50
-STEPS: int = 10000
-EQUILIBRATION_STEPS: int = 2000
-SAMPLE_INTERVAL: int = 20
-
-# Temperatures
-T_LOW: float = 0.4   # Well below BKT (Power law expected)
-T_HIGH: float = 1.5  # Well above BKT (Exponential expected)
+from utils.system_helpers import ensure_results_dir, parallel_sweep, save_plot, setup_logging
 
 
-def simulate_correlation(T: float) -> tuple[np.ndarray, np.ndarray]:
+def simulate_correlation(params: tuple[float, int, int, int, int]) -> tuple[np.ndarray, np.ndarray]:
     """Worker function: simulate and return the averaged correlation function at temperature T.
 
     Args:
-        T: Temperature.
+        params: Tuple of (T, L, steps, eq_steps, sample_interval).
 
     Returns:
         A tuple of (r, G_r) — radial distances and averaged correlations.
     """
-    print(f"Collecting data for T={T}...")
+    T, L, steps, eq_steps, sample_interval = params
+    logger = logging.getLogger('multiferroic')
+    logger.debug(f"Collecting data for T={T}...")
     sim = XYSimulation(L, T)
-    sim.equilibrate(EQUILIBRATION_STEPS)
-    return get_averaged_correlation(sim, STEPS, SAMPLE_INTERVAL)
+    sim.equilibrate(eq_steps)
+    return get_averaged_correlation(sim, steps, sample_interval)
 
 
-if __name__ == "__main__":
+def main() -> None:
+    """Run the correlation comparison analysis for the XY model."""
+    parser = argparse.ArgumentParser(description='2D XY Model Correlation Comparison')
+    parser.add_argument('--size', type=int, default=50, help='Linear lattice size L')
+    parser.add_argument('--steps', type=int, default=10000, help='Measurement steps')
+    parser.add_argument('--eq-steps', type=int, default=2000, help='Equilibration steps')
+    parser.add_argument('--interval', type=int, default=20, help='Sample interval')
+    parser.add_argument('--output-dir', type=str, default='results/xy', help='Output directory')
+    parser.add_argument('--log-file', type=str, default=None, help='Optional log file path')
+    parser.add_argument('--verbose', action='store_true', help='Enable verbose logging')
+
+    args = parser.parse_arguments() if hasattr(parser, 'parse_arguments') else parser.parse_args()
+
+    # Configure logging
+    log_level = logging.DEBUG if args.verbose else logging.INFO
+    logger = setup_logging(level=log_level, log_file=args.log_file)
+
+    # Temperatures
+    T_LOW: float = 0.4   # Well below BKT (Power law expected)
+    T_HIGH: float = 1.5  # Well above BKT (Exponential expected)
+
+    logger.info(f"Starting XY correlation comparison (L={args.size})...")
     temperatures = [T_LOW, T_HIGH]
-    (r_low, G_low), (r_high, G_high) = parallel_sweep(simulate_correlation, temperatures)
+    sweep_params = [(T, args.size, args.steps, args.eq_steps, args.interval) for T in temperatures]
+
+    results = parallel_sweep(simulate_correlation, sweep_params)
+    (r_low, G_low), (r_high, G_high) = results
 
     # Plotting
     fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(14, 6))
@@ -63,6 +82,9 @@ if __name__ == "__main__":
     ax2.legend()
     ax2.grid(True, which="both", ls="-", alpha=0.5)
 
-    output_dir: str = ensure_results_dir('results/xy')
+    output_dir: str = ensure_results_dir(args.output_dir)
     save_plot('correlation_comparison.png', directory=output_dir)
-    print(f"Comparison plot saved to {output_dir}/correlation_comparison.png")
+
+
+if __name__ == "__main__":
+    main()

@@ -2,7 +2,9 @@
 Technical utility functions for file system operations, plotting, and parallel execution.
 """
 
+import logging
 import os
+import sys
 from collections.abc import Callable, Iterable, Sequence, Sized
 from multiprocessing import Pool
 
@@ -11,6 +13,40 @@ import numpy as np
 from tqdm import tqdm
 
 # No typing import needed for modern syntax
+
+def setup_logging(level: int = logging.INFO, log_file: str | None = None) -> logging.Logger:
+    """
+    Configure project-wide logging.
+
+    Args:
+        level: Logging level (e.g., logging.INFO).
+        log_file: Optional path to a file to save logs to.
+
+    Returns:
+        The configured logger instance.
+    """
+    logger = logging.getLogger('multiferroic')
+    logger.setLevel(level)
+
+    # Avoid duplicate handlers if setup_logging is called multiple times
+    if not logger.handlers:
+        formatter = logging.Formatter(
+            '%(asctime)s - %(levelname)s - %(message)s', datefmt='%Y-%m-%d %H:%M:%S'
+        )
+
+        # Console handler
+        ch = logging.StreamHandler(sys.stdout)
+        ch.setFormatter(formatter)
+        logger.addHandler(ch)
+
+        # File handler
+        if log_file:
+            ensure_results_dir(os.path.dirname(log_file))
+            fh = logging.FileHandler(log_file)
+            fh.setFormatter(formatter)
+            logger.addHandler(fh)
+
+    return logger
 
 def ensure_results_dir(directory: str = 'results') -> str:
     """
@@ -22,7 +58,8 @@ def ensure_results_dir(directory: str = 'results') -> str:
     Returns:
         The path to the directory.
     """
-    os.makedirs(directory, exist_ok=True)
+    if directory:
+        os.makedirs(directory, exist_ok=True)
     return directory
 
 def save_plot(filename: str, directory: str = 'results', tight_layout: bool = True) -> None:
@@ -34,12 +71,13 @@ def save_plot(filename: str, directory: str = 'results', tight_layout: bool = Tr
         directory: Output directory name.
         tight_layout: Whether to apply plt.tight_layout() before saving.
     """
+    logger = logging.getLogger('multiferroic')
     ensure_results_dir(directory)
     if tight_layout:
         plt.tight_layout()
     path = os.path.join(directory, filename)
     plt.savefig(path)
-    print(f"Plot saved to {path}")
+    logger.info(f"Plot saved to {path}")
 
 # tqdm bar format that always shows rate as iterations/s (never inverts to s/it).
 _BAR_FORMAT = '{l_bar}{bar}| {n_fmt}/{total_fmt} [{elapsed}<{remaining}, {rate_noinv_fmt}{postfix}]'
