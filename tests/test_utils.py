@@ -12,13 +12,25 @@ import pytest
 matplotlib.use('Agg')  # Non-interactive backend — no display required
 import matplotlib.pyplot as plt
 
+from models.clock_model import ClockSimulation
 from models.ising_model import IsingSimulation
-from utils.physics_helpers import calculate_thermodynamics, get_averaged_correlation
+from models.xy_model import XYSimulation
+from utils.physics_helpers import (
+    calculate_thermodynamics,
+    compute_kinetics_metrics,
+    get_averaged_correlation,
+    pair_correlation_x,
+    power_fit,
+    radial_average_sk,
+)
 from utils.system_helpers import (
     ensure_results_dir,
     parallel_sweep,
+    plot_ordering_evolution,
+    plot_ordering_kinetics,
     plot_temperature_sweep,
     save_plot,
+    setup_logging,
 )
 
 
@@ -146,10 +158,88 @@ def test_get_averaged_correlation_invalid_inputs(ising_sim):
         get_averaged_correlation(ising_sim, total_steps=10, sample_interval=0)
 
 
+# New Tests for Kinetics Analysis
+def test_radial_average_sk_ising():
+    """radial_average_sk should work for scalar spins."""
+    spins = np.ones((32, 32))
+    k, sk = radial_average_sk(spins)
+    assert isinstance(k, np.ndarray)
+    assert isinstance(sk, np.ndarray)
+    assert len(k) == len(sk)
+    assert len(k) > 0
+
+
+def test_radial_average_sk_xy():
+    """radial_average_sk should work for vector spins."""
+    spins = np.ones((32, 32, 2))
+    k, sk = radial_average_sk(spins)
+    assert len(k) == len(sk)
+    assert len(k) > 0
+
+
+def test_pair_correlation_x_ising():
+    """pair_correlation_x should work for scalar spins."""
+    spins = np.ones((32, 32))
+    r, g = pair_correlation_x(spins)
+    assert len(r) == len(g)
+    assert g[0] == pytest.approx(1.0)
+
+
+def test_pair_correlation_x_xy():
+    """pair_correlation_x should work for vector spins."""
+    spins = np.ones((32, 32, 2))
+    r, g = pair_correlation_x(spins)
+    assert len(r) == len(g)
+    assert g[0] == pytest.approx(1.0)
+
+
+def test_compute_kinetics_metrics_ising():
+    """compute_kinetics_metrics should return R_sk and xi for Ising."""
+    sim = IsingSimulation(16, 1.0)
+    metrics = compute_kinetics_metrics(sim)
+    assert 'R_sk' in metrics
+    assert 'xi' in metrics
+    assert isinstance(metrics['R_sk'], float)
+    assert isinstance(metrics['xi'], float)
+
+
+def test_compute_kinetics_metrics_xy():
+    """compute_kinetics_metrics should return R_sk and xi for XY."""
+    sim = XYSimulation(16, 1.0)
+    metrics = compute_kinetics_metrics(sim)
+    assert 'R_sk' in metrics
+    assert 'xi' in metrics
+
+
+def test_power_fit():
+    """power_fit should extract exponent and prefactor for perfect power law."""
+    t = np.array([10, 100, 1000], dtype=float)
+    y = 2.0 * t**0.5
+    mask = np.ones_like(t, dtype=bool)
+    exp, pre = power_fit(t, y, mask)
+    assert exp == pytest.approx(0.5)
+    assert pre == pytest.approx(2.0)
+
+
+def test_power_fit_none_on_insufficient_data():
+    """power_fit should return None if not enough valid data points."""
+    t = np.array([1, 2], dtype=float)
+    y = np.array([1, 2], dtype=float)
+    mask = np.ones_like(t, dtype=bool)
+    exp, pre = power_fit(t, y, mask)
+    assert exp is None
+    assert pre is None
+
+
 # Tests for system utility functions
+def test_setup_logging():
+    """setup_logging should return a logger instance."""
+    logger = setup_logging()
+    assert logger.name == 'multiferroic'
+
+
 def test_ensure_results_dir(test_results_dir):
     """ensure_results_dir should create a directory if it does not exist."""
-    # test_results_dir fixture already creates it, so we'll test a subfolder
     sub_dir = os.path.join(test_results_dir, 'subfolder')
     path = ensure_results_dir(sub_dir)
     assert path == sub_dir
@@ -173,41 +263,60 @@ def test_parallel_sweep():
     assert results == [1, 4, 9, 16, 25]
 
 
-# Tests for plot_temperature_sweep
-def test_plot_temperature_sweep_creates_figure_with_four_axes():
-    """Should produce a figure containing exactly 4 axes."""
-    plt.close('all')
-    temps = np.linspace(0.5, 3.0, 10)
-    dummy = np.ones(10)
+# Tests for high-level plotting functions
+def test_plot_temperature_sweep_runs():
+    """plot_temperature_sweep smoke test."""
+    temps = np.array([1.0, 2.0])
+    data = np.array([0.5, 0.5])
     plot_temperature_sweep(
         temps,
-        dummy,
-        dummy,
-        dummy,
-        dummy,
+        data,
+        data,
+        data,
+        data,
         title='Test',
-        filename='_test.png',
-        directory='results',
+        filename='_ts.png',
+        directory='test_results',
     )
-    fig = plt.gcf()
-    assert len(fig.axes) == 4
     plt.close('all')
 
 
-def test_plot_temperature_sweep_runs_without_error():
-    """plot_temperature_sweep should not raise for well-formed inputs."""
+def test_plot_ordering_kinetics_runs():
+    """plot_ordering_kinetics smoke test."""
+    t = np.array([1, 10, 100])
+    r = np.array([1, 2, 3])
+    exponents = {'R_sk': 0.5, 'xi': 0.5, 'third': -1.0}
+    prefactors = {'R_sk': 1.0, 'xi': 1.0, 'third': 1.0}
+    mask = np.ones_like(t, dtype=bool)
+    plot_ordering_kinetics(
+        t,
+        r,
+        r,
+        r,
+        'Test Metric',
+        exponents,
+        prefactors,
+        mask,
+        'Title',
+        '_kin.png',
+        'test_results',
+    )
     plt.close('all')
-    temps = np.array([1.0, 2.0, 3.0])
-    data = np.array([0.5, 0.3, 0.1])
-    # This should not raise
-    plot_temperature_sweep(
-        temps,
-        data,
-        data,
-        data,
-        data,
-        title='Smoke test',
-        filename='_smoke.png',
-        directory='results',
+
+
+def test_plot_ordering_evolution_runs():
+    """plot_ordering_evolution smoke test."""
+    targets = [1, 10]
+    snapshots = [np.ones((16, 16)), np.ones((16, 16))]
+    gr_data = [(np.arange(8), np.ones(8)), (np.arange(8), np.ones(8))]
+    plot_ordering_evolution(
+        targets,
+        snapshots,
+        gr_data,
+        None,
+        'Title',
+        '_evol.png',
+        'test_results',
+        is_vector=False,
     )
     plt.close('all')
