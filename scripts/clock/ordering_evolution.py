@@ -12,7 +12,7 @@ import logging
 import numpy as np
 
 from models.clock_model import ClockSimulation
-from utils.system_helpers import ensure_results_dir, plot_domain_evolution, setup_logging
+from utils.system_helpers import ensure_results_dir, plot_ordering_evolution, setup_logging
 
 
 def main() -> None:
@@ -69,7 +69,7 @@ def main() -> None:
 
     title = f'2D {Q}-state Clock Model Evolution — T = {T}, L = {L}, A = {A}'
     
-    plot_domain_evolution(
+    plot_ordering_evolution(
         targets=STEP_TARGETS,
         snapshots=snapshots,
         gr_data=snapshots_gr,

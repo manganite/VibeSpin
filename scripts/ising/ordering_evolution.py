@@ -12,7 +12,7 @@ import logging
 import numpy as np
 
 from models.ising_model import IsingSimulation
-from utils.system_helpers import ensure_results_dir, plot_domain_evolution, setup_logging
+from utils.system_helpers import ensure_results_dir, plot_ordering_evolution, setup_logging
 
 
 def main() -> None:
@@ -64,11 +64,11 @@ def main() -> None:
 
     title = f'2D Ising Ordering Evolution — T = {T} (< T_c ≈ {T_CRIT}), L = {L}'
     
-    plot_domain_evolution(
+    plot_ordering_evolution(
         targets=STEP_TARGETS,
         snapshots=snapshots,
         gr_data=snapshots_gr,
-        vorticity_data=None, # Ising uses Sk fallback in plot_domain_evolution
+        vorticity_data=None, # Ising uses Sk fallback in plot_ordering_evolution
         title=title,
         filename='ordering_evolution.png',
         directory=ensure_results_dir(args.output_dir),

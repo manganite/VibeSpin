@@ -12,7 +12,7 @@ import logging
 import numpy as np
 
 from models.xy_model import XYSimulation
-from utils.system_helpers import ensure_results_dir, plot_domain_evolution, setup_logging
+from utils.system_helpers import ensure_results_dir, plot_ordering_evolution, setup_logging
 
 
 def main() -> None:
@@ -66,7 +66,7 @@ def main() -> None:
 
     title = f'2D XY Model Ordering Evolution — T = {T} (< T_BKT ≈ {T_BKT}), L = {L}'
     
-    plot_domain_evolution(
+    plot_ordering_evolution(
         targets=STEP_TARGETS,
         snapshots=snapshots,
         gr_data=snapshots_gr,
