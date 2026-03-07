@@ -4,21 +4,22 @@ This project is a high-performance Python framework for simulating and analyzing
 
 ## Features
 
-- **High Performance**: Uses [Numba](https://numba.pydata.org/) JIT compilation to achieve C-like speeds for lattice updates.
+- **High Performance**: Uses [Numba](https://numba.pydata.org/) JIT compilation with `fastmath=True` and disk caching.
+- **Scientific Reproducibility**: Deterministic seed management for both NumPy and Numba.
+- **Professional Tooling**: CLI support for all scripts and structured logging.
 - **Physical Observables**: Calculates magnetization, energy, specific heat, magnetic susceptibility, helicity modulus, and vorticity.
-- **Statistical Analysis**: Implements real-space spin-spin correlation functions G(r) and structure factors S(k) via Fast Fourier Transforms (FFT).
-- **Domain Coarsening**: Tools for analysing domain growth after a thermal quench.
-- **Parallelization**: Supports multi-core temperature sweeps and independent simulation runs.
+- **Statistical Analysis**: Fast spin-spin correlation functions G(r) and structure factors S(k).
+- **Domain Coarsening**: Specialized tools for verifying growth laws (e.g., $R(t) \sim t^{1/2}$).
 
 ## Core Technologies
 
 - **Python 3.x** (≥ 3.9)
 - **NumPy**: Efficient array operations and FFTs.
-- **Numba**: Just-In-Time compilation for the Monte Carlo kernels.
+- **Numba**: Just-In-Time compilation for core kernels.
 - **Matplotlib**: Visualization of results and spin configurations.
-- **tqdm**: Progress tracking for long-running simulations.
-- **pytest**: Modern testing framework for unit and integration tests.
-- **Ruff**: Extremely fast Python linter and code formatter.
+- **pytest & pytest-cov**: Testing framework with code coverage analysis.
+- **Ruff**: Fast Python linter and code formatter.
+- **Mypy**: Static type checker.
 
 ## Project Structure
 
@@ -32,66 +33,46 @@ This project is a high-performance Python framework for simulating and analyzing
 
 ### Installation
 
-1. Clone the repository:
-   ```bash
-   git clone <repository-url>
-   ```
-2. Navigate to the project directory:
-   ```bash
-   cd multiferroic
-   ```
-3. Install the package in editable mode with development dependencies:
+1. Clone the repository and navigate to the project directory.
+2. Install the package in editable mode:
    ```bash
    pip install -e .
    ```
 
 ### Running Simulations
 
-Standardized temperature sweeps are available for all models. Each script generates a 4-panel plot of thermodynamic observables.
+All major scripts support a Command Line Interface (CLI).
 
 **Example: Run Ising temperature sweep**
 ```bash
-python scripts/ising/temperature_sweep.py
+python scripts/ising/temperature_sweep.py --size 64 --t-points 40 --verbose
 ```
 
-**Example: Run XY temperature sweep**
+**Example: Run XY helicity modulus analysis**
 ```bash
-python scripts/xy/temperature_sweep.py
+python scripts/xy/helicity_modulus.py --size 64 --meas-steps 50000
 ```
 
-**Example: Run Clock temperature sweep**
-```bash
-python scripts/clock/temperature_sweep.py
-```
-
-Results and visualizations will be saved to the `results/<model>/` directory.
+Results and visualizations will be saved to the `results/` directory.
 
 ### Running Tests
 
-To run the full test suite, use `pytest` from the project root:
+To run the full test suite with coverage:
 ```bash
-pytest tests/
+pytest --cov
 ```
 
 ### Code Quality
 
-To maintain high code quality, this project uses **Ruff** for linting and formatting. You can run these tools from the project root:
-
-**Check for linting issues:**
+Check linting and type safety:
 ```bash
 ruff check .
-```
-
-**Automatically fix issues and format code:**
-```bash
-ruff check . --fix
-ruff format .
+mypy --explicit-package-bases models/ utils/
 ```
 
 ## Development Conventions
 
-- **Performance**: Always use `@njit(cache=True)` (Numba) for nested loops involving lattice updates or energy calculations. Caching reduces startup time by saving compiled code to disk.
-- **Type Safety**: Use Python type hints project-wide.
-- **Documentation**: Provide comprehensive docstrings for all modules, classes, and functions.
-- **Modularity**: When adding a new model, inherit from `MonteCarloSimulation` in `models/simulation_base.py`.
-- **Parallelism**: Use `parallel_sweep` from `utils.system_helpers` for sweeps over independent parameters.
+- **Performance**: Always use `@njit(cache=True, fastmath=True)` for nested loops.
+- **Reproducibility**: Use the `seed` parameter when initializing models for deterministic results.
+- **Logging**: Use the project-wide logger (`setup_logging`).
+- **Type Safety**: Use modern Python type hints project-wide.
