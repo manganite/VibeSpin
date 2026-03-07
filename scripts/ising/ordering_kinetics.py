@@ -178,7 +178,7 @@ def compute_correlation_length(sim: IsingSimulation) -> float:
 
 def main() -> None:
     """Run the domain growth simulation and save a log-log plot."""
-    parser = argparse.ArgumentParser(description='2D Ising Model Domain Growth Analysis')
+    parser = argparse.ArgumentParser(description='2D Ising Model Ordering Kinetics Analysis')
     parser.add_argument('--size', type=int, default=512, help='Linear lattice size L')
     parser.add_argument('--temp', type=float, default=0.1, help='Quench temperature T')
     parser.add_argument('--max-steps', type=int, default=1000, help='Total MC steps')
@@ -259,7 +259,7 @@ def main() -> None:
     # -----------------------------------------------------------------------
     # Plot — left: linear scale, right: log-log scale
     # -----------------------------------------------------------------------
-    title = (f'2D Ising Domain Growth — $T = {T}$ ($< T_c \\approx {T_CRIT}$), $L = {L}$')
+    title = (f'2D Ising Ordering Kinetics — $T = {T}$ ($< T_c \\approx {T_CRIT}$), $L = {L}$')
     fig, (ax_lin, ax_log) = plt.subplots(1, 2, figsize=(14, 6))
     fig.suptitle(title, fontsize=13)
 
@@ -301,7 +301,7 @@ def main() -> None:
     ax_log.grid(True, which='both', alpha=0.25)
 
     output_dir = ensure_results_dir(args.output_dir)
-    save_plot('domain_growth.png', directory=output_dir)
+    save_plot('ordering_kinetics.png', directory=output_dir)
 
 
 if __name__ == '__main__':

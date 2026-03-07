@@ -70,7 +70,7 @@ def compute_correlation_length(sim: ClockSimulation) -> float:
 
 def main() -> None:
     """Run the domain growth simulation and save analysis plots."""
-    parser = argparse.ArgumentParser(description='2D Clock Model Domain Growth Analysis')
+    parser = argparse.ArgumentParser(description='2D Clock Model Ordering Kinetics Analysis')
     parser.add_argument('--size', type=int, default=256, help='Linear lattice size L')
     parser.add_argument('--temp', type=float, default=0.1, help='Quench temperature T')
     parser.add_argument('--q', type=int, default=6, help='Number of clock states')
@@ -143,10 +143,10 @@ def main() -> None:
 
     # Plotting
     fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(14, 6))
-    title = f'2D {Q}-state Clock Domain Growth — $T = {T}$, $L = {L}$, $A = {A}$'
+    title = f'2D {Q}-state Clock Ordering Kinetics — $T = {T}$, $L = {L}$, $A = {A}$'
     fig.suptitle(title, fontsize=13)
     
-    # 1. Domain Growth R(t)
+    # 1. Ordering Kinetics R(t)
     ax1.loglog(t, R_sk, 'o', label='$R_{S(k)}$ (Structure Factor)')
     if exp_sk:
         ax1.loglog(t[fit_mask], pre_sk * t[fit_mask]**exp_sk, '--', color='tab:blue', 
@@ -174,7 +174,7 @@ def main() -> None:
     ax2.legend()
 
     output_dir = ensure_results_dir(args.output_dir)
-    save_plot('domain_growth.png', directory=output_dir)
+    save_plot('ordering_kinetics.png', directory=output_dir)
 
 
 if __name__ == '__main__':
