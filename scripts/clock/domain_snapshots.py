@@ -78,8 +78,8 @@ def main() -> None:
     # --- 3 × N layout: row 0 = phase, row 1 = vorticity, row 2 = G(r) ---------
     n_cols = n_targets
     fig, axes = plt.subplots(3, n_cols,
-                             figsize=(n_cols * 4, 12),
-                             gridspec_kw={'hspace': 0.35, 'wspace': 0.25})
+                             figsize=(n_cols * 4, 12.5),
+                             gridspec_kw={'hspace': 0.45, 'wspace': 0.25})
     fig.suptitle(
         f'2D {Q}-state Clock Model Evolution — T = {T}, L = {L}, A = {A}',
         fontsize=14, y=0.98,
@@ -111,14 +111,37 @@ def main() -> None:
         # --- Row 2: Correlation G(r) ---
         ax_gr = axes[2, col]
         r, G = snapshots_gr[col]
+        
+        # Plot using linear y-scale and log x-scale (Ising style)
         ax_gr.plot(r[1:], G[1:], linewidth=1.5)
+        ax_gr.axhline(0, color='tab:gray', linewidth=0.7, linestyle='--')
+        
+        inv_e = 1.0 / np.e
+        ax_gr.axhline(inv_e, color='tab:red', linewidth=0.8,
+                      linestyle=':', alpha=0.7, label='$1/e$')
+        
         ax_gr.set_xscale('log')
-        ax_gr.set_yscale('log')
-        ax_gr.set_xlabel('r', fontsize=10)
+        ax_gr.set_xlabel('Distance r', fontsize=10)
         if col == 0:
-            ax_gr.set_ylabel('G(r)', fontsize=10)
+            ax_gr.set_ylabel('$G(r)$ / $G(0)$', fontsize=10)
         ax_gr.grid(True, which='both', alpha=0.3)
-        ax_gr.set_ylim(1e-2, 1.1)
+        ax_gr.set_ylim(-0.1, 1.1)
+
+        # Find xi where G(r) first drops below 1/e via linear interpolation
+        r_plot = r[1:]
+        G_plot = G[1:]
+        below = np.where(G_plot < inv_e)[0]
+        if len(below) > 0:
+            idx = below[0]
+            if idx > 0:
+                r0, r1 = float(r_plot[idx - 1]), float(r_plot[idx])
+                g0, g1 = float(G_plot[idx - 1]), float(G_plot[idx])
+                xi = r0 + (inv_e - g0) * (r1 - r0) / (g1 - g0)
+            else:
+                xi = float(r_plot[idx])
+            ax_gr.axvline(xi, color='tab:red', linewidth=1.0, linestyle='--', alpha=0.8)
+            ax_gr.text(xi * 1.15, inv_e + 0.04,
+                       f'$\\xi = {xi:.1f}$', fontsize=9, color='tab:red')
 
     output_dir = ensure_results_dir(args.output_dir)
     save_plot('domain_snapshots.png', directory=output_dir)
