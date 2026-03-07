@@ -1,74 +1,162 @@
 """
-Benchmark script for Multiferroic Simulation Project.
-Measures performance of Monte Carlo sweeps and analysis functions.
+Comprehensive scaling benchmark for the Multiferroic Simulation Project.
+Measures performance of MC sweeps and analysis functions across different lattice sizes.
 """
 
+import argparse
 import time
+import os
+
+import matplotlib.pyplot as plt
+import numpy as np
 
 from models.clock_model import ClockSimulation
 from models.ising_model import IsingSimulation
 from models.xy_model import XYSimulation
+from utils.system_helpers import ensure_results_dir, save_plot
 
 
-def run_benchmark():
-    L = 128
-    steps = 1000
-    analysis_iters = 100
+def measure_performance(sim, sweeps=100, analysis_iters=50):
+    """Measure sweeps/sec and analysis times for a simulation instance."""
+    # Warm-up
+    sim.step()
+    sim._get_energy()
+    sim._calculate_correlation_function()
+    if hasattr(sim, '_calculate_vorticity'):
+        sim._calculate_vorticity()
 
-    print(f'Starting Benchmark (L={L}, sweeps={steps})...\n')
+    # 1. Sweep speed
+    start = time.perf_counter()
+    for _ in range(sweeps):
+        sim.step()
+    sweep_duration = time.perf_counter() - start
+    sps = sweeps / sweep_duration
 
-    models = [
-        ('Ising (Checkerboard)', IsingSimulation(L, 2.269, update='checkerboard')),
-        ('Ising (Random)', IsingSimulation(L, 2.269, update='random')),
-        ('XY Model', XYSimulation(L, 0.89)),
-        ('Clock Model (q=6)', ClockSimulation(L, 0.5, q=6)),
+    # 2. Thermodynamic measurements (Energy + Mag)
+    start = time.perf_counter()
+    for _ in range(analysis_iters):
+        sim._get_energy()
+        sim._get_magnetization()
+    thermo_ms = (time.perf_counter() - start) / analysis_iters * 1000
+
+    # 3. Correlation function G(r)
+    start = time.perf_counter()
+    for _ in range(analysis_iters):
+        sim._calculate_correlation_function()
+    corr_ms = (time.perf_counter() - start) / analysis_iters * 1000
+
+    # 4. Vorticity (if applicable)
+    vort_ms = 0.0
+    if hasattr(sim, '_calculate_vorticity'):
+        start = time.perf_counter()
+        for _ in range(analysis_iters):
+            sim._calculate_vorticity()
+        vort_ms = (time.perf_counter() - start) / analysis_iters * 1000
+
+    return {
+        'sps': sps,
+        'thermo_ms': thermo_ms,
+        'corr_ms': corr_ms,
+        'vort_ms': vort_ms
+    }
+
+
+def run_scaling_benchmark():
+    parser = argparse.ArgumentParser(description='Scaling Benchmark')
+    parser.add_argument('--sizes', type=int, nargs='+', default=[32, 64, 128, 256], 
+                        help='Lattice sizes to benchmark')
+    parser.add_argument('--sweeps', type=int, default=200, help='Sweeps per point')
+    parser.add_argument('--output-dir', type=str, default='results/benchmarks', help='Output directory')
+    args = parser.parse_args()
+
+    sizes = sorted(args.sizes)
+    model_configs = [
+        ('Ising (Checker)', lambda L: IsingSimulation(L, 2.269, update='checkerboard')),
+        ('Ising (Random)', lambda L: IsingSimulation(L, 2.269, update='random')),
+        ('XY Model', lambda L: XYSimulation(L, 0.89)),
+        ('Clock (q=6)', lambda L: ClockSimulation(L, 0.5, q=6))
     ]
 
-    results = []
+    # Results structure: results[model_name][size] = metrics_dict
+    all_results = {name: {} for name, _ in model_configs}
 
-    for name, sim in models:
-        print(f'Benchmarking {name}...')
+    print(f"Starting scaling benchmark for sizes: {sizes}\n")
 
-        # Warm-up (ensure JIT compilation)
-        sim.step()
-        sim._calculate_correlation_function()
-        if hasattr(sim, '_calculate_vorticity'):
-            sim._calculate_vorticity()
+    for L in sizes:
+        print(f"--- Lattice Size L = {L} (N = {L*L}) ---")
+        for name, constructor in model_configs:
+            print(f"Benchmarking {name}...", end=' ', flush=True)
+            sim = constructor(L)
+            metrics = measure_performance(sim, sweeps=args.sweeps)
+            all_results[name][L] = metrics
+            print(f"{metrics['sps']:.1f} sweeps/s")
+        print()
 
-        # 1. Measure Sweep Speed
-        start = time.perf_counter()
-        for _ in range(steps):
-            sim.step()
-        end = time.perf_counter()
-        duration = end - start
-        sps = steps / duration
+    # --- Visualization ---
+    fig, ((ax1, ax2), (ax3, ax4)) = plt.subplots(2, 2, figsize=(15, 12))
+    fig.suptitle('Performance Scaling Analysis', fontsize=16)
 
-        # 2. Measure Correlation Function Speed
-        start_corr = time.perf_counter()
-        for _ in range(analysis_iters):
-            sim._calculate_correlation_function()
-        end_corr = time.perf_counter()
-        corr_ms = ((end_corr - start_corr) / analysis_iters) * 1000
+    for name in all_results:
+        res = all_results[name]
+        L_vals = sorted(list(res.keys()))
+        N_vals = [L*L for L in L_vals]
+        
+        # Panel 1: Sweeps per second vs N
+        ax1.loglog(N_vals, [res[L]['sps'] for L in L_vals], 'o-', label=name)
+        
+        # Panel 2: Thermodynamic measurement time vs N
+        ax2.loglog(N_vals, [res[L]['thermo_ms'] for L in L_vals], 's-', label=name)
+        
+        # Panel 3: Correlation function time vs N
+        ax3.loglog(N_vals, [res[L]['corr_ms'] for L in L_vals], '^-', label=name)
+        
+        # Panel 4: Analysis overhead ratio (Analysis time / Sweep time)
+        # One sweep time = 1 / sps
+        overhead = []
+        for L in L_vals:
+            sweep_time_ms = (1.0 / res[L]['sps']) * 1000
+            total_analysis_ms = res[L]['thermo_ms'] + res[L]['corr_ms'] + res[L]['vort_ms']
+            overhead.append(total_analysis_ms / sweep_time_ms)
+        ax4.plot(L_vals, overhead, 'D-', label=name)
 
-        # 3. Measure Vorticity Speed (if applicable)
-        vort_ms = 0.0
-        if hasattr(sim, '_calculate_vorticity'):
-            start_vort = time.perf_counter()
-            for _ in range(analysis_iters):
-                sim._calculate_vorticity()
-            end_vort = time.perf_counter()
-            vort_ms = ((end_vort - start_vort) / analysis_iters) * 1000
+    # Styling
+    ax1.set_title('Throughput (Sweeps/sec)')
+    ax1.set_xlabel('Number of sites N ($L^2$)')
+    ax1.set_ylabel('Sweeps / sec')
+    ax1.grid(True, which='both', alpha=0.3)
+    ax1.legend()
 
-        results.append({'name': name, 'sps': sps, 'corr_ms': corr_ms, 'vort_ms': vort_ms})
+    ax2.set_title('Thermodynamic Measurement Cost')
+    ax2.set_xlabel('Number of sites N')
+    ax2.set_ylabel('Time (ms)')
+    ax2.grid(True, which='both', alpha=0.3)
 
-    print('\n' + '=' * 65)
-    print(f'{"Model":<25} | {"Sweeps/sec":<12} | {"G(r) (ms)":<10} | {"Vort (ms)":<10}')
-    print('-' * 65)
-    for res in results:
-        vort_str = f'{res["vort_ms"]:>9.2f}' if res['vort_ms'] > 0 else f'{"N/A":>9}'
-        print(f'{res["name"]:<25} | {res["sps"]:>11.1f} | {res["corr_ms"]:>9.2f} | {vort_str}')
-    print('=' * 65)
+    ax3.set_title('Correlation Function Cost $G(r)$')
+    ax3.set_xlabel('Number of sites N')
+    ax3.set_ylabel('Time (ms)')
+    ax3.grid(True, which='both', alpha=0.3)
+
+    ax4.set_title('Analysis Overhead Ratio')
+    ax4.set_xlabel('Lattice Size L')
+    ax4.set_ylabel('Ratio (Analysis Time / Sweep Time)')
+    ax4.grid(True, alpha=0.3)
+
+    output_dir = ensure_results_dir(args.output_dir)
+    save_plot('scaling_benchmark.png', directory=output_dir)
+    
+    # Print summary table for largest size
+    L_max = sizes[-1]
+    print(f"\nFinal Performance Table (L={L_max}):")
+    print("=" * 85)
+    print(f"{'Model':<20} | {'Sweeps/s':>12} | {'Thermo (ms)':>12} | {'G(r) (ms)':>12} | {'Overhead':>10}")
+    print("-" * 85)
+    for name in all_results:
+        m = all_results[name][L_max]
+        sw_ms = (1.0 / m['sps']) * 1000
+        ratio = (m['thermo_ms'] + m['corr_ms'] + m['vort_ms']) / sw_ms
+        print(f"{name:<20} | {m['sps']:>12.1f} | {m['thermo_ms']:>12.3f} | {m['corr_ms']:>12.3f} | {ratio:>10.2f}x")
+    print("=" * 85)
 
 
 if __name__ == '__main__':
-    run_benchmark()
+    run_scaling_benchmark()
