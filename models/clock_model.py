@@ -215,48 +215,60 @@ class ClockSimulation(MonteCarloSimulation):
 
 
 if __name__ == '__main__':
-    # Parameters
-    L = 50  # Lattice size (L x L)
-    T = 0.5  # Temperature
-    STEPS = 1000
-    A = 1.0  # Anisotropy strength
-    q = 6  # q-state clock model
+    import argparse
+    import logging
 
-    print(f'Initializing {q}-state Clock Model (L={L}, T={T}, A={A})...')
-    sim = ClockSimulation(L, T, A=A, q=q)
+    from utils.system_helpers import setup_logging
 
-    print(f'Running for {STEPS} steps...')
-    mag_history, energy_history = sim.run(STEPS)
+    parser = argparse.ArgumentParser(description='Clock Model Quick Example')
+    parser.add_argument('--size', type=int, default=128, help='Lattice size L')
+    parser.add_argument('--temp', type=float, default=0.2, help='Temperature T')
+    parser.add_argument('--q', type=int, default=6, help='Clock states q')
+    parser.add_argument('--steps', type=int, default=500, help='MC steps')
+    parser.add_argument('--seed', type=int, default=None, help='Random seed')
+    parser.add_argument('--verbose', action='store_true', help='Enable verbose logging')
+    args = parser.parse_args()
+
+    log_level = logging.DEBUG if args.verbose else logging.INFO
+    logger = setup_logging(level=log_level)
+
+    logger.info(f'Initializing {args.q}-state Clock Model (L={args.size}, T={args.temp})...')
+    sim = ClockSimulation(args.size, args.temp, q=args.q, seed=args.seed)
+
+    logger.info(f'Running for {args.steps} steps...')
+    mag_history, energy_history = sim.run(args.steps)
 
     # Plotting
     fig, (ax1, ax2, ax3) = plt.subplots(1, 3, figsize=(18, 5))
+    fig.suptitle(f'2D {args.q}-state Clock Model — $L={args.size}, T={args.temp}$', fontsize=14)
 
-    # Final Configuration (Phase angle)
+    # Final Phase Configuration
     if sim.spins is not None:
         angles = np.arctan2(sim.spins[..., 1], sim.spins[..., 0])
-        im = ax1.imshow(angles, cmap='hsv', interpolation='none')
-        ax1.set_title(f'Spin Phase after {STEPS} steps')
+        im1 = ax1.imshow(angles, cmap='hsv', interpolation='none', vmin=-np.pi, vmax=np.pi)
+        ax1.set_title('Final Spin Phase')
         ax1.axis('off')
-        plt.colorbar(im, ax=ax1, label='Phase (radians)')
+        plt.colorbar(im1, ax=ax1, label='Phase (rad)', shrink=0.8)
 
     # Magnetization and Energy
-    ax2.plot(mag_history, label='Magnetization |M|')
+    ax2.plot(mag_history, label='|M|')
     ax2.plot(energy_history, label='Energy')
-    ax2.set_title('Observables vs Time')
+    ax2.set_title('Thermodynamics vs Time')
     ax2.set_xlabel('Monte Carlo Steps')
     ax2.set_ylabel('Value')
-    ax2.grid(True)
+    ax2.grid(True, alpha=0.3)
     ax2.legend()
 
     # Vorticity map
-    vorticity = sim._calculate_vorticity()
-    im_vortex = ax3.imshow(vorticity, cmap='bwr', interpolation='none', vmin=-1, vmax=1)
-    ax3.set_title('Vorticity Map')
+    vort = sim._calculate_vorticity()
+    im2 = ax3.imshow(vort, cmap='bwr', interpolation='none', vmin=-1, vmax=1)
+    ax3.set_title(f'Vorticity (Total: {int(np.sum(np.abs(vort)))})')
     ax3.axis('off')
-    plt.colorbar(im_vortex, ax=ax3, ticks=[-1, 0, 1], label='Winding Number')
+    plt.colorbar(im2, ax=ax3, ticks=[-1, 0, 1], label='Winding No.', shrink=0.8)
 
+    plt.tight_layout()
     output_dir = 'results'
     os.makedirs(output_dir, exist_ok=True)
-    output_file = os.path.join(output_dir, 'clock_simulation.png')
+    output_file = os.path.join(output_dir, 'clock_example.png')
     plt.savefig(output_file)
-    print(f'Simulation finished. Plot saved to {output_file}')
+    logger.info(f'Simulation finished. Plot saved to {output_file}')

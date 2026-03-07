@@ -171,56 +171,70 @@ class XYSimulation(MonteCarloSimulation):
 
 
 if __name__ == '__main__':
-    # Parameters
-    L = 50  # Lattice size (L x L)
-    T = 0.89  # Temperature (BKT transition approx 0.89)
-    STEPS = 1000
+    import argparse
+    import logging
 
-    print(f'Initializing XY Model (L={L}, T={T})...')
-    sim = XYSimulation(L, T)
+    from utils.system_helpers import setup_logging
 
-    print(f'Running for {STEPS} steps...')
-    mag_history, energy_history = sim.run(STEPS)
+    parser = argparse.ArgumentParser(description='XY Model Quick Example')
+    parser.add_argument('--size', type=int, default=128, help='Lattice size L')
+    parser.add_argument('--temp', type=float, default=0.5, help='Temperature T')
+    parser.add_argument('--steps', type=int, default=500, help='MC steps')
+    parser.add_argument('--seed', type=int, default=None, help='Random seed')
+    parser.add_argument('--verbose', action='store_true', help='Enable verbose logging')
+    args = parser.parse_args()
+
+    log_level = logging.DEBUG if args.verbose else logging.INFO
+    logger = setup_logging(level=log_level)
+
+    logger.info(f'Initializing XY Model (L={args.size}, T={args.temp})...')
+    sim = XYSimulation(args.size, args.temp, seed=args.seed)
+
+    logger.info(f'Running for {args.steps} steps...')
+    sim.run(args.steps)
 
     # Plotting
-    fig, axes = plt.subplots(2, 2, figsize=(12, 12))
+    fig, axes = plt.subplots(2, 2, figsize=(12, 11))
+    fig.suptitle(f'2D XY Model — $L={args.size}, T={args.temp}$', fontsize=14)
     ax1, ax2, ax3, ax4 = axes.flatten()
 
     # Final Configuration (Phase angle)
     if sim.spins is not None:
         angles = np.arctan2(sim.spins[..., 1], sim.spins[..., 0])
-        im = ax1.imshow(angles, cmap='hsv', interpolation='none')
-        ax1.set_title(f'Spin Phase after {STEPS} steps')
+        im1 = ax1.imshow(angles, cmap='hsv', interpolation='none', vmin=-np.pi, vmax=np.pi)
+        ax1.set_title('Final Spin Phase')
         ax1.axis('off')
-        fig.colorbar(im, ax=ax1, label='Phase (radians)', shrink=0.8)
+        fig.colorbar(im1, ax=ax1, label='Phase (rad)', shrink=0.8)
 
     # Vorticity map
-    vorticity = sim._calculate_vorticity()
-    im_vortex = ax2.imshow(vorticity, cmap='bwr', interpolation='none', vmin=-1, vmax=1)
-    ax2.set_title('Vorticity Map')
+    vort = sim._calculate_vorticity()
+    im2 = ax2.imshow(vort, cmap='bwr', interpolation='none', vmin=-1, vmax=1)
+    ax2.set_title(f'Vorticity (Total: {int(np.sum(np.abs(vort)))})')
     ax2.axis('off')
-    fig.colorbar(im_vortex, ax=ax2, ticks=[-1, 0, 1], label='Winding Number', shrink=0.8)
+    fig.colorbar(im2, ax=ax2, ticks=[-1, 0, 1], label='Winding No.', shrink=0.8)
 
     # Spin-Spin Correlation Function
     r, G_r = sim._calculate_correlation_function()
-    ax3.plot(r, G_r)
+    ax3.plot(r[1:], G_r[1:], 'o-', markersize=3)
     ax3.set_title('Spin-Spin Correlation G(r)')
-    ax3.set_xlabel('Distance r (pixels)')
+    ax3.set_xlabel('Distance r')
     ax3.set_ylabel('G(r)')
-    ax3.grid(True)
-    ax3.set_yscale('log')
+    ax3.grid(True, alpha=0.3)
+    ax3.set_xscale('log')
 
-    # Structure Factor
-    S_k = sim._calculate_structure_factor()
-    im_sk = ax4.imshow(S_k, cmap='viridis', norm=LogNorm())
+    # Structure Factor (Radial)
+    from utils.physics_helpers import radial_average_sk
+
+    k, sk = radial_average_sk(sim.spins)
+    ax4.loglog(k[1:], sk[1:], 'o-', markersize=3, color='tab:green')
     ax4.set_title('Structure Factor S(k)')
-    ax4.set_xlabel('$k_x$')
-    ax4.set_ylabel('$k_y$')
-    fig.colorbar(im_sk, ax=ax4, label='S(k)', shrink=0.8)
+    ax4.set_xlabel('|k|')
+    ax4.set_ylabel('S(k)')
+    ax4.grid(True, alpha=0.3)
 
+    plt.tight_layout()
     output_dir = 'results'
     os.makedirs(output_dir, exist_ok=True)
-    output_file = os.path.join(output_dir, 'xy_simulation.png')
-    plt.tight_layout()
+    output_file = os.path.join(output_dir, 'xy_example.png')
     plt.savefig(output_file)
-    print(f'Simulation finished. Plot saved to {output_file}')
+    logger.info(f'Simulation finished. Plot saved to {output_file}')

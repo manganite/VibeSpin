@@ -217,46 +217,59 @@ class IsingSimulation(MonteCarloSimulation):
 
 
 if __name__ == '__main__':
-    # Parameters
-    L = 50  # Lattice size (L x L)
-    T = 2.269  # Temperature (critical point approx 2.269)
-    STEPS = 1000
+    import argparse
+    import logging
 
-    print(f'Initializing Ising Model (L={L}, T={T})...')
-    sim = IsingSimulation(L, T)
+    from utils.system_helpers import setup_logging
 
-    print(f'Running for {STEPS} steps...')
-    mag_history, energy_history = sim.run(STEPS)
+    parser = argparse.ArgumentParser(description='Ising Model Quick Example')
+    parser.add_argument('--size', type=int, default=128, help='Lattice size L')
+    parser.add_argument('--temp', type=float, default=2.269, help='Temperature T')
+    parser.add_argument('--steps', type=int, default=500, help='MC steps')
+    parser.add_argument('--seed', type=int, default=None, help='Random seed')
+    parser.add_argument('--verbose', action='store_true', help='Enable verbose logging')
+    args = parser.parse_args()
+
+    log_level = logging.DEBUG if args.verbose else logging.INFO
+    logger = setup_logging(level=log_level)
+
+    logger.info(f'Initializing Ising Model (L={args.size}, T={args.temp})...')
+    sim = IsingSimulation(args.size, args.temp, seed=args.seed)
+
+    logger.info(f'Running for {args.steps} steps...')
+    mag_history, energy_history = sim.run(args.steps)
 
     # Plotting
     fig, (ax1, ax2, ax3) = plt.subplots(1, 3, figsize=(18, 5))
+    fig.suptitle(f'2D Ising Model — $L={args.size}, T={args.temp}$', fontsize=14)
 
     # Final Configuration
     if sim.spins is not None:
         ax1.imshow(sim.spins, cmap='gray', interpolation='none')
-    ax1.set_title(f'Spin Configuration after {STEPS} steps')
+    ax1.set_title('Final Spin Configuration')
     ax1.axis('off')
 
     # Magnetization and Energy
-    ax2.plot(mag_history, label='Magnetization')
+    ax2.plot(mag_history, label='|M|')
     ax2.plot(energy_history, label='Energy')
-    ax2.set_title('Observables vs Time')
+    ax2.set_title('Thermodynamics vs Time')
     ax2.set_xlabel('Monte Carlo Steps')
     ax2.set_ylabel('Value')
-    ax2.grid(True)
+    ax2.grid(True, alpha=0.3)
     ax2.legend()
 
     # Correlation
     r, G_r = sim._calculate_correlation_function()
-    ax3.plot(r, G_r)
+    ax3.plot(r, G_r, 'o-', markersize=3)
     ax3.set_title('Spin-Spin Correlation G(r)')
     ax3.set_xlabel('Distance r')
     ax3.set_ylabel('G(r)')
-    ax3.grid(True)
+    ax3.grid(True, alpha=0.3)
     ax3.set_yscale('log')
 
+    plt.tight_layout()
     output_dir = 'results'
     os.makedirs(output_dir, exist_ok=True)
-    output_file = os.path.join(output_dir, 'ising_simulation.png')
+    output_file = os.path.join(output_dir, 'ising_example.png')
     plt.savefig(output_file)
-    print(f'Simulation finished. Plot saved to {output_file}')
+    logger.info(f'Simulation finished. Plot saved to {output_file}')
