@@ -4,7 +4,6 @@ Verifies that identical seeds produce identical simulation trajectories.
 """
 
 import numpy as np
-import pytest
 
 from models.clock_model import ClockSimulation
 from models.ising_model import IsingSimulation

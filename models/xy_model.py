@@ -6,7 +6,6 @@ import os
 
 import matplotlib.pyplot as plt
 import numpy as np
-from matplotlib.colors import LogNorm
 from numba import njit
 
 from .simulation_base import (
@@ -225,12 +224,13 @@ if __name__ == '__main__':
     # Structure Factor (Radial)
     from utils.physics_helpers import radial_average_sk
 
-    k, sk = radial_average_sk(sim.spins)
-    ax4.loglog(k[1:], sk[1:], 'o-', markersize=3, color='tab:green')
-    ax4.set_title('Structure Factor S(k)')
-    ax4.set_xlabel('|k|')
-    ax4.set_ylabel('S(k)')
-    ax4.grid(True, alpha=0.3)
+    if sim.spins is not None:
+        k, sk = radial_average_sk(sim.spins)
+        ax4.loglog(k[1:], sk[1:], 'o-', markersize=3, color='tab:green')
+        ax4.set_title('Structure Factor S(k)')
+        ax4.set_xlabel('|k|')
+        ax4.set_ylabel('S(k)')
+        ax4.grid(True, alpha=0.3)
 
     plt.tight_layout()
     output_dir = 'results'

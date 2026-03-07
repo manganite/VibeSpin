@@ -12,7 +12,6 @@ import pytest
 matplotlib.use('Agg')  # Non-interactive backend — no display required
 import matplotlib.pyplot as plt
 
-from models.clock_model import ClockSimulation
 from models.ising_model import IsingSimulation
 from models.xy_model import XYSimulation
 from utils.physics_helpers import (

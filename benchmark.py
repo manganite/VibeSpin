@@ -5,10 +5,8 @@ Measures performance of MC sweeps and analysis functions across different lattic
 
 import argparse
 import time
-import os
 
 import matplotlib.pyplot as plt
-import numpy as np
 
 from models.clock_model import ClockSimulation
 from models.ising_model import IsingSimulation
@@ -53,20 +51,18 @@ def measure_performance(sim, sweeps=100, analysis_iters=50):
             sim._calculate_vorticity()
         vort_ms = (time.perf_counter() - start) / analysis_iters * 1000
 
-    return {
-        'sps': sps,
-        'thermo_ms': thermo_ms,
-        'corr_ms': corr_ms,
-        'vort_ms': vort_ms
-    }
+    return {'sps': sps, 'thermo_ms': thermo_ms, 'corr_ms': corr_ms, 'vort_ms': vort_ms}
 
 
 def run_scaling_benchmark():
     parser = argparse.ArgumentParser(description='Scaling Benchmark')
-    parser.add_argument('--sizes', type=int, nargs='+', default=[32, 64, 128, 256], 
-                        help='Lattice sizes to benchmark')
+    parser.add_argument(
+        '--sizes', type=int, nargs='+', default=[32, 64, 128, 256], help='Lattice sizes'
+    )
     parser.add_argument('--sweeps', type=int, default=200, help='Sweeps per point')
-    parser.add_argument('--output-dir', type=str, default='results/benchmarks', help='Output directory')
+    parser.add_argument(
+        '--output-dir', type=str, default='results/benchmarks', help='Output directory'
+    )
     args = parser.parse_args()
 
     sizes = sorted(args.sizes)
@@ -74,18 +70,18 @@ def run_scaling_benchmark():
         ('Ising (Checker)', lambda L: IsingSimulation(L, 2.269, update='checkerboard')),
         ('Ising (Random)', lambda L: IsingSimulation(L, 2.269, update='random')),
         ('XY Model', lambda L: XYSimulation(L, 0.89)),
-        ('Clock (q=6)', lambda L: ClockSimulation(L, 0.5, q=6))
+        ('Clock (q=6)', lambda L: ClockSimulation(L, 0.5, q=6)),
     ]
 
     # Results structure: results[model_name][size] = metrics_dict
     all_results = {name: {} for name, _ in model_configs}
 
-    print(f"Starting scaling benchmark for sizes: {sizes}\n")
+    print(f'Starting scaling benchmark for sizes: {sizes}\n')
 
     for L in sizes:
-        print(f"--- Lattice Size L = {L} (N = {L*L}) ---")
+        print(f'--- Lattice Size L = {L} (N = {L*L}) ---')
         for name, constructor in model_configs:
-            print(f"Benchmarking {name}...", end=' ', flush=True)
+            print(f'Benchmarking {name}...', end=' ', flush=True)
             sim = constructor(L)
             metrics = measure_performance(sim, sweeps=args.sweeps)
             all_results[name][L] = metrics
@@ -99,19 +95,18 @@ def run_scaling_benchmark():
     for name in all_results:
         res = all_results[name]
         L_vals = sorted(list(res.keys()))
-        N_vals = [L*L for L in L_vals]
-        
+        N_vals = [L * L for L in L_vals]
+
         # Panel 1: Sweeps per second vs N
         ax1.loglog(N_vals, [res[L]['sps'] for L in L_vals], 'o-', label=name)
-        
+
         # Panel 2: Thermodynamic measurement time vs N
         ax2.loglog(N_vals, [res[L]['thermo_ms'] for L in L_vals], 's-', label=name)
-        
+
         # Panel 3: Correlation function time vs N
         ax3.loglog(N_vals, [res[L]['corr_ms'] for L in L_vals], '^-', label=name)
-        
+
         # Panel 4: Analysis overhead ratio (Analysis time / Sweep time)
-        # One sweep time = 1 / sps
         overhead = []
         for L in L_vals:
             sweep_time_ms = (1.0 / res[L]['sps']) * 1000
@@ -143,19 +138,23 @@ def run_scaling_benchmark():
 
     output_dir = ensure_results_dir(args.output_dir)
     save_plot('scaling_benchmark.png', directory=output_dir)
-    
+
     # Print summary table for largest size
     L_max = sizes[-1]
-    print(f"\nFinal Performance Table (L={L_max}):")
-    print("=" * 85)
-    print(f"{'Model':<20} | {'Sweeps/s':>12} | {'Thermo (ms)':>12} | {'G(r) (ms)':>12} | {'Overhead':>10}")
-    print("-" * 85)
+    print(f'\nFinal Performance Table (L={L_max}):')
+    print('=' * 85)
+    row_fmt = '{:<20} | {:>12} | {:>12} | {:>12} | {:>10}'
+    print(row_fmt.format('Model', 'Sweeps/s', 'Thermo (ms)', 'G(r) (ms)', 'Overhead'))
+    print('-' * 85)
     for name in all_results:
         m = all_results[name][L_max]
         sw_ms = (1.0 / m['sps']) * 1000
         ratio = (m['thermo_ms'] + m['corr_ms'] + m['vort_ms']) / sw_ms
-        print(f"{name:<20} | {m['sps']:>12.1f} | {m['thermo_ms']:>12.3f} | {m['corr_ms']:>12.3f} | {ratio:>10.2f}x")
-    print("=" * 85)
+        print(
+            f'{name:<20} | {m["sps"]:>12.1f} | {m["thermo_ms"]:>12.3f} | '
+            f'{m["corr_ms"]:>12.3f} | {ratio:>10.2f}x'
+        )
+    print('=' * 85)
 
 
 if __name__ == '__main__':
