@@ -18,7 +18,7 @@ from utils.system_helpers import ensure_results_dir, plot_domain_evolution, setu
 def main() -> None:
     """Run the snapshot simulation and generate a multi-row evolution figure."""
     parser = argparse.ArgumentParser(description='2D XY Model Domain Snapshot Visualisation')
-    parser.add_argument('--size', type=int, default=128, help='Linear lattice size L')
+    parser.add_argument('--size', type=int, default=256, help='Linear lattice size L')
     parser.add_argument('--temp', type=float, default=0.5, help='Quench temperature T')
     parser.add_argument('--targets', type=int, nargs='+', default=[1, 10, 100, 1000],
                         help='MC steps at which to take snapshots')
