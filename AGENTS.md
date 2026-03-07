@@ -10,6 +10,7 @@ The codebase provides a modular architecture for Monte Carlo simulations:
 - **Scientific Reproducibility**: Implements deterministic seed management across both NumPy and Numba random number generators to ensure simulation results are perfectly replicable.
 - **Professional Tooling**: Comprehensive Command Line Interface (CLI) via `argparse` and structured logging for all simulation scripts.
 - **Unified Analysis**: Shared utilities for power-law fitting, length-scale extraction ($R_{S(k)}$, $\xi$), and complex multi-row plotting.
+- **Performance Profiling**: Dedicated scaling benchmark suite measuring simulation throughput and analysis costs across multiple lattice sizes.
 
 ## Project Structure
 
@@ -26,7 +27,8 @@ The codebase provides a modular architecture for Monte Carlo simulations:
   - `ordering_evolution.py`: Visual snapshots of spatial order development.
   - `temperature_sweep.py`: Standard thermodynamic sweeps (M, E, chi, Cv).
 - `results/`: Directory where simulation plots (PNG) and data are saved.
-- `tests/`: Comprehensive unit tests for models and utilities.
+- `tests/`: Comprehensive unit tests for models, utilities, and reproducibility.
+- `benchmark.py`: Scaling analysis and performance visualization tool.
 
 ## Getting Started
 
@@ -41,7 +43,7 @@ pip install -e .
 
 All major scripts support a CLI for easy parameter configuration.
 
-**Example: Phase Ordering Kinetics**
+**Example: Ordering Kinetics**
 ```bash
 python scripts/xy/ordering_kinetics.py --size 256 --max-steps 1000 --verbose
 ```
