@@ -155,7 +155,7 @@ def main() -> None:
                    label=f'Fit $\\xi$: $t^{{{exp_xi:.2f}}}$')
         
     ax1.set_xlabel('Time t (Monte Carlo sweeps)')
-    ax1.set_ylabel('Domain Size R(t)')
+    ax1.set_ylabel('Characteristic Length Scale $L(t)$ (lattice units)')
     ax1.set_title('Domain Coarsening')
     ax1.grid(True, which='both', alpha=0.3)
     ax1.legend()
