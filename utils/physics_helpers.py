@@ -104,15 +104,17 @@ def radial_average_sk(spins: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
     N = spins.shape[0]
     if spins.ndim == 3:  # Vector spins (XY/Clock)
         sx, sy = spins[..., 0], spins[..., 1]
-        Sk_raw = np.abs(np.fft.fft2(sx.astype(float)))**2 + np.abs(np.fft.fft2(sy.astype(float)))**2
+        Sk_raw = (
+            np.abs(np.fft.fft2(sx.astype(float))) ** 2 + np.abs(np.fft.fft2(sy.astype(float))) ** 2
+        )
     else:  # Scalar spins (Ising)
-        Sk_raw = np.abs(np.fft.fft2(spins.astype(float)))**2
-        
+        Sk_raw = np.abs(np.fft.fft2(spins.astype(float))) ** 2
+
     Sk = np.fft.fftshift(Sk_raw) / (N * N)
 
     cx = N // 2
     iy, ix = np.indices((N, N))
-    r_int = np.sqrt((ix - cx)**2 + (iy - cx)**2).astype(int)
+    r_int = np.sqrt((ix - cx) ** 2 + (iy - cx) ** 2).astype(int)
 
     # Average within each annular bin up to the Nyquist radius
     r_max = cx
@@ -142,16 +144,16 @@ def pair_correlation_x(spins: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
         G: Normalised pair correlation G(r) / G(0).
     """
     N = spins.shape[0]
-    
+
     if spins.ndim == 3:  # Vector spins (XY/Clock)
         sx, sy = spins[..., 0].astype(float), spins[..., 1].astype(float)
         Fx = np.fft.rfft(sx, axis=1)
         Fy = np.fft.rfft(sy, axis=1)
-        autocorr = np.fft.irfft(np.abs(Fx)**2 + np.abs(Fy)**2, n=N, axis=1)
+        autocorr = np.fft.irfft(np.abs(Fx) ** 2 + np.abs(Fy) ** 2, n=N, axis=1)
     else:  # Scalar spins (Ising)
         s = spins.astype(float)
         F = np.fft.rfft(s, axis=1)
-        autocorr = np.fft.irfft(np.abs(F)**2, n=N, axis=1)
+        autocorr = np.fft.irfft(np.abs(F) ** 2, n=N, axis=1)
 
     # Average over rows and normalise by N
     G_full = np.mean(autocorr, axis=0) / N
@@ -163,3 +165,51 @@ def pair_correlation_x(spins: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
         G = G / G[0]
 
     return r_vals, G
+
+
+def compute_kinetics_metrics(sim: MonteCarloSimulation) -> dict[str, float]:
+    """
+    Calculate common kinetics metrics (R_sk, xi) for a simulation state.
+
+    Args:
+        sim: MonteCarloSimulation instance.
+
+    Returns:
+        Dictionary containing 'R_sk' and 'xi'.
+    """
+    if sim.spins is None:
+        return {'R_sk': 0.0, 'xi': 0.0}
+
+    # 1. R_sk from structure factor first moment
+    kvals, S_radial = radial_average_sk(sim.spins)
+    S_k = S_radial[1:]
+    K_k = kvals[1:]
+    denom = float(np.sum(K_k * S_k))
+    R_sk = (2.0 * np.pi * float(np.sum(S_k) / denom)) if denom != 0 else 0.0
+
+    # 2. xi from G(r) 1/e decay
+    r_vals, G = pair_correlation_x(sim.spins)
+    inv_e = 1.0 / np.e
+    below = np.where(G < inv_e)[0]
+    if len(below) == 0:
+        xi = float(r_vals[-1])
+    elif below[0] == 0:
+        xi = float(r_vals[0])
+    else:
+        idx = below[0]
+        r0, r1 = float(r_vals[idx - 1]), float(r_vals[idx])
+        g0, g1 = float(G[idx - 1]), float(G[idx])
+        xi = r0 + (inv_e - g0) * (r1 - r0) / (g1 - g0)
+
+    return {'R_sk': R_sk, 'xi': xi}
+
+
+def power_fit(
+    t_arr: np.ndarray, y_arr: np.ndarray, mask: np.ndarray
+) -> tuple[float, float] | tuple[None, None]:
+    """Return (exponent, prefactor) from a log-log linear fit, or (None, None)."""
+    valid = mask & (y_arr > 0)
+    if valid.sum() < 3:
+        return None, None
+    coeffs = np.polyfit(np.log(t_arr[valid]), np.log(y_arr[valid]), 1)
+    return float(coeffs[0]), float(np.exp(coeffs[1]))
