@@ -74,7 +74,10 @@ def save_plot(filename: str, directory: str = 'results', tight_layout: bool = Tr
     logger = logging.getLogger('multiferroic')
     ensure_results_dir(directory)
     if tight_layout:
-        plt.tight_layout()
+        try:
+            plt.tight_layout()
+        except UserWarning:
+            pass
     path = os.path.join(directory, filename)
     plt.savefig(path)
     logger.info(f"Plot saved to {path}")
@@ -156,5 +159,116 @@ def plot_temperature_sweep(
 
     for ax in axes.flatten():
         ax.set_xlabel('Temperature (T)')
+
+    save_plot(filename, directory=directory)
+
+
+def plot_domain_evolution(
+    targets: Sequence[int],
+    snapshots: Sequence[np.ndarray],
+    gr_data: Sequence[tuple[np.ndarray, np.ndarray]],
+    vorticity_data: Sequence[np.ndarray] | None,
+    title: str,
+    filename: str,
+    directory: str,
+    is_vector: bool = False,
+) -> None:
+    """
+    Generate and save a multi-row figure showing domain evolution over time.
+
+    Row 0: Spin configurations (binary for Ising, HSV for XY/Clock).
+    Row 1: Circularly-averaged structure factor S(|k|) or Vorticity maps.
+    Row 2: Radially averaged correlation functions G(r) with xi estimates.
+
+    Args:
+        targets: List of MC steps for each snapshot.
+        snapshots: List of spin arrays.
+        gr_data: List of (r, G) tuples.
+        vorticity_data: Optional list of vorticity arrays.
+        title: Figure-level suptitle.
+        filename: Output filename.
+        directory: Output directory.
+        is_vector: Whether the spins are 2D vectors (True) or scalars (False).
+    """
+    n_cols = len(targets)
+    # Determine rows: 3 rows if vorticity is provided, otherwise 3 rows (with Sk)
+    fig, axes = plt.subplots(3, n_cols,
+                             figsize=(n_cols * 4, 12.5),
+                             gridspec_kw={'hspace': 0.45, 'wspace': 0.25})
+    fig.suptitle(title, fontsize=14, y=0.98)
+
+    for col in range(n_cols):
+        t = targets[col]
+        spins = snapshots[col]
+        
+        # --- Row 0: Spin Configuration ---
+        ax_spin = axes[0, col]
+        if is_vector:
+            angles = np.arctan2(spins[..., 1], spins[..., 0])
+            im = ax_spin.imshow(angles, cmap='hsv', interpolation='none',
+                                vmin=-np.pi, vmax=np.pi)
+            if col == n_cols - 1:
+                plt.colorbar(im, ax=ax_spin, label='Phase (rad)', shrink=0.8)
+        else:
+            ax_spin.imshow(spins, cmap='binary', interpolation='none',
+                           vmin=-1, vmax=1)
+        ax_spin.set_title(f't = {t} sweep{"s" if t != 1 else ""}', fontsize=12)
+        ax_spin.axis('off')
+
+        # --- Row 1: Mid-row (Vorticity or Sk) ---
+        ax_mid = axes[1, col]
+        if vorticity_data is not None:
+            vort = vorticity_data[col]
+            im_v = ax_mid.imshow(vort, cmap='bwr', interpolation='none', vmin=-1, vmax=1)
+            ax_mid.axis('off')
+            v_count = int(np.sum(np.abs(vort)))
+            ax_mid.set_title(f'Vortices: {v_count}', fontsize=10)
+            if col == n_cols - 1:
+                plt.colorbar(im_v, ax=ax_mid, ticks=[-1, 0, 1], label='Winding No.', shrink=0.8)
+        else:
+            # Fallback to structure factor Sk if no vorticity (Ising style)
+            # Importing here to avoid circular dependencies
+            from .physics_helpers import radial_average_sk
+            k_vals, S_radial = radial_average_sk(spins)
+            ax_mid.plot(k_vals[1:], S_radial[1:], linewidth=1.2)
+            ax_mid.set_xscale('log')
+            ax_mid.set_yscale('log')
+            ax_mid.set_xlabel('$|k|$', fontsize=9)
+            if col == 0:
+                ax_mid.set_ylabel('$S(|k|)$', fontsize=9)
+            ax_mid.grid(True, which='both', alpha=0.25)
+
+        # --- Row 2: Correlation G(r) ---
+        ax_gr = axes[2, col]
+        r, G = gr_data[col]
+        ax_gr.plot(r[1:], G[1:], linewidth=1.5)
+        ax_gr.axhline(0, color='tab:gray', linewidth=0.7, linestyle='--')
+        
+        inv_e = 1.0 / np.e
+        ax_gr.axhline(inv_e, color='tab:red', linewidth=0.8,
+                      linestyle=':', alpha=0.7, label='$1/e$')
+        
+        ax_gr.set_xscale('log')
+        ax_gr.set_xlabel('Distance r', fontsize=10)
+        if col == 0:
+            ax_gr.set_ylabel('$G(r)$ / $G(0)$', fontsize=10)
+        ax_gr.grid(True, which='both', alpha=0.3)
+        ax_gr.set_ylim(-0.1, 1.1)
+
+        # Find xi where G(r) first drops below 1/e
+        r_plot = r[1:]
+        G_plot = G[1:]
+        below = np.where(G_plot < inv_e)[0]
+        if len(below) > 0:
+            idx = below[0]
+            if idx > 0:
+                r0, r1 = float(r_plot[idx - 1]), float(r_plot[idx])
+                g0, g1 = float(G_plot[idx - 1]), float(G_plot[idx])
+                xi = r0 + (inv_e - g0) * (r1 - r0) / (g1 - g0)
+            else:
+                xi = float(r_plot[idx])
+            ax_gr.axvline(xi, color='tab:red', linewidth=1.0, linestyle='--', alpha=0.8)
+            ax_gr.text(xi * 1.15, inv_e + 0.04,
+                       f'$\\xi = {xi:.1f}$', fontsize=9, color='tab:red')
 
     save_plot(filename, directory=directory)
