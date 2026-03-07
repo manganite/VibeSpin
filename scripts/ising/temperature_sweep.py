@@ -10,7 +10,7 @@ from utils.physics_helpers import calculate_thermodynamics
 from utils.system_helpers import parallel_sweep, plot_temperature_sweep
 
 # Simulation Parameters
-L: int = 50
+L: int = 64
 EQUILIBRATION_STEPS: int = 5000
 MEASUREMENT_STEPS: int = 5000
 
