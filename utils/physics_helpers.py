@@ -26,9 +26,9 @@ def calculate_thermodynamics(
         ValueError: If ``T`` is not positive or ``L`` is not a positive integer.
     """
     if T <= 0.0:
-        raise ValueError(f"T must be positive (T > 0), got {T}")
+        raise ValueError(f'T must be positive (T > 0), got {T}')
     if not isinstance(L, (int, np.integer)) or L < 1:
-        raise ValueError(f"L must be a positive integer, got {L!r}")
+        raise ValueError(f'L must be a positive integer, got {L!r}')
     avg_mag = float(np.mean(mags))
     avg_eng = float(np.mean(engs))
     N = L * L
@@ -61,9 +61,9 @@ def get_averaged_correlation(
         ValueError: If ``sample_interval`` is less than 1 or ``total_steps`` is negative.
     """
     if sample_interval < 1:
-        raise ValueError(f"sample_interval must be >= 1, got {sample_interval}")
+        raise ValueError(f'sample_interval must be >= 1, got {sample_interval}')
     if total_steps < 0:
-        raise ValueError(f"total_steps must be non-negative, got {total_steps}")
+        raise ValueError(f'total_steps must be non-negative, got {total_steps}')
     G_r_avg: np.ndarray | None = None
     count = 0
     r: np.ndarray = np.array([])

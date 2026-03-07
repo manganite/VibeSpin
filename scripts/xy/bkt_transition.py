@@ -60,8 +60,8 @@ def run_bkt_study() -> None:
     temperatures: np.ndarray = np.linspace(args.t_min, args.t_max, args.t_points)
     T_BKT_THEORETICAL: float = 0.893
 
-    logger.info(f"Starting BKT transition study (Vortex counting) for L={args.size}...")
-    logger.info(f"Range: [{args.t_min}, {args.t_max}] with {args.t_points} points.")
+    logger.info(f'Starting BKT transition study (Vortex counting) for L={args.size}...')
+    logger.info(f'Range: [{args.t_min}, {args.t_max}] with {args.t_points} points.')
 
     sweep_params = [(T, args.size, args.eq_steps, args.meas_steps) for T in temperatures]
     vortex_counts: list[float] = parallel_sweep(simulate_bkt_point, sweep_params)
@@ -86,5 +86,5 @@ def run_bkt_study() -> None:
     save_plot('bkt_transition.png', directory=args.output_dir)
 
 
-if __name__ == "__main__":
+if __name__ == '__main__':
     run_bkt_study()

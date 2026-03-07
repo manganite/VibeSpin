@@ -46,9 +46,7 @@ def ising_step_numba(
                 jnxt = idx_next[j]
                 jprv = idx_prev[j]
 
-                neighbor_sum = (
-                    spins[iprv, j] + spins[inxt, j] + spins[i, jprv] + spins[i, jnxt]
-                )
+                neighbor_sum = spins[iprv, j] + spins[inxt, j] + spins[i, jprv] + spins[i, jnxt]
 
                 dE = 2 * J * spins[i, j] * neighbor_sum
 
@@ -127,9 +125,7 @@ def ising_step_random_numba(
         jnxt = idx_next[j]
         jprv = idx_prev[j]
 
-        neighbor_sum = (
-            spins[iprv, j] + spins[inxt, j] + spins[i, jprv] + spins[i, jnxt]
-        )
+        neighbor_sum = spins[iprv, j] + spins[inxt, j] + spins[i, jprv] + spins[i, jnxt]
         dE = 2 * J * spins[i, j] * neighbor_sum
 
         if dE <= 0:
@@ -173,9 +169,8 @@ class IsingSimulation(MonteCarloSimulation):
         """
         super().__init__(size, temp, seed=seed)
         if update not in self._VALID_UPDATES:
-            raise ValueError(
-                f"Unknown update scheme {update!r}. " f"Valid options: {sorted(self._VALID_UPDATES)}"
-            )
+            valid_opts = sorted(self._VALID_UPDATES)
+            raise ValueError(f'Unknown update scheme {update!r}. Valid options: {valid_opts}')
         self.J = J
         self.update = update
         # Initialize random spins +1 or -1
@@ -210,9 +205,7 @@ class IsingSimulation(MonteCarloSimulation):
     def _get_energy(self) -> float:
         """Calculate energy per spin of the lattice."""
         if self.spins is not None:
-            return float(
-                ising_energy_numba(self.spins, self.J, self.idx_next)
-            )  # type: ignore[no-any-return]
+            return float(ising_energy_numba(self.spins, self.J, self.idx_next))
         return 0.0
 
     def _get_structure_factor_squared_unshifted(self) -> np.ndarray:
@@ -223,16 +216,16 @@ class IsingSimulation(MonteCarloSimulation):
         return np.array([])
 
 
-if __name__ == "__main__":
+if __name__ == '__main__':
     # Parameters
     L = 50  # Lattice size (L x L)
     T = 2.269  # Temperature (critical point approx 2.269)
     STEPS = 1000
 
-    print(f"Initializing Ising Model (L={L}, T={T})...")
+    print(f'Initializing Ising Model (L={L}, T={T})...')
     sim = IsingSimulation(L, T)
 
-    print(f"Running for {STEPS} steps...")
+    print(f'Running for {STEPS} steps...')
     mag_history, energy_history = sim.run(STEPS)
 
     # Plotting
@@ -266,4 +259,4 @@ if __name__ == "__main__":
     os.makedirs(output_dir, exist_ok=True)
     output_file = os.path.join(output_dir, 'ising_simulation.png')
     plt.savefig(output_file)
-    print(f"Simulation finished. Plot saved to {output_file}")
+    print(f'Simulation finished. Plot saved to {output_file}')

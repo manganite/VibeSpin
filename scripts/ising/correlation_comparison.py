@@ -25,7 +25,7 @@ def simulate_correlation(params: tuple[float, int, int, int, int]) -> tuple[np.n
     """
     T, L, steps, eq_steps, sample_interval = params
     logger = logging.getLogger('multiferroic')
-    logger.debug(f"Collecting data for T={T}...")
+    logger.debug(f'Collecting data for T={T}...')
     sim = IsingSimulation(L, T)
     sim.equilibrate(eq_steps)
     return get_averaged_correlation(sim, steps, sample_interval)
@@ -49,15 +49,15 @@ def main() -> None:
     logger = setup_logging(level=log_level, log_file=args.log_file)
 
     # Ising 2D Critical Temperature approx 2.269
-    T_FERRO: float = 1.8   # Below Tc (Long range order)
+    T_FERRO: float = 1.8  # Below Tc (Long range order)
     T_CRIT: float = 2.269  # At Tc (Power law decay)
-    T_PARA: float = 3.0    # Above Tc (Exponential decay)
+    T_PARA: float = 3.0  # Above Tc (Exponential decay)
 
     # Fitting Parameters
     FIT_START_R: int = 2
     FIT_END_R: int = 15
 
-    logger.info(f"Starting Ising correlation comparison (L={args.size})...")
+    logger.info(f'Starting Ising correlation comparison (L={args.size})...')
     temperatures = [T_FERRO, T_CRIT, T_PARA]
     sweep_params = [(T, args.size, args.steps, args.eq_steps, args.interval) for T in temperatures]
 
@@ -77,12 +77,12 @@ def main() -> None:
         try:
             slope, intercept = np.polyfit(r_fit_valid, log_G_para_fit, 1)
             if slope == 0.0:
-                raise ValueError("Fitted slope is zero; cannot compute correlation length.")
+                raise ValueError('Fitted slope is zero; cannot compute correlation length.')
             xi: float = -1.0 / slope
-            logger.info(f"Fitted correlation length for T={T_PARA} (paramagnetic): xi = {xi:.4f}")
+            logger.info(f'Fitted correlation length for T={T_PARA} (paramagnetic): xi = {xi:.4f}')
             fit_line: np.ndarray = np.exp(intercept + slope * r)
         except (np.linalg.LinAlgError, ValueError) as exc:
-            logger.warning(f"Exponential fit failed for T={T_PARA}: {exc}")
+            logger.warning(f'Exponential fit failed for T={T_PARA}: {exc}')
 
     # Plotting
     fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(14, 6))
@@ -95,7 +95,7 @@ def main() -> None:
     ax1.set_xlabel('Distance r')
     ax1.set_ylabel('Correlation G(r)')
     ax1.legend()
-    ax1.grid(True, which="both", ls="-", alpha=0.5)
+    ax1.grid(True, which='both', ls='-', alpha=0.5)
 
     # 2. Semi-Log Plot (Best for Exponential / High T)
     ax2.plot(r, G_ferro, 's-', label=f'T={T_FERRO} (T < Tc)', alpha=0.7)
@@ -108,11 +108,11 @@ def main() -> None:
     ax2.set_xlabel('Distance r')
     ax2.set_ylabel('Correlation G(r)')
     ax2.legend()
-    ax2.grid(True, which="both", ls="-", alpha=0.5)
+    ax2.grid(True, which='both', ls='-', alpha=0.5)
 
     output_dir: str = ensure_results_dir(args.output_dir)
     save_plot('correlation_comparison.png', directory=output_dir)
 
 
-if __name__ == "__main__":
+if __name__ == '__main__':
     main()

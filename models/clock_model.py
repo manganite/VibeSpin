@@ -53,18 +53,8 @@ def clock_step_numba(
                 jprv = idx_prev[j]
 
                 # Neighbor sum
-                nx = (
-                    spins[iprv, j, 0]
-                    + spins[inxt, j, 0]
-                    + spins[i, jprv, 0]
-                    + spins[i, jnxt, 0]
-                )
-                ny = (
-                    spins[iprv, j, 1]
-                    + spins[inxt, j, 1]
-                    + spins[i, jprv, 1]
-                    + spins[i, jnxt, 1]
-                )
+                nx = spins[iprv, j, 0] + spins[inxt, j, 0] + spins[i, jprv, 0] + spins[i, jnxt, 0]
+                ny = spins[iprv, j, 1] + spins[inxt, j, 1] + spins[i, jprv, 1] + spins[i, jnxt, 1]
 
                 sx, sy = spins[i, j, 0], spins[i, j, 1]
 
@@ -119,12 +109,8 @@ def clock_energy_numba(
         for j in range(N):
             jnxt = idx_next[j]
             # Interaction
-            dot_right = (
-                spins[i, j, 0] * spins[i, jnxt, 0] + spins[i, j, 1] * spins[i, jnxt, 1]
-            )
-            dot_down = (
-                spins[i, j, 0] * spins[inxt, j, 0] + spins[i, j, 1] * spins[inxt, j, 1]
-            )
+            dot_right = spins[i, j, 0] * spins[i, jnxt, 0] + spins[i, j, 1] * spins[i, jnxt, 1]
+            dot_down = spins[i, j, 0] * spins[inxt, j, 0] + spins[i, j, 1] * spins[inxt, j, 1]
             energy -= J * (dot_right + dot_down)
 
             # Anisotropy
@@ -163,7 +149,7 @@ class ClockSimulation(MonteCarloSimulation):
         """
         super().__init__(size, temp, seed=seed)
         if q < 2:
-            raise ValueError(f"q must be >= 2 (number of clock states), got {q}")
+            raise ValueError(f'q must be >= 2 (number of clock states), got {q}')
         self.J = J
         self.A = A
         self.q = q
@@ -201,24 +187,20 @@ class ClockSimulation(MonteCarloSimulation):
     def _get_energy(self) -> float:
         """Calculate energy per spin."""
         if self.spins is not None:
-            return float(
-                clock_energy_numba(self.spins, self.J, self.A, self.q, self.idx_next)
-            )  # type: ignore[no-any-return]
+            return float(clock_energy_numba(self.spins, self.J, self.A, self.q, self.idx_next))
         return 0.0
 
     def _calculate_vorticity(self) -> np.ndarray:
         """Calculate the vorticity (winding number) of each plaquette."""
         if self.spins is not None:
-            return np.asarray(
-                calculate_vorticity_numba(self.spins, self.idx_next)
-            )  # type: ignore[no-any-return]
+            return np.asarray(calculate_vorticity_numba(self.spins, self.idx_next))
         return np.array([])
 
     def _get_helicity_data(self) -> tuple[float, float]:
         """Calculate sum of cos and sin of angle differences in x-direction."""
         if self.spins is not None:
             cos_sum, sin_sum = get_helicity_data_numba(self.spins)
-            return float(cos_sum), float(sin_sum)  # type: ignore[no-any-return]
+            return float(cos_sum), float(sin_sum)
         return 0.0, 0.0
 
     def _get_structure_factor_squared_unshifted(self) -> np.ndarray:
@@ -228,11 +210,11 @@ class ClockSimulation(MonteCarloSimulation):
             sy = self.spins[..., 1]
             Sk_x = np.fft.fft2(sx)
             Sk_y = np.fft.fft2(sy)
-            return np.asarray(np.abs(Sk_x) ** 2 + np.abs(Sk_y) ** 2)  # type: ignore[no-any-return]
+            return np.asarray(np.abs(Sk_x) ** 2 + np.abs(Sk_y) ** 2)
         return np.array([])
 
 
-if __name__ == "__main__":
+if __name__ == '__main__':
     # Parameters
     L = 50  # Lattice size (L x L)
     T = 0.5  # Temperature
@@ -240,10 +222,10 @@ if __name__ == "__main__":
     A = 1.0  # Anisotropy strength
     q = 6  # q-state clock model
 
-    print(f"Initializing {q}-state Clock Model (L={L}, T={T}, A={A})...")
+    print(f'Initializing {q}-state Clock Model (L={L}, T={T}, A={A})...')
     sim = ClockSimulation(L, T, A=A, q=q)
 
-    print(f"Running for {STEPS} steps...")
+    print(f'Running for {STEPS} steps...')
     mag_history, energy_history = sim.run(STEPS)
 
     # Plotting
@@ -277,4 +259,4 @@ if __name__ == "__main__":
     os.makedirs(output_dir, exist_ok=True)
     output_file = os.path.join(output_dir, 'clock_simulation.png')
     plt.savefig(output_file)
-    print(f"Simulation finished. Plot saved to {output_file}")
+    print(f'Simulation finished. Plot saved to {output_file}')

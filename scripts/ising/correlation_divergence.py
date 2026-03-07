@@ -25,7 +25,7 @@ def get_correlation_length(params: tuple[float, int, int, int, int]) -> tuple[fl
     """
     T, L, steps, eq_steps, sample_interval = params
     logger = logging.getLogger('multiferroic')
-    logger.debug(f"Calculating xi for T={T}...")
+    logger.debug(f'Calculating xi for T={T}...')
     sim = IsingSimulation(L, T)
     sim.equilibrate(eq_steps)
 
@@ -46,7 +46,7 @@ def get_correlation_length(params: tuple[float, int, int, int, int]) -> tuple[fl
     try:
         slope, intercept = np.polyfit(r_fit, log_G, 1)
         xi: float = -1.0 / slope
-    except (np.linalg.LinAlgError, ValueError, ZeroDivisionError):
+    except np.linalg.LinAlgError, ValueError, ZeroDivisionError:
         xi = np.nan
 
     return T, xi
@@ -75,8 +75,8 @@ def run_divergence_analysis() -> None:
     # Sweep Temperatures (Paramagnetic phase T > Tc)
     TEMPERATURES: list[float] = [2.4, 2.45, 2.5, 2.6, 2.7, 2.8, 3.0, 3.2, 3.5]
 
-    logger.info(f"Calculating correlation lengths for T > Tc (L={args.size})...")
-    logger.info(f"Approaching Tc={TC_THEORETICAL} with {len(TEMPERATURES)} points.")
+    logger.info(f'Calculating correlation lengths for T > Tc (L={args.size})...')
+    logger.info(f'Approaching Tc={TC_THEORETICAL} with {len(TEMPERATURES)} points.')
 
     sweep_params = [(T, args.size, args.steps, args.eq_steps, args.interval) for T in TEMPERATURES]
     results: list[tuple[float, float]] = parallel_sweep(get_correlation_length, sweep_params)
@@ -112,7 +112,7 @@ def run_divergence_analysis() -> None:
         slope, intercept = np.polyfit(log_t, log_xi, 1)
         nu = -slope
     except (np.linalg.LinAlgError, ValueError) as exc:
-        logger.warning(f"Power-law fit failed: {exc}")
+        logger.warning(f'Power-law fit failed: {exc}')
 
     ax2.loglog(reduced_T, xis, 'o', label='Simulation Data')
 
@@ -129,12 +129,12 @@ def run_divergence_analysis() -> None:
     ax2.set_xlabel(r'$T - T_c$')
     ax2.set_ylabel(r'Correlation Length $\xi$')
     ax2.set_title(r'Critical Exponent $\nu$ Extraction')
-    ax2.grid(True, which="both", ls="-", alpha=0.5)
+    ax2.grid(True, which='both', ls='-', alpha=0.5)
     ax2.legend()
 
     output_dir: str = ensure_results_dir(args.output_dir)
     save_plot('correlation_divergence.png', directory=output_dir)
 
 
-if __name__ == "__main__":
+if __name__ == '__main__':
     run_divergence_analysis()

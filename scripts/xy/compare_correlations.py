@@ -25,7 +25,7 @@ def simulate_correlation(params: tuple[float, int, int, int, int]) -> tuple[np.n
     """
     T, L, steps, eq_steps, sample_interval = params
     logger = logging.getLogger('multiferroic')
-    logger.debug(f"Collecting data for T={T}...")
+    logger.debug(f'Collecting data for T={T}...')
     sim = XYSimulation(L, T)
     sim.equilibrate(eq_steps)
     return get_averaged_correlation(sim, steps, sample_interval)
@@ -49,10 +49,10 @@ def main() -> None:
     logger = setup_logging(level=log_level, log_file=args.log_file)
 
     # Temperatures
-    T_LOW: float = 0.4   # Well below BKT (Power law expected)
+    T_LOW: float = 0.4  # Well below BKT (Power law expected)
     T_HIGH: float = 1.5  # Well above BKT (Exponential expected)
 
-    logger.info(f"Starting XY correlation comparison (L={args.size})...")
+    logger.info(f'Starting XY correlation comparison (L={args.size})...')
     temperatures = [T_LOW, T_HIGH]
     sweep_params = [(T, args.size, args.steps, args.eq_steps, args.interval) for T in temperatures]
 
@@ -70,7 +70,7 @@ def main() -> None:
     ax1.set_xlabel('Distance r')
     ax1.set_ylabel('Correlation G(r)')
     ax1.legend()
-    ax1.grid(True, which="both", ls="-", alpha=0.5)
+    ax1.grid(True, which='both', ls='-', alpha=0.5)
 
     # 2. Semi-Log Plot (Best for Exponential / High T)
     ax2.plot(r_low, G_low, 'o-', label=f'T={T_LOW} (Low Temp)')
@@ -80,11 +80,11 @@ def main() -> None:
     ax2.set_xlabel('Distance r')
     ax2.set_ylabel('Correlation G(r)')
     ax2.legend()
-    ax2.grid(True, which="both", ls="-", alpha=0.5)
+    ax2.grid(True, which='both', ls='-', alpha=0.5)
 
     output_dir: str = ensure_results_dir(args.output_dir)
     save_plot('correlation_comparison.png', directory=output_dir)
 
 
-if __name__ == "__main__":
+if __name__ == '__main__':
     main()

@@ -20,8 +20,13 @@ def main() -> None:
     parser = argparse.ArgumentParser(description='2D XY Model Domain Snapshot Visualisation')
     parser.add_argument('--size', type=int, default=256, help='Linear lattice size L')
     parser.add_argument('--temp', type=float, default=0.5, help='Quench temperature T')
-    parser.add_argument('--targets', type=int, nargs='+', default=[1, 10, 100, 1000],
-                        help='MC steps at which to take snapshots')
+    parser.add_argument(
+        '--targets',
+        type=int,
+        nargs='+',
+        default=[1, 10, 100, 1000],
+        help='MC steps at which to take snapshots',
+    )
     parser.add_argument('--output-dir', type=str, default='results/xy', help='Output directory')
     parser.add_argument('--log-file', type=str, default=None, help='Optional log file path')
     parser.add_argument('--verbose', action='store_true', help='Enable verbose logging')
@@ -37,35 +42,35 @@ def main() -> None:
     STEP_TARGETS = sorted(args.targets)
     T_BKT: float = 0.893
 
-    logger.info(f"XY domain snapshots (L={L}, T={T})")
-    logger.info(f"Recording snapshots at steps {STEP_TARGETS} ...")
+    logger.info(f'XY domain snapshots (L={L}, T={T})')
+    logger.info(f'Recording snapshots at steps {STEP_TARGETS} ...')
 
     sim = XYSimulation(size=L, temp=T)
     n_targets: int = len(STEP_TARGETS)
-    
+
     # Storage for snapshots
     snapshots: list[np.ndarray] = []
     snapshots_vort: list[np.ndarray] = []
     snapshots_gr: list[tuple[np.ndarray, np.ndarray]] = []
-    
+
     current_step: int = 0
 
-    for i, target in enumerate(STEP_TARGETS):
+    for _i, target in enumerate(STEP_TARGETS):
         steps_to_run = target - current_step
         for _ in range(steps_to_run):
             sim.step()
         current_step = target
-        
+
         if sim.spins is not None:
             snapshots.append(sim.spins.copy())
             snapshots_vort.append(sim._calculate_vorticity())
             snapshots_gr.append(sim._calculate_correlation_function())
-            logger.debug(f"Captured snapshot at step {target}")
+            logger.debug(f'Captured snapshot at step {target}')
 
-    logger.info(f"Collected {n_targets} snapshots. Saving figure ...")
+    logger.info(f'Collected {n_targets} snapshots. Saving figure ...')
 
     title = f'2D XY Model Ordering Evolution — T = {T} (< T_BKT ≈ {T_BKT}), L = {L}'
-    
+
     plot_ordering_evolution(
         targets=STEP_TARGETS,
         snapshots=snapshots,
@@ -74,7 +79,7 @@ def main() -> None:
         title=title,
         filename='ordering_evolution.png',
         directory=ensure_results_dir(args.output_dir),
-        is_vector=True
+        is_vector=True,
     )
 
 

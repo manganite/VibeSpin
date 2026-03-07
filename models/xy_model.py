@@ -46,18 +46,8 @@ def xy_step_numba(
                 jprv = idx_prev[j]
 
                 # Neighbor sum vector
-                nx = (
-                    spins[iprv, j, 0]
-                    + spins[inxt, j, 0]
-                    + spins[i, jprv, 0]
-                    + spins[i, jnxt, 0]
-                )
-                ny = (
-                    spins[iprv, j, 1]
-                    + spins[inxt, j, 1]
-                    + spins[i, jprv, 1]
-                    + spins[i, jnxt, 1]
-                )
+                nx = spins[iprv, j, 0] + spins[inxt, j, 0] + spins[i, jprv, 0] + spins[i, jnxt, 0]
+                ny = spins[iprv, j, 1] + spins[inxt, j, 1] + spins[i, jprv, 1] + spins[i, jnxt, 1]
 
                 # Current spin
                 sx = spins[i, j, 0]
@@ -104,12 +94,8 @@ def xy_energy_numba(spins: np.ndarray, J: float, idx_next: np.ndarray) -> float:
         for j in range(N):
             jnxt = idx_next[j]
             # Sum unique pairs (right and down)
-            dot_right = (
-                spins[i, j, 0] * spins[i, jnxt, 0] + spins[i, j, 1] * spins[i, jnxt, 1]
-            )
-            dot_down = (
-                spins[i, j, 0] * spins[inxt, j, 0] + spins[i, j, 1] * spins[inxt, j, 1]
-            )
+            dot_right = spins[i, j, 0] * spins[i, jnxt, 0] + spins[i, j, 1] * spins[i, jnxt, 1]
+            dot_down = spins[i, j, 0] * spins[inxt, j, 0] + spins[i, j, 1] * spins[inxt, j, 1]
             energy -= J * (dot_right + dot_down)
     return energy / (N * N)
 
@@ -144,9 +130,7 @@ class XYSimulation(MonteCarloSimulation):
                 from .simulation_base import _seed_numba
 
                 _seed_numba(self.seed + self.steps)
-            self.spins = xy_step_numba(
-                self.spins, self.beta, self.J, self.idx_next, self.idx_prev
-            )
+            self.spins = xy_step_numba(self.spins, self.beta, self.J, self.idx_next, self.idx_prev)
         self.steps += 1
 
     def _get_magnetization(self) -> float:
@@ -159,24 +143,20 @@ class XYSimulation(MonteCarloSimulation):
     def _get_energy(self) -> float:
         """Calculate energy per spin."""
         if self.spins is not None:
-            return float(
-                xy_energy_numba(self.spins, self.J, self.idx_next)
-            )  # type: ignore[no-any-return]
+            return float(xy_energy_numba(self.spins, self.J, self.idx_next))
         return 0.0
 
     def _calculate_vorticity(self) -> np.ndarray:
         """Calculate the vorticity (winding number) of each plaquette."""
         if self.spins is not None:
-            return np.asarray(
-                calculate_vorticity_numba(self.spins, self.idx_next)
-            )  # type: ignore[no-any-return]
+            return np.asarray(calculate_vorticity_numba(self.spins, self.idx_next))
         return np.array([])
 
     def _get_helicity_data(self) -> tuple[float, float]:
         """Calculate sum of cos and sin of angle differences in x-direction."""
         if self.spins is not None:
             cos_sum, sin_sum = get_helicity_data_numba(self.spins)
-            return float(cos_sum), float(sin_sum)  # type: ignore[no-any-return]
+            return float(cos_sum), float(sin_sum)
         return 0.0, 0.0
 
     def _get_structure_factor_squared_unshifted(self) -> np.ndarray:
@@ -186,20 +166,20 @@ class XYSimulation(MonteCarloSimulation):
             sy = self.spins[..., 1]
             Sk_x = np.fft.fft2(sx)
             Sk_y = np.fft.fft2(sy)
-            return np.asarray(np.abs(Sk_x) ** 2 + np.abs(Sk_y) ** 2)  # type: ignore[no-any-return]
+            return np.asarray(np.abs(Sk_x) ** 2 + np.abs(Sk_y) ** 2)
         return np.array([])
 
 
-if __name__ == "__main__":
+if __name__ == '__main__':
     # Parameters
     L = 50  # Lattice size (L x L)
     T = 0.89  # Temperature (BKT transition approx 0.89)
     STEPS = 1000
 
-    print(f"Initializing XY Model (L={L}, T={T})...")
+    print(f'Initializing XY Model (L={L}, T={T})...')
     sim = XYSimulation(L, T)
 
-    print(f"Running for {STEPS} steps...")
+    print(f'Running for {STEPS} steps...')
     mag_history, energy_history = sim.run(STEPS)
 
     # Plotting
@@ -243,4 +223,4 @@ if __name__ == "__main__":
     output_file = os.path.join(output_dir, 'xy_simulation.png')
     plt.tight_layout()
     plt.savefig(output_file)
-    print(f"Simulation finished. Plot saved to {output_file}")
+    print(f'Simulation finished. Plot saved to {output_file}')

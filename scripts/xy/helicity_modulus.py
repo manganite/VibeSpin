@@ -28,7 +28,7 @@ def simulate_helicity(params: tuple[float, int, int, int]) -> float:
     """
     T, L, eq_steps, meas_steps = params
     if T <= 0.0:
-        raise ValueError(f"Temperature must be positive to compute helicity modulus, got {T}")
+        raise ValueError(f'Temperature must be positive to compute helicity modulus, got {T}')
 
     sim = XYSimulation(L, T)
     sim.equilibrate(eq_steps)
@@ -72,8 +72,8 @@ def run_helicity_sweep() -> None:
     # Generate temperature points
     temperatures: np.ndarray = np.linspace(args.t_min, args.t_max, args.t_points)
 
-    logger.info(f"Starting Helicity Modulus sweep for L={args.size}...")
-    logger.info(f"Range: [{args.t_min}, {args.t_max}] with {args.t_points} points.")
+    logger.info(f'Starting Helicity Modulus sweep for L={args.size}...')
+    logger.info(f'Range: [{args.t_min}, {args.t_max}] with {args.t_points} points.')
 
     sweep_params = [(T, args.size, args.eq_steps, args.meas_steps) for T in temperatures]
     upsilons: list[float] = parallel_sweep(simulate_helicity, sweep_params)
@@ -96,5 +96,5 @@ def run_helicity_sweep() -> None:
     save_plot('helicity_modulus.png', directory=args.output_dir)
 
 
-if __name__ == "__main__":
+if __name__ == '__main__':
     run_helicity_sweep()

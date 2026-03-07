@@ -13,7 +13,9 @@ from utils.physics_helpers import calculate_thermodynamics
 from utils.system_helpers import parallel_sweep, plot_temperature_sweep, setup_logging
 
 
-def simulate_temperature(params: tuple[float, int, int, float, int, int]) -> tuple[float, float, float, float]:
+def simulate_temperature(
+    params: tuple[float, int, int, float, int, int],
+) -> tuple[float, float, float, float]:
     """
     Worker function to simulate a single temperature point for the Clock model.
     """
@@ -52,7 +54,7 @@ def run_sweep() -> None:
     A = args.aniso
     temperatures: np.ndarray = np.linspace(args.t_min, args.t_max, args.t_points)
 
-    logger.info(f"Starting {Q}-state Clock temperature sweep (L={L}, A={A})...")
+    logger.info(f'Starting {Q}-state Clock temperature sweep (L={L}, A={A})...')
     # Bundle parameters for parallel sweep
     sweep_params = [(T, L, Q, A, args.eq_steps, args.meas_steps) for T in temperatures]
 
@@ -73,5 +75,5 @@ def run_sweep() -> None:
     )
 
 
-if __name__ == "__main__":
+if __name__ == '__main__':
     run_sweep()

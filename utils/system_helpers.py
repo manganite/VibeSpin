@@ -14,6 +14,7 @@ from tqdm import tqdm
 
 # No typing import needed for modern syntax
 
+
 def setup_logging(level: int = logging.INFO, log_file: str | None = None) -> logging.Logger:
     """
     Configure project-wide logging.
@@ -48,6 +49,7 @@ def setup_logging(level: int = logging.INFO, log_file: str | None = None) -> log
 
     return logger
 
+
 def ensure_results_dir(directory: str = 'results') -> str:
     """
     Ensure the results directory exists.
@@ -61,6 +63,7 @@ def ensure_results_dir(directory: str = 'results') -> str:
     if directory:
         os.makedirs(directory, exist_ok=True)
     return directory
+
 
 def save_plot(filename: str, directory: str = 'results', tight_layout: bool = True) -> None:
     """
@@ -80,10 +83,12 @@ def save_plot(filename: str, directory: str = 'results', tight_layout: bool = Tr
             pass
     path = os.path.join(directory, filename)
     plt.savefig(path)
-    logger.info(f"Plot saved to {path}")
+    logger.info(f'Plot saved to {path}')
+
 
 # tqdm bar format that always shows rate as iterations/s (never inverts to s/it).
 _BAR_FORMAT = '{l_bar}{bar}| {n_fmt}/{total_fmt} [{elapsed}<{remaining}, {rate_noinv_fmt}{postfix}]'
+
 
 def parallel_sweep(
     worker_func: Callable, params: Iterable, num_processes: int | None = None
@@ -208,14 +213,24 @@ def plot_ordering_kinetics(
     ax1.loglog(t, R_sk, 'o', label='$R_{S(k)}$ (Structure Factor)')
     if exponents.get('R_sk') is not None:
         exp, pre = exponents['R_sk'], prefactors['R_sk']
-        ax1.loglog(t[fit_mask], pre * t[fit_mask] ** exp, '--', color='tab:blue',
-                   label=f'Fit $R_{{sk}}$: $t^{{{exp:.2f}}}$')
+        ax1.loglog(
+            t[fit_mask],
+            pre * t[fit_mask] ** exp,
+            '--',
+            color='tab:blue',
+            label=f'Fit $R_{{sk}}$: $t^{{{exp:.2f}}}$',
+        )
 
     ax1.loglog(t, R_xi, 's', label='$\\xi$ (Correlation length)')
     if exponents.get('xi') is not None:
         exp, pre = exponents['xi'], prefactors['xi']
-        ax1.loglog(t[fit_mask], pre * t[fit_mask] ** exp, '--', color='tab:orange',
-                   label=f'Fit $\\xi$: $t^{{{exp:.2f}}}$')
+        ax1.loglog(
+            t[fit_mask],
+            pre * t[fit_mask] ** exp,
+            '--',
+            color='tab:orange',
+            label=f'Fit $\\xi$: $t^{{{exp:.2f}}}$',
+        )
 
     ax1.set_xlabel('Time t (Monte Carlo sweeps)')
     ax1.set_ylabel(y_label)
@@ -228,8 +243,9 @@ def plot_ordering_kinetics(
         ax2.loglog(t, third_metric, 'D', color='tab:purple', label=third_metric_label)
         if exponents.get('third') is not None:
             exp, pre = exponents['third'], prefactors['third']
-            ax2.loglog(t[fit_mask], pre * t[fit_mask] ** exp, 'k--',
-                       label=f'Fit: $t^{{{exp:.2f}}}$')
+            ax2.loglog(
+                t[fit_mask], pre * t[fit_mask] ** exp, 'k--', label=f'Fit: $t^{{{exp:.2f}}}$'
+            )
         ax2.set_xlabel('Time t (Monte Carlo sweeps)')
         ax2.set_ylabel(third_metric_label)
         ax2.set_title(right_title)
@@ -269,26 +285,24 @@ def plot_ordering_evolution(
         is_vector: Whether the spins are 2D vectors (True) or scalars (False).
     """
     n_cols = len(targets)
-    fig, axes = plt.subplots(3, n_cols,
-                             figsize=(n_cols * 4, 12.5),
-                             gridspec_kw={'hspace': 0.45, 'wspace': 0.25})
+    fig, axes = plt.subplots(
+        3, n_cols, figsize=(n_cols * 4, 12.5), gridspec_kw={'hspace': 0.45, 'wspace': 0.25}
+    )
     fig.suptitle(title, fontsize=14, y=0.98)
 
     for col in range(n_cols):
         t = targets[col]
         spins = snapshots[col]
-        
+
         # --- Row 0: Spin Configuration ---
         ax_spin = axes[0, col]
         if is_vector:
             angles = np.arctan2(spins[..., 1], spins[..., 0])
-            im = ax_spin.imshow(angles, cmap='hsv', interpolation='none',
-                                vmin=-np.pi, vmax=np.pi)
+            im = ax_spin.imshow(angles, cmap='hsv', interpolation='none', vmin=-np.pi, vmax=np.pi)
             if col == n_cols - 1:
                 plt.colorbar(im, ax=ax_spin, label='Phase (rad)', shrink=0.8)
         else:
-            ax_spin.imshow(spins, cmap='binary', interpolation='none',
-                           vmin=-1, vmax=1)
+            ax_spin.imshow(spins, cmap='binary', interpolation='none', vmin=-1, vmax=1)
         ax_spin.set_title(f't = {t} sweep{"s" if t != 1 else ""}', fontsize=12)
         ax_spin.axis('off')
 
@@ -304,6 +318,7 @@ def plot_ordering_evolution(
                 plt.colorbar(im_v, ax=ax_mid, ticks=[-1, 0, 1], label='Winding No.', shrink=0.8)
         else:
             from .physics_helpers import radial_average_sk
+
             k_vals, S_radial = radial_average_sk(spins)
             ax_mid.plot(k_vals[1:], S_radial[1:], linewidth=1.2)
             ax_mid.set_xscale('log')
@@ -318,11 +333,12 @@ def plot_ordering_evolution(
         r, G = gr_data[col]
         ax_gr.plot(r[1:], G[1:], linewidth=1.5)
         ax_gr.axhline(0, color='tab:gray', linewidth=0.7, linestyle='--')
-        
+
         inv_e = 1.0 / np.e
-        ax_gr.axhline(inv_e, color='tab:red', linewidth=0.8,
-                      linestyle=':', alpha=0.7, label='$1/e$')
-        
+        ax_gr.axhline(
+            inv_e, color='tab:red', linewidth=0.8, linestyle=':', alpha=0.7, label='$1/e$'
+        )
+
         ax_gr.set_xscale('log')
         ax_gr.set_xlabel('Distance r', fontsize=10)
         if col == 0:
@@ -343,7 +359,6 @@ def plot_ordering_evolution(
             else:
                 xi = float(r_plot[idx])
             ax_gr.axvline(xi, color='tab:red', linewidth=1.0, linestyle='--', alpha=0.8)
-            ax_gr.text(xi * 1.15, inv_e + 0.04,
-                       f'$\\xi = {xi:.1f}$', fontsize=9, color='tab:red')
+            ax_gr.text(xi * 1.15, inv_e + 0.04, f'$\\xi = {xi:.1f}$', fontsize=9, color='tab:red')
 
     save_plot(filename, directory=directory)

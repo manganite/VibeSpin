@@ -74,13 +74,9 @@ def get_helicity_data_numba(spins: np.ndarray) -> tuple[float, float]:
         for j in range(N):
             j_next = 0 if j == N - 1 else j + 1
             # cos(theta_i - theta_j) = s_i . s_j
-            cos_sum += (
-                spins[i, j, 0] * spins[i, j_next, 0] + spins[i, j, 1] * spins[i, j_next, 1]
-            )
+            cos_sum += spins[i, j, 0] * spins[i, j_next, 0] + spins[i, j, 1] * spins[i, j_next, 1]
             # sin(theta_i - theta_j) = cross product
-            sin_sum += (
-                spins[i, j, 0] * spins[i, j_next, 1] - spins[i, j, 1] * spins[i, j_next, 0]
-            )
+            sin_sum += spins[i, j, 0] * spins[i, j_next, 1] - spins[i, j, 1] * spins[i, j_next, 0]
     return cos_sum, sin_sum
 
 
@@ -103,9 +99,9 @@ class MonteCarloSimulation(ABC):
             ValueError: If ``size`` is not a positive integer or ``temp`` is not positive.
         """
         if not isinstance(size, (int, np.integer)) or size < 1:
-            raise ValueError(f"size must be a positive integer, got {size!r}")
+            raise ValueError(f'size must be a positive integer, got {size!r}')
         if temp <= 0.0:
-            raise ValueError(f"temp must be positive (T > 0), got {temp}")
+            raise ValueError(f'temp must be positive (T > 0), got {temp}')
         self.size = size
         self.temp = temp
         self.beta = 1.0 / temp
@@ -207,4 +203,3 @@ class MonteCarloSimulation(ABC):
             magnetization[i] = self._get_magnetization()
             energies[i] = self._get_energy()
         return magnetization, energies
-

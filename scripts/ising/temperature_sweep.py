@@ -48,7 +48,7 @@ def run_sweep() -> None:
     L = args.size
     temperatures: np.ndarray = np.linspace(args.t_min, args.t_max, args.t_points)
 
-    logger.info(f"Starting Ising temperature sweep (L={L})...")
+    logger.info(f'Starting Ising temperature sweep (L={L})...')
     # Bundle parameters for parallel sweep
     sweep_params = [(T, L, args.eq_steps, args.meas_steps) for T in temperatures]
 
@@ -69,5 +69,5 @@ def run_sweep() -> None:
     )
 
 
-if __name__ == "__main__":
+if __name__ == '__main__':
     run_sweep()

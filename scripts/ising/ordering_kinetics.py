@@ -13,7 +13,12 @@ from tqdm import tqdm
 
 from models.ising_model import IsingSimulation
 from utils.physics_helpers import compute_kinetics_metrics, power_fit
-from utils.system_helpers import _BAR_FORMAT, ensure_results_dir, plot_ordering_kinetics, setup_logging
+from utils.system_helpers import (
+    _BAR_FORMAT,
+    ensure_results_dir,
+    plot_ordering_kinetics,
+    setup_logging,
+)
 
 
 def compute_mean_intercept_length(sim: IsingSimulation) -> float:
@@ -53,7 +58,7 @@ def main() -> None:
     T = args.temp
     T_CRIT = 2.269
 
-    logger.info(f"Ising ordering kinetics analysis (L={L}, T={T:.3f} < T_c={T_CRIT})")
+    logger.info(f'Ising ordering kinetics analysis (L={L}, T={T:.3f} < T_c={T_CRIT})')
 
     step_targets = np.unique(np.logspace(0, np.log10(args.max_steps), num=args.samples).astype(int))
     sim = IsingSimulation(size=L, temp=T, update='random')
@@ -76,30 +81,35 @@ def main() -> None:
         R_sk[i] = metrics['R_sk']
         R_xi[i] = metrics['xi']
         R_mil[i] = compute_mean_intercept_length(sim)
-        
-        logger.debug(f"t={current_step}: R_sk={R_sk[i]:.2f}, xi={R_xi[i]:.2f}, MIL={R_mil[i]:.2f}")
+
+        logger.debug(f't={current_step}: R_sk={R_sk[i]:.2f}, xi={R_xi[i]:.2f}, MIL={R_mil[i]:.2f}')
 
     # Power law fits
     fit_mask = t >= args.fit_min
     exponents = {}
     prefactors = {}
-    
+
     for key, data in [('R_sk', R_sk), ('xi', R_xi), ('third', R_mil)]:
         exp, pre = power_fit(t, data, fit_mask)
         exponents[key], prefactors[key] = exp, pre
         if exp:
-            logger.info(f"{key} exponent: {exp:.3f} (Allen-Cahn: 0.5)")
+            logger.info(f'{key} exponent: {exp:.3f} (Allen-Cahn: 0.5)')
 
     plot_ordering_kinetics(
-        t=t, R_sk=R_sk, R_xi=R_xi, 
-        third_metric=R_mil, third_metric_label='Mean Intercept Length $R_{MIL}$',
-        exponents=exponents, prefactors=prefactors, fit_mask=fit_mask,
+        t=t,
+        R_sk=R_sk,
+        R_xi=R_xi,
+        third_metric=R_mil,
+        third_metric_label='Mean Intercept Length $R_{MIL}$',
+        exponents=exponents,
+        prefactors=prefactors,
+        fit_mask=fit_mask,
         title=f'2D Ising Ordering Kinetics — $T = {T}$ ($< T_c \\approx {T_CRIT}$), $L = {L}$',
         filename='ordering_kinetics.png',
         directory=ensure_results_dir(args.output_dir),
         y_label='Domain Size Scale (lattice units)',
         left_title='Domain Coarsening',
-        right_title='Boundary Wall Decay'
+        right_title='Boundary Wall Decay',
     )
 
 

@@ -13,7 +13,12 @@ from tqdm import tqdm
 
 from models.xy_model import XYSimulation
 from utils.physics_helpers import compute_kinetics_metrics, power_fit
-from utils.system_helpers import _BAR_FORMAT, ensure_results_dir, plot_ordering_kinetics, setup_logging
+from utils.system_helpers import (
+    _BAR_FORMAT,
+    ensure_results_dir,
+    plot_ordering_kinetics,
+    setup_logging,
+)
 
 
 def compute_vortex_density(sim: XYSimulation) -> float:
@@ -45,7 +50,7 @@ def main() -> None:
     T = args.temp
     T_BKT: float = 0.893
 
-    logger.info(f"XY ordering kinetics analysis (L={L}, T={T:.3f} < T_BKT={T_BKT})")
+    logger.info(f'XY ordering kinetics analysis (L={L}, T={T:.3f} < T_BKT={T_BKT})')
 
     step_targets = np.unique(np.logspace(0, np.log10(args.max_steps), num=args.samples).astype(int))
     sim = XYSimulation(size=L, temp=T)
@@ -68,30 +73,35 @@ def main() -> None:
         R_sk[i] = metrics['R_sk']
         R_xi[i] = metrics['xi']
         v_dens[i] = compute_vortex_density(sim)
-        
-        logger.debug(f"t={current_step}: R_sk={R_sk[i]:.2f}, xi={R_xi[i]:.2f}, n_v={v_dens[i]:.4f}")
+
+        logger.debug(f't={current_step}: R_sk={R_sk[i]:.2f}, xi={R_xi[i]:.2f}, n_v={v_dens[i]:.4f}')
 
     # Power law fits
     fit_mask = t >= args.fit_min
     exponents = {}
     prefactors = {}
-    
+
     for key, data in [('R_sk', R_sk), ('xi', R_xi), ('third', v_dens)]:
         exp, pre = power_fit(t, data, fit_mask)
         exponents[key], prefactors[key] = exp, pre
         if exp:
-            label = "Growth" if key != 'third' else "Decay"
-            logger.info(f"{key} {label} exponent: {exp:.3f}")
+            label = 'Growth' if key != 'third' else 'Decay'
+            logger.info(f'{key} {label} exponent: {exp:.3f}')
 
     plot_ordering_kinetics(
-        t=t, R_sk=R_sk, R_xi=R_xi, 
-        third_metric=v_dens, third_metric_label='Vortex Density $n_v(t)$',
-        exponents=exponents, prefactors=prefactors, fit_mask=fit_mask,
+        t=t,
+        R_sk=R_sk,
+        R_xi=R_xi,
+        third_metric=v_dens,
+        third_metric_label='Vortex Density $n_v(t)$',
+        exponents=exponents,
+        prefactors=prefactors,
+        fit_mask=fit_mask,
         title=f'2D XY Ordering Kinetics — $T = {T}$ ($< T_{{BKT}} \\approx {T_BKT}$), $L = {L}$',
         filename='ordering_kinetics.png',
         directory=ensure_results_dir(args.output_dir),
         left_title='Phase Ordering Dynamics',
-        right_title='Vortex Decay'
+        right_title='Vortex Decay',
     )
 
 
