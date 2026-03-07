@@ -13,6 +13,7 @@ dependencies = [
     "tqdm",
     "numba",
     "pytest",
+    "pytest-cov",
     "ruff",
     "mypy",
 ]
@@ -24,7 +25,22 @@ include = ["models*", "utils*", "scripts*"]
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 python_files = "test_*.py"
-addopts = "-ra --showlocals"
+addopts = "-ra --showlocals --cov=models --cov=utils --cov-report=term-missing"
+
+[tool.coverage.run]
+branch = true
+source = ["models", "utils"]
+
+[tool.coverage.report]
+show_missing = true
+exclude_lines = [
+    "pragma: no cover",
+    "def __repr__",
+    "if __name__ == .__main__.:",
+    "raise NotImplementedError",
+    "if TYPE_CHECKING:",
+    "@abstractmethod",
+]
 
 [tool.ruff]
 # Target Python version
