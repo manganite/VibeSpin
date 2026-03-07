@@ -3,32 +3,23 @@ Standardized temperature sweep for the 2D q-state Clock model.
 Calculates and plots magnetization, energy, susceptibility, and specific heat.
 """
 
+import argparse
+
 import numpy as np
 
 from models.clock_model import ClockSimulation
 from utils.physics_helpers import calculate_thermodynamics
 from utils.system_helpers import parallel_sweep, plot_temperature_sweep
 
-# Simulation Parameters
-L: int = 48
-Q: int = 6
-A: float = 0.1
-EQUILIBRATION_STEPS: int = 20000
-MEASUREMENT_STEPS: int = 20000
 
-# Sweep Parameters
-T_MIN: float = 0.1
-T_MAX: float = 2.0
-T_POINTS: int = 40
-
-
-def simulate_temperature(T: float) -> tuple[float, float, float, float]:
+def simulate_temperature(params: tuple[float, int, int, float, int, int]) -> tuple[float, float, float, float]:
     """
     Worker function to simulate a single temperature point for the Clock model.
     """
+    T, L, Q, A, eq_steps, meas_steps = params
     sim = ClockSimulation(L, T, A=A, q=Q)
-    sim.equilibrate(EQUILIBRATION_STEPS)
-    mags, engs = sim.run(MEASUREMENT_STEPS)
+    sim.equilibrate(eq_steps)
+    mags, engs = sim.run(meas_steps)
     return calculate_thermodynamics(np.array(mags), np.array(engs), T, L)
 
 
@@ -36,11 +27,30 @@ def run_sweep() -> None:
     """
     Execute the temperature sweep and generate standardized 4-panel plots.
     """
-    temperatures: np.ndarray = np.linspace(T_MIN, T_MAX, T_POINTS)
+    parser = argparse.ArgumentParser(description='2D Clock Model Temperature Sweep')
+    parser.add_argument('--size', type=int, default=48, help='Linear lattice size L')
+    parser.add_argument('--q', type=int, default=6, help='Number of clock states')
+    parser.add_argument('--aniso', type=float, default=0.1, help='Anisotropy strength A')
+    parser.add_argument('--eq-steps', type=int, default=20000, help='Equilibration steps')
+    parser.add_argument('--meas-steps', type=int, default=20000, help='Measurement steps')
+    parser.add_argument('--t-min', type=float, default=0.1, help='Minimum temperature')
+    parser.add_argument('--t-max', type=float, default=2.0, help='Maximum temperature')
+    parser.add_argument('--t-points', type=int, default=40, help='Number of temperature points')
+    parser.add_argument('--output-dir', type=str, default='results/clock', help='Output directory')
+
+    args = parser.parse_arguments() if hasattr(parser, 'parse_arguments') else parser.parse_args()
+
+    L = args.size
+    Q = args.q
+    A = args.aniso
+    temperatures: np.ndarray = np.linspace(args.t_min, args.t_max, args.t_points)
 
     print(f"Starting {Q}-state Clock temperature sweep (L={L}, A={A})...")
+    # Bundle parameters for parallel sweep
+    sweep_params = [(T, L, Q, A, args.eq_steps, args.meas_steps) for T in temperatures]
+
     results: list[tuple[float, float, float, float]] = parallel_sweep(
-        simulate_temperature, temperatures
+        simulate_temperature, sweep_params
     )
     avg_m, avg_e, susc, spec_h = zip(*results, strict=True)
 
@@ -52,7 +62,7 @@ def run_sweep() -> None:
         spec_h,
         title=f'2D {Q}-state Clock Model: Temperature Sweep (L={L}, A={A})',
         filename='temperature_sweep.png',
-        directory='results/clock',
+        directory=args.output_dir,
     )
 
 

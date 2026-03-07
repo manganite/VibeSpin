@@ -11,6 +11,8 @@ Row 3 – Real-space pair correlation G(r) along the x-direction, averaged over
          all rows and normalised so G(0) = 1.
 """
 
+import argparse
+
 import matplotlib.pyplot as plt
 import numpy as np
 
@@ -92,12 +94,19 @@ def pair_correlation_x(spins: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
 
 def main() -> None:
     """Run the snapshot simulation and save a 2-row (spins + S(|k|)) figure."""
-    # --- Parameters ---------------------------------------------------------
-    L: int = 512             # Lattice size
-    T: float = 2.0           # Quench temperature (T < T_c ≈ 2.269)
-    STEP_TARGETS: list[int] = [1, 10, 100, 1000]
+    parser = argparse.ArgumentParser(description='2D Ising Model Domain Snapshot Visualisation')
+    parser.add_argument('--size', type=int, default=512, help='Linear lattice size L')
+    parser.add_argument('--temp', type=float, default=2.0, help='Quench temperature T')
+    parser.add_argument('--targets', type=int, nargs='+', default=[1, 10, 100, 1000],
+                        help='MC steps at which to take snapshots')
+    parser.add_argument('--output-dir', type=str, default='results/ising', help='Output directory')
+
+    args = parser.parse_arguments() if hasattr(parser, 'parse_arguments') else parser.parse_args()
+
+    L = args.size
+    T = args.temp
+    STEP_TARGETS = sorted(args.targets)
     T_CRIT: float = 2.269
-    # ------------------------------------------------------------------------
 
     print(f"Ising domain snapshots (L={L}, T={T})")
     print(f"Recording snapshots at steps {STEP_TARGETS} ...")
@@ -187,7 +196,7 @@ def main() -> None:
 
 
     plt.tight_layout()
-    output_dir = ensure_results_dir('results/ising')
+    output_dir = ensure_results_dir(args.output_dir)
     save_plot('domain_snapshots.png', directory=output_dir)
 
 

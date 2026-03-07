@@ -13,6 +13,8 @@ On a log-log plot the Allen-Cahn (Model A) growth law predicts:
     R(t) ~ t^(1/2)
 """
 
+import argparse
+
 import matplotlib.pyplot as plt
 import numpy as np
 from tqdm import tqdm
@@ -175,14 +177,22 @@ def compute_correlation_length(sim: IsingSimulation) -> float:
 
 def main() -> None:
     """Run the domain growth simulation and save a log-log plot."""
-    # --- Parameters ---------------------------------------------------------
-    L: int = 512 # Lattice size (larger → cleaner scaling)
-    T: float = 0.1      # Quench temperature (T < T_c ≈ 2.269)
-    MAX_STEPS: int = 1000  # Total MC steps after quench
-    N_SAMPLES: int = 10   # Number of logarithmically-spaced measurement points
-    FIT_MIN_STEP: int = 20  # Discard early transient steps from the power-law fit
+    parser = argparse.ArgumentParser(description='2D Ising Model Domain Growth Analysis')
+    parser.add_argument('--size', type=int, default=512, help='Linear lattice size L')
+    parser.add_argument('--temp', type=float, default=0.1, help='Quench temperature T')
+    parser.add_argument('--max-steps', type=int, default=1000, help='Total MC steps')
+    parser.add_argument('--samples', type=int, default=10, help='Number of measurement points')
+    parser.add_argument('--fit-min', type=int, default=20, help='Min step for power-law fit')
+    parser.add_argument('--output-dir', type=str, default='results/ising', help='Output directory')
+
+    args = parser.parse_arguments() if hasattr(parser, 'parse_arguments') else parser.parse_args()
+
+    L = args.size
+    T = args.temp
+    MAX_STEPS = args.max_steps
+    N_SAMPLES = args.samples
+    FIT_MIN_STEP = args.fit_min
     T_CRIT: float = 2.269   # Critical temperature for reference
-    # ------------------------------------------------------------------------
 
     print(f"Ising domain growth analysis (L={L}, T={T:.3f} < T_c={T_CRIT})")
     print(f"Measuring R(t) at {N_SAMPLES} log-spaced steps up to t={MAX_STEPS} ...")
@@ -299,7 +309,7 @@ def main() -> None:
     ax_log.set_title('Log-log scale', fontsize=11)
     ax_log.grid(True, which='both', alpha=0.25)
 
-    output_dir = ensure_results_dir('results/ising')
+    output_dir = ensure_results_dir(args.output_dir)
     save_plot('domain_growth.png', directory=output_dir)
 
 
