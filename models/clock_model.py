@@ -81,8 +81,10 @@ def clock_step_numba(
                 dE_inter = -J * ((sx_new * nx + sy_new * ny) - (sx * nx + sy * ny))
 
                 # Anisotropy Energy Change
+                # Optimization: The new angle is simply the old angle plus delta.
+                # This avoids an expensive second arctan2 call.
                 phi_old = np.arctan2(sy, sx)
-                phi_new = np.arctan2(sy_new, sx_new)
+                phi_new = phi_old + delta
                 dE_aniso = -A * (np.cos(q * phi_new) - np.cos(q * phi_old))
 
                 dE = dE_inter + dE_aniso
