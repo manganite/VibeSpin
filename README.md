@@ -1,33 +1,33 @@
 # Multiferroic Simulation Project
 
-This project is a high-performance Python framework for simulating and analyzing phase transitions in 2D lattice models, including **Ising**, **XY**, and **q-state Clock** models. It is designed to study complex physical phenomena like the BKT (Berezinskii-Kosterlitz-Thouless) transition, topological defects (vortices), and domain coarsening dynamics.
+This project is a high-performance Python framework for simulating and analyzing phase transitions in 2D lattice models, including **Ising**, **XY**, and **q-state Clock** models. It is designed to study complex physical phenomena like the BKT (Berezinskii-Kosterlitz-Thouless) transition, topological defects (vortices), and phase ordering kinetics.
 
 ## Features
 
-- **High Performance**: Uses [Numba](https://numba.pydata.org/) JIT compilation with `fastmath=True` and disk caching.
-- **Scientific Reproducibility**: Deterministic seed management for both NumPy and Numba.
-- **Professional Tooling**: CLI support for all scripts and structured logging.
-- **Physical Observables**: Calculates magnetization, energy, specific heat, magnetic susceptibility, helicity modulus, and vorticity.
-- **Statistical Analysis**: Fast spin-spin correlation functions G(r) and structure factors S(k).
-- **Domain Coarsening**: Specialized tools for verifying growth laws (e.g., $R(t) \sim t^{1/2}$).
+- **High Performance**: Uses [Numba](https://numba.pydata.org/) JIT compilation with `fastmath=True` and disk caching for C-like simulation speeds.
+- **Scientific Reproducibility**: Deterministic seed management synchronizing both NumPy and Numba RNG states.
+- **Ordering Kinetics**: Specialized tools for verifying growth laws (e.g., $L(t) \sim t^{1/2}$) and defect decay (e.g., $n_v \sim t^{-1}$) across all models.
+- **Ordering Evolution**: High-resolution multi-row visualizations showing the spatial development of order, vorticity maps, and correlation functions over time.
+- **Professional Tooling**: Comprehensive CLI support, structured logging, and unified plotting interfaces.
+- **Physical Observables**: Calculates magnetization, energy, specific heat, magnetic susceptibility, helicity modulus, vorticity, and correlation functions.
 
 ## Core Technologies
 
 - **Python 3.x** (≥ 3.9)
 - **NumPy**: Efficient array operations and FFTs.
-- **Numba**: Just-In-Time compilation for core kernels.
-- **Matplotlib**: Visualization of results and spin configurations.
+- **Numba**: Just-In-Time compilation for core simulation kernels.
+- **Matplotlib**: Visualization of results and ordering processes.
 - **pytest & pytest-cov**: Testing framework with code coverage analysis.
 - **Ruff**: Fast Python linter and code formatter.
 - **Mypy**: Static type checker.
 
 ## Project Structure
 
-- `models/`: Core simulation logic and model implementations.
-- `utils/`: Shared helper functions for system operations and physics calculations.
-- `scripts/`: Model-specific analysis and simulation scripts.
+- `models/`: Core simulation logic and model implementations (Ising, XY, Clock).
+- `utils/`: Unified physics analysis (`physics_helpers.py`) and technical utilities (`system_helpers.py`).
+- `scripts/`: Model-specific analysis tools (Sweeps, Kinetics, Evolution, Snapshots).
 - `results/`: Directory where simulation plots and data are saved.
-- `tests/`: Unit tests for models and utilities.
+- `tests/`: Comprehensive unit tests for models and utilities.
 
 ## Getting Started
 
@@ -43,36 +43,31 @@ This project is a high-performance Python framework for simulating and analyzing
 
 All major scripts support a Command Line Interface (CLI).
 
-**Example: Run Ising temperature sweep**
+**Example: Phase Ordering Kinetics**
 ```bash
-python scripts/ising/temperature_sweep.py --size 64 --t-points 40 --verbose
+# Extract growth exponents for the Ising model
+python scripts/ising/ordering_kinetics.py --size 256 --max-steps 1000 --verbose
 ```
 
-**Example: Run XY helicity modulus analysis**
+**Example: Spatial Order Evolution**
 ```bash
-python scripts/xy/helicity_modulus.py --size 64 --meas-steps 50000
+# Generate 4-column visual evolution for the XY model
+python scripts/xy/ordering_evolution.py --size 256 --targets 1 10 100 1000
 ```
 
-Results and visualizations will be saved to the `results/` directory.
-
-### Running Tests
-
-To run the full test suite with coverage:
-```bash
-pytest --cov
-```
+Results and visualizations will be saved to model-specific folders in the `results/` directory.
 
 ### Code Quality
 
 Check linting and type safety:
 ```bash
 ruff check .
-mypy --explicit-package-bases models/ utils/
+mypy --explicit-package-bases models/ utils/ scripts/
 ```
 
 ## Development Conventions
 
-- **Performance**: Always use `@njit(cache=True, fastmath=True)` for nested loops.
-- **Reproducibility**: Use the `seed` parameter when initializing models for deterministic results.
-- **Logging**: Use the project-wide logger (`setup_logging`).
-- **Type Safety**: Use modern Python type hints project-wide.
+- **Performance**: Always use `@njit(cache=True, fastmath=True)` for loops. Avoid modulo operators in PBCs; use pre-calculated indices.
+- **Reproducibility**: Use the `seed` parameter when initializing models.
+- **Unified Logic**: Prefer shared utilities in `utils/` for kinetics and evolution analysis to ensure project-wide consistency.
+- **Logging**: Use the project-wide logger (`setup_logging`) instead of `print()`.
