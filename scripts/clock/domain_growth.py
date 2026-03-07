@@ -157,7 +157,7 @@ def main() -> None:
         ax1.loglog(t[fit_mask], pre_xi * t[fit_mask]**exp_xi, '--', color='tab:orange',
                    label=f'Fit $\\xi$: $t^{{{exp_xi:.2f}}}$')
         
-    ax1.set_xlabel('Time t (sweeps)')
+    ax1.set_xlabel('Time t (Monte Carlo sweeps)')
     ax1.set_ylabel('Domain Size R(t)')
     ax1.set_title('Domain Coarsening')
     ax1.grid(True, which='both', alpha=0.3)
@@ -167,7 +167,7 @@ def main() -> None:
     ax2.loglog(t, v_dens, 'D', color='tab:purple', label='$n_v(t)$ (Vortex Density)')
     if exp_v:
         ax2.loglog(t[fit_mask], pre_v * t[fit_mask]**exp_v, 'k--', label=f'Fit: $t^{{{exp_v:.2f}}}$')
-    ax2.set_xlabel('Time t (sweeps)')
+    ax2.set_xlabel('Time t (Monte Carlo sweeps)')
     ax2.set_ylabel('Vortex Density $n_v$')
     ax2.set_title('Vortex Decay')
     ax2.grid(True, which='both', alpha=0.3)
