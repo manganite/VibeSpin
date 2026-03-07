@@ -43,13 +43,13 @@ This project is a high-performance Python framework for simulating and analyzing
 
 All major scripts support a Command Line Interface (CLI).
 
-**Example: Phase Ordering Kinetics**
+**Example: Ordering Kinetics**
 ```bash
-# Extract growth exponents for the Ising model
+# Study domain coarsening in the Ising model
 python scripts/ising/ordering_kinetics.py --size 256 --max-steps 1000 --verbose
 ```
 
-**Example: Spatial Order Evolution**
+**Example: Phase Ordering Evolution**
 ```bash
 # Generate 4-column visual evolution for the XY model
 python scripts/xy/ordering_evolution.py --size 256 --targets 1 10 100 1000
