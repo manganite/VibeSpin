@@ -11,7 +11,7 @@ from numba import njit
 from .simulation_base import MonteCarloSimulation
 
 
-@njit(cache=True)
+@njit(cache=True, fastmath=True)
 def ising_step_numba(
     spins: np.ndarray, beta: float, J: float, idx_next: np.ndarray, idx_prev: np.ndarray
 ) -> np.ndarray:

@@ -15,9 +15,15 @@ from .simulation_base import (
 )
 
 
-@njit(cache=True)
+@njit(cache=True, fastmath=True)
 def clock_step_numba(
-    spins: np.ndarray, beta: float, J: float, A: float, q: int, idx_next: np.ndarray, idx_prev: np.ndarray
+    spins: np.ndarray,
+    beta: float,
+    J: float,
+    A: float,
+    q: int,
+    idx_next: np.ndarray,
+    idx_prev: np.ndarray,
 ) -> np.ndarray:
     """
     Perform one full Monte Carlo sweep of the Clock Model lattice.
@@ -87,8 +93,10 @@ def clock_step_numba(
     return spins
 
 
-@njit(cache=True)
-def clock_energy_numba(spins: np.ndarray, J: float, A: float, q: int, idx_next: np.ndarray) -> float:
+@njit(cache=True, fastmath=True)
+def clock_energy_numba(
+    spins: np.ndarray, J: float, A: float, q: int, idx_next: np.ndarray
+) -> float:
     """
     Calculate the total energy of the Clock Model lattice.
 
@@ -129,7 +137,13 @@ class ClockSimulation(MonteCarloSimulation):
     """
 
     def __init__(
-        self, size: int, temp: float, J: float = 1.0, A: float = 1.0, q: int = 6, seed: int | None = None
+        self,
+        size: int,
+        temp: float,
+        J: float = 1.0,
+        A: float = 1.0,
+        q: int = 6,
+        seed: int | None = None,
     ):
         """
         Initialize the Clock Model simulation.
@@ -165,7 +179,13 @@ class ClockSimulation(MonteCarloSimulation):
 
                 _seed_numba(self.seed + self.steps)
             self.spins = clock_step_numba(
-                self.spins, self.beta, self.J, self.A, self.q, self.idx_next, self.idx_prev
+                self.spins,
+                self.beta,
+                self.J,
+                self.A,
+                self.q,
+                self.idx_next,
+                self.idx_prev,
             )
         self.steps += 1
 

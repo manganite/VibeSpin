@@ -16,7 +16,7 @@ from .simulation_base import (
 )
 
 
-@njit(cache=True)
+@njit(cache=True, fastmath=True)
 def xy_step_numba(
     spins: np.ndarray, beta: float, J: float, idx_next: np.ndarray, idx_prev: np.ndarray
 ) -> np.ndarray:
@@ -84,7 +84,7 @@ def xy_step_numba(
     return spins
 
 
-@njit(cache=True)
+@njit(cache=True, fastmath=True)
 def xy_energy_numba(spins: np.ndarray, J: float, idx_next: np.ndarray) -> float:
     """
     Calculate the total energy of the XY lattice.
@@ -244,5 +244,3 @@ if __name__ == "__main__":
     plt.tight_layout()
     plt.savefig(output_file)
     print(f"Simulation finished. Plot saved to {output_file}")
-
-

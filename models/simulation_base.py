@@ -8,13 +8,13 @@ import numpy as np
 from numba import njit
 
 
-@njit(cache=True)
+@njit(cache=True, fastmath=True)
 def _seed_numba(seed: int) -> None:
     """Helper to seed Numba's internal random number generator."""
     np.random.seed(seed)
 
 
-@njit(cache=True)
+@njit(cache=True, fastmath=True)
 def _calculate_vorticity_angles_numba(angles: np.ndarray, idx_next: np.ndarray) -> np.ndarray:
     """Fast kernel to calculate vorticity from a 2D array of angles."""
     N = angles.shape[0]
@@ -54,7 +54,8 @@ def calculate_vorticity_numba(spins: np.ndarray, idx_next: np.ndarray) -> np.nda
     angles = np.arctan2(spins[..., 1], spins[..., 0])
     return _calculate_vorticity_angles_numba(angles, idx_next)
 
-@njit(cache=True)
+
+@njit(cache=True, fastmath=True)
 def get_helicity_data_numba(spins: np.ndarray) -> tuple[float, float]:
     """
     Calculate sum of cos and sin of angle differences in x-direction for helicity modulus.
@@ -73,10 +74,15 @@ def get_helicity_data_numba(spins: np.ndarray) -> tuple[float, float]:
         for j in range(N):
             j_next = 0 if j == N - 1 else j + 1
             # cos(theta_i - theta_j) = s_i . s_j
-            cos_sum += spins[i, j, 0]*spins[i, j_next, 0] + spins[i, j, 1]*spins[i, j_next, 1]
+            cos_sum += (
+                spins[i, j, 0] * spins[i, j_next, 0] + spins[i, j, 1] * spins[i, j_next, 1]
+            )
             # sin(theta_i - theta_j) = cross product
-            sin_sum += spins[i, j, 0]*spins[i, j_next, 1] - spins[i, j, 1]*spins[i, j_next, 0]
+            sin_sum += (
+                spins[i, j, 0] * spins[i, j_next, 1] - spins[i, j, 1] * spins[i, j_next, 0]
+            )
     return cos_sum, sin_sum
+
 
 class MonteCarloSimulation(ABC):
     """
@@ -112,6 +118,13 @@ class MonteCarloSimulation(ABC):
         self.idx_next = np.roll(np.arange(size), -1)
         self.idx_prev = np.roll(np.arange(size), 1)
 
+        # Pre-calculate radial distance bins for correlation analysis
+        center = size // 2
+        iy, ix = np.indices((size, size))
+        r = np.sqrt((ix - center) ** 2 + (iy - center) ** 2)
+        self._r_int_pre = r.astype(int).ravel()
+        self._nr_pre = np.bincount(self._r_int_pre)
+        self._r_range_pre = np.arange(center)
 
     @abstractmethod
     def step(self) -> None:
@@ -151,24 +164,20 @@ class MonteCarloSimulation(ABC):
         # Shift the (0,0) correlation to the center of the map for radial averaging
         G_r_map = np.fft.fftshift(G_r_map)
 
-        # Radially average G(r)
-        N = self.size
-        center = N // 2
-        y, x = np.indices((N, N))
-        r = np.sqrt((x - center)**2 + (y - center)**2)
-        r_int = r.astype(int)
-
-        tbin = np.bincount(r_int.ravel(), G_r_map.ravel())
-        nr = np.bincount(r_int.ravel())
+        # Radially average G(r) using pre-calculated masks
+        tbin = np.bincount(self._r_int_pre, G_r_map.ravel())
 
         # Avoid division by zero
-        radial_profile = np.divide(tbin, nr, out=np.zeros_like(tbin, dtype=float), where=nr!=0)
+        radial_profile = np.divide(
+            tbin, self._nr_pre, out=np.zeros_like(tbin, dtype=float), where=self._nr_pre != 0
+        )
 
         # Normalize by G(0) so that G(0) = 1
         if radial_profile[0] != 0:
             radial_profile /= radial_profile[0]
 
-        return np.arange(center), radial_profile[:center]
+        center = self.size // 2
+        return self._r_range_pre, radial_profile[:center]
 
     def equilibrate(self, n_steps: int) -> None:
         """
@@ -198,3 +207,4 @@ class MonteCarloSimulation(ABC):
             magnetization[i] = self._get_magnetization()
             energies[i] = self._get_energy()
         return magnetization, energies
+
