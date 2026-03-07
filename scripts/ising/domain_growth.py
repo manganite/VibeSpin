@@ -263,47 +263,30 @@ def main() -> None:
     fig, (ax_lin, ax_log) = plt.subplots(1, 2, figsize=(14, 6))
     fig.suptitle(title, fontsize=13)
 
-    # Allen-Cahn reference anchored to first valid ξ fit point
-    valid_xi = fit_mask & (R_xi > 0)
-    t_ref = t[valid_xi]
-    if len(t_ref) > 0:
-        t0, R0 = t_ref[0], R_xi[valid_xi][0]
-        R_ac = R0 * (t_ref / t0) ** 0.5
-    else:
-        t_ref, R_ac = np.array([]), np.array([])
-
     for ax in (ax_lin, ax_log):
-        # Structure-factor estimator — points only
+        # Structure-factor estimator
         ax.plot(t, R_sk, 'o', markersize=4, color='tab:blue',
                 label='$R_{S(k)}$ — structure-factor')
-        if exp_sk is not None and pre_sk is not None:
-            valid_sk = fit_mask & (R_sk > 0)
-            ax.plot(t[valid_sk], pre_sk * t[valid_sk] ** exp_sk,
+        if exp_sk is not None:
+            ax.plot(t[fit_mask], pre_sk * t[fit_mask] ** exp_sk,
                     '--', color='tab:blue', linewidth=1.3, alpha=0.7,
-                    label=rf'Fit $S(k)$: $\propto t^{{{exp_sk:.3f}}}$')
+                    label=rf'Fit $S(k)$: $t^{{{exp_sk:.2f}}}$')
 
-        # MIL estimator — points only
+        # MIL estimator
         ax.plot(t, R_mil, 's', markersize=4, color='tab:orange',
                 label='$R_\\mathrm{MIL}$ — mean intercept length')
-        if exp_mil is not None and pre_mil is not None:
-            valid_mil = fit_mask & (R_mil > 0)
-            ax.plot(t[valid_mil], pre_mil * t[valid_mil] ** exp_mil,
+        if exp_mil is not None:
+            ax.plot(t[fit_mask], pre_mil * t[fit_mask] ** exp_mil,
                     '--', color='tab:orange', linewidth=1.3, alpha=0.7,
-                    label=rf'Fit MIL: $\propto t^{{{exp_mil:.3f}}}$')
+                    label=rf'Fit MIL: $t^{{{exp_mil:.2f}}}$')
 
-        # Correlation-length estimator — points only
+        # Correlation-length estimator
         ax.plot(t, R_xi, '^', markersize=4, color='tab:green',
                 label=r'$\xi$ — G(r) correlation length')
-        if exp_xi is not None and pre_xi is not None:
-            ax.plot(t[valid_xi], pre_xi * t[valid_xi] ** exp_xi,
+        if exp_xi is not None:
+            ax.plot(t[fit_mask], pre_xi * t[fit_mask] ** exp_xi,
                     '--', color='tab:green', linewidth=1.3, alpha=0.7,
-                    label=rf'Fit $\xi$: $\propto t^{{{exp_xi:.3f}}}$')
-
-        # Allen-Cahn t^(1/2) reference anchored to ξ
-        if len(t_ref) > 0:
-            ax.plot(t_ref, R_ac, ':', color='tab:gray', linewidth=1.5, alpha=0.8,
-                    label=r'Allen–Cahn: $R \propto t^{1/2}$')
-
+                    label=rf'Fit $\xi$: $t^{{{exp_xi:.2f}}}$')
 
         ax.set_xlabel('Monte Carlo Steps $t$', fontsize=12)
         ax.set_ylabel('Domain Size $R(t)$ (lattice units)', fontsize=12)

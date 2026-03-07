@@ -131,9 +131,11 @@ def main() -> None:
         return float(coeffs[0]), float(np.exp(coeffs[1]))
 
     exp_sk, pre_sk = power_fit(t, R_sk, fit_mask)
+    exp_xi, pre_xi = power_fit(t, R_xi, fit_mask)
     exp_v, pre_v = power_fit(t, v_dens, fit_mask)
 
-    if exp_sk: logger.info(f"Domain Size R(t) exponent: {exp_sk:.3f} (Allen-Cahn: 0.5)")
+    if exp_sk: logger.info(f"Domain Size R_sk(t) exponent: {exp_sk:.3f} (Allen-Cahn: 0.5)")
+    if exp_xi: logger.info(f"Correlation Length xi(t) exponent: {exp_xi:.3f} (Allen-Cahn: 0.5)")
     if exp_v: logger.info(f"Vortex Density n_v(t) exponent: {exp_v:.3f} (Theory: -1.0)")
 
     # Plotting
@@ -141,9 +143,15 @@ def main() -> None:
     
     # 1. Domain Growth R(t)
     ax1.loglog(t, R_sk, 'o', label='$R_{S(k)}$ (Structure Factor)')
-    ax1.loglog(t, R_xi, 's', label='$\\xi$ (Correlation length)')
     if exp_sk:
-        ax1.loglog(t[fit_mask], pre_sk * t[fit_mask]**exp_sk, 'r--', label=f'Fit: $t^{{{exp_sk:.2f}}}$')
+        ax1.loglog(t[fit_mask], pre_sk * t[fit_mask]**exp_sk, '--', color='tab:blue', 
+                   label=f'Fit $R_{{sk}}$: $t^{{{exp_sk:.2f}}}$')
+        
+    ax1.loglog(t, R_xi, 's', label='$\\xi$ (Correlation length)')
+    if exp_xi:
+        ax1.loglog(t[fit_mask], pre_xi * t[fit_mask]**exp_xi, '--', color='tab:orange',
+                   label=f'Fit $\\xi$: $t^{{{exp_xi:.2f}}}$')
+        
     ax1.set_xlabel('Time t (sweeps)')
     ax1.set_ylabel('Domain Size R(t)')
     ax1.set_title('Domain Coarsening')
