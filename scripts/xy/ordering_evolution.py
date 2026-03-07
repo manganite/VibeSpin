@@ -1,5 +1,5 @@
 """
-Domain snapshot visualisation for the 2D XY model.
+Phase ordering evolution visualisation for the 2D XY model.
 
 Quenches from a disordered state to T < T_BKT and records the spin configuration
 at multiple time steps, plotting phase configurations, vorticity maps, and
@@ -16,8 +16,8 @@ from utils.system_helpers import ensure_results_dir, plot_ordering_evolution, se
 
 
 def main() -> None:
-    """Run the snapshot simulation and generate a multi-row evolution figure."""
-    parser = argparse.ArgumentParser(description='2D XY Model Domain Snapshot Visualisation')
+    """Run the simulation and generate a multi-row phase ordering figure."""
+    parser = argparse.ArgumentParser(description='2D XY Model Phase Ordering Visualisation')
     parser.add_argument('--size', type=int, default=256, help='Linear lattice size L')
     parser.add_argument('--temp', type=float, default=0.5, help='Quench temperature T')
     parser.add_argument(
@@ -42,7 +42,7 @@ def main() -> None:
     STEP_TARGETS = sorted(args.targets)
     T_BKT: float = 0.893
 
-    logger.info(f'XY domain snapshots (L={L}, T={T})')
+    logger.info(f'XY phase ordering evolution (L={L}, T={T})')
     logger.info(f'Recording snapshots at steps {STEP_TARGETS} ...')
 
     sim = XYSimulation(size=L, temp=T)

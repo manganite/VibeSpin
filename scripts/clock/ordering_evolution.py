@@ -1,5 +1,5 @@
 """
-Domain snapshot visualisation for the 2D q-state Clock model.
+Phase ordering evolution visualisation for the 2D q-state Clock model.
 
 Quenches from a disordered state to T < T_c and records the spin configuration
 at multiple time steps, plotting phase configurations, vorticity maps, and
@@ -16,8 +16,8 @@ from utils.system_helpers import ensure_results_dir, plot_ordering_evolution, se
 
 
 def main() -> None:
-    """Run the snapshot simulation and generate a multi-row evolution figure."""
-    parser = argparse.ArgumentParser(description='2D Clock Model Domain Snapshot Visualisation')
+    """Run the simulation and generate a multi-row phase ordering figure."""
+    parser = argparse.ArgumentParser(description='2D Clock Model Phase Ordering Visualisation')
     parser.add_argument('--size', type=int, default=256, help='Linear lattice size L')
     parser.add_argument('--temp', type=float, default=0.2, help='Quench temperature T')
     parser.add_argument('--q', type=int, default=6, help='Number of clock states')
@@ -45,7 +45,7 @@ def main() -> None:
     A = args.aniso
     STEP_TARGETS = sorted(args.targets)
 
-    logger.info(f'Clock domain snapshots (L={L}, T={T}, q={Q}, A={A})')
+    logger.info(f'Clock phase ordering evolution (L={L}, T={T}, q={Q}, A={A})')
     logger.info(f'Recording snapshots at steps {STEP_TARGETS} ...')
 
     sim = ClockSimulation(size=L, temp=T, q=Q, A=A)

@@ -1,5 +1,5 @@
 """
-Domain snapshot visualisation for the 2D Ising model.
+Domain ordering evolution visualisation for the 2D Ising model.
 
 Quenches from a disordered state to T < T_c and records the spin configuration
 at multiple time steps, plotting spin configurations, structure factors, and
@@ -16,8 +16,8 @@ from utils.system_helpers import ensure_results_dir, plot_ordering_evolution, se
 
 
 def main() -> None:
-    """Run the snapshot simulation and generate a multi-row evolution figure."""
-    parser = argparse.ArgumentParser(description='2D Ising Model Domain Snapshot Visualisation')
+    """Run the simulation and generate a multi-row domain ordering figure."""
+    parser = argparse.ArgumentParser(description='2D Ising Model Domain Ordering Visualisation')
     parser.add_argument('--size', type=int, default=512, help='Linear lattice size L')
     parser.add_argument('--temp', type=float, default=2.0, help='Quench temperature T')
     parser.add_argument(
@@ -42,7 +42,7 @@ def main() -> None:
     STEP_TARGETS = sorted(args.targets)
     T_CRIT: float = 2.269
 
-    logger.info(f'Ising domain snapshots (L={L}, T={T})')
+    logger.info(f'Ising domain ordering evolution (L={L}, T={T})')
     logger.info(f'Recording snapshots at steps {STEP_TARGETS} ...')
 
     sim = IsingSimulation(size=L, temp=T, update='random')
