@@ -62,7 +62,7 @@ def main() -> None:
 
     logger.info(f"Collected {n_targets} snapshots. Saving figure ...")
 
-    title = f'2D Ising Domain Evolution — T = {T} (< T_c ≈ {T_CRIT}), L = {L}'
+    title = f'2D Ising Ordering Evolution — T = {T} (< T_c ≈ {T_CRIT}), L = {L}'
     
     plot_domain_evolution(
         targets=STEP_TARGETS,
@@ -70,7 +70,7 @@ def main() -> None:
         gr_data=snapshots_gr,
         vorticity_data=None, # Ising uses Sk fallback in plot_domain_evolution
         title=title,
-        filename='domain_snapshots.png',
+        filename='ordering_evolution.png',
         directory=ensure_results_dir(args.output_dir),
         is_vector=False
     )

@@ -1,7 +1,7 @@
 """
-Domain snapshot visualisation for the 2D q-state Clock model.
+Domain snapshot visualisation for the 2D XY model.
 
-Quenches from a disordered state to T < T_c and records the spin configuration
+Quenches from a disordered state to T < T_BKT and records the spin configuration
 at multiple time steps, plotting phase configurations, vorticity maps, and
 radially averaged correlation functions G(r).
 """
@@ -11,20 +11,18 @@ import logging
 
 import numpy as np
 
-from models.clock_model import ClockSimulation
+from models.xy_model import XYSimulation
 from utils.system_helpers import ensure_results_dir, plot_domain_evolution, setup_logging
 
 
 def main() -> None:
     """Run the snapshot simulation and generate a multi-row evolution figure."""
-    parser = argparse.ArgumentParser(description='2D Clock Model Domain Snapshot Visualisation')
+    parser = argparse.ArgumentParser(description='2D XY Model Domain Snapshot Visualisation')
     parser.add_argument('--size', type=int, default=256, help='Linear lattice size L')
-    parser.add_argument('--temp', type=float, default=0.2, help='Quench temperature T')
-    parser.add_argument('--q', type=int, default=6, help='Number of clock states')
-    parser.add_argument('--aniso', type=float, default=0.5, help='Anisotropy strength A')
+    parser.add_argument('--temp', type=float, default=0.5, help='Quench temperature T')
     parser.add_argument('--targets', type=int, nargs='+', default=[1, 10, 100, 1000],
                         help='MC steps at which to take snapshots')
-    parser.add_argument('--output-dir', type=str, default='results/clock', help='Output directory')
+    parser.add_argument('--output-dir', type=str, default='results/xy', help='Output directory')
     parser.add_argument('--log-file', type=str, default=None, help='Optional log file path')
     parser.add_argument('--verbose', action='store_true', help='Enable verbose logging')
 
@@ -36,14 +34,13 @@ def main() -> None:
 
     L = args.size
     T = args.temp
-    Q = args.q
-    A = args.aniso
     STEP_TARGETS = sorted(args.targets)
+    T_BKT: float = 0.893
 
-    logger.info(f"Clock domain snapshots (L={L}, T={T}, q={Q}, A={A})")
+    logger.info(f"XY domain snapshots (L={L}, T={T})")
     logger.info(f"Recording snapshots at steps {STEP_TARGETS} ...")
 
-    sim = ClockSimulation(size=L, temp=T, q=Q, A=A)
+    sim = XYSimulation(size=L, temp=T)
     n_targets: int = len(STEP_TARGETS)
     
     # Storage for snapshots
@@ -67,7 +64,7 @@ def main() -> None:
 
     logger.info(f"Collected {n_targets} snapshots. Saving figure ...")
 
-    title = f'2D {Q}-state Clock Model Evolution — T = {T}, L = {L}, A = {A}'
+    title = f'2D XY Model Ordering Evolution — T = {T} (< T_BKT ≈ {T_BKT}), L = {L}'
     
     plot_domain_evolution(
         targets=STEP_TARGETS,
@@ -75,7 +72,7 @@ def main() -> None:
         gr_data=snapshots_gr,
         vorticity_data=snapshots_vort,
         title=title,
-        filename='domain_snapshots.png',
+        filename='ordering_evolution.png',
         directory=ensure_results_dir(args.output_dir),
         is_vector=True
     )
