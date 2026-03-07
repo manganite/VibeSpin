@@ -15,27 +15,19 @@ def _seed_numba(seed: int) -> None:
 
 
 @njit(cache=True)
-def calculate_vorticity_numba(spins: np.ndarray) -> np.ndarray:
-    """
-    Calculate the vorticity (winding number) of each plaquette for 2D vector spins.
-
-    Args:
-        spins: (N, N, 2) array of unit vectors.
-
-    Returns:
-        vorticity: (N, N) array containing winding numbers (+1, -1, or 0).
-    """
-    N = spins.shape[0]
+def _calculate_vorticity_angles_numba(angles: np.ndarray, idx_next: np.ndarray) -> np.ndarray:
+    """Fast kernel to calculate vorticity from a 2D array of angles."""
+    N = angles.shape[0]
     vorticity = np.zeros((N, N))
     for i in range(N):
+        inxt = idx_next[i]
         for j in range(N):
-            i_next = 0 if i == N - 1 else i + 1
-            j_next = 0 if j == N - 1 else j + 1
+            jnxt = idx_next[j]
 
-            t1 = np.arctan2(spins[i, j, 1], spins[i, j, 0])
-            t2 = np.arctan2(spins[i, j_next, 1], spins[i, j_next, 0])
-            t3 = np.arctan2(spins[i_next, j_next, 1], spins[i_next, j_next, 0])
-            t4 = np.arctan2(spins[i_next, j, 1], spins[i_next, j, 0])
+            t1 = angles[i, j]
+            t2 = angles[i, jnxt]
+            t3 = angles[inxt, jnxt]
+            t4 = angles[inxt, j]
 
             d1 = (t2 - t1 + np.pi) % (2 * np.pi) - np.pi
             d2 = (t3 - t2 + np.pi) % (2 * np.pi) - np.pi
@@ -44,6 +36,23 @@ def calculate_vorticity_numba(spins: np.ndarray) -> np.ndarray:
 
             vorticity[i, j] = np.round((d1 + d2 + d3 + d4) / (2 * np.pi))
     return vorticity
+
+
+def calculate_vorticity_numba(spins: np.ndarray, idx_next: np.ndarray) -> np.ndarray:
+    """
+    Calculate the vorticity (winding number) of each plaquette for 2D vector spins.
+    Optimized by calculating angles first and then using a fast wrapping kernel.
+
+    Args:
+        spins: (N, N, 2) array of unit vectors.
+        idx_next: Pre-calculated next-neighbor indices.
+
+    Returns:
+        vorticity: (N, N) array containing winding numbers (+1, -1, or 0).
+    """
+    # Vectorized arctan2 is much faster than calling it inside a Numba loop
+    angles = np.arctan2(spins[..., 1], spins[..., 0])
+    return _calculate_vorticity_angles_numba(angles, idx_next)
 
 @njit(cache=True)
 def get_helicity_data_numba(spins: np.ndarray) -> tuple[float, float]:

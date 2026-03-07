@@ -167,7 +167,9 @@ class XYSimulation(MonteCarloSimulation):
     def _calculate_vorticity(self) -> np.ndarray:
         """Calculate the vorticity (winding number) of each plaquette."""
         if self.spins is not None:
-            return np.asarray(calculate_vorticity_numba(self.spins))  # type: ignore[no-any-return]
+            return np.asarray(
+                calculate_vorticity_numba(self.spins, self.idx_next)
+            )  # type: ignore[no-any-return]
         return np.array([])
 
     def _get_helicity_data(self) -> tuple[float, float]:

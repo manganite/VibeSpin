@@ -187,7 +187,9 @@ class ClockSimulation(MonteCarloSimulation):
     def _calculate_vorticity(self) -> np.ndarray:
         """Calculate the vorticity (winding number) of each plaquette."""
         if self.spins is not None:
-            return np.asarray(calculate_vorticity_numba(self.spins))  # type: ignore[no-any-return]
+            return np.asarray(
+                calculate_vorticity_numba(self.spins, self.idx_next)
+            )  # type: ignore[no-any-return]
         return np.array([])
 
     def _get_helicity_data(self) -> tuple[float, float]:
@@ -254,5 +256,3 @@ if __name__ == "__main__":
     output_file = os.path.join(output_dir, 'clock_simulation.png')
     plt.savefig(output_file)
     print(f"Simulation finished. Plot saved to {output_file}")
-
-
