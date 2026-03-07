@@ -11,8 +11,8 @@ from utils.system_helpers import parallel_sweep, save_plot
 
 # Simulation Parameters
 L: int = 64
-EQUILIBRATION_STEPS: int = 20000
-MEASUREMENT_STEPS: int = 50000 # Higher steps needed for fluctuation convergence
+EQUILIBRATION_STEPS: int = 10000
+MEASUREMENT_STEPS: int = 20000
 
 # Sweep Parameters
 T_MIN: float = 0.1

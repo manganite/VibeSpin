@@ -11,8 +11,8 @@ from utils.system_helpers import parallel_sweep, plot_temperature_sweep
 
 # Simulation Parameters
 L: int = 32
-EQUILIBRATION_STEPS: int = 10000
-MEASUREMENT_STEPS: int = 10000
+EQUILIBRATION_STEPS: int = 5000
+MEASUREMENT_STEPS: int = 5000
 
 # Sweep Parameters
 T_MIN: float = 0.1

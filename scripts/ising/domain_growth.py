@@ -176,7 +176,7 @@ def compute_correlation_length(sim: IsingSimulation) -> float:
 def main() -> None:
     """Run the domain growth simulation and save a log-log plot."""
     # --- Parameters ---------------------------------------------------------
-    L: int = 2048 # Lattice size (larger → cleaner scaling)
+    L: int = 512 # Lattice size (larger → cleaner scaling)
     T: float = 0.1      # Quench temperature (T < T_c ≈ 2.269)
     MAX_STEPS: int = 1000  # Total MC steps after quench
     N_SAMPLES: int = 10   # Number of logarithmically-spaced measurement points

@@ -93,7 +93,7 @@ def pair_correlation_x(spins: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
 def main() -> None:
     """Run the snapshot simulation and save a 2-row (spins + S(|k|)) figure."""
     # --- Parameters ---------------------------------------------------------
-    L: int = 1024             # Lattice size
+    L: int = 512             # Lattice size
     T: float = 2.0           # Quench temperature (T < T_c ≈ 2.269)
     STEP_TARGETS: list[int] = [1, 10, 100, 1000]
     T_CRIT: float = 2.269

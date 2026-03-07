@@ -12,8 +12,8 @@ from utils.system_helpers import ensure_results_dir, parallel_sweep, save_plot
 
 # Global Parameters
 L: int = 128
-STEPS: int = 200000
-EQUILIBRATION_STEPS: int = 20000
+STEPS: int = 50000
+EQUILIBRATION_STEPS: int = 10000
 SAMPLE_INTERVAL: int = 20
 
 # Physical Constants
