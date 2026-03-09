@@ -26,6 +26,11 @@ This document provides mandatory procedural context and technical constraints fo
   mypy --explicit-package-bases models/ utils/ scripts/
   ```
 
+### 4. Source Control & Delivery
+- **Pre-Commit Check**: Before proposing a commit, you MUST run the full test suite and linting (`pytest`, `ruff`, `mypy`).
+- **Commit Format**: Prefer descriptive, multi-line commit messages that explain the physical or technical rationale for changes.
+- **GitHub Sync**: After a successful local commit, always ask the user if they wish to push to the remote repository.
+
 ## Directory Map for Agents
 
 - `models/`: Implementations of Hamiltonian dynamics.
