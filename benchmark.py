@@ -69,8 +69,10 @@ def run_scaling_benchmark():
     model_configs = [
         ('Ising (Checker)', lambda L: IsingSimulation(L, 2.269, update='checkerboard')),
         ('Ising (Random)', lambda L: IsingSimulation(L, 2.269, update='random')),
-        ('XY Model', lambda L: XYSimulation(L, 0.89)),
-        ('Clock (q=6)', lambda L: ClockSimulation(L, 0.5, q=6)),
+        ('XY (Checker)', lambda L: XYSimulation(L, 0.89, update='checkerboard')),
+        ('XY (Random)', lambda L: XYSimulation(L, 0.89, update='random')),
+        ('Clock (Checker)', lambda L: ClockSimulation(L, 0.5, q=6, update='checkerboard')),
+        ('Clock (Random)', lambda L: ClockSimulation(L, 0.5, q=6, update='random')),
     ]
 
     # Results structure: results[model_name][size] = metrics_dict

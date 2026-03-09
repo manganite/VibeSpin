@@ -60,7 +60,7 @@ def ising_step_numba(
     return spins
 
 
-@njit(cache=True)
+@njit(cache=True, fastmath=True)
 def ising_energy_numba(spins: np.ndarray, J: float, idx_next: np.ndarray) -> float:
     """
     Calculate the total energy of the Ising lattice.
@@ -84,7 +84,7 @@ def ising_energy_numba(spins: np.ndarray, J: float, idx_next: np.ndarray) -> flo
     return energy / (N * N)
 
 
-@njit(cache=True)
+@njit(cache=True, fastmath=True)
 def ising_step_random_numba(
     spins: np.ndarray, beta: float, J: float, idx_next: np.ndarray, idx_prev: np.ndarray
 ) -> np.ndarray:

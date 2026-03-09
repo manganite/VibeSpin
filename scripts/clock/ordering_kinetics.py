@@ -56,7 +56,7 @@ def main() -> None:
     logger.info(f'Clock ordering kinetics analysis (L={L}, T={T:.3f}, q={Q}, A={A})')
 
     step_targets = np.unique(np.logspace(0, np.log10(args.max_steps), num=args.samples).astype(int))
-    sim = ClockSimulation(size=L, temp=T, q=Q, A=A)
+    sim = ClockSimulation(size=L, temp=T, q=Q, A=A, update='random')
 
     N_data = len(step_targets)
     t = np.zeros(N_data)

@@ -48,7 +48,7 @@ def main() -> None:
     logger.info(f'Clock phase ordering evolution (L={L}, T={T}, q={Q}, A={A})')
     logger.info(f'Recording snapshots at steps {STEP_TARGETS} ...')
 
-    sim = ClockSimulation(size=L, temp=T, q=Q, A=A)
+    sim = ClockSimulation(size=L, temp=T, q=Q, A=A, update='random')
     n_targets: int = len(STEP_TARGETS)
 
     # Storage for snapshots

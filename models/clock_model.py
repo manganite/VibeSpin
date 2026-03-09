@@ -71,8 +71,6 @@ def clock_step_numba(
                 dE_inter = -J * ((sx_new * nx + sy_new * ny) - (sx * nx + sy * ny))
 
                 # Anisotropy Energy Change
-                # Optimization: The new angle is simply the old angle plus delta.
-                # This avoids an expensive second arctan2 call.
                 phi_old = np.arctan2(sy, sx)
                 phi_new = phi_old + delta
                 dE_aniso = -A * (np.cos(q * phi_new) - np.cos(q * phi_old))
@@ -82,6 +80,73 @@ def clock_step_numba(
                 if dE <= 0 or np.random.random() < np.exp(-dE * beta):
                     spins[i, j, 0] = sx_new
                     spins[i, j, 1] = sy_new
+    return spins
+
+
+@njit(cache=True, fastmath=True)
+def clock_step_random_numba(
+    spins: np.ndarray,
+    beta: float,
+    J: float,
+    A: float,
+    q: int,
+    idx_next: np.ndarray,
+    idx_prev: np.ndarray,
+) -> np.ndarray:
+    """
+    Perform one full Monte Carlo sweep of the Clock Model lattice using random sequential updates.
+
+    Args:
+        spins: (N, N, 2) array of unit vectors.
+        beta: Inverse temperature 1/kT.
+        J: Coupling constant.
+        A: Anisotropy strength.
+        q: Number of clock states.
+        idx_next: Pre-calculated next-neighbor indices.
+        idx_prev: Pre-calculated previous-neighbor indices.
+
+    Returns:
+        Updated spins array.
+    """
+    N = spins.shape[0]
+    for _ in range(N * N):
+        idx = np.random.randint(0, N * N)
+        i = idx // N
+        j = idx % N
+
+        inxt = idx_next[i]
+        iprv = idx_prev[i]
+        jnxt = idx_next[j]
+        jprv = idx_prev[j]
+
+        # Neighbor sum
+        nx = spins[iprv, j, 0] + spins[inxt, j, 0] + spins[i, jprv, 0] + spins[i, jnxt, 0]
+        ny = spins[iprv, j, 1] + spins[inxt, j, 1] + spins[i, jprv, 1] + spins[i, jnxt, 1]
+
+        sx, sy = spins[i, j, 0], spins[i, j, 1]
+
+        # Propose update
+        delta = np.random.uniform(-0.5, 0.5)
+        c, s = np.cos(delta), np.sin(delta)
+        sx_new = sx * c - sy * s
+        sy_new = sx * s + sy * c
+        norm = np.sqrt(sx_new**2 + sy_new**2)
+        sx_new /= norm
+        sy_new /= norm
+
+        # Interaction Energy Change
+        dE_inter = -J * ((sx_new * nx + sy_new * ny) - (sx * nx + sy * ny))
+
+        # Anisotropy Energy Change
+        phi_old = np.arctan2(sy, sx)
+        phi_new = phi_old + delta
+        dE_aniso = -A * (np.cos(q * phi_new) - np.cos(q * phi_old))
+
+        dE = dE_inter + dE_aniso
+
+        if dE <= 0 or np.random.random() < np.exp(-dE * beta):
+            spins[i, j, 0] = sx_new
+            spins[i, j, 1] = sy_new
     return spins
 
 
@@ -124,6 +189,8 @@ class ClockSimulation(MonteCarloSimulation):
     Simulation of the 2D q-state clock model on a square lattice.
     """
 
+    _VALID_UPDATES: frozenset = frozenset({'checkerboard', 'random'})
+
     def __init__(
         self,
         size: int,
@@ -131,6 +198,7 @@ class ClockSimulation(MonteCarloSimulation):
         J: float = 1.0,
         A: float = 1.0,
         q: int = 6,
+        update: str = 'checkerboard',
         seed: int | None = None,
     ):
         """
@@ -142,17 +210,24 @@ class ClockSimulation(MonteCarloSimulation):
             J: Coupling constant (default 1.0).
             A: Anisotropy strength (default 1.0).
             q: Number of clock states (default 6). Must be ≥ 2.
+            update: Update scheme — ``'checkerboard'`` (default, faster) or
+                ``'random'`` (random sequential Metropolis, more physical
+                stochastic dynamics for kinetics studies).
             seed: Optional random seed for reproducibility.
 
         Raises:
-            ValueError: If ``q`` is less than 2.
+            ValueError: If ``q`` is less than 2 or update scheme is unknown.
         """
         super().__init__(size, temp, seed=seed)
         if q < 2:
             raise ValueError(f'q must be >= 2 (number of clock states), got {q}')
+        if update not in self._VALID_UPDATES:
+            valid_opts = sorted(self._VALID_UPDATES)
+            raise ValueError(f'Unknown update scheme {update!r}. Valid options: {valid_opts}')
         self.J = J
         self.A = A
         self.q = q
+        self.update = update
 
         # Initialize random spins as 2D unit vectors
         # spin = (spin_x, spin_y)
@@ -166,15 +241,27 @@ class ClockSimulation(MonteCarloSimulation):
                 from .simulation_base import _seed_numba
 
                 _seed_numba(self.seed + self.steps)
-            self.spins = clock_step_numba(
-                self.spins,
-                self.beta,
-                self.J,
-                self.A,
-                self.q,
-                self.idx_next,
-                self.idx_prev,
-            )
+
+            if self.update == 'random':
+                self.spins = clock_step_random_numba(
+                    self.spins,
+                    self.beta,
+                    self.J,
+                    self.A,
+                    self.q,
+                    self.idx_next,
+                    self.idx_prev,
+                )
+            else:
+                self.spins = clock_step_numba(
+                    self.spins,
+                    self.beta,
+                    self.J,
+                    self.A,
+                    self.q,
+                    self.idx_next,
+                    self.idx_prev,
+                )
         self.steps += 1
 
     def _get_magnetization(self) -> float:

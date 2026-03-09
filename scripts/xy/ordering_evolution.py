@@ -45,7 +45,7 @@ def main() -> None:
     logger.info(f'XY phase ordering evolution (L={L}, T={T})')
     logger.info(f'Recording snapshots at steps {STEP_TARGETS} ...')
 
-    sim = XYSimulation(size=L, temp=T)
+    sim = XYSimulation(size=L, temp=T, update='random')
     n_targets: int = len(STEP_TARGETS)
 
     # Storage for snapshots

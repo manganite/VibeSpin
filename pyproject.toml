@@ -16,6 +16,9 @@ dependencies = [
     "pytest-cov",
     "ruff",
     "mypy",
+    "ipykernel",
+    "notebook",
+    "ipywidgets",
 ]
 
 [tool.setuptools.packages.find]

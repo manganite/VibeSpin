@@ -2,3 +2,6 @@ numpy
 matplotlib
 tqdm
 numba
+ipykernel
+notebook
+ipywidgets

@@ -74,6 +74,63 @@ def xy_step_numba(
 
 
 @njit(cache=True, fastmath=True)
+def xy_step_random_numba(
+    spins: np.ndarray, beta: float, J: float, idx_next: np.ndarray, idx_prev: np.ndarray
+) -> np.ndarray:
+    """
+    Perform one full Monte Carlo sweep of the XY lattice using random sequential updates.
+
+    Args:
+        spins: (N, N, 2) array of unit vectors.
+        beta: Inverse temperature 1/kT.
+        J: Coupling constant.
+        idx_next: Pre-calculated next-neighbor indices.
+        idx_prev: Pre-calculated previous-neighbor indices.
+
+    Returns:
+        Updated spins array.
+    """
+    N = spins.shape[0]
+    for _ in range(N * N):
+        idx = np.random.randint(0, N * N)
+        i = idx // N
+        j = idx % N
+
+        inxt = idx_next[i]
+        iprv = idx_prev[i]
+        jnxt = idx_next[j]
+        jprv = idx_prev[j]
+
+        # Neighbor sum vector
+        nx = spins[iprv, j, 0] + spins[inxt, j, 0] + spins[i, jprv, 0] + spins[i, jnxt, 0]
+        ny = spins[iprv, j, 1] + spins[inxt, j, 1] + spins[i, jprv, 1] + spins[i, jnxt, 1]
+
+        # Current spin
+        sx = spins[i, j, 0]
+        sy = spins[i, j, 1]
+
+        # Propose update
+        delta = np.random.uniform(-0.5, 0.5)
+        c, s = np.cos(delta), np.sin(delta)
+
+        sx_new = sx * c - sy * s
+        sy_new = sx * s + sy * c
+
+        # Normalize
+        norm = np.sqrt(sx_new**2 + sy_new**2)
+        sx_new /= norm
+        sy_new /= norm
+
+        # Energy change: -J * (s_new - s_old) . neighbors
+        dE = -J * ((sx_new * nx + sy_new * ny) - (sx * nx + sy * ny))
+
+        if dE <= 0 or np.random.random() < np.exp(-dE * beta):
+            spins[i, j, 0] = sx_new
+            spins[i, j, 1] = sy_new
+    return spins
+
+
+@njit(cache=True, fastmath=True)
 def xy_energy_numba(spins: np.ndarray, J: float, idx_next: np.ndarray) -> float:
     """
     Calculate the total energy of the XY lattice.
@@ -104,7 +161,16 @@ class XYSimulation(MonteCarloSimulation):
     Simulation of the 2D XY model on a square lattice.
     """
 
-    def __init__(self, size: int, temp: float, J: float = 1.0, seed: int | None = None):
+    _VALID_UPDATES: frozenset = frozenset({'checkerboard', 'random'})
+
+    def __init__(
+        self,
+        size: int,
+        temp: float,
+        J: float = 1.0,
+        update: str = 'checkerboard',
+        seed: int | None = None,
+    ):
         """
         Initialize the XY simulation.
 
@@ -112,10 +178,20 @@ class XYSimulation(MonteCarloSimulation):
             size: Linear dimension L of the L x L lattice.
             temp: Temperature T.
             J: Coupling constant (default 1.0).
+            update: Update scheme — ``'checkerboard'`` (default, faster) or
+                ``'random'`` (random sequential Metropolis, more physical
+                stochastic dynamics for kinetics studies).
             seed: Optional random seed for reproducibility.
+
+        Raises:
+            ValueError: If ``update`` is not one of the recognised schemes.
         """
         super().__init__(size, temp, seed=seed)
+        if update not in self._VALID_UPDATES:
+            valid_opts = sorted(self._VALID_UPDATES)
+            raise ValueError(f'Unknown update scheme {update!r}. Valid options: {valid_opts}')
         self.J = J
+        self.update = update
 
         # Initialize random spins as 2D unit vectors
         # spin = (spin_x, spin_y)
@@ -129,7 +205,15 @@ class XYSimulation(MonteCarloSimulation):
                 from .simulation_base import _seed_numba
 
                 _seed_numba(self.seed + self.steps)
-            self.spins = xy_step_numba(self.spins, self.beta, self.J, self.idx_next, self.idx_prev)
+
+            if self.update == 'random':
+                self.spins = xy_step_random_numba(
+                    self.spins, self.beta, self.J, self.idx_next, self.idx_prev
+                )
+            else:
+                self.spins = xy_step_numba(
+                    self.spins, self.beta, self.J, self.idx_next, self.idx_prev
+                )
         self.steps += 1
 
     def _get_magnetization(self) -> float:

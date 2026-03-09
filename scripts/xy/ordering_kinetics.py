@@ -53,7 +53,7 @@ def main() -> None:
     logger.info(f'XY ordering kinetics analysis (L={L}, T={T:.3f} < T_BKT={T_BKT})')
 
     step_targets = np.unique(np.logspace(0, np.log10(args.max_steps), num=args.samples).astype(int))
-    sim = XYSimulation(size=L, temp=T)
+    sim = XYSimulation(size=L, temp=T, update='random')
 
     N_data = len(step_targets)
     t = np.zeros(N_data)
