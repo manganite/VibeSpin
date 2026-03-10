@@ -26,7 +26,7 @@ def setup_logging(level: int = logging.INFO, log_file: str | None = None) -> log
     Returns:
         The configured logger instance.
     """
-    logger = logging.getLogger('multiferroic')
+    logger = logging.getLogger('vibespin')
     logger.setLevel(level)
 
     # Avoid duplicate handlers if setup_logging is called multiple times
@@ -74,7 +74,7 @@ def save_plot(filename: str, directory: str = 'results', tight_layout: bool = Tr
         directory: Output directory name.
         tight_layout: Whether to apply plt.tight_layout() before saving.
     """
-    logger = logging.getLogger('multiferroic')
+    logger = logging.getLogger('vibespin')
     ensure_results_dir(directory)
     if tight_layout:
         try:

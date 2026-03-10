@@ -1,5 +1,5 @@
 """
-Comprehensive scaling benchmark for the Multiferroic Simulation Project.
+Comprehensive scaling benchmark for the VibeSpin Simulation Project.
 Measures performance of MC sweeps and analysis functions across different lattice sizes.
 """
 

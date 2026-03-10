@@ -1,4 +1,4 @@
-# Agent Instruction Guide: Multiferroic Project
+# Agent Instruction Guide: VibeSpin
 
 This document provides mandatory procedural context and technical constraints for AI Agents working on this codebase.
 

@@ -234,7 +234,7 @@ def test_power_fit_none_on_insufficient_data():
 def test_setup_logging():
     """setup_logging should return a logger instance."""
     logger = setup_logging()
-    assert logger.name == 'multiferroic'
+    assert logger.name == 'vibespin'
 
 
 def test_ensure_results_dir(test_results_dir):

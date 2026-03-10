@@ -24,7 +24,7 @@ def get_correlation_length(params: tuple[float, int, int, int, int]) -> tuple[fl
         A tuple of (T, xi).
     """
     T, L, steps, eq_steps, sample_interval = params
-    logger = logging.getLogger('multiferroic')
+    logger = logging.getLogger('vibespin')
     logger.debug(f'Calculating xi for T={T}...')
     sim = IsingSimulation(L, T)
     sim.equilibrate(eq_steps)

@@ -24,7 +24,7 @@ def simulate_correlation(params: tuple[float, int, int, int, int]) -> tuple[np.n
         A tuple of (r, G_r) — radial distances and averaged correlations.
     """
     T, L, steps, eq_steps, sample_interval = params
-    logger = logging.getLogger('multiferroic')
+    logger = logging.getLogger('vibespin')
     logger.debug(f'Collecting data for T={T}...')
     sim = XYSimulation(L, T)
     sim.equilibrate(eq_steps)
