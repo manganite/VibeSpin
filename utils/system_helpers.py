@@ -1,7 +1,7 @@
-from __future__ import annotations
 """
 Technical utility functions for file system operations, plotting, and parallel execution.
 """
+from __future__ import annotations
 
 import logging
 import os

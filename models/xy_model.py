@@ -1,7 +1,7 @@
-from __future__ import annotations
 """
 2D XY Model simulation using the Metropolis-Hastings algorithm.
 """
+from __future__ import annotations
 
 import os
 

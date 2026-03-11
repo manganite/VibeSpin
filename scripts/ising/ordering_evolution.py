@@ -1,4 +1,3 @@
-from __future__ import annotations
 """
 Domain ordering evolution visualisation for the 2D Ising model.
 
@@ -6,6 +5,7 @@ Quenches from a disordered state to T < T_c and records the spin configuration
 at multiple time steps, plotting spin configurations, structure factors, and
 radially averaged correlation functions G(r).
 """
+from __future__ import annotations
 
 import argparse
 import logging

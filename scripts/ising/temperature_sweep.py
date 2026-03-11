@@ -1,8 +1,8 @@
-from __future__ import annotations
 """
 Standardized temperature sweep for the 2D Ising model.
 Calculates and plots magnetization, energy, susceptibility, and specific heat.
 """
+from __future__ import annotations
 
 import argparse
 import logging

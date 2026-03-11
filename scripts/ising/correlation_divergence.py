@@ -1,8 +1,8 @@
-from __future__ import annotations
 """
 Analysis of correlation length divergence in the 2D Ising model.
 Extracts the critical exponent nu by fitting correlation lengths near Tc.
 """
+from __future__ import annotations
 
 import argparse
 import logging
