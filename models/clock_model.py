@@ -1,3 +1,4 @@
+from __future__ import annotations
 """
 2D q-state Clock Model simulation using the Metropolis-Hastings algorithm.
 """
@@ -17,6 +18,7 @@ from .simulation_base import (
 
 @njit(cache=True, fastmath=True)
 def clock_step_numba(
+    *,
     spins: np.ndarray,
     beta: float,
     J: float,
@@ -85,6 +87,7 @@ def clock_step_numba(
 
 @njit(cache=True, fastmath=True)
 def clock_step_random_numba(
+    *,
     spins: np.ndarray,
     beta: float,
     J: float,
@@ -152,7 +155,7 @@ def clock_step_random_numba(
 
 @njit(cache=True, fastmath=True)
 def clock_energy_numba(
-    spins: np.ndarray, J: float, A: float, q: int, idx_next: np.ndarray
+    *, spins: np.ndarray, J: float, A: float, q: int, idx_next: np.ndarray
 ) -> float:
     """
     Calculate the total energy of the Clock Model lattice.
@@ -193,6 +196,7 @@ class ClockSimulation(MonteCarloSimulation):
 
     def __init__(
         self,
+        *,
         size: int,
         temp: float,
         J: float = 1.0,
@@ -218,7 +222,7 @@ class ClockSimulation(MonteCarloSimulation):
         Raises:
             ValueError: If ``q`` is less than 2 or update scheme is unknown.
         """
-        super().__init__(size, temp, seed=seed)
+        super().__init__(size=size, temp=temp, seed=seed)
         if q < 2:
             raise ValueError(f'q must be >= 2 (number of clock states), got {q}')
         if update not in self._VALID_UPDATES:
@@ -240,27 +244,27 @@ class ClockSimulation(MonteCarloSimulation):
             if self.seed is not None:
                 from .simulation_base import _seed_numba
 
-                _seed_numba(self.seed + self.steps)
+                _seed_numba(seed=self.seed + self.steps)
 
             if self.update == 'random':
                 self.spins = clock_step_random_numba(
-                    self.spins,
-                    self.beta,
-                    self.J,
-                    self.A,
-                    self.q,
-                    self.idx_next,
-                    self.idx_prev,
+                    spins=self.spins,
+                    beta=self.beta,
+                    J=self.J,
+                    A=self.A,
+                    q=self.q,
+                    idx_next=self.idx_next,
+                    idx_prev=self.idx_prev,
                 )
             else:
                 self.spins = clock_step_numba(
-                    self.spins,
-                    self.beta,
-                    self.J,
-                    self.A,
-                    self.q,
-                    self.idx_next,
-                    self.idx_prev,
+                    spins=self.spins,
+                    beta=self.beta,
+                    J=self.J,
+                    A=self.A,
+                    q=self.q,
+                    idx_next=self.idx_next,
+                    idx_prev=self.idx_prev,
                 )
         self.steps += 1
 
@@ -274,19 +278,24 @@ class ClockSimulation(MonteCarloSimulation):
     def _get_energy(self) -> float:
         """Calculate energy per spin."""
         if self.spins is not None:
-            return float(clock_energy_numba(self.spins, self.J, self.A, self.q, self.idx_next))
+            return float(
+                clock_energy_numba(
+                    spins=self.spins, J=self.J, A=self.A, q=self.q, idx_next=self.idx_next
+                )
+            )
         return 0.0
+
 
     def _calculate_vorticity(self) -> np.ndarray:
         """Calculate the vorticity (winding number) of each plaquette."""
         if self.spins is not None:
-            return np.asarray(calculate_vorticity_numba(self.spins, self.idx_next))
+            return np.asarray(calculate_vorticity_numba(spins=self.spins, idx_next=self.idx_next))
         return np.array([])
 
     def _get_helicity_data(self) -> tuple[float, float]:
         """Calculate sum of cos and sin of angle differences in x-direction."""
         if self.spins is not None:
-            cos_sum, sin_sum = get_helicity_data_numba(self.spins)
+            cos_sum, sin_sum = get_helicity_data_numba(spins=self.spins)
             return float(cos_sum), float(sin_sum)
         return 0.0, 0.0
 
@@ -320,10 +329,10 @@ if __name__ == '__main__':
     logger = setup_logging(level=log_level)
 
     logger.info(f'Initializing {args.q}-state Clock Model (L={args.size}, T={args.temp})...')
-    sim = ClockSimulation(args.size, args.temp, q=args.q, seed=args.seed)
+    sim = ClockSimulation(size=args.size, temp=args.temp, q=args.q, seed=args.seed)
 
     logger.info(f'Running for {args.steps} steps...')
-    mag_history, energy_history = sim.run(args.steps)
+    mag_history, energy_history = sim.run(n_steps=args.steps)
 
     # Plotting
     fig, (ax1, ax2, ax3) = plt.subplots(1, 3, figsize=(18, 5))
@@ -359,3 +368,4 @@ if __name__ == '__main__':
     output_file = os.path.join(output_dir, 'clock_example.png')
     plt.savefig(output_file)
     logger.info(f'Simulation finished. Plot saved to {output_file}')
+

@@ -1,3 +1,4 @@
+from __future__ import annotations
 """
 2D Ising Model simulation using the Metropolis-Hastings algorithm.
 """
@@ -13,7 +14,7 @@ from .simulation_base import MonteCarloSimulation
 
 @njit(cache=True, fastmath=True)
 def ising_step_numba(
-    spins: np.ndarray, beta: float, J: float, idx_next: np.ndarray, idx_prev: np.ndarray
+    *, spins: np.ndarray, beta: float, J: float, idx_next: np.ndarray, idx_prev: np.ndarray
 ) -> np.ndarray:
     """
     Perform one full Monte Carlo sweep of the Ising lattice.
@@ -61,7 +62,7 @@ def ising_step_numba(
 
 
 @njit(cache=True, fastmath=True)
-def ising_energy_numba(spins: np.ndarray, J: float, idx_next: np.ndarray) -> float:
+def ising_energy_numba(*, spins: np.ndarray, J: float, idx_next: np.ndarray) -> float:
     """
     Calculate the total energy of the Ising lattice.
 
@@ -86,7 +87,7 @@ def ising_energy_numba(spins: np.ndarray, J: float, idx_next: np.ndarray) -> flo
 
 @njit(cache=True, fastmath=True)
 def ising_step_random_numba(
-    spins: np.ndarray, beta: float, J: float, idx_next: np.ndarray, idx_prev: np.ndarray
+    *, spins: np.ndarray, beta: float, J: float, idx_next: np.ndarray, idx_prev: np.ndarray
 ) -> np.ndarray:
     """
     Perform one full Monte Carlo sweep of the Ising lattice using random
@@ -146,6 +147,7 @@ class IsingSimulation(MonteCarloSimulation):
 
     def __init__(
         self,
+        *,
         size: int,
         temp: float,
         J: float = 1.0,
@@ -167,7 +169,7 @@ class IsingSimulation(MonteCarloSimulation):
         Raises:
             ValueError: If ``update`` is not one of the recognised schemes.
         """
-        super().__init__(size, temp, seed=seed)
+        super().__init__(size=size, temp=temp, seed=seed)
         if update not in self._VALID_UPDATES:
             valid_opts = sorted(self._VALID_UPDATES)
             raise ValueError(f'Unknown update scheme {update!r}. Valid options: {valid_opts}')
@@ -184,15 +186,23 @@ class IsingSimulation(MonteCarloSimulation):
             if self.seed is not None:
                 from .simulation_base import _seed_numba
 
-                _seed_numba(self.seed + self.steps)
+                _seed_numba(seed=self.seed + self.steps)
 
             if self.update == 'random':
                 self.spins = ising_step_random_numba(
-                    self.spins, self.beta, self.J, self.idx_next, self.idx_prev
+                    spins=self.spins,
+                    beta=self.beta,
+                    J=self.J,
+                    idx_next=self.idx_next,
+                    idx_prev=self.idx_prev,
                 )
             else:
                 self.spins = ising_step_numba(
-                    self.spins, self.beta, self.J, self.idx_next, self.idx_prev
+                    spins=self.spins,
+                    beta=self.beta,
+                    J=self.J,
+                    idx_next=self.idx_next,
+                    idx_prev=self.idx_prev,
                 )
         self.steps += 1
 
@@ -205,7 +215,9 @@ class IsingSimulation(MonteCarloSimulation):
     def _get_energy(self) -> float:
         """Calculate energy per spin of the lattice."""
         if self.spins is not None:
-            return float(ising_energy_numba(self.spins, self.J, self.idx_next))
+            return float(
+                ising_energy_numba(spins=self.spins, J=self.J, idx_next=self.idx_next)
+            )
         return 0.0
 
     def _get_structure_factor_squared_unshifted(self) -> np.ndarray:
@@ -234,10 +246,10 @@ if __name__ == '__main__':
     logger = setup_logging(level=log_level)
 
     logger.info(f'Initializing Ising Model (L={args.size}, T={args.temp})...')
-    sim = IsingSimulation(args.size, args.temp, seed=args.seed)
+    sim = IsingSimulation(size=args.size, temp=args.temp, seed=args.seed)
 
     logger.info(f'Running for {args.steps} steps...')
-    mag_history, energy_history = sim.run(args.steps)
+    mag_history, energy_history = sim.run(n_steps=args.steps)
 
     # Plotting
     fig, (ax1, ax2, ax3) = plt.subplots(1, 3, figsize=(18, 5))

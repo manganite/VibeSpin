@@ -1,3 +1,4 @@
+from __future__ import annotations
 """
 Analysis of the Berezinskii-Kosterlitz-Thouless (BKT) transition in the 2D XY model.
 Counts the average density of vortices as a function of temperature.
@@ -24,8 +25,8 @@ def simulate_bkt_point(params: tuple[float, int, int, int]) -> float:
         Average number of vortices found in the lattice.
     """
     T, L, eq_steps, meas_steps = params
-    sim = XYSimulation(L, T)
-    sim.equilibrate(eq_steps)
+    sim = XYSimulation(size=L, temp=T)
+    sim.equilibrate(n_steps=eq_steps)
 
     total_vortex_count: int = 0
     for _ in range(meas_steps):
@@ -64,7 +65,7 @@ def run_bkt_study() -> None:
     logger.info(f'Range: [{args.t_min}, {args.t_max}] with {args.t_points} points.')
 
     sweep_params = [(T, args.size, args.eq_steps, args.meas_steps) for T in temperatures]
-    vortex_counts: list[float] = parallel_sweep(simulate_bkt_point, sweep_params)
+    vortex_counts: list[float] = parallel_sweep(worker_func=simulate_bkt_point, params=sweep_params)
 
     # Plotting results
     plt.figure(figsize=(10, 6))
@@ -83,7 +84,7 @@ def run_bkt_study() -> None:
     plt.grid(True)
     plt.legend()
 
-    save_plot('bkt_transition.png', directory=args.output_dir)
+    save_plot(filename='bkt_transition.png', directory=args.output_dir)
 
 
 if __name__ == '__main__':

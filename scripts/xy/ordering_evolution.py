@@ -1,3 +1,4 @@
+from __future__ import annotations
 """
 Phase ordering evolution visualisation for the 2D XY model.
 

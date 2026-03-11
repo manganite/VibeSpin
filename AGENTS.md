@@ -9,12 +9,18 @@ This document provides mandatory procedural context and technical constraints fo
 - **Constraint**: Do not use `np.mod` or `%` for Periodic Boundary Conditions (PBCs). Use pre-calculated indices `self.idx_next` and `self.idx_prev`.
 - **Constraint**: Minimize memory allocation inside JIT loops; update arrays in-place whenever possible.
 
-### 2. Physical Fidelity & Update Algorithms
+### 2. Code Quality & Type Safety
+- **Type Hints**: Every source file MUST include `from __future__ import annotations` as the first import to support modern type hinting and forward references.
+- **API Safety**: Use `*` to force **keyword-only arguments** for all public simulation and analysis methods (e.g., `def run(self, *, steps: int, temp: float) -> None:`). This prevents transposition errors in complex physical APIs.
+- **Import Strategy**: Use **relative imports** within the package (e.g., `from ..utils import ...`) and **absolute imports** in `tests/` and `scripts/`.
+
+### 3. Physical Fidelity & Update Algorithms
 - **Dynamics/Kinetics Mandate**: When simulating non-equilibrium kinetics (coarsening, aging), you MUST use **Random Site Selection** (e.g., `xy_step_random_numba`). Sequential or checkerboard updates are physically invalid for these studies.
 - **Thermodynamics/Equilibrium Mandate**: For steady-state measurements or temperature sweeps, you SHOULD use **Checkerboard Updates** for higher throughput.
 - **Vorticity**: Calculate using directed phase differences around plaquettes as implemented in `models/simulation_base.py`.
 
-### 3. Verification & Testing
+### 4. Verification & Testing
+- **Interface Testing**: Focus tests on **physical observables** (magnetization, energy, correlations) rather than internal implementation details.
 - **Reproducibility**: Models must sync Numba's internal RNG with the global seed using `models.simulation_base._seed_numba(seed)`.
 - **Unit Testing**: Any change to `models/` or `utils/physics_helpers.py` must be verified by running:
   ```bash
@@ -26,12 +32,13 @@ This document provides mandatory procedural context and technical constraints fo
   mypy --explicit-package-bases models/ utils/ scripts/
   ```
 
-### 4. Source Control & Delivery
+### 5. Source Control & Delivery
 - **Pre-Commit Check**: Before proposing a commit, you MUST run the full test suite and linting (`pytest`, `ruff`, `mypy`).
-- **Commit Format**: Prefer descriptive, multi-line commit messages that explain the physical or technical rationale for changes.
+- **Commit Format**: Use **Conventional Commits** (`type(scope): description`). Valid types: `phys` (physics logic), `feat`, `fix`, `perf`, `docs`, `test`, `chore`. Example: `phys(xy): implement helicity modulus calculation`.
 - **GitHub Sync**: After a successful local commit, always ask the user if they wish to push to the remote repository.
 
 ## Directory Map for Agents
+...
 
 - `models/`: Implementations of Hamiltonian dynamics.
   - `simulation_base.py`: Abstract base class `MonteCarloSimulation`.

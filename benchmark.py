@@ -67,12 +67,12 @@ def run_scaling_benchmark():
 
     sizes = sorted(args.sizes)
     model_configs = [
-        ('Ising (Checker)', lambda L: IsingSimulation(L, 2.269, update='checkerboard')),
-        ('Ising (Random)', lambda L: IsingSimulation(L, 2.269, update='random')),
-        ('XY (Checker)', lambda L: XYSimulation(L, 0.89, update='checkerboard')),
-        ('XY (Random)', lambda L: XYSimulation(L, 0.89, update='random')),
-        ('Clock (Checker)', lambda L: ClockSimulation(L, 0.5, q=6, update='checkerboard')),
-        ('Clock (Random)', lambda L: ClockSimulation(L, 0.5, q=6, update='random')),
+        ('Ising (Checker)', lambda L: IsingSimulation(size=L, temp=2.269, update='checkerboard')),
+        ('Ising (Random)', lambda L: IsingSimulation(size=L, temp=2.269, update='random')),
+        ('XY (Checker)', lambda L: XYSimulation(size=L, temp=0.89, update='checkerboard')),
+        ('XY (Random)', lambda L: XYSimulation(size=L, temp=0.89, update='random')),
+        ('Clock (Checker)', lambda L: ClockSimulation(size=L, temp=0.5, q=6, update='checkerboard')),
+        ('Clock (Random)', lambda L: ClockSimulation(size=L, temp=0.5, q=6, update='random')),
     ]
 
     # Results structure: results[model_name][size] = metrics_dict
@@ -138,8 +138,8 @@ def run_scaling_benchmark():
     ax4.set_ylabel('Ratio (Analysis Time / Sweep Time)')
     ax4.grid(True, alpha=0.3)
 
-    output_dir = ensure_results_dir(args.output_dir)
-    save_plot('scaling_benchmark.png', directory=output_dir)
+    ensure_results_dir(directory=args.output_dir)
+    save_plot(filename='scaling_benchmark.png', directory=args.output_dir)
 
     # Print summary table for largest size
     L_max = sizes[-1]

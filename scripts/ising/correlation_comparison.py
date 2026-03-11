@@ -1,3 +1,4 @@
+from __future__ import annotations
 """
 Comparison of spin-spin correlation functions for the 2D Ising model.
 Analyzes correlation behavior in ferromagnetic, critical, and paramagnetic phases.
@@ -26,9 +27,9 @@ def simulate_correlation(params: tuple[float, int, int, int, int]) -> tuple[np.n
     T, L, steps, eq_steps, sample_interval = params
     logger = logging.getLogger('vibespin')
     logger.debug(f'Collecting data for T={T}...')
-    sim = IsingSimulation(L, T)
-    sim.equilibrate(eq_steps)
-    return get_averaged_correlation(sim, steps, sample_interval)
+    sim = IsingSimulation(size=L, temp=T)
+    sim.equilibrate(n_steps=eq_steps)
+    return get_averaged_correlation(sim=sim, total_steps=steps, sample_interval=sample_interval)
 
 
 def main() -> None:

@@ -1,3 +1,4 @@
+from __future__ import annotations
 """
 Tests for scientific reproducibility across models.
 Verifies that identical seeds produce identical simulation trajectories.

@@ -1,3 +1,4 @@
+from __future__ import annotations
 """
 Unit tests for the Monte Carlo simulation models (Ising, XY, Clock).
 """
@@ -19,7 +20,7 @@ def standard_params():
 def test_ising_initialization(standard_params):
     """Verify correct initialization of the Ising model."""
     size, temp = standard_params['size'], standard_params['temp']
-    sim = IsingSimulation(size, temp)
+    sim = IsingSimulation(size=size, temp=temp)
     assert sim.size == size
     assert sim.temp == temp
     assert sim.spins.shape == (size, size)
@@ -37,7 +38,7 @@ def test_ising_run(standard_params):
     """Verify that a short simulation run returns the expected number of measurements."""
     sim = IsingSimulation(**standard_params)
     n_steps = 5
-    mags, engs = sim.run(n_steps)
+    mags, engs = sim.run(n_steps=n_steps)
     assert len(mags) == n_steps
     assert len(engs) == n_steps
     for m in mags:
@@ -51,8 +52,8 @@ def test_ising_low_temp_magnetization():
     sim = IsingSimulation(size=size, temp=0.1)
     sim.spins = np.ones((size, size), dtype=np.int8)
 
-    sim.equilibrate(100)
-    mags, _ = sim.run(100)
+    sim.equilibrate(n_steps=100)
+    mags, _ = sim.run(n_steps=100)
     # At T=0.1, it should stay very close to M=1
     assert np.mean(mags) > 0.99
 
@@ -62,8 +63,8 @@ def test_ising_high_temp_magnetization():
     # T = 100 is well above Tc ≈ 2.269
     size = 20
     sim = IsingSimulation(size=size, temp=100.0)
-    sim.equilibrate(500)
-    mags, _ = sim.run(100)
+    sim.equilibrate(n_steps=500)
+    mags, _ = sim.run(n_steps=100)
     # For L=20, M ~ 1/sqrt(N) = 1/20 = 0.05. 0.2 is a safe upper bound.
     assert np.mean(mags) < 0.2
 
@@ -71,7 +72,7 @@ def test_ising_high_temp_magnetization():
 def test_xy_initialization(standard_params):
     """Verify correct initialization and spin normalization of the XY model."""
     size, temp = standard_params['size'], standard_params['temp']
-    sim = XYSimulation(size, temp)
+    sim = XYSimulation(size=size, temp=temp)
     assert sim.size == size
     assert sim.spins.shape == (size, size, 2)
     # Check normalization
@@ -92,7 +93,7 @@ def test_xy_vorticity_detection():
     """Verify that _calculate_vorticity correctly detects a manually placed vortex."""
     # Create a simple vortex at the center of a 4x4 lattice
     size = 4
-    sim = XYSimulation(size, temp=1.0)
+    sim = XYSimulation(size=size, temp=1.0)
 
     # Angles arranged in a loop around the first plaquette (0,0)
     # s(0,0)=0, s(0,1)=pi/2, s(1,1)=pi, s(1,0)=3pi/2
@@ -113,7 +114,7 @@ def test_clock_initialization(standard_params):
     """Verify correct initialization of the q-state clock model."""
     size, temp = standard_params['size'], standard_params['temp']
     q = 6
-    sim = ClockSimulation(size, temp, q=q)
+    sim = ClockSimulation(size=size, temp=temp, q=q)
     assert sim.size == size
     assert sim.q == q
     assert sim.spins.shape == (size, size, 2)
@@ -172,28 +173,28 @@ def test_reproducibility():
     n_steps = 10
 
     # Test Ising
-    sim1 = IsingSimulation(size, temp, seed=seed)
-    sim2 = IsingSimulation(size, temp, seed=seed)
-    m1, e1 = sim1.run(n_steps)
-    m2, e2 = sim2.run(n_steps)
+    sim1 = IsingSimulation(size=size, temp=temp, seed=seed)
+    sim2 = IsingSimulation(size=size, temp=temp, seed=seed)
+    m1, e1 = sim1.run(n_steps=n_steps)
+    m2, e2 = sim2.run(n_steps=n_steps)
     np.testing.assert_array_equal(sim1.spins, sim2.spins)
     np.testing.assert_array_almost_equal(m1, m2)
     np.testing.assert_array_almost_equal(e1, e2)
 
     # Test XY
-    sim1_xy = XYSimulation(size, temp, seed=seed)
-    sim2_xy = XYSimulation(size, temp, seed=seed)
-    m1_xy, e1_xy = sim1_xy.run(n_steps)
-    m2_xy, e2_xy = sim2_xy.run(n_steps)
+    sim1_xy = XYSimulation(size=size, temp=temp, seed=seed)
+    sim2_xy = XYSimulation(size=size, temp=temp, seed=seed)
+    m1_xy, e1_xy = sim1_xy.run(n_steps=n_steps)
+    m2_xy, e2_xy = sim2_xy.run(n_steps=n_steps)
     np.testing.assert_array_almost_equal(sim1_xy.spins, sim2_xy.spins)
     np.testing.assert_array_almost_equal(m1_xy, m2_xy)
     np.testing.assert_array_almost_equal(e1_xy, e2_xy)
 
     # Test Clock
-    sim1_c = ClockSimulation(size, temp, seed=seed)
-    sim2_c = ClockSimulation(size, temp, seed=seed)
-    m1_c, e1_c = sim1_c.run(n_steps)
-    m2_c, e2_c = sim2_c.run(n_steps)
+    sim1_c = ClockSimulation(size=size, temp=temp, seed=seed)
+    sim2_c = ClockSimulation(size=size, temp=temp, seed=seed)
+    m1_c, e1_c = sim1_c.run(n_steps=n_steps)
+    m2_c, e2_c = sim2_c.run(n_steps=n_steps)
     np.testing.assert_array_almost_equal(sim1_c.spins, sim2_c.spins)
     np.testing.assert_array_almost_equal(m1_c, m2_c)
     np.testing.assert_array_almost_equal(e1_c, e2_c)

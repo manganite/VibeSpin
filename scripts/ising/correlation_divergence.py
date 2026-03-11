@@ -1,3 +1,4 @@
+from __future__ import annotations
 """
 Analysis of correlation length divergence in the 2D Ising model.
 Extracts the critical exponent nu by fitting correlation lengths near Tc.
@@ -26,10 +27,10 @@ def get_correlation_length(params: tuple[float, int, int, int, int]) -> tuple[fl
     T, L, steps, eq_steps, sample_interval = params
     logger = logging.getLogger('vibespin')
     logger.debug(f'Calculating xi for T={T}...')
-    sim = IsingSimulation(L, T)
-    sim.equilibrate(eq_steps)
+    sim = IsingSimulation(size=L, temp=T)
+    sim.equilibrate(n_steps=eq_steps)
 
-    r, G_r = get_averaged_correlation(sim, steps, sample_interval)
+    r, G_r = get_averaged_correlation(sim=sim, total_steps=steps, sample_interval=sample_interval)
 
     # Filter for valid range
     # r > 1 to avoid short-range lattice effects
@@ -46,7 +47,7 @@ def get_correlation_length(params: tuple[float, int, int, int, int]) -> tuple[fl
     try:
         slope, intercept = np.polyfit(r_fit, log_G, 1)
         xi: float = -1.0 / slope
-    except np.linalg.LinAlgError, ValueError, ZeroDivisionError:
+    except (np.linalg.LinAlgError, ValueError, ZeroDivisionError):
         xi = np.nan
 
     return T, xi

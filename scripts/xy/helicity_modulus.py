@@ -1,3 +1,4 @@
+from __future__ import annotations
 """
 Analysis of the helicity modulus (superfluid stiffness) in the 2D XY model.
 Used to identify the universal jump at the BKT transition.
@@ -30,8 +31,8 @@ def simulate_helicity(params: tuple[float, int, int, int]) -> float:
     if T <= 0.0:
         raise ValueError(f'Temperature must be positive to compute helicity modulus, got {T}')
 
-    sim = XYSimulation(L, T)
-    sim.equilibrate(eq_steps)
+    sim = XYSimulation(size=L, temp=T)
+    sim.equilibrate(n_steps=eq_steps)
 
     cos_sums: np.ndarray = np.empty(meas_steps)
     sin_sums: np.ndarray = np.empty(meas_steps)
@@ -76,7 +77,7 @@ def run_helicity_sweep() -> None:
     logger.info(f'Range: [{args.t_min}, {args.t_max}] with {args.t_points} points.')
 
     sweep_params = [(T, args.size, args.eq_steps, args.meas_steps) for T in temperatures]
-    upsilons: list[float] = parallel_sweep(simulate_helicity, sweep_params)
+    upsilons: list[float] = parallel_sweep(worker_func=simulate_helicity, params=sweep_params)
 
     # Plotting
     plt.figure(figsize=(10, 6))
@@ -93,7 +94,7 @@ def run_helicity_sweep() -> None:
     plt.legend()
     plt.ylim(bottom=0)
 
-    save_plot('helicity_modulus.png', directory=args.output_dir)
+    save_plot(filename='helicity_modulus.png', directory=args.output_dir)
 
 
 if __name__ == '__main__':

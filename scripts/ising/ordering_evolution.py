@@ -1,3 +1,4 @@
+from __future__ import annotations
 """
 Domain ordering evolution visualisation for the 2D Ising model.
 

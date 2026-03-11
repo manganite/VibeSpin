@@ -1,3 +1,4 @@
+from __future__ import annotations
 """
 Base classes and shared Numba-accelerated kernels for Monte Carlo simulations.
 """
@@ -9,7 +10,7 @@ from numba import njit
 
 
 @njit(cache=True, fastmath=True)
-def _seed_numba(seed: int) -> None:
+def _seed_numba(*, seed: int) -> None:
     """Helper to seed Numba's internal random number generator."""
     np.random.seed(seed)
 
@@ -38,7 +39,7 @@ def _calculate_vorticity_angles_numba(angles: np.ndarray, idx_next: np.ndarray) 
     return vorticity
 
 
-def calculate_vorticity_numba(spins: np.ndarray, idx_next: np.ndarray) -> np.ndarray:
+def calculate_vorticity_numba(*, spins: np.ndarray, idx_next: np.ndarray) -> np.ndarray:
     """
     Calculate the vorticity (winding number) of each plaquette for 2D vector spins.
     Optimized by calculating angles first and then using a fast wrapping kernel.
@@ -56,7 +57,7 @@ def calculate_vorticity_numba(spins: np.ndarray, idx_next: np.ndarray) -> np.nda
 
 
 @njit(cache=True, fastmath=True)
-def get_helicity_data_numba(spins: np.ndarray) -> tuple[float, float]:
+def get_helicity_data_numba(*, spins: np.ndarray) -> tuple[float, float]:
     """
     Calculate sum of cos and sin of angle differences in x-direction for helicity modulus.
 
@@ -86,7 +87,7 @@ class MonteCarloSimulation(ABC):
     Provides infrastructure for equilibration, measurement runs, and statistical analysis.
     """
 
-    def __init__(self, size: int, temp: float, seed: int | None = None):
+    def __init__(self, *, size: int, temp: float, seed: int | None = None):
         """
         Initialize the simulation.
 
@@ -175,7 +176,7 @@ class MonteCarloSimulation(ABC):
         center = self.size // 2
         return self._r_range_pre, radial_profile[:center]
 
-    def equilibrate(self, n_steps: int) -> None:
+    def equilibrate(self, *, n_steps: int) -> None:
         """
         Perform equilibration steps without recording measurements.
 
@@ -185,7 +186,7 @@ class MonteCarloSimulation(ABC):
         for _ in range(n_steps):
             self.step()
 
-    def run(self, n_steps: int) -> tuple[np.ndarray, np.ndarray]:
+    def run(self, *, n_steps: int) -> tuple[np.ndarray, np.ndarray]:
         """
         Run the simulation and record magnetization and energy at each step.
 

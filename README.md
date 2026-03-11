@@ -95,3 +95,15 @@ python scripts/xy/ordering_evolution.py --size 256 --targets 1 10 100 1000
 In **VibeSpin**, the code is not just a black box; it is a collaborative artifact. As you navigate from the simple flips of an Ising model to the swirling vortices of the XY model, you are participating in a new era of scientific computing—one where the "vibe" of the researcher and the precision of the physics exist in perfect symmetry.
 
 For detailed developer and AI agent instructions, please refer to [AGENTS.md](AGENTS.md).
+
+---
+
+## **Disclaimer: AI-Assisted Development**
+
+This entire project — from the physics kernels and Monte Carlo algorithms to the test suite and documentation — was developed using **AI-assisted "vibe coding"** with the following tools:
+
+- **[VS Code](https://code.visualstudio.com/)** — Primary development environment.
+- **[GitHub Copilot](https://github.com/features/copilot)** — In-editor AI pair programmer (agent mode) used for code generation, refactoring, and debugging.
+- **[Gemini CLI](https://github.com/google-gemini/gemini-cli)** — Command-line AI assistant used for iterative prompting, analysis, and exploratory research tasks.
+
+No significant portion of the source code was written by hand without AI collaboration. This project is intended to demonstrate and explore what is achievable when a human researcher acts as an orchestrator, directing AI agents with physics intuition and high-level intent.

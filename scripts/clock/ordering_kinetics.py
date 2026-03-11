@@ -1,3 +1,4 @@
+from __future__ import annotations
 """
 Ordering kinetics analysis for the 2D q-state Clock model.
 

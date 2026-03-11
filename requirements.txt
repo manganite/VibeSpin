@@ -2,6 +2,10 @@ numpy
 matplotlib
 tqdm
 numba
+pytest
+pytest-cov
+ruff
+mypy
 ipykernel
 notebook
 ipywidgets

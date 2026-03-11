@@ -1,3 +1,4 @@
+from __future__ import annotations
 """
 Standardized temperature sweep for the 2D XY model.
 Calculates and plots magnetization, energy, susceptibility, and specific heat.
@@ -18,9 +19,9 @@ def simulate_temperature(params: tuple[float, int, int, int]) -> tuple[float, fl
     Worker function to simulate a single temperature point for the XY model.
     """
     T, L, eq_steps, meas_steps = params
-    sim = XYSimulation(L, T)
-    sim.equilibrate(eq_steps)
-    mags, engs = sim.run(meas_steps)
+    sim = XYSimulation(size=L, temp=T)
+    sim.equilibrate(n_steps=eq_steps)
+    mags, engs = sim.run(n_steps=meas_steps)
     return calculate_thermodynamics(np.array(mags), np.array(engs), T, L)
 
 

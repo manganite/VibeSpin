@@ -1,3 +1,4 @@
+from __future__ import annotations
 """
 2D XY Model simulation using the Metropolis-Hastings algorithm.
 """
@@ -17,7 +18,7 @@ from .simulation_base import (
 
 @njit(cache=True, fastmath=True)
 def xy_step_numba(
-    spins: np.ndarray, beta: float, J: float, idx_next: np.ndarray, idx_prev: np.ndarray
+    *, spins: np.ndarray, beta: float, J: float, idx_next: np.ndarray, idx_prev: np.ndarray
 ) -> np.ndarray:
     """
     Perform one full Monte Carlo sweep of the XY lattice.
@@ -75,7 +76,7 @@ def xy_step_numba(
 
 @njit(cache=True, fastmath=True)
 def xy_step_random_numba(
-    spins: np.ndarray, beta: float, J: float, idx_next: np.ndarray, idx_prev: np.ndarray
+    *, spins: np.ndarray, beta: float, J: float, idx_next: np.ndarray, idx_prev: np.ndarray
 ) -> np.ndarray:
     """
     Perform one full Monte Carlo sweep of the XY lattice using random sequential updates.
@@ -131,7 +132,7 @@ def xy_step_random_numba(
 
 
 @njit(cache=True, fastmath=True)
-def xy_energy_numba(spins: np.ndarray, J: float, idx_next: np.ndarray) -> float:
+def xy_energy_numba(*, spins: np.ndarray, J: float, idx_next: np.ndarray) -> float:
     """
     Calculate the total energy of the XY lattice.
 
@@ -165,6 +166,7 @@ class XYSimulation(MonteCarloSimulation):
 
     def __init__(
         self,
+        *,
         size: int,
         temp: float,
         J: float = 1.0,
@@ -186,7 +188,7 @@ class XYSimulation(MonteCarloSimulation):
         Raises:
             ValueError: If ``update`` is not one of the recognised schemes.
         """
-        super().__init__(size, temp, seed=seed)
+        super().__init__(size=size, temp=temp, seed=seed)
         if update not in self._VALID_UPDATES:
             valid_opts = sorted(self._VALID_UPDATES)
             raise ValueError(f'Unknown update scheme {update!r}. Valid options: {valid_opts}')
@@ -204,15 +206,23 @@ class XYSimulation(MonteCarloSimulation):
             if self.seed is not None:
                 from .simulation_base import _seed_numba
 
-                _seed_numba(self.seed + self.steps)
+                _seed_numba(seed=self.seed + self.steps)
 
             if self.update == 'random':
                 self.spins = xy_step_random_numba(
-                    self.spins, self.beta, self.J, self.idx_next, self.idx_prev
+                    spins=self.spins,
+                    beta=self.beta,
+                    J=self.J,
+                    idx_next=self.idx_next,
+                    idx_prev=self.idx_prev,
                 )
             else:
                 self.spins = xy_step_numba(
-                    self.spins, self.beta, self.J, self.idx_next, self.idx_prev
+                    spins=self.spins,
+                    beta=self.beta,
+                    J=self.J,
+                    idx_next=self.idx_next,
+                    idx_prev=self.idx_prev,
                 )
         self.steps += 1
 
@@ -226,19 +236,20 @@ class XYSimulation(MonteCarloSimulation):
     def _get_energy(self) -> float:
         """Calculate energy per spin."""
         if self.spins is not None:
-            return float(xy_energy_numba(self.spins, self.J, self.idx_next))
+            return float(xy_energy_numba(spins=self.spins, J=self.J, idx_next=self.idx_next))
         return 0.0
+
 
     def _calculate_vorticity(self) -> np.ndarray:
         """Calculate the vorticity (winding number) of each plaquette."""
         if self.spins is not None:
-            return np.asarray(calculate_vorticity_numba(self.spins, self.idx_next))
+            return np.asarray(calculate_vorticity_numba(spins=self.spins, idx_next=self.idx_next))
         return np.array([])
 
     def _get_helicity_data(self) -> tuple[float, float]:
         """Calculate sum of cos and sin of angle differences in x-direction."""
         if self.spins is not None:
-            cos_sum, sin_sum = get_helicity_data_numba(self.spins)
+            cos_sum, sin_sum = get_helicity_data_numba(spins=self.spins)
             return float(cos_sum), float(sin_sum)
         return 0.0, 0.0
 
@@ -271,10 +282,10 @@ if __name__ == '__main__':
     logger = setup_logging(level=log_level)
 
     logger.info(f'Initializing XY Model (L={args.size}, T={args.temp})...')
-    sim = XYSimulation(args.size, args.temp, seed=args.seed)
+    sim = XYSimulation(size=args.size, temp=args.temp, seed=args.seed)
 
     logger.info(f'Running for {args.steps} steps...')
-    sim.run(args.steps)
+    sim.run(n_steps=args.steps)
 
     # Plotting
     fig, axes = plt.subplots(2, 2, figsize=(12, 11))

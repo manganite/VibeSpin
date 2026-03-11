@@ -1,3 +1,4 @@
+from __future__ import annotations
 """
 Physics-related utility functions for calculating thermodynamic observables and correlations.
 """
@@ -8,7 +9,7 @@ from models.simulation_base import MonteCarloSimulation
 
 
 def calculate_thermodynamics(
-    mags: np.ndarray, engs: np.ndarray, T: float, L: int
+    *, mags: np.ndarray, engs: np.ndarray, T: float, L: int
 ) -> tuple[float, float, float, float]:
     """
     Calculate average magnetization, energy, susceptibility, and specific heat.
@@ -43,7 +44,7 @@ def calculate_thermodynamics(
 
 
 def get_averaged_correlation(
-    sim: MonteCarloSimulation, total_steps: int, sample_interval: int
+    *, sim: MonteCarloSimulation, total_steps: int, sample_interval: int
 ) -> tuple[np.ndarray, np.ndarray]:
     """
     Run simulation and average the correlation function over multiple configurations.
@@ -88,7 +89,7 @@ def get_averaged_correlation(
     return r, G_r_avg
 
 
-def radial_average_sk(spins: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
+def radial_average_sk(*, spins: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
     """Compute the circularly averaged structure factor S(|k|).
 
     Bins S(k) by integer pixel radius from the DC centre of the shifted FFT,
@@ -129,7 +130,7 @@ def radial_average_sk(spins: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
     return k_vals, S_radial
 
 
-def pair_correlation_x(spins: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
+def pair_correlation_x(*, spins: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
     """Compute the real-space spin-spin pair correlation G(r) along x.
 
     Uses the Wiener-Khinchin theorem: the autocorrelation of each row is the
@@ -167,7 +168,7 @@ def pair_correlation_x(spins: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
     return r_vals, G
 
 
-def compute_kinetics_metrics(sim: MonteCarloSimulation) -> dict[str, float]:
+def compute_kinetics_metrics(*, sim: MonteCarloSimulation) -> dict[str, float]:
     """
     Calculate common kinetics metrics (R_sk, xi) for a simulation state.
 
@@ -181,14 +182,14 @@ def compute_kinetics_metrics(sim: MonteCarloSimulation) -> dict[str, float]:
         return {'R_sk': 0.0, 'xi': 0.0}
 
     # 1. R_sk from structure factor first moment
-    kvals, S_radial = radial_average_sk(sim.spins)
+    kvals, S_radial = radial_average_sk(spins=sim.spins)
     S_k = S_radial[1:]
     K_k = kvals[1:]
     denom = float(np.sum(K_k * S_k))
     R_sk = (2.0 * np.pi * float(np.sum(S_k) / denom)) if denom != 0 else 0.0
 
     # 2. xi from G(r) 1/e decay
-    r_vals, G = pair_correlation_x(sim.spins)
+    r_vals, G = pair_correlation_x(spins=sim.spins)
     inv_e = 1.0 / np.e
     below = np.where(G < inv_e)[0]
     if len(below) == 0:
@@ -205,7 +206,7 @@ def compute_kinetics_metrics(sim: MonteCarloSimulation) -> dict[str, float]:
 
 
 def power_fit(
-    t_arr: np.ndarray, y_arr: np.ndarray, mask: np.ndarray
+    *, t_arr: np.ndarray, y_arr: np.ndarray, mask: np.ndarray
 ) -> tuple[float, float] | tuple[None, None]:
     """Return (exponent, prefactor) from a log-log linear fit, or (None, None)."""
     valid = mask & (y_arr > 0)

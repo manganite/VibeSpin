@@ -1,3 +1,4 @@
+from __future__ import annotations
 """
 Technical utility functions for file system operations, plotting, and parallel execution.
 """
@@ -15,7 +16,7 @@ from tqdm import tqdm
 # No typing import needed for modern syntax
 
 
-def setup_logging(level: int = logging.INFO, log_file: str | None = None) -> logging.Logger:
+def setup_logging(*, level: int = logging.INFO, log_file: str | None = None) -> logging.Logger:
     """
     Configure project-wide logging.
 
@@ -42,7 +43,7 @@ def setup_logging(level: int = logging.INFO, log_file: str | None = None) -> log
 
         # File handler
         if log_file:
-            ensure_results_dir(os.path.dirname(log_file))
+            ensure_results_dir(directory=os.path.dirname(log_file))
             fh = logging.FileHandler(log_file)
             fh.setFormatter(formatter)
             logger.addHandler(fh)
@@ -50,7 +51,7 @@ def setup_logging(level: int = logging.INFO, log_file: str | None = None) -> log
     return logger
 
 
-def ensure_results_dir(directory: str = 'results') -> str:
+def ensure_results_dir(*, directory: str = 'results') -> str:
     """
     Ensure the results directory exists.
 
@@ -65,7 +66,7 @@ def ensure_results_dir(directory: str = 'results') -> str:
     return directory
 
 
-def save_plot(filename: str, directory: str = 'results', tight_layout: bool = True) -> None:
+def save_plot(*, filename: str, directory: str = 'results', tight_layout: bool = True) -> None:
     """
     Save the current matplotlib plot to the results directory.
 
@@ -75,7 +76,7 @@ def save_plot(filename: str, directory: str = 'results', tight_layout: bool = Tr
         tight_layout: Whether to apply plt.tight_layout() before saving.
     """
     logger = logging.getLogger('vibespin')
-    ensure_results_dir(directory)
+    ensure_results_dir(directory=directory)
     if tight_layout:
         try:
             plt.tight_layout()
@@ -91,7 +92,7 @@ _BAR_FORMAT = '{l_bar}{bar}| {n_fmt}/{total_fmt} [{elapsed}<{remaining}, {rate_n
 
 
 def parallel_sweep(
-    worker_func: Callable, params: Iterable, num_processes: int | None = None
+    *, worker_func: Callable, params: Iterable, num_processes: int | None = None
 ) -> list:
     """
     Run a parallel sweep over a set of parameters using a worker function.
@@ -113,6 +114,7 @@ def parallel_sweep(
 
 
 def plot_temperature_sweep(
+    *,
     temperatures: np.ndarray,
     avg_m: Sequence[float],
     avg_e: Sequence[float],
@@ -165,10 +167,11 @@ def plot_temperature_sweep(
     for ax in axes.flatten():
         ax.set_xlabel('Temperature (T)')
 
-    save_plot(filename, directory=directory)
+    save_plot(filename=filename, directory=directory)
 
 
 def plot_ordering_kinetics(
+    *,
     t: np.ndarray,
     R_sk: np.ndarray,
     R_xi: np.ndarray,
@@ -254,10 +257,11 @@ def plot_ordering_kinetics(
     else:
         ax2.axis('off')
 
-    save_plot(filename, directory=directory)
+    save_plot(filename=filename, directory=directory)
 
 
 def plot_ordering_evolution(
+    *,
     targets: Sequence[int],
     snapshots: Sequence[np.ndarray],
     gr_data: Sequence[tuple[np.ndarray, np.ndarray]],
@@ -319,7 +323,7 @@ def plot_ordering_evolution(
         else:
             from .physics_helpers import radial_average_sk
 
-            k_vals, S_radial = radial_average_sk(spins)
+            k_vals, S_radial = radial_average_sk(spins=spins)
             ax_mid.plot(k_vals[1:], S_radial[1:], linewidth=1.2)
             ax_mid.set_xscale('log')
             ax_mid.set_yscale('log')
@@ -361,4 +365,4 @@ def plot_ordering_evolution(
             ax_gr.axvline(xi, color='tab:red', linewidth=1.0, linestyle='--', alpha=0.8)
             ax_gr.text(xi * 1.15, inv_e + 0.04, f'$\\xi = {xi:.1f}$', fontsize=9, color='tab:red')
 
-    save_plot(filename, directory=directory)
+    save_plot(filename=filename, directory=directory)
