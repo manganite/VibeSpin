@@ -1,10 +1,10 @@
-from __future__ import annotations
 """
 Ordering kinetics analysis for the 2D Ising model.
 
 Starting from a disordered state, quenches to T < T_c and tracks the growth of
 domain size R(t) and the evolution of domain boundaries.
 """
+from __future__ import annotations
 
 import argparse
 import logging

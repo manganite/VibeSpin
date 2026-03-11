@@ -1,4 +1,3 @@
-from __future__ import annotations
 """
 Phase ordering evolution visualisation for the 2D XY model.
 
@@ -6,6 +5,7 @@ Quenches from a disordered state to T < T_BKT and records the spin configuration
 at multiple time steps, plotting phase configurations, vorticity maps, and
 radially averaged correlation functions G(r).
 """
+from __future__ import annotations
 
 import argparse
 import logging

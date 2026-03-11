@@ -1,8 +1,8 @@
-from __future__ import annotations
 """
 Comparison of spin-spin correlation functions G(r) for the XY model.
 Contrasts power-law decay (low T) with exponential decay (high T).
 """
+from __future__ import annotations
 
 import argparse
 import logging

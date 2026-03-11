@@ -1,8 +1,8 @@
-from __future__ import annotations
 """
 Analysis of the Berezinskii-Kosterlitz-Thouless (BKT) transition in the 2D XY model.
 Counts the average density of vortices as a function of temperature.
 """
+from __future__ import annotations
 
 import argparse
 import logging
