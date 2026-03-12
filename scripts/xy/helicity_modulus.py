@@ -1,8 +1,8 @@
-from __future__ import annotations
 """
 Analysis of the helicity modulus (superfluid stiffness) in the 2D XY model.
 Used to identify the universal jump at the BKT transition.
 """
+from __future__ import annotations
 
 import argparse
 import logging

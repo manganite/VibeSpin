@@ -1,7 +1,7 @@
-from __future__ import annotations
 """
 Physics-related utility functions for calculating thermodynamic observables and correlations.
 """
+from __future__ import annotations
 
 import numpy as np
 

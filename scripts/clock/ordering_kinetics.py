@@ -1,10 +1,10 @@
-from __future__ import annotations
 """
 Ordering kinetics analysis for the 2D q-state Clock model.
 
 Quenches from a disordered state to T < T_c and records length scale
 growth and vortex density decay over time.
 """
+from __future__ import annotations
 
 import argparse
 import logging

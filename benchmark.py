@@ -71,7 +71,10 @@ def run_scaling_benchmark():
         ('Ising (Random)', lambda L: IsingSimulation(size=L, temp=2.269, update='random')),
         ('XY (Checker)', lambda L: XYSimulation(size=L, temp=0.89, update='checkerboard')),
         ('XY (Random)', lambda L: XYSimulation(size=L, temp=0.89, update='random')),
-        ('Clock (Checker)', lambda L: ClockSimulation(size=L, temp=0.5, q=6, update='checkerboard')),
+        (
+            'Clock (Checker)',
+            lambda L: ClockSimulation(size=L, temp=0.5, q=6, update='checkerboard'),
+        ),
         ('Clock (Random)', lambda L: ClockSimulation(size=L, temp=0.5, q=6, update='random')),
     ]
 

@@ -1,7 +1,7 @@
-from __future__ import annotations
 """
 Unit tests for the Monte Carlo simulation models (Ising, XY, Clock).
 """
+from __future__ import annotations
 
 import numpy as np
 import pytest

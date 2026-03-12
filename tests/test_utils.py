@@ -1,7 +1,7 @@
-from __future__ import annotations
 """
 Unit tests for utility functions in utils/physics_helpers.py and utils/system_helpers.py.
 """
+from __future__ import annotations
 
 import os
 import shutil

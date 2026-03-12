@@ -1,7 +1,7 @@
-from __future__ import annotations
 """
 Base classes and shared Numba-accelerated kernels for Monte Carlo simulations.
 """
+from __future__ import annotations
 
 from abc import ABC, abstractmethod
 

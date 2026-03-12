@@ -1,8 +1,8 @@
-from __future__ import annotations
 """
 Comparison of spin-spin correlation functions for the 2D Ising model.
 Analyzes correlation behavior in ferromagnetic, critical, and paramagnetic phases.
 """
+from __future__ import annotations
 
 import argparse
 import logging
