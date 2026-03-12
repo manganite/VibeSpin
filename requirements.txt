@@ -9,3 +9,4 @@ mypy
 ipykernel
 notebook
 ipywidgets
+scipy
