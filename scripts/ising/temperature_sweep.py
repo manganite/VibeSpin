@@ -22,7 +22,7 @@ def simulate_temperature(params: tuple[float, int, int, int]) -> tuple[float, fl
     sim = IsingSimulation(size=L, temp=T)
     sim.equilibrate(n_steps=eq_steps)
     mags, engs = sim.run(n_steps=meas_steps)
-    return calculate_thermodynamics(np.array(mags), np.array(engs), T, L)
+    return calculate_thermodynamics(mags=np.array(mags), engs=np.array(engs), T=T, L=L)
 
 
 def run_sweep() -> None:
@@ -54,16 +54,16 @@ def run_sweep() -> None:
     sweep_params = [(T, L, args.eq_steps, args.meas_steps) for T in temperatures]
 
     results: list[tuple[float, float, float, float]] = parallel_sweep(
-        simulate_temperature, sweep_params
+        worker_func=simulate_temperature, params=sweep_params
     )
     avg_m, avg_e, susc, spec_h = zip(*results, strict=True)
 
     plot_temperature_sweep(
-        temperatures,
-        avg_m,
-        avg_e,
-        susc,
-        spec_h,
+        temperatures=temperatures,
+        avg_m=avg_m,
+        avg_e=avg_e,
+        susc=susc,
+        spec_h=spec_h,
         title=f'2D Ising Model: Temperature Sweep (L={L})',
         filename='temperature_sweep.png',
         directory=args.output_dir,

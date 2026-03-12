@@ -77,7 +77,7 @@ def main() -> None:
             sim.step()
         current_step = int(target)
 
-        metrics = compute_kinetics_metrics(sim)
+        metrics = compute_kinetics_metrics(sim=sim)
         t[i] = float(current_step)
         R_sk[i] = metrics['R_sk']
         R_xi[i] = metrics['xi']
@@ -91,7 +91,7 @@ def main() -> None:
     prefactors = {}
 
     for key, data in [('R_sk', R_sk), ('xi', R_xi), ('third', R_mil)]:
-        exp, pre = power_fit(t, data, fit_mask)
+        exp, pre = power_fit(t_arr=t, y_arr=data, mask=fit_mask)
         exponents[key], prefactors[key] = exp, pre
         if exp:
             logger.info(f'{key} exponent: {exp:.3f} (Allen-Cahn: 0.5)')
@@ -107,7 +107,7 @@ def main() -> None:
         fit_mask=fit_mask,
         title=f'2D Ising Ordering Kinetics — $T = {T}$ ($< T_c \\approx {T_CRIT}$), $L = {L}$',
         filename='ordering_kinetics.png',
-        directory=ensure_results_dir(args.output_dir),
+        directory=ensure_results_dir(directory=args.output_dir),
         y_label='Domain Size Scale (lattice units)',
         left_title='Domain Coarsening',
         right_title='Boundary Wall Decay',

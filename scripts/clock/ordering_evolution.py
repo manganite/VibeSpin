@@ -82,7 +82,7 @@ def main() -> None:
         vorticity_data=snapshots_vort,
         title=title,
         filename='ordering_evolution.png',
-        directory=ensure_results_dir(args.output_dir),
+        directory=ensure_results_dir(directory=args.output_dir),
         is_vector=True,
     )
 

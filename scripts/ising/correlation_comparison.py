@@ -62,7 +62,7 @@ def main() -> None:
     temperatures = [T_FERRO, T_CRIT, T_PARA]
     sweep_params = [(T, args.size, args.steps, args.eq_steps, args.interval) for T in temperatures]
 
-    results = parallel_sweep(simulate_correlation, sweep_params)
+    results = parallel_sweep(worker_func=simulate_correlation, params=sweep_params)
     (r, G_ferro), (_, G_crit), (_, G_para) = results
 
     # --- Fit for correlation length xi in paramagnetic phase ---
@@ -111,8 +111,8 @@ def main() -> None:
     ax2.legend()
     ax2.grid(True, which='both', ls='-', alpha=0.5)
 
-    output_dir: str = ensure_results_dir(args.output_dir)
-    save_plot('correlation_comparison.png', directory=output_dir)
+    output_dir: str = ensure_results_dir(directory=args.output_dir)
+    save_plot(filename='correlation_comparison.png', directory=output_dir)
 
 
 if __name__ == '__main__':

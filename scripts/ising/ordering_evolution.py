@@ -77,7 +77,7 @@ def main() -> None:
         vorticity_data=None,  # Ising uses Sk fallback in plot_ordering_evolution
         title=title,
         filename='ordering_evolution.png',
-        directory=ensure_results_dir(args.output_dir),
+        directory=ensure_results_dir(directory=args.output_dir),
         is_vector=False,
     )
 

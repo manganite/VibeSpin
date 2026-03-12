@@ -57,7 +57,7 @@ def main() -> None:
     temperatures = [T_LOW, T_HIGH]
     sweep_params = [(T, args.size, args.steps, args.eq_steps, args.interval) for T in temperatures]
 
-    results = parallel_sweep(simulate_correlation, sweep_params)
+    results = parallel_sweep(worker_func=simulate_correlation, params=sweep_params)
     (r_low, G_low), (r_high, G_high) = results
 
     # Plotting
@@ -83,8 +83,8 @@ def main() -> None:
     ax2.legend()
     ax2.grid(True, which='both', ls='-', alpha=0.5)
 
-    output_dir: str = ensure_results_dir(args.output_dir)
-    save_plot('correlation_comparison.png', directory=output_dir)
+    output_dir: str = ensure_results_dir(directory=args.output_dir)
+    save_plot(filename='correlation_comparison.png', directory=output_dir)
 
 
 if __name__ == '__main__':

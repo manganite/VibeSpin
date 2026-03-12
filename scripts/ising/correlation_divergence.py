@@ -80,7 +80,9 @@ def run_divergence_analysis() -> None:
     logger.info(f'Approaching Tc={TC_THEORETICAL} with {len(TEMPERATURES)} points.')
 
     sweep_params = [(T, args.size, args.steps, args.eq_steps, args.interval) for T in TEMPERATURES]
-    results: list[tuple[float, float]] = parallel_sweep(get_correlation_length, sweep_params)
+    results: list[tuple[float, float]] = parallel_sweep(
+        worker_func=get_correlation_length, params=sweep_params
+    )
 
     temps_list, xis_list = zip(*results, strict=True)
     temps: np.ndarray = np.array(temps_list)
@@ -133,8 +135,8 @@ def run_divergence_analysis() -> None:
     ax2.grid(True, which='both', ls='-', alpha=0.5)
     ax2.legend()
 
-    output_dir: str = ensure_results_dir(args.output_dir)
-    save_plot('correlation_divergence.png', directory=output_dir)
+    output_dir: str = ensure_results_dir(directory=args.output_dir)
+    save_plot(filename='correlation_divergence.png', directory=output_dir)
 
 
 if __name__ == '__main__':
