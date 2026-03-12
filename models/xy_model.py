@@ -320,7 +320,7 @@ if __name__ == '__main__':
     from utils.physics_helpers import radial_average_sk
 
     if sim.spins is not None:
-        k, sk = radial_average_sk(sim.spins)
+        k, sk = radial_average_sk(spins=sim.spins)
         ax4.loglog(k[1:], sk[1:], 'o-', markersize=3, color='tab:green')
         ax4.set_title('Structure Factor S(k)')
         ax4.set_xlabel('|k|')
