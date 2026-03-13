@@ -20,6 +20,7 @@ dependencies = [
     "ipykernel",
     "notebook",
     "ipywidgets",
+    "scipy",
 ]
 
 [tool.setuptools.packages.find]
@@ -47,8 +48,8 @@ exclude_lines = [
 ]
 
 [tool.ruff]
-# Target Python version
-target-version = "py314"
+# Target Python version (matches local .venv / Python 3.12)
+target-version = "py312"
 line-length = 100
 
 [tool.ruff.lint]
@@ -64,7 +65,7 @@ skip-magic-trailing-comma = false
 line-ending = "auto"
 
 [tool.mypy]
-python_version = "3.14"
+python_version = "3.12"
 warn_return_any = true
 warn_unused_configs = true
 disallow_untyped_defs = true
