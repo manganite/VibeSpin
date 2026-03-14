@@ -124,8 +124,8 @@ def adaptive_equilibrate(
     sim: _Sim,
     *,
     min_steps: int,
-    probe_steps: int = 2000,
-    factor: float = 20.0,
+    probe_steps: int = 500,
+    factor: float = 50.0,
     max_steps: int = 200_000,
 ) -> int:
     """
@@ -144,8 +144,8 @@ def adaptive_equilibrate(
     Args:
         sim: Any simulation object implementing ``equilibrate`` and ``run``.
         min_steps: Mandatory burn-in passed to ``sim.equilibrate`` before probing.
-        probe_steps: MC steps per probe run (default 2000).
-        factor: Required ratio ``probe_steps / tau_int`` (default 20.0).
+        probe_steps: MC steps per probe run (default 500).
+        factor: Required ratio ``probe_steps / tau_int`` (default 50.0).
         max_steps: Hard cap on total steps to prevent unbounded runtime near
             criticality (default 200 000).
 

@@ -20,14 +20,20 @@ from utils.system_helpers import (
 
 
 def simulate_temperature(
-    params: tuple[float, int, int, int],
+    params: tuple[float, int, int, int, int, float, int],
 ) -> tuple[float, float, float, float, float]:
     """
     Worker function to simulate a single temperature point for the Ising model.
     """
-    T, L, eq_steps, meas_steps = params
+    T, L, eq_steps, meas_steps, eq_probe_steps, eq_factor, eq_max_steps = params
     sim = IsingSimulation(size=L, temp=T)
-    adaptive_equilibrate(sim, min_steps=eq_steps)
+    adaptive_equilibrate(
+        sim,
+        min_steps=eq_steps,
+        probe_steps=eq_probe_steps,
+        factor=eq_factor,
+        max_steps=eq_max_steps,
+    )
     mags, engs = sim.run(n_steps=meas_steps)
     mags_arr = np.array(mags)
     thermo = calculate_thermodynamics(mags=mags_arr, engs=np.array(engs), T=T, L=L)
@@ -49,6 +55,18 @@ def run_sweep() -> None:
         '--eq-steps', type=int, default=5000,
         help='Min equilibration steps (adaptive top-up if tau_int demands it)',
     )
+    parser.add_argument(
+        '--eq-probe-steps', type=int, default=500,
+        help='Probe length for adaptive equilibration',
+    )
+    parser.add_argument(
+        '--eq-factor', type=float, default=50.0,
+        help='Adaptive stop rule: require probe_steps >= eq_factor * tau_int',
+    )
+    parser.add_argument(
+        '--eq-max-steps', type=int, default=200000,
+        help='Hard cap on adaptive equilibration steps',
+    )
     parser.add_argument('--meas-steps', type=int, default=5000, help='Measurement steps')
     parser.add_argument('--t-min', type=float, default=0.1, help='Minimum temperature')
     parser.add_argument('--t-max', type=float, default=4.0, help='Maximum temperature')
@@ -68,7 +86,18 @@ def run_sweep() -> None:
 
     logger.info(f'Starting Ising temperature sweep (L={L})...')
     # Bundle parameters for parallel sweep
-    sweep_params = [(T, L, args.eq_steps, args.meas_steps) for T in temperatures]
+    sweep_params = [
+        (
+            T,
+            L,
+            args.eq_steps,
+            args.meas_steps,
+            args.eq_probe_steps,
+            args.eq_factor,
+            args.eq_max_steps,
+        )
+        for T in temperatures
+    ]
 
     results: list[tuple[float, float, float, float, float]] = parallel_sweep(
         worker_func=simulate_temperature, params=sweep_params
