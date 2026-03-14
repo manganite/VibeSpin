@@ -40,9 +40,19 @@ XY ordering evolution with snapshot targets can be run with:
 python scripts/xy/ordering_evolution.py --size 256 --targets 1 10 100 1000
 ```
 
+Performance trends across different lattice sizes and update schemes can be analyzed with the benchmark tool. This generates a summary of sweeps per second and identifies overhead from thermodynamic and correlation measurements.
+
+```bash
+python benchmark.py --sizes 64 128 --sweeps 1000
+```
+
+Generated figures and analysis reports are saved to the `results/` directory, organized by model type and experiment category.
+
 ## Development guidance
 
-Simulation kernels should remain in `@njit(cache=True, fastmath=True)` functions, and reproducibility-sensitive runs should specify `seed` values. Logging should go through `utils/system_helpers.py:setup_logging` rather than direct print calls. Before proposing a commit, run `pytest`, `ruff check .`, and `mypy --explicit-package-bases models/ utils/ scripts/`.
+Simulation kernels should remain in `@njit(cache=True, fastmath=True)` functions, and reproducibility-sensitive runs should specify `seed` values. Logging should go through `utils/system_helpers.py:setup_logging` rather than direct print calls. 
+
+Before proposing a commit, run the full verification suite: `pytest`, `ruff check .`, and `mypy`. Ensure that new physical logic or utility functions include unit tests in the `tests/` directory to maintain high standards of physical fidelity and code quality.
 
 When a Numba typing failure appears, include the traceback and the kernel source in the debugging prompt. That usually reveals unsupported object usage quickly.
 
