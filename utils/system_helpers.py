@@ -8,12 +8,11 @@ import os
 import sys
 from collections.abc import Callable, Iterable, Sequence, Sized
 from multiprocessing import Pool
+from typing import Protocol
 
 import matplotlib.pyplot as plt
 import numpy as np
 from tqdm import tqdm
-
-# No typing import needed for modern syntax
 
 
 def setup_logging(*, level: int = logging.INFO, log_file: str | None = None) -> logging.Logger:
@@ -111,6 +110,71 @@ def parallel_sweep(
 
     with Pool(processes=num_processes) as pool:
         return list(tqdm(pool.imap(worker_func, params), total=total_len, bar_format=_BAR_FORMAT))
+
+
+class _Sim(Protocol):
+    """Structural type for any MonteCarloSimulation; avoids a models/ → utils/ import."""
+
+    def equilibrate(self, *, n_steps: int) -> None: ...
+
+    def run(self, *, n_steps: int) -> tuple[np.ndarray, np.ndarray]: ...
+
+
+def adaptive_equilibrate(
+    sim: _Sim,
+    *,
+    min_steps: int,
+    probe_steps: int = 2000,
+    factor: float = 20.0,
+    max_steps: int = 200_000,
+) -> int:
+    """
+    Equilibrate a simulation adaptively, extending the burn-in until the probe
+    window covers ``factor`` integrated autocorrelation times.
+
+    After the mandatory ``min_steps`` burn-in, the function repeatedly runs a
+    ``probe_steps`` measurement via ``sim.run()`` and computes ``tau_int`` from
+    the resulting magnetization series.  If
+    ``probe_steps >= factor * tau_int``, the probe spans enough correlation
+    times for the initial state to be forgotten and equilibration is declared
+    complete.  Otherwise the probe has advanced the system state and the loop
+    continues.  In the ordered phase the magnetization series has zero variance;
+    this is treated as full equilibration and the function returns immediately.
+
+    Args:
+        sim: Any simulation object implementing ``equilibrate`` and ``run``.
+        min_steps: Mandatory burn-in passed to ``sim.equilibrate`` before probing.
+        probe_steps: MC steps per probe run (default 2000).
+        factor: Required ratio ``probe_steps / tau_int`` (default 20.0).
+        max_steps: Hard cap on total steps to prevent unbounded runtime near
+            criticality (default 200 000).
+
+    Returns:
+        Total number of MC steps run (burn-in + probes).
+    """
+    from .physics_helpers import calculate_autocorr  # lazy import; avoids pickle issues
+
+    logger = logging.getLogger('vibespin')
+    sim.equilibrate(n_steps=min_steps)
+    total = min_steps
+
+    while total < max_steps:
+        mags, _ = sim.run(n_steps=probe_steps)
+        total += probe_steps
+        try:
+            _, tau_int = calculate_autocorr(time_series=mags)
+        except ValueError:
+            # Zero variance: fully ordered phase, equilibration is trivially satisfied.
+            return total
+        if probe_steps >= factor * tau_int:
+            return total
+
+    logger.warning(
+        f'adaptive_equilibrate: reached max_steps={max_steps} without satisfying '
+        f'criterion probe_steps({probe_steps}) >= factor({factor}) * tau_int; '
+        'proceeding anyway.'
+    )
+    return total
 
 
 def plot_temperature_sweep(

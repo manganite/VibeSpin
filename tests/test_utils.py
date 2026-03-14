@@ -26,6 +26,7 @@ from utils.physics_helpers import (
     radial_average_sk,
 )
 from utils.system_helpers import (
+    adaptive_equilibrate,
     ensure_results_dir,
     parallel_sweep,
     plot_ordering_evolution,
@@ -458,3 +459,34 @@ def test_autocorr_invalid_zero_variance():
     """Should raise ValueError for constant input."""
     with pytest.raises(ValueError, match='zero variance'):
         calculate_autocorr(time_series=np.ones(100))
+
+
+# ---------------------------------------------------------------------------
+# adaptive_equilibrate tests
+# ---------------------------------------------------------------------------
+
+
+class _StubSim:
+    """Minimal simulation stub whose run() always returns a constant magnetization."""
+
+    def equilibrate(self, *, n_steps: int) -> None:
+        pass
+
+    def run(self, *, n_steps: int) -> tuple[np.ndarray, np.ndarray]:
+        # Constant array triggers zero-variance ValueError in calculate_autocorr.
+        return np.ones(n_steps), np.zeros(n_steps)
+
+
+def test_adaptive_equilibrate_ordered_phase():
+    """Zero-variance probe (ordered phase) should return without crashing."""
+    sim = _StubSim()
+    total = adaptive_equilibrate(sim, min_steps=100, probe_steps=50)
+    assert total >= 100
+
+
+def test_adaptive_equilibrate_high_temp():
+    """At T=10 (far above Tc) tau_int ~ 0.5, so one probe_steps=500 satisfies factor=5."""
+    sim = IsingSimulation(size=8, temp=10.0)
+    total = adaptive_equilibrate(sim, min_steps=200, probe_steps=500, factor=5.0)
+    # One probe suffices: 500 >> 5 * 0.5 = 2.5, so total = min_steps + probe_steps.
+    assert total == 200 + 500

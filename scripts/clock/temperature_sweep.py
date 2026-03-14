@@ -11,7 +11,12 @@ import numpy as np
 
 from models.clock_model import ClockSimulation
 from utils.physics_helpers import calculate_autocorr, calculate_entropy, calculate_thermodynamics
-from utils.system_helpers import parallel_sweep, plot_temperature_sweep, setup_logging
+from utils.system_helpers import (
+    adaptive_equilibrate,
+    parallel_sweep,
+    plot_temperature_sweep,
+    setup_logging,
+)
 
 
 def simulate_temperature(
@@ -22,11 +27,15 @@ def simulate_temperature(
     """
     T, L, Q, A, eq_steps, meas_steps = params
     sim = ClockSimulation(size=L, temp=T, A=A, q=Q)
-    sim.equilibrate(n_steps=eq_steps)
+    adaptive_equilibrate(sim, min_steps=eq_steps)
     mags, engs = sim.run(n_steps=meas_steps)
     mags_arr = np.array(mags)
     thermo = calculate_thermodynamics(mags=mags_arr, engs=np.array(engs), T=T, L=L)
-    _, tau = calculate_autocorr(time_series=mags_arr)
+    try:
+        _, tau = calculate_autocorr(time_series=mags_arr)
+    except ValueError:
+        # Fully ordered windows can have zero variance; mark tau as undefined.
+        tau = float('nan')
     return (*thermo, tau)
 
 
@@ -38,7 +47,10 @@ def run_sweep() -> None:
     parser.add_argument('--size', type=int, default=48, help='Linear lattice size L')
     parser.add_argument('--q', type=int, default=6, help='Number of clock states')
     parser.add_argument('--aniso', type=float, default=0.1, help='Anisotropy strength A')
-    parser.add_argument('--eq-steps', type=int, default=20000, help='Equilibration steps')
+    parser.add_argument(
+        '--eq-steps', type=int, default=20000,
+        help='Min equilibration steps (adaptive top-up if tau_int demands it)',
+    )
     parser.add_argument('--meas-steps', type=int, default=20000, help='Measurement steps')
     parser.add_argument('--t-min', type=float, default=0.1, help='Minimum temperature')
     parser.add_argument('--t-max', type=float, default=2.0, help='Maximum temperature')
