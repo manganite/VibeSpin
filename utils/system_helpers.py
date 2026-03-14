@@ -316,8 +316,9 @@ def plot_ordering_evolution(
             vort = vorticity_data[col]
             im_v = ax_mid.imshow(vort, cmap='bwr', interpolation='none', vmin=-1, vmax=1)
             ax_mid.axis('off')
-            v_count = int(np.sum(np.abs(vort)))
-            ax_mid.set_title(f'Vortices: {v_count}', fontsize=10)
+            v_count = int(np.count_nonzero(np.abs(vort) > 0.0))
+            n_v = v_count / vort.size
+            ax_mid.set_title(f'Vortices: {v_count}, $n_v={n_v:.3f}$', fontsize=10)
             if col == n_cols - 1:
                 plt.colorbar(im_v, ax=ax_mid, ticks=[-1, 0, 1], label='Winding No.', shrink=0.8)
         else:

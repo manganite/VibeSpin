@@ -22,13 +22,6 @@ from utils.system_helpers import (
 )
 
 
-def compute_vortex_density(sim: ClockSimulation) -> float:
-    """Calculate the number of vortices per unit area."""
-    vorticity = sim._calculate_vorticity()
-    total_vortices = np.sum(np.abs(vorticity))
-    return float(total_vortices / (sim.size**2))
-
-
 def main() -> None:
     """Run the Clock ordering kinetics simulation."""
     parser = argparse.ArgumentParser(description='2D Clock Model Ordering Kinetics Analysis')
@@ -76,7 +69,7 @@ def main() -> None:
         t[i] = float(current_step)
         R_sk[i] = metrics['R_sk']
         R_xi[i] = metrics['xi']
-        v_dens[i] = compute_vortex_density(sim)
+        v_dens[i] = sim._get_vortex_density()
 
         logger.debug(f't={current_step}: R_sk={R_sk[i]:.2f}, xi={R_xi[i]:.2f}, n_v={v_dens[i]:.4f}')
 

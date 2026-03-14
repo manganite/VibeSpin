@@ -11,6 +11,7 @@ from numba import njit
 
 from .simulation_base import (
     MonteCarloSimulation,
+    calculate_vortex_density_numba,
     calculate_vorticity_numba,
     get_helicity_data_numba,
 )
@@ -291,6 +292,12 @@ class ClockSimulation(MonteCarloSimulation):
         if self.spins is not None:
             return np.asarray(calculate_vorticity_numba(spins=self.spins, idx_next=self.idx_next))
         return np.array([])
+
+    def _get_vortex_density(self) -> float:
+        """Calculate vortex density n_v, the fraction of plaquettes with non-zero winding."""
+        if self.spins is not None:
+            return float(calculate_vortex_density_numba(spins=self.spins, idx_next=self.idx_next))
+        return 0.0
 
     def _get_helicity_data(self) -> tuple[float, float]:
         """Calculate sum of cos and sin of angle differences in x-direction."""

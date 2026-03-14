@@ -57,6 +57,33 @@ def calculate_vorticity_numba(*, spins: np.ndarray, idx_next: np.ndarray) -> np.
 
 
 @njit(cache=True, fastmath=True)
+def _vortex_density_from_vorticity_numba(vorticity: np.ndarray) -> float:
+    """Return density of non-zero winding plaquettes."""
+    N = vorticity.shape[0]
+    count = 0
+    for i in range(N):
+        for j in range(N):
+            if np.abs(vorticity[i, j]) > 0.0:
+                count += 1
+    return count / float(N * N)
+
+
+def calculate_vortex_density_numba(*, spins: np.ndarray, idx_next: np.ndarray) -> float:
+    """
+    Calculate vortex density n_v, i.e. the fraction of plaquettes with non-zero winding.
+
+    Args:
+        spins: (N, N, 2) array of unit vectors.
+        idx_next: Pre-calculated next-neighbor indices.
+
+    Returns:
+        Vortex density n_v in [0, 1].
+    """
+    vorticity = calculate_vorticity_numba(spins=spins, idx_next=idx_next)
+    return float(_vortex_density_from_vorticity_numba(vorticity))
+
+
+@njit(cache=True, fastmath=True)
 def get_helicity_data_numba(*, spins: np.ndarray) -> tuple[float, float]:
     """
     Calculate sum of cos and sin of angle differences in x-direction for helicity modulus.

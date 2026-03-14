@@ -110,6 +110,36 @@ def test_xy_vorticity_detection():
     assert vorticity[0, 0] == 1.0
 
 
+def test_xy_vortex_density_single_vortex():
+    """Verify XY vortex density matches the non-zero winding fraction from the vorticity map."""
+    size = 4
+    sim = XYSimulation(size=size, temp=1.0)
+
+    angles = np.zeros((size, size))
+    angles[0, 0] = 0.0
+    angles[0, 1] = np.pi / 2
+    angles[1, 1] = np.pi
+    angles[1, 0] = 1.5 * np.pi
+
+    sim.spins = np.stack([np.cos(angles), np.sin(angles)], axis=-1)
+
+    density = sim._get_vortex_density()
+    vorticity = sim._calculate_vorticity()
+    expected_density = np.count_nonzero(np.abs(vorticity) > 0.0) / (size * size)
+    assert density == pytest.approx(expected_density)
+
+
+def test_xy_vortex_density_uniform_state_is_zero():
+    """Verify XY vortex density is zero for a uniform spin field."""
+    size = 6
+    sim = XYSimulation(size=size, temp=1.0)
+    sim.spins = np.zeros((size, size, 2), dtype=np.float64)
+    sim.spins[..., 0] = 1.0
+
+    density = sim._get_vortex_density()
+    assert density == pytest.approx(0.0)
+
+
 def test_clock_initialization(standard_params):
     """Verify correct initialization of the q-state clock model."""
     size, temp = standard_params['size'], standard_params['temp']
@@ -129,6 +159,36 @@ def test_clock_step(standard_params):
     assert sim.steps == 1
     norms = np.linalg.norm(sim.spins, axis=-1)
     np.testing.assert_allclose(norms, 1.0)
+
+
+def test_clock_vortex_density_single_vortex():
+    """Verify Clock vortex density matches the non-zero winding fraction from the vorticity map."""
+    size = 4
+    sim = ClockSimulation(size=size, temp=1.0, q=6)
+
+    angles = np.zeros((size, size))
+    angles[0, 0] = 0.0
+    angles[0, 1] = np.pi / 2
+    angles[1, 1] = np.pi
+    angles[1, 0] = 1.5 * np.pi
+
+    sim.spins = np.stack([np.cos(angles), np.sin(angles)], axis=-1)
+
+    density = sim._get_vortex_density()
+    vorticity = sim._calculate_vorticity()
+    expected_density = np.count_nonzero(np.abs(vorticity) > 0.0) / (size * size)
+    assert density == pytest.approx(expected_density)
+
+
+def test_clock_vortex_density_uniform_state_is_zero():
+    """Verify Clock vortex density is zero for a uniform spin field."""
+    size = 6
+    sim = ClockSimulation(size=size, temp=1.0, q=6)
+    sim.spins = np.zeros((size, size, 2), dtype=np.float64)
+    sim.spins[..., 0] = 1.0
+
+    density = sim._get_vortex_density()
+    assert density == pytest.approx(0.0)
 
 
 def test_correlation_function(standard_params):

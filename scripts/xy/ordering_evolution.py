@@ -66,7 +66,9 @@ def main() -> None:
             snapshots.append(sim.spins.copy())
             snapshots_vort.append(sim._calculate_vorticity())
             snapshots_gr.append(sim._calculate_correlation_function())
-            logger.debug(f'Captured snapshot at step {target}')
+            logger.debug(
+                f'Captured snapshot at step {target} (n_v={sim._get_vortex_density():.4f})'
+            )
 
     logger.info(f'Collected {n_targets} snapshots. Saving figure ...')
 
