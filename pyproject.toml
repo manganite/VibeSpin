@@ -92,3 +92,11 @@ module = "models.*"
 # Numba functions often return 'Any' in mypy's eyes, causing no-any-return errors
 warn_return_any = false
 disable_error_code = ["no-any-return"]
+
+[[tool.mypy.overrides]]
+module = "tests.*"
+# Pytest test/fixture functions are intentionally lightweight and often left
+# unannotated; keep strict typing for source modules while relaxing tests.
+disallow_untyped_defs = false
+disallow_incomplete_defs = false
+check_untyped_defs = false

@@ -1,3 +1,5 @@
+# mypy: disable-error-code=no-untyped-def
+
 """
 Unit tests for utility functions in utils/physics_helpers.py and utils/system_helpers.py.
 """
@@ -271,12 +273,13 @@ def test_plot_temperature_sweep_runs():
     """plot_temperature_sweep smoke test."""
     temps = np.array([1.0, 2.0])
     data = np.array([0.5, 0.5])
+    data_seq = data.tolist()
     plot_temperature_sweep(
         temperatures=temps,
-        avg_m=data,
-        avg_e=data,
-        susc=data,
-        spec_h=data,
+        avg_m=data_seq,
+        avg_e=data_seq,
+        susc=data_seq,
+        spec_h=data_seq,
         title='Test',
         filename='_ts.png',
         directory='test_results',
@@ -288,8 +291,8 @@ def test_plot_ordering_kinetics_runs():
     """plot_ordering_kinetics smoke test."""
     t = np.array([1, 10, 100])
     r = np.array([1, 2, 3])
-    exponents = {'R_sk': 0.5, 'xi': 0.5, 'third': -1.0}
-    prefactors = {'R_sk': 1.0, 'xi': 1.0, 'third': 1.0}
+    exponents: dict[str, float | None] = {'R_sk': 0.5, 'xi': 0.5, 'third': -1.0}
+    prefactors: dict[str, float | None] = {'R_sk': 1.0, 'xi': 1.0, 'third': 1.0}
     mask = np.ones_like(t, dtype=bool)
     plot_ordering_kinetics(
         t=t,

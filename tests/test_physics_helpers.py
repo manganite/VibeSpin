@@ -1,3 +1,5 @@
+# mypy: disable-error-code=no-untyped-def
+
 """
 Unit tests for physics-related utility functions in utils/physics_helpers.py.
 """
