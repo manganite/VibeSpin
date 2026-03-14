@@ -45,6 +45,12 @@ def clock_step_numba(
         Updated spins array.
     """
     N = spins.shape[0]
+    # Batch generate random updates
+    deltas = np.random.uniform(-0.5, 0.5, size=(N, N))
+    cos_vals = np.cos(deltas)
+    sin_vals = np.sin(deltas)
+    random_vals = np.random.random(size=(N, N))
+
     for parity in range(2):
         for i in range(N):
             # Use striding to avoid 'if' condition in the inner loop
@@ -61,9 +67,10 @@ def clock_step_numba(
 
                 sx, sy = spins[i, j, 0], spins[i, j, 1]
 
-                # Propose update
-                delta = np.random.uniform(-0.5, 0.5)
-                c, s = np.cos(delta), np.sin(delta)
+                # Proposed update from pre-calculated values
+                delta = deltas[i, j]
+                c, s = cos_vals[i, j], sin_vals[i, j]
+
                 sx_new = sx * c - sy * s
                 sy_new = sx * s + sy * c
                 norm = np.sqrt(sx_new**2 + sy_new**2)
@@ -80,7 +87,7 @@ def clock_step_numba(
 
                 dE = dE_inter + dE_aniso
 
-                if dE <= 0 or np.random.random() < np.exp(-dE * beta):
+                if dE <= 0 or random_vals[i, j] < np.exp(-dE * beta):
                     spins[i, j, 0] = sx_new
                     spins[i, j, 1] = sy_new
     return spins
@@ -113,8 +120,16 @@ def clock_step_random_numba(
         Updated spins array.
     """
     N = spins.shape[0]
-    for _ in range(N * N):
-        idx = np.random.randint(0, N * N)
+    num_attempts = N * N
+    # Pre-calculate random indices and updates
+    indices = np.random.randint(0, num_attempts, size=num_attempts)
+    deltas = np.random.uniform(-0.5, 0.5, size=num_attempts)
+    cos_vals = np.cos(deltas)
+    sin_vals = np.sin(deltas)
+    random_vals = np.random.random(size=num_attempts)
+
+    for k in range(num_attempts):
+        idx = indices[k]
         i = idx // N
         j = idx % N
 
@@ -129,9 +144,10 @@ def clock_step_random_numba(
 
         sx, sy = spins[i, j, 0], spins[i, j, 1]
 
-        # Propose update
-        delta = np.random.uniform(-0.5, 0.5)
-        c, s = np.cos(delta), np.sin(delta)
+        # Proposed update
+        delta = deltas[k]
+        c, s = cos_vals[k], sin_vals[k]
+
         sx_new = sx * c - sy * s
         sy_new = sx * s + sy * c
         norm = np.sqrt(sx_new**2 + sy_new**2)
@@ -148,7 +164,7 @@ def clock_step_random_numba(
 
         dE = dE_inter + dE_aniso
 
-        if dE <= 0 or np.random.random() < np.exp(-dE * beta):
+        if dE <= 0 or random_vals[k] < np.exp(-dE * beta):
             spins[i, j, 0] = sx_new
             spins[i, j, 1] = sy_new
     return spins
@@ -302,7 +318,7 @@ class ClockSimulation(MonteCarloSimulation):
     def _get_helicity_data(self) -> tuple[float, float]:
         """Calculate sum of cos and sin of angle differences in x-direction."""
         if self.spins is not None:
-            cos_sum, sin_sum = get_helicity_data_numba(spins=self.spins)
+            cos_sum, sin_sum = get_helicity_data_numba(spins=self.spins, idx_next=self.idx_next)
             return float(cos_sum), float(sin_sum)
         return 0.0, 0.0
 

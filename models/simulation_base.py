@@ -84,12 +84,13 @@ def calculate_vortex_density_numba(*, spins: np.ndarray, idx_next: np.ndarray) -
 
 
 @njit(cache=True, fastmath=True)
-def get_helicity_data_numba(*, spins: np.ndarray) -> tuple[float, float]:
+def get_helicity_data_numba(*, spins: np.ndarray, idx_next: np.ndarray) -> tuple[float, float]:
     """
     Calculate sum of cos and sin of angle differences in x-direction for helicity modulus.
 
     Args:
         spins: (N, N, 2) array of unit vectors.
+        idx_next: Pre-calculated next-neighbor indices for PBCs.
 
     Returns:
         cos_sum: Sum of cosine of angle differences.
@@ -100,7 +101,7 @@ def get_helicity_data_numba(*, spins: np.ndarray) -> tuple[float, float]:
     sin_sum = 0.0
     for i in range(N):
         for j in range(N):
-            j_next = 0 if j == N - 1 else j + 1
+            j_next = idx_next[j]
             # cos(theta_i - theta_j) = s_i . s_j
             cos_sum += spins[i, j, 0] * spins[i, j_next, 0] + spins[i, j, 1] * spins[i, j_next, 1]
             # sin(theta_i - theta_j) = cross product
