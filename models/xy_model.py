@@ -181,7 +181,7 @@ class XYSimulation(MonteCarloSimulation):
             size: Linear dimension L of the L x L lattice.
             temp: Temperature T.
             J: Coupling constant (default 1.0).
-            update: Update scheme — ``'checkerboard'`` (default, faster) or
+            update: Update scheme - ``'checkerboard'`` (default, faster) or
                 ``'random'`` (random sequential Metropolis, more physical
                 stochastic dynamics for kinetics studies).
             seed: Optional random seed for reproducibility.
@@ -296,7 +296,7 @@ if __name__ == '__main__':
 
     # Plotting
     fig, axes = plt.subplots(2, 2, figsize=(12, 11))
-    fig.suptitle(f'2D XY Model — $L={args.size}, T={args.temp}$', fontsize=14)
+    fig.suptitle(f'2D XY Model - $L={args.size}, T={args.temp}$', fontsize=14)
     ax1, ax2, ax3, ax4 = axes.flatten()
 
     # Final Configuration (Phase angle)

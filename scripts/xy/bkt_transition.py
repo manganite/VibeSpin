@@ -1,6 +1,6 @@
 """
 Analysis of the Berezinskii-Kosterlitz-Thouless (BKT) transition in the 2D XY model.
-Counts the average density of vortices as a function of temperature.
+Measures the average vortex density as a function of temperature.
 """
 from __future__ import annotations
 
@@ -16,30 +16,28 @@ from utils.system_helpers import parallel_sweep, save_plot, setup_logging
 
 def simulate_bkt_point(params: tuple[float, int, int, int]) -> float:
     """
-    Worker function to simulate a single temperature and count average vortex density.
+    Worker function to simulate a single temperature and measure average vortex density.
 
     Args:
         params: Tuple of (T, L, eq_steps, meas_steps).
 
     Returns:
-        Average number of vortices found in the lattice.
+        Average vortex density n_v.
     """
     T, L, eq_steps, meas_steps = params
     sim = XYSimulation(size=L, temp=T)
     sim.equilibrate(n_steps=eq_steps)
 
-    total_vortex_count: int = 0
+    total_vortex_density = 0.0
     for _ in range(meas_steps):
         sim.step()
-        vorticity = sim._calculate_vorticity()
-        # Count all non-zero winding numbers (vortices and anti-vortices)
-        total_vortex_count += int(np.sum(np.abs(vorticity)))
+        total_vortex_density += sim._get_vortex_density()
 
-    return total_vortex_count / meas_steps
+    return total_vortex_density / meas_steps
 
 
 def run_bkt_study() -> None:
-    """Run temperature sweep to observe vortex proliferation near T_BKT."""
+    """Run temperature sweep to observe vortex-density growth near T_BKT."""
     parser = argparse.ArgumentParser(description='2D XY Model BKT Transition Analysis')
     parser.add_argument('--size', type=int, default=40, help='Linear lattice size L')
     parser.add_argument('--eq-steps', type=int, default=10000, help='Equilibration steps')
@@ -61,15 +59,17 @@ def run_bkt_study() -> None:
     temperatures: np.ndarray = np.linspace(args.t_min, args.t_max, args.t_points)
     T_BKT_THEORETICAL: float = 0.893
 
-    logger.info(f'Starting BKT transition study (Vortex counting) for L={args.size}...')
+    logger.info(f'Starting BKT transition study (vortex density) for L={args.size}...')
     logger.info(f'Range: [{args.t_min}, {args.t_max}] with {args.t_points} points.')
 
     sweep_params = [(T, args.size, args.eq_steps, args.meas_steps) for T in temperatures]
-    vortex_counts: list[float] = parallel_sweep(worker_func=simulate_bkt_point, params=sweep_params)
+    vortex_densities: list[float] = parallel_sweep(
+        worker_func=simulate_bkt_point, params=sweep_params
+    )
 
     # Plotting results
     plt.figure(figsize=(10, 6))
-    plt.plot(temperatures, vortex_counts, 'o-', markersize=5, label='Total Vortex Count')
+    plt.plot(temperatures, vortex_densities, 'o-', markersize=5, label='Vortex Density $n_v$')
 
     plt.axvline(
         x=T_BKT_THEORETICAL,
@@ -79,8 +79,8 @@ def run_bkt_study() -> None:
         label=f'Theoretical $T_{{BKT}} \\approx {T_BKT_THEORETICAL}$',
     )
     plt.xlabel('Temperature (T)')
-    plt.ylabel('Average Vortex Count')
-    plt.title(f'Vortex Proliferation in 2D XY Model (L={args.size})')
+    plt.ylabel('Average Vortex Density $n_v$')
+    plt.title(f'Vortex Density in 2D XY Model (L={args.size})')
     plt.grid(True)
     plt.legend()
 

@@ -10,7 +10,7 @@ import matplotlib
 import numpy as np
 import pytest
 
-matplotlib.use('Agg')  # Non-interactive backend — no display required
+matplotlib.use('Agg')  # Non-interactive backend - no display required
 import matplotlib.pyplot as plt
 
 from models.ising_model import IsingSimulation

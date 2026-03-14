@@ -68,7 +68,7 @@ def main() -> None:
 
     logger.info(f'Collected {n_targets} snapshots. Saving figure ...')
 
-    title = f'2D Ising Ordering Evolution — T = {T} (< T_c ≈ {T_CRIT}), L = {L}'
+    title = f'2D Ising Ordering Evolution - T = {T} (< T_c ≈ {T_CRIT}), L = {L}'
 
     plot_ordering_evolution(
         targets=STEP_TARGETS,

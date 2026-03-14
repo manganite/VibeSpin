@@ -161,7 +161,7 @@ class IsingSimulation(MonteCarloSimulation):
             size: Linear dimension L of the L x L lattice.
             temp: Temperature T.
             J: Coupling constant (default 1.0).
-            update: Update scheme — ``'checkerboard'`` (default, faster) or
+            update: Update scheme - ``'checkerboard'`` (default, faster) or
                 ``'random'`` (random sequential Metropolis, more physical
                 stochastic dynamics for coarsening studies).
             seed: Optional random seed for reproducibility.
@@ -253,7 +253,7 @@ if __name__ == '__main__':
 
     # Plotting
     fig, (ax1, ax2, ax3) = plt.subplots(1, 3, figsize=(18, 5))
-    fig.suptitle(f'2D Ising Model — $L={args.size}, T={args.temp}$', fontsize=14)
+    fig.suptitle(f'2D Ising Model - $L={args.size}, T={args.temp}$', fontsize=14)
 
     # Final Configuration
     if sim.spins is not None:

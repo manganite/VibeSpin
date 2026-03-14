@@ -105,7 +105,7 @@ def main() -> None:
         exponents=exponents,
         prefactors=prefactors,
         fit_mask=fit_mask,
-        title=f'2D Ising Ordering Kinetics — $T = {T}$ ($< T_c \\approx {T_CRIT}$), $L = {L}$',
+        title=f'2D Ising Ordering Kinetics - $T = {T}$ ($< T_c \\approx {T_CRIT}$), $L = {L}$',
         filename='ordering_kinetics.png',
         directory=ensure_results_dir(directory=args.output_dir),
         y_label='Domain Size Scale (lattice units)',

@@ -91,7 +91,7 @@ def main() -> None:
         exponents=exponents,
         prefactors=prefactors,
         fit_mask=fit_mask,
-        title=f'2D XY Ordering Kinetics — $T = {T}$ ($< T_{{BKT}} \\approx {T_BKT}$), $L = {L}$',
+        title=f'2D XY Ordering Kinetics - $T = {T}$ ($< T_{{BKT}} \\approx {T_BKT}$), $L = {L}$',
         filename='ordering_kinetics.png',
         directory=ensure_results_dir(directory=args.output_dir),
         left_title='Phase Ordering Dynamics',

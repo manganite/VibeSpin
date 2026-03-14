@@ -215,7 +215,7 @@ class ClockSimulation(MonteCarloSimulation):
             J: Coupling constant (default 1.0).
             A: Anisotropy strength (default 1.0).
             q: Number of clock states (default 6). Must be ≥ 2.
-            update: Update scheme — ``'checkerboard'`` (default, faster) or
+            update: Update scheme - ``'checkerboard'`` (default, faster) or
                 ``'random'`` (random sequential Metropolis, more physical
                 stochastic dynamics for kinetics studies).
             seed: Optional random seed for reproducibility.
@@ -343,7 +343,7 @@ if __name__ == '__main__':
 
     # Plotting
     fig, (ax1, ax2, ax3) = plt.subplots(1, 3, figsize=(18, 5))
-    fig.suptitle(f'2D {args.q}-state Clock Model — $L={args.size}, T={args.temp}$', fontsize=14)
+    fig.suptitle(f'2D {args.q}-state Clock Model - $L={args.size}, T={args.temp}$', fontsize=14)
 
     # Final Phase Configuration
     if sim.spins is not None:

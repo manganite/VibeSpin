@@ -94,7 +94,7 @@ def main() -> None:
         exponents=exponents,
         prefactors=prefactors,
         fit_mask=fit_mask,
-        title=f'2D {Q}-state Clock Ordering Kinetics — $T = {T}$, $L = {L}$, $A = {A}$',
+        title=f'2D {Q}-state Clock Ordering Kinetics - $T = {T}$, $L = {L}$, $A = {A}$',
         filename='ordering_kinetics.png',
         directory=ensure_results_dir(directory=args.output_dir),
         left_title='Phase Ordering Dynamics',

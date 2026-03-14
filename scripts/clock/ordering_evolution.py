@@ -75,7 +75,7 @@ def main() -> None:
 
     logger.info(f'Collected {n_targets} snapshots. Saving figure ...')
 
-    title = f'2D {Q}-state Clock Model Evolution — T = {T}, L = {L}, A = {A}'
+    title = f'2D {Q}-state Clock Model Evolution - T = {T}, L = {L}, A = {A}'
 
     plot_ordering_evolution(
         targets=STEP_TARGETS,

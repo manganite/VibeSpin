@@ -72,7 +72,7 @@ def main() -> None:
 
     logger.info(f'Collected {n_targets} snapshots. Saving figure ...')
 
-    title = f'2D XY Model Ordering Evolution — T = {T} (< T_BKT ≈ {T_BKT}), L = {L}'
+    title = f'2D XY Model Ordering Evolution - T = {T} (< T_BKT ≈ {T_BKT}), L = {L}'
 
     plot_ordering_evolution(
         targets=STEP_TARGETS,

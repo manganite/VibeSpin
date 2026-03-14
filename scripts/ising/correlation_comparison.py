@@ -22,7 +22,7 @@ def simulate_correlation(params: tuple[float, int, int, int, int]) -> tuple[np.n
         params: Tuple of (T, L, steps, eq_steps, sample_interval).
 
     Returns:
-        A tuple of (r, G_r) — radial distances and averaged correlations.
+        A tuple of (r, G_r) - radial distances and averaged correlations.
     """
     T, L, steps, eq_steps, sample_interval = params
     logger = logging.getLogger('vibespin')
