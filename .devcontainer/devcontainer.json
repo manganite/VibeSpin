@@ -18,9 +18,14 @@
 	// "forwardPorts": [],
 
 	// Use 'postCreateCommand' to run commands after the container is created.
-	"postCreateCommand": "pip install -e . && npm install -g @google/gemini-cli",
+	"postCreateCommand": "bash -lc 'set -euo pipefail; python -m venv --clear --copies .venv; ./.venv/bin/python -m pip install --upgrade pip; ./.venv/bin/python -m pip install -e \".[dev,notebook]\"; if [ \"${INSTALL_GEMINI_CLI:-0}\" = \"1\" ]; then npm install -g @google/gemini-cli@latest; else echo \"[devcontainer] Skipping Gemini CLI install (set INSTALL_GEMINI_CLI=1 to enable).\"; fi'",
+	"postStartCommand": "bash .devcontainer/scripts/check-ssh-agent.sh",
 	"customizations": {
 		"vscode": {
+			"settings": {
+				"python.defaultInterpreterPath": "/workspaces/vibespin/.venv/bin/python",
+				"python.terminal.activateEnvironment": true
+			},
 			"extensions": [
 				"ms-python.python",
 				"ms-python.debugpy",
@@ -37,7 +42,7 @@
 				"ms-python.mypy-type-checker"
 			]
 		}
-	},
+	}
 
 	// Configure tool-specific properties.
 	// "customizations": {},

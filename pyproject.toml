@@ -13,14 +13,20 @@ dependencies = [
     "matplotlib",
     "tqdm",
     "numba",
+    "scipy",
+]
+
+[project.optional-dependencies]
+dev = [
     "pytest",
     "pytest-cov",
     "ruff",
     "mypy",
+]
+notebook = [
     "ipykernel",
     "notebook",
     "ipywidgets",
-    "scipy",
 ]
 
 [tool.setuptools.packages.find]
