@@ -4,6 +4,7 @@ Physics-related utility functions for calculating thermodynamic observables and 
 from __future__ import annotations
 
 import numpy as np
+from scipy.integrate import cumulative_trapezoid
 
 from models.simulation_base import MonteCarloSimulation
 
@@ -41,6 +42,71 @@ def calculate_thermodynamics(
     specific_heat = float(N * np.var(engs) / (T**2))
 
     return avg_mag, avg_eng, susceptibility, specific_heat
+
+
+def calculate_entropy(
+    *,
+    temperatures: np.ndarray,
+    specific_heat: np.ndarray,
+    s_ref: float = 0.0,
+) -> np.ndarray:
+    """
+    Compute entropy by integrating specific heat over a temperature sweep.
+
+    Integrates C(T)/T from high temperature downward so that
+    S(T_max) = ``s_ref`` and S(T) = s_ref - integral from T to T_max of C/T dT'.
+    This avoids the C/T divergence near T = 0 and anchors the result at the
+    high-temperature limit where the entropy is analytically known.
+
+    Args:
+        temperatures: 1-D array of temperature values. Need not be sorted.
+        specific_heat: Specific heat C_v at each temperature (same length).
+        s_ref: Reference entropy at the highest temperature. Pass ``0.0``
+            for relative entropy or ``np.log(q)`` (per site, in units of
+            k_B) for absolute entropy of a q-state model.
+
+    Returns:
+        1-D array of entropy values, one per temperature, in the original
+        unsorted order of ``temperatures``.
+
+    Raises:
+        ValueError: If arrays differ in length, contain fewer than 2 points,
+            or include non-positive temperatures.
+    """
+    temperatures = np.asarray(temperatures, dtype=np.float64)
+    specific_heat = np.asarray(specific_heat, dtype=np.float64)
+
+    if temperatures.shape != specific_heat.shape:
+        raise ValueError(
+            f'temperatures and specific_heat must have the same shape, '
+            f'got {temperatures.shape} and {specific_heat.shape}'
+        )
+    if temperatures.size < 2:
+        raise ValueError('Need at least 2 temperature points for integration')
+    if np.any(temperatures <= 0.0):
+        raise ValueError('All temperatures must be positive')
+
+    # Sort ascending; remember original order to restore later.
+    sort_idx = np.argsort(temperatures)
+    t_sorted = temperatures[sort_idx]
+    cv_sorted = specific_heat[sort_idx]
+
+    # Integrand: C(T) / T
+    integrand = cv_sorted / t_sorted
+
+    # Cumulative integral from T_1 (lowest) to each T_i.
+    partial = cumulative_trapezoid(integrand, t_sorted)
+    # Prepend 0 for the first (lowest-T) point.
+    partial = np.concatenate(([0.0], partial))
+
+    # S(T) = s_ref - (total_integral - partial_integral_up_to_T)
+    total = partial[-1]
+    entropy_sorted = s_ref - (total - partial)
+
+    # Restore original ordering.
+    entropy: np.ndarray = np.empty_like(entropy_sorted)
+    entropy[sort_idx] = entropy_sorted
+    return entropy
 
 
 def get_averaged_correlation(

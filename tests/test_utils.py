@@ -16,6 +16,7 @@ import matplotlib.pyplot as plt
 from models.ising_model import IsingSimulation
 from models.xy_model import XYSimulation
 from utils.physics_helpers import (
+    calculate_entropy,
     calculate_thermodynamics,
     compute_kinetics_metrics,
     get_averaged_correlation,
@@ -320,3 +321,79 @@ def test_plot_ordering_evolution_runs():
         is_vector=False,
     )
     plt.close('all')
+
+
+# ---------- Tests for calculate_entropy ----------
+
+def test_entropy_constant_cv():
+    """For constant Cv, total entropy change equals Cv * ln(T_max / T_min)."""
+    T = np.linspace(1.0, 10.0, 200)
+    Cv = np.full_like(T, 3.0)
+    S = calculate_entropy(temperatures=T, specific_heat=Cv)
+    # S(T_max) = 0.0 (default s_ref), S(T_min) = -Cv * ln(T_max/T_min)
+    expected_delta = 3.0 * np.log(10.0 / 1.0)
+    assert pytest.approx(S[-1] - S[0], rel=1e-3) == expected_delta
+
+
+def test_entropy_linear_cv():
+    """For Cv = a*T, integral of a*T/T dT = a*(T_max - T_min)."""
+    T = np.linspace(1.0, 5.0, 500)
+    a = 2.0
+    Cv = a * T
+    S = calculate_entropy(temperatures=T, specific_heat=Cv)
+    expected_delta = a * (5.0 - 1.0)
+    assert pytest.approx(S[-1] - S[0], rel=1e-3) == expected_delta
+
+
+def test_entropy_monotonicity():
+    """Positive Cv implies non-decreasing entropy with temperature."""
+    T = np.linspace(0.5, 5.0, 100)
+    Cv = np.abs(np.sin(T)) + 0.1  # strictly positive
+    S = calculate_entropy(temperatures=T, specific_heat=Cv)
+    diffs = np.diff(S)
+    assert np.all(diffs >= -1e-14)
+
+
+def test_entropy_s_ref_shift():
+    """Changing s_ref shifts all entropy values by a constant."""
+    T = np.linspace(1.0, 5.0, 50)
+    Cv = np.ones_like(T)
+    S_base = calculate_entropy(temperatures=T, specific_heat=Cv, s_ref=0.0)
+    S_shifted = calculate_entropy(temperatures=T, specific_heat=Cv, s_ref=np.log(6))
+    np.testing.assert_allclose(S_shifted - S_base, np.log(6), atol=1e-14)
+
+
+def test_entropy_unsorted_temperatures():
+    """Entropy should be correct even when temperatures are not sorted."""
+    T_sorted = np.linspace(1.0, 5.0, 50)
+    Cv_sorted = 2.0 * T_sorted
+    S_sorted = calculate_entropy(temperatures=T_sorted, specific_heat=Cv_sorted)
+
+    rng = np.random.default_rng(42)
+    perm = rng.permutation(len(T_sorted))
+    S_perm = calculate_entropy(temperatures=T_sorted[perm], specific_heat=Cv_sorted[perm])
+    np.testing.assert_allclose(S_perm, S_sorted[perm], atol=1e-12)
+
+
+def test_entropy_invalid_too_few_points():
+    """Should raise ValueError with fewer than 2 temperature points."""
+    with pytest.raises(ValueError, match='at least 2'):
+        calculate_entropy(temperatures=np.array([1.0]), specific_heat=np.array([1.0]))
+
+
+def test_entropy_invalid_negative_temperature():
+    """Should raise ValueError for non-positive temperatures."""
+    with pytest.raises(ValueError, match='positive'):
+        calculate_entropy(
+            temperatures=np.array([-1.0, 1.0]),
+            specific_heat=np.array([1.0, 1.0]),
+        )
+
+
+def test_entropy_invalid_shape_mismatch():
+    """Should raise ValueError when array lengths differ."""
+    with pytest.raises(ValueError, match='same shape'):
+        calculate_entropy(
+            temperatures=np.array([1.0, 2.0, 3.0]),
+            specific_heat=np.array([1.0, 2.0]),
+        )

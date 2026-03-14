@@ -123,12 +123,15 @@ def plot_temperature_sweep(
     title: str,
     filename: str,
     directory: str,
+    entropy: np.ndarray | Sequence[float] | None = None,
 ) -> None:
     """
-    Generate and save a standardized 4-panel temperature sweep plot.
+    Generate and save a standardized temperature sweep plot.
 
     Displays magnetization, energy, susceptibility, and specific heat as
-    functions of temperature. Saves the figure via :func:`save_plot`.
+    functions of temperature.  When *entropy* is provided an additional
+    panel is appended (3×2 layout); otherwise the classic 2×2 layout is
+    used.  Saves the figure via :func:`save_plot`.
 
     Args:
         temperatures: Array of temperature values (x-axis).
@@ -139,10 +142,19 @@ def plot_temperature_sweep(
         title: Figure-level suptitle string (e.g. '2D Ising Model: Temperature Sweep (L=50)').
         filename: Output filename passed to :func:`save_plot` (e.g. 'temperature_sweep.png').
         directory: Output directory passed to :func:`save_plot` (e.g. 'results/ising').
+        entropy: Optional entropy per temperature point.  When *None* the
+            plot keeps the original 2×2 layout.
     """
-    fig, axes = plt.subplots(2, 2, figsize=(12, 10))
+    if entropy is not None:
+        fig, axes = plt.subplots(3, 2, figsize=(12, 14))
+        flat = axes.flatten()
+        ax1, ax2, ax3, ax4, ax5, ax6 = flat
+    else:
+        fig, axes = plt.subplots(2, 2, figsize=(12, 10))
+        flat = axes.flatten()
+        ax1, ax2, ax3, ax4 = flat
+
     fig.suptitle(title)
-    ax1, ax2, ax3, ax4 = axes.flatten()
 
     ax1.plot(temperatures, avg_m, 'o-', markersize=4)
     ax1.set_ylabel('Average Magnetization |M|')
@@ -164,8 +176,16 @@ def plot_temperature_sweep(
     ax4.set_title('Specific Heat')
     ax4.grid(True)
 
-    for ax in axes.flatten():
-        ax.set_xlabel('Temperature (T)')
+    if entropy is not None:
+        ax5.plot(temperatures, entropy, 'o-', color='purple', markersize=4)
+        ax5.set_ylabel(r'Entropy $S\,/\,k_B$')
+        ax5.set_title('Entropy')
+        ax5.grid(True)
+        ax6.set_visible(False)
+
+    for ax in flat:
+        if ax.get_visible():
+            ax.set_xlabel('Temperature (T)')
 
     save_plot(filename=filename, directory=directory)
 

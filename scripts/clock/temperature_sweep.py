@@ -10,7 +10,7 @@ import logging
 import numpy as np
 
 from models.clock_model import ClockSimulation
-from utils.physics_helpers import calculate_thermodynamics
+from utils.physics_helpers import calculate_entropy, calculate_thermodynamics
 from utils.system_helpers import parallel_sweep, plot_temperature_sweep, setup_logging
 
 
@@ -63,6 +63,10 @@ def run_sweep() -> None:
         worker_func=simulate_temperature, params=sweep_params
     )
     avg_m, avg_e, susc, spec_h = zip(*results, strict=True)
+    entropy = calculate_entropy(
+        temperatures=temperatures, specific_heat=np.array(spec_h),
+        s_ref=np.log(Q),
+    )
 
     plot_temperature_sweep(
         temperatures=temperatures,
@@ -70,6 +74,7 @@ def run_sweep() -> None:
         avg_e=avg_e,
         susc=susc,
         spec_h=spec_h,
+        entropy=entropy,
         title=f'2D {Q}-state Clock Model: Temperature Sweep (L={L}, A={A})',
         filename='temperature_sweep.png',
         directory=args.output_dir,
