@@ -10,13 +10,13 @@ import logging
 import numpy as np
 
 from models.clock_model import ClockSimulation
-from utils.physics_helpers import calculate_entropy, calculate_thermodynamics
+from utils.physics_helpers import calculate_autocorr, calculate_entropy, calculate_thermodynamics
 from utils.system_helpers import parallel_sweep, plot_temperature_sweep, setup_logging
 
 
 def simulate_temperature(
     params: tuple[float, int, int, float, int, int],
-) -> tuple[float, float, float, float]:
+) -> tuple[float, float, float, float, float]:
     """
     Worker function to simulate a single temperature point for the Clock model.
     """
@@ -24,7 +24,10 @@ def simulate_temperature(
     sim = ClockSimulation(size=L, temp=T, A=A, q=Q)
     sim.equilibrate(n_steps=eq_steps)
     mags, engs = sim.run(n_steps=meas_steps)
-    return calculate_thermodynamics(mags=np.array(mags), engs=np.array(engs), T=T, L=L)
+    mags_arr = np.array(mags)
+    thermo = calculate_thermodynamics(mags=mags_arr, engs=np.array(engs), T=T, L=L)
+    _, tau = calculate_autocorr(time_series=mags_arr)
+    return (*thermo, tau)
 
 
 def run_sweep() -> None:
@@ -59,10 +62,10 @@ def run_sweep() -> None:
     # Bundle parameters for parallel sweep
     sweep_params = [(T, L, Q, A, args.eq_steps, args.meas_steps) for T in temperatures]
 
-    results: list[tuple[float, float, float, float]] = parallel_sweep(
+    results: list[tuple[float, float, float, float, float]] = parallel_sweep(
         worker_func=simulate_temperature, params=sweep_params
     )
-    avg_m, avg_e, susc, spec_h = zip(*results, strict=True)
+    avg_m, avg_e, susc, spec_h, tau_int_vals = zip(*results, strict=True)
     entropy = calculate_entropy(
         temperatures=temperatures, specific_heat=np.array(spec_h),
         s_ref=np.log(Q),
@@ -75,6 +78,7 @@ def run_sweep() -> None:
         susc=susc,
         spec_h=spec_h,
         entropy=entropy,
+        tau_int=tau_int_vals,
         title=f'2D {Q}-state Clock Model: Temperature Sweep (L={L}, A={A})',
         filename='temperature_sweep.png',
         directory=args.output_dir,

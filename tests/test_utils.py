@@ -16,6 +16,7 @@ import matplotlib.pyplot as plt
 from models.ising_model import IsingSimulation
 from models.xy_model import XYSimulation
 from utils.physics_helpers import (
+    calculate_autocorr,
     calculate_entropy,
     calculate_thermodynamics,
     compute_kinetics_metrics,
@@ -397,3 +398,63 @@ def test_entropy_invalid_shape_mismatch():
             temperatures=np.array([1.0, 2.0, 3.0]),
             specific_heat=np.array([1.0, 2.0]),
         )
+
+
+# ---------- Tests for calculate_autocorr ----------
+
+def test_autocorr_normalization():
+    """C(0) must be 1.0 for any non-constant input."""
+    rng = np.random.default_rng(0)
+    x = rng.standard_normal(500)
+    C_t, _ = calculate_autocorr(time_series=x)
+    assert pytest.approx(C_t[0], abs=1e-12) == 1.0
+
+
+def test_autocorr_white_noise_tau():
+    """White noise has tau_int close to 0.5 (effective sample count = N)."""
+    rng = np.random.default_rng(1)
+    x = rng.standard_normal(4000)
+    _, tau = calculate_autocorr(time_series=x)
+    assert 0.3 < tau < 1.5
+
+
+def test_autocorr_ar1_tau():
+    """AR(1) process with rho=0.7 should give tau_int close to rho/(1-rho) = 2.33."""
+    rng = np.random.default_rng(42)
+    rho = 0.7
+    N = 20000
+    x = np.empty(N)
+    x[0] = 0.0
+    noise = rng.standard_normal(N)
+    for i in range(1, N):
+        x[i] = rho * x[i - 1] + noise[i] * np.sqrt(1 - rho**2)
+    _, tau = calculate_autocorr(time_series=x)
+    expected = rho / (1.0 - rho)  # ~2.33
+    assert abs(tau - expected) / expected < 0.3
+
+
+def test_autocorr_high_correlation_larger_tau():
+    """A strongly correlated series must have a larger tau_int than white noise."""
+    rng = np.random.default_rng(7)
+    noise = rng.standard_normal(3000)
+    white = rng.standard_normal(3000)
+    rho = 0.9
+    corr = np.empty(3000)
+    corr[0] = 0.0
+    for i in range(1, 3000):
+        corr[i] = rho * corr[i - 1] + noise[i] * np.sqrt(1 - rho**2)
+    _, tau_white = calculate_autocorr(time_series=white)
+    _, tau_corr = calculate_autocorr(time_series=corr)
+    assert tau_corr > tau_white
+
+
+def test_autocorr_invalid_too_few_points():
+    """Should raise ValueError with fewer than 3 elements."""
+    with pytest.raises(ValueError, match='at least 3'):
+        calculate_autocorr(time_series=np.array([1.0, 2.0]))
+
+
+def test_autocorr_invalid_zero_variance():
+    """Should raise ValueError for constant input."""
+    with pytest.raises(ValueError, match='zero variance'):
+        calculate_autocorr(time_series=np.ones(100))

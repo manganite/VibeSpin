@@ -109,6 +109,70 @@ def calculate_entropy(
     return entropy
 
 
+def calculate_autocorr(
+    *,
+    time_series: np.ndarray,
+    max_lag: int | None = None,
+    window_constant: float = 6.0,
+) -> tuple[np.ndarray, float]:
+    """
+    Compute the normalized autocorrelation function and integrated autocorrelation time.
+
+    Uses an FFT-based estimator for C(t): zero-pads to 2N, computes the power
+    spectrum, IFFTs, and normalizes by variance and the number of pairs at each
+    lag.  Applies the Madras-Sokal automatic windowing rule to stop integration
+    at the lag W where W = ``window_constant`` * tau_int, preventing the estimator
+    from accumulating noise at large lags.
+
+    Args:
+        time_series: 1-D array of sequential measurements (e.g. magnetization).
+        max_lag: Maximum lag to compute.  Defaults to ``len(time_series) // 2``.
+        window_constant: Multiplier for the Madras-Sokal window (default 6.0).
+
+    Returns:
+        A tuple ``(C_t, tau_int)`` where ``C_t`` is the normalized autocorrelation
+        array truncated at the window endpoint, and ``tau_int`` is the integrated
+        autocorrelation time (scalar).
+
+    Raises:
+        ValueError: If ``time_series`` has fewer than 3 elements or zero variance.
+    """
+    x = np.asarray(time_series, dtype=np.float64)
+    N = len(x)
+    if N < 3:
+        raise ValueError(f'time_series must have at least 3 elements, got {N}')
+    variance = float(np.var(x))
+    if variance == 0.0:
+        raise ValueError('time_series has zero variance; autocorrelation is undefined')
+
+    if max_lag is None:
+        max_lag = N // 2
+
+    # FFT-based unnormalized autocorrelation via power spectrum
+    x_centered = x - np.mean(x)
+    n_fft = 2 * N
+    fx = np.fft.rfft(x_centered, n=n_fft)
+    power = fx * np.conj(fx)
+    acf_raw: np.ndarray = np.fft.irfft(power, n=n_fft)[:N].real
+
+    # Normalize: divide by variance and by (N - t) pairs at each lag t
+    lags = np.arange(N, dtype=np.float64)
+    norm = variance * (N - lags)
+    C_t_full: np.ndarray = acf_raw / norm
+
+    # Madras-Sokal automatic window: integrate until window W = window_constant * tau_int
+    tau_int = 0.5
+    window_end = max_lag
+    for t in range(1, max_lag + 1):
+        tau_int += float(C_t_full[t])
+        if t >= window_constant * tau_int:
+            window_end = t
+            break
+
+    C_t: np.ndarray = C_t_full[:window_end + 1]
+    return C_t, tau_int
+
+
 def get_averaged_correlation(
     *, sim: MonteCarloSimulation, total_steps: int, sample_interval: int
 ) -> tuple[np.ndarray, np.ndarray]:
