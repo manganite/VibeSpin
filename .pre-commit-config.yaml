@@ -1,0 +1,27 @@
+repos:
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.15.0
+    hooks:
+      - id: ruff-check
+
+  - repo: https://github.com/pre-commit/mirrors-mypy
+    rev: v1.18.2
+    hooks:
+      - id: mypy
+        args: [--explicit-package-bases, models/, utils/, scripts/]
+        pass_filenames: false
+        additional_dependencies:
+          - numpy
+          - matplotlib
+          - tqdm
+          - numba
+          - scipy
+
+  - repo: local
+    hooks:
+      - id: pytest
+        name: pytest
+        entry: .venv/bin/pytest
+        language: system
+        pass_filenames: false
+        stages: [pre-push]

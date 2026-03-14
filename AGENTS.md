@@ -12,7 +12,7 @@ This document provides mandatory procedural context and technical constraints fo
 ### 2. Code Quality & Type Safety
 - **Type Hints**: Every source file MUST include `from __future__ import annotations` as the first import to support modern type hinting and forward references.
 - **API Safety**: Use `*` to force **keyword-only arguments** for all public simulation and analysis methods (e.g., `def run(self, *, steps: int, temp: float) -> None:`). This prevents transposition errors in complex physical APIs.
-- **Import Strategy**: Use **relative imports** within the package (e.g., `from ..utils import ...`) and **absolute imports** in `tests/` and `scripts/`.
+- **Import Strategy**: Use **relative imports** within the same package namespace (e.g., `from .simulation_base import ...`). In this repository layout, `models/` and `utils/` are top-level package namespaces, so cross-package imports between them should use **absolute imports** (e.g., `from models.simulation_base import ...`). Keep **absolute imports** in `tests/` and `scripts/`.
 - **Terminology Consistency**: Use the same names for the same concepts across code, docstrings, README text, notebook prose, plots, logs, CLI help, and tests. If a concept already has an established name in the project, reuse it instead of introducing a near-synonym. If a rename is necessary, update the surrounding vocabulary consistently.
 
 ### 3. Physical Fidelity & Update Algorithms

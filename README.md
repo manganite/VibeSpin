@@ -10,8 +10,18 @@ The project supports checkerboard and random-site updates, with a clear distinct
 
 ## Installation
 
+For runtime use:
+
 ```bash
 pip install -e .
+```
+
+For development (tests, linting, and type checking):
+
+```bash
+pip install -e ".[dev,notebook]"
+pre-commit install
+pre-commit install --hook-type pre-push
 ```
 
 ## Typical usage
@@ -19,7 +29,7 @@ pip install -e .
 A temperature sweep for XY equilibrium analysis can be launched with the command below.
 
 ```bash
-python scripts/xy/temperature_sweep.py --L 32 --T-min 0.2 --T-max 1.5 --steps 10
+python scripts/xy/temperature_sweep.py --size 32 --t-min 0.2 --t-max 1.5 --t-points 10
 ```
 
 BKT-focused analysis can be started with the following script.
@@ -52,7 +62,18 @@ Generated figures and analysis reports are saved to the `results/` directory, or
 
 Simulation kernels should remain in `@njit(cache=True, fastmath=True)` functions, and reproducibility-sensitive runs should specify `seed` values. Logging should go through `utils/system_helpers.py:setup_logging` rather than direct print calls. 
 
-Before proposing a commit, run the full verification suite: `pytest`, `ruff check .`, and `mypy`. Ensure that new physical logic or utility functions include unit tests in the `tests/` directory to maintain high standards of physical fidelity and code quality.
+For non-equilibrium kinetics scripts (`*_kinetics.py` and `*_evolution.py`), use random-site updates. Temperature sweep scripts (`*_sweep.py`) should keep checkerboard updates for equilibrium throughput.
+
+Before proposing a commit, run the full verification suite:
+
+```bash
+pytest
+ruff check .
+mypy --explicit-package-bases models/ utils/ scripts/
+pre-commit run --all-files
+```
+
+Ensure that new physical logic or utility functions include unit tests in the `tests/` directory to maintain high standards of physical fidelity and code quality.
 
 When a Numba typing failure appears, include the traceback and the kernel source in the debugging prompt. That usually reveals unsupported object usage quickly.
 
