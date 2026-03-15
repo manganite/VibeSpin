@@ -1,5 +1,5 @@
 """
-2D Ising Model simulation using the Metropolis-Hastings algorithm.
+2D Ising Model simulation using Metropolis-Hastings and Wolff cluster algorithms.
 """
 from __future__ import annotations
 
@@ -176,12 +176,102 @@ def ising_step_random_numba(
     return spins
 
 
+@njit(cache=True, fastmath=True)
+def ising_wolff_step_numba(
+    *, spins: np.ndarray, beta: float, J: float, idx_next: np.ndarray, idx_prev: np.ndarray
+) -> np.ndarray:
+    """
+    Perform one Wolff cluster flip on the Ising lattice.
+
+    A single cluster is grown by probabilistic DFS from a random seed site and
+    then flipped in a single collective move.  The bond acceptance probability
+    ``P_add = 1 - exp(-2 beta J)`` is derived from the Fortuin-Kasteleyn
+    representation and guarantees detailed balance without rejections.
+
+    One call constitutes one *cluster sweep*.  The effective number of site
+    updates per call scales as the mean cluster size ``<C>`` and diverges at
+    T_c, which is precisely where Metropolis suffers maximum critical slowing
+    down.  ``parallel=True`` is silently ignored: cluster growth is
+    inherently sequential.
+
+    Parameters
+    ----------
+        spins: (N, N) array of spins (+1 or -1).
+        beta: Inverse temperature 1/kT.
+        J: Coupling constant.
+        idx_next: Pre-calculated next-neighbor indices (PBC).
+        idx_prev: Pre-calculated previous-neighbor indices (PBC).
+
+    Returns
+    -------
+        Updated spins array.
+    """
+    N = spins.shape[0]
+    p_add = 1.0 - np.exp(-2.0 * J * beta)
+
+    # Choose a random seed site
+    si = np.random.randint(0, N)
+    sj = np.random.randint(0, N)
+    seed_spin = spins[si, sj]
+
+    # Pre-allocate cluster membership mask and DFS stack
+    in_cluster = np.zeros((N, N), dtype=np.bool_)
+    stack = np.empty(N * N, dtype=np.int64)
+    in_cluster[si, sj] = True
+    stack[0] = si * N + sj
+    stack_top = 1
+
+    while stack_top > 0:
+        stack_top -= 1
+        flat = stack[stack_top]
+        ci = flat // N
+        cj = flat % N
+
+        inxt = idx_next[ci]
+        iprv = idx_prev[ci]
+        jnxt = idx_next[cj]
+        jprv = idx_prev[cj]
+
+        # North
+        if not in_cluster[iprv, cj] and spins[iprv, cj] == seed_spin:
+            if np.random.random() < p_add:
+                in_cluster[iprv, cj] = True
+                stack[stack_top] = iprv * N + cj
+                stack_top += 1
+        # South
+        if not in_cluster[inxt, cj] and spins[inxt, cj] == seed_spin:
+            if np.random.random() < p_add:
+                in_cluster[inxt, cj] = True
+                stack[stack_top] = inxt * N + cj
+                stack_top += 1
+        # West
+        if not in_cluster[ci, jprv] and spins[ci, jprv] == seed_spin:
+            if np.random.random() < p_add:
+                in_cluster[ci, jprv] = True
+                stack[stack_top] = ci * N + jprv
+                stack_top += 1
+        # East
+        if not in_cluster[ci, jnxt] and spins[ci, jnxt] == seed_spin:
+            if np.random.random() < p_add:
+                in_cluster[ci, jnxt] = True
+                stack[stack_top] = ci * N + jnxt
+                stack_top += 1
+
+    # Flip all cluster spins in-place
+    for i in range(N):
+        for j in range(N):
+            if in_cluster[i, j]:
+                spins[i, j] *= -1
+
+    return spins
+
+
 class IsingSimulation(MonteCarloSimulation):
     """
     Simulation of the 2D Ising model on a square lattice.
     """
 
-    _VALID_UPDATES: frozenset = frozenset({'checkerboard', 'random'})
+    _VALID_UPDATES: frozenset = frozenset({'checkerboard', 'random', 'wolff'})
 
     def __init__(
         self,
@@ -201,9 +291,11 @@ class IsingSimulation(MonteCarloSimulation):
             size: Linear dimension L of the L x L lattice.
             temp: Temperature T.
             J: Coupling constant (default 1.0).
-            update: Update scheme - ``'checkerboard'`` (default, faster) or
-                ``'random'`` (random sequential Metropolis, more physical
-                stochastic dynamics for coarsening studies).
+            update: Update scheme - ``'checkerboard'`` (default, faster),
+                ``'random'`` (random sequential Metropolis, physical
+                stochastic dynamics for coarsening studies), or
+                ``'wolff'`` (Wolff cluster algorithm, highly efficient near T_c
+                due to vanishing critical slowing down).
             parallel: Whether to use parallelized Numba kernels (only for checkerboard).
             seed: Optional random seed for reproducibility.
 
@@ -233,6 +325,14 @@ class IsingSimulation(MonteCarloSimulation):
 
             if self.update == 'random':
                 self.spins = ising_step_random_numba(
+                    spins=self.spins,
+                    beta=self.beta,
+                    J=self.J,
+                    idx_next=self.idx_next,
+                    idx_prev=self.idx_prev,
+                )
+            elif self.update == 'wolff':
+                self.spins = ising_wolff_step_numba(
                     spins=self.spins,
                     beta=self.beta,
                     J=self.J,
@@ -292,6 +392,13 @@ def main() -> None:
     parser.add_argument('--steps', type=int, default=500, help='MC steps')
     parser.add_argument('--seed', type=int, default=None, help='Random seed')
     parser.add_argument('--parallel', action='store_true', help='Use parallel kernels')
+    parser.add_argument(
+        '--update',
+        type=str,
+        default='checkerboard',
+        choices=['checkerboard', 'random', 'wolff'],
+        help='Update scheme (default: checkerboard)',
+    )
     parser.add_argument('--verbose', action='store_true', help='Enable verbose logging')
     args = parser.parse_args()
 
@@ -299,9 +406,12 @@ def main() -> None:
     logger = setup_logging(level=log_level)
 
     logger.info(
-        f'Initializing Ising Model (L={args.size}, T={args.temp}, parallel={args.parallel})...'
+        f'Initializing Ising Model (L={args.size}, T={args.temp}, '
+        f'update={args.update}, parallel={args.parallel})...'
     )
-    sim = IsingSimulation(size=args.size, temp=args.temp, seed=args.seed, parallel=args.parallel)
+    sim = IsingSimulation(
+        size=args.size, temp=args.temp, seed=args.seed, parallel=args.parallel, update=args.update
+    )
 
     logger.info(f'Running for {args.steps} steps...')
     mag_history, energy_history = sim.run(n_steps=args.steps)

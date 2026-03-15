@@ -73,3 +73,19 @@ def test_different_seeds_produce_different_results():
     sim2.step()
 
     assert not np.array_equal(sim1.spins, sim2.spins)
+
+
+def test_ising_wolff_reproducibility():
+    """Two Ising Wolff simulations with the same seed must produce identical cluster sequences."""
+    L, T, seed = 16, 2.269, 77
+    sim1 = IsingSimulation(size=L, temp=T, seed=seed, update='wolff')
+    sim2 = IsingSimulation(size=L, temp=T, seed=seed, update='wolff')
+
+    assert np.array_equal(sim1.spins, sim2.spins)
+
+    for _ in range(5):
+        sim1.step()
+        sim2.step()
+
+    assert np.array_equal(sim1.spins, sim2.spins)
+    assert sim1._get_energy() == sim2._get_energy()

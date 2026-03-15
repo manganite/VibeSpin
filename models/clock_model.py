@@ -1,5 +1,5 @@
 """
-2D q-state Clock Model simulation using the Metropolis-Hastings algorithm.
+2D q-state Clock Model simulation using Metropolis-Hastings and Wolff cluster algorithms.
 """
 from __future__ import annotations
 
@@ -265,12 +265,129 @@ def clock_energy_numba(
     return energy / (N * N)
 
 
+@njit(cache=True, fastmath=True)
+def clock_wolff_step_numba(
+    *, spins: np.ndarray, beta: float, J: float, idx_next: np.ndarray, idx_prev: np.ndarray
+) -> np.ndarray:
+    """
+    Perform one Wolff cluster flip on the continuous Clock Model lattice.
+
+    Implements the Wolff-Evertz reflection scheme for O(2) spins using only
+    the Heisenberg exchange coupling J.  A random mirror-plane axis r\u0302 is
+    sampled from S^1, and bonds are activated with probability
+    ``P_add = 1 - exp(-2 beta J sigma_i sigma_j)`` where
+    ``sigma_i = s_i \u00b7 r\u0302``.  Cluster spins are reflected:
+    ``s -> s - 2 (s \u00b7 r\u0302) r\u0302``.
+
+    **Limitation**: the crystal-field anisotropy term ``A cos(q phi)`` breaks
+    the O(2) reflection symmetry required by the Fortuin-Kasteleyn bond
+    construction.  This kernel therefore satisfies detailed balance only for
+    the exchange part of the Hamiltonian; use it at parameters where the
+    anisotropy is weak relative to J, or set A=0 for pure XY-like studies.
+
+    One call constitutes one cluster sweep.  ``parallel=True`` is silently
+    ignored.
+
+    Parameters
+    ----------
+        spins: (N, N, 2) array of unit vectors.
+        beta: Inverse temperature 1/kT.
+        J: Coupling constant.
+        idx_next: Pre-calculated next-neighbor indices (PBC).
+        idx_prev: Pre-calculated previous-neighbor indices (PBC).
+
+    Returns
+    -------
+        Updated spins array.
+    """
+    N = spins.shape[0]
+
+    # Random mirror-plane axis r\u0302 = (cos phi, sin phi)
+    phi = np.random.uniform(0.0, 2.0 * np.pi)
+    rx = np.cos(phi)
+    ry = np.sin(phi)
+
+    # Random seed site
+    si = np.random.randint(0, N)
+    sj = np.random.randint(0, N)
+
+    # Pre-allocate cluster membership mask and DFS stack
+    in_cluster = np.zeros((N, N), dtype=np.bool_)
+    stack = np.empty(N * N, dtype=np.int64)
+    in_cluster[si, sj] = True
+    stack[0] = si * N + sj
+    stack_top = 1
+
+    while stack_top > 0:
+        stack_top -= 1
+        flat = stack[stack_top]
+        ci = flat // N
+        cj = flat % N
+
+        proj_c = spins[ci, cj, 0] * rx + spins[ci, cj, 1] * ry
+        inxt = idx_next[ci]
+        iprv = idx_prev[ci]
+        jnxt = idx_next[cj]
+        jprv = idx_prev[cj]
+
+        # North
+        if not in_cluster[iprv, cj]:
+            proj_n = spins[iprv, cj, 0] * rx + spins[iprv, cj, 1] * ry
+            prod = proj_c * proj_n
+            if prod > 0.0:
+                p_add = 1.0 - np.exp(-2.0 * beta * J * prod)
+                if np.random.random() < p_add:
+                    in_cluster[iprv, cj] = True
+                    stack[stack_top] = iprv * N + cj
+                    stack_top += 1
+        # South
+        if not in_cluster[inxt, cj]:
+            proj_n = spins[inxt, cj, 0] * rx + spins[inxt, cj, 1] * ry
+            prod = proj_c * proj_n
+            if prod > 0.0:
+                p_add = 1.0 - np.exp(-2.0 * beta * J * prod)
+                if np.random.random() < p_add:
+                    in_cluster[inxt, cj] = True
+                    stack[stack_top] = inxt * N + cj
+                    stack_top += 1
+        # West
+        if not in_cluster[ci, jprv]:
+            proj_n = spins[ci, jprv, 0] * rx + spins[ci, jprv, 1] * ry
+            prod = proj_c * proj_n
+            if prod > 0.0:
+                p_add = 1.0 - np.exp(-2.0 * beta * J * prod)
+                if np.random.random() < p_add:
+                    in_cluster[ci, jprv] = True
+                    stack[stack_top] = ci * N + jprv
+                    stack_top += 1
+        # East
+        if not in_cluster[ci, jnxt]:
+            proj_n = spins[ci, jnxt, 0] * rx + spins[ci, jnxt, 1] * ry
+            prod = proj_c * proj_n
+            if prod > 0.0:
+                p_add = 1.0 - np.exp(-2.0 * beta * J * prod)
+                if np.random.random() < p_add:
+                    in_cluster[ci, jnxt] = True
+                    stack[stack_top] = ci * N + jnxt
+                    stack_top += 1
+
+    # Reflect all cluster spins through the plane perpendicular to r\u0302
+    for i in range(N):
+        for j in range(N):
+            if in_cluster[i, j]:
+                proj = spins[i, j, 0] * rx + spins[i, j, 1] * ry
+                spins[i, j, 0] -= 2.0 * proj * rx
+                spins[i, j, 1] -= 2.0 * proj * ry
+
+    return spins
+
+
 class ClockSimulation(MonteCarloSimulation):
     """
     Simulation of the 2D q-state clock model on a square lattice.
     """
 
-    _VALID_UPDATES: frozenset = frozenset({'checkerboard', 'random'})
+    _VALID_UPDATES: frozenset = frozenset({'checkerboard', 'random', 'wolff'})
 
     def __init__(
         self,
@@ -293,10 +410,12 @@ class ClockSimulation(MonteCarloSimulation):
             temp: Temperature T.
             J: Coupling constant (default 1.0).
             A: Anisotropy strength (default 1.0).
-            q: Number of clock states (default 6). Must be ≥ 2.
-            update: Update scheme - ``'checkerboard'`` (default, faster) or
-                ``'random'`` (random sequential Metropolis, more physical
-                stochastic dynamics for kinetics studies).
+            q: Number of clock states (default 6). Must be \u2265 2.
+            update: Update scheme - ``'checkerboard'`` (default, faster),
+                ``'random'`` (random sequential Metropolis, physical
+                stochastic dynamics for kinetics studies), or
+                ``'wolff'`` (Wolff-Evertz cluster algorithm using the exchange
+                term J; detailed balance holds exactly only when A=0).
             parallel: Whether to use parallelized Numba kernels (only for checkerboard).
             seed: Optional random seed for reproducibility.
 
@@ -336,6 +455,14 @@ class ClockSimulation(MonteCarloSimulation):
                     J=self.J,
                     A=self.A,
                     q=self.q,
+                    idx_next=self.idx_next,
+                    idx_prev=self.idx_prev,
+                )
+            elif self.update == 'wolff':
+                self.spins = clock_wolff_step_numba(
+                    spins=self.spins,
+                    beta=self.beta,
+                    J=self.J,
                     idx_next=self.idx_next,
                     idx_prev=self.idx_prev,
                 )
@@ -825,6 +952,13 @@ def main() -> None:
     parser.add_argument('--steps', type=int, default=500, help='MC steps')
     parser.add_argument('--seed', type=int, default=None, help='Random seed')
     parser.add_argument('--parallel', action='store_true', help='Use parallel kernels')
+    parser.add_argument(
+        '--update',
+        type=str,
+        default='checkerboard',
+        choices=['checkerboard', 'random', 'wolff'],
+        help='Update scheme (default: checkerboard)',
+    )
     parser.add_argument('--verbose', action='store_true', help='Enable verbose logging')
     args = parser.parse_args()
 
@@ -833,10 +967,11 @@ def main() -> None:
 
     logger.info(
         f'Initializing {args.q}-state Clock Model (L={args.size}, T={args.temp}, '
-        f'parallel={args.parallel})...'
+        f'update={args.update}, parallel={args.parallel})...'
     )
     sim = ClockSimulation(
-        size=args.size, temp=args.temp, q=args.q, seed=args.seed, parallel=args.parallel
+        size=args.size, temp=args.temp, q=args.q, seed=args.seed, parallel=args.parallel,
+        update=args.update
     )
 
     logger.info(f'Running for {args.steps} steps...')

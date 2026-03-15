@@ -464,3 +464,81 @@ def test_discrete_clock_parallel_update():
     sim = DiscreteClockSimulation(size=16, temp=0.5, q=6, parallel=True)
     sim.step()
     assert sim.steps == 1
+
+
+def test_ising_wolff_update():
+    """Verify Ising Wolff cluster update dispatches correctly."""
+    sim = IsingSimulation(size=10, temp=2.269, update='wolff')
+    sim.step()
+    assert sim.steps == 1
+    assert sim.update == 'wolff'
+    assert np.all(np.logical_or(sim.spins == 1, sim.spins == -1))
+
+
+def test_xy_wolff_update():
+    """Verify XY Wolff cluster update dispatches correctly and preserves norms."""
+    sim = XYSimulation(size=10, temp=0.8, update='wolff')
+    sim.step()
+    assert sim.steps == 1
+    assert sim.update == 'wolff'
+    norms = np.linalg.norm(sim.spins, axis=-1)
+    np.testing.assert_allclose(norms, 1.0, atol=1e-12)
+
+
+def test_clock_wolff_update():
+    """Verify Clock Wolff cluster update dispatches correctly and preserves norms."""
+    sim = ClockSimulation(size=10, temp=0.5, q=6, update='wolff')
+    sim.step()
+    assert sim.steps == 1
+    assert sim.update == 'wolff'
+    norms = np.linalg.norm(sim.spins, axis=-1)
+    np.testing.assert_allclose(norms, 1.0, atol=1e-12)
+
+
+def test_ising_wolff_thermodynamic_consistency():
+    """
+    Wolff and Metropolis must sample the same canonical distribution.
+
+    At T=2.5 (disordered phase, above T_c≈2.269) on a 12x12 lattice both
+    algorithms are run to equilibrium and their time-averaged energy per site
+    and magnetisation are compared.  Agreement within simulation noise
+    demonstrates that the Wolff acceptance probabilities correctly reproduce
+    the Boltzmann weights.
+    """
+    L, T, J = 12, 2.5, 1.0
+    n_equil, n_meas = 1000, 2000
+
+    sim_metro = IsingSimulation(size=L, temp=T, J=J, update='checkerboard', seed=1)
+    sim_metro.equilibrate(n_steps=n_equil)
+    mags_metro, engs_metro = sim_metro.run(n_steps=n_meas)
+
+    sim_wolff = IsingSimulation(size=L, temp=T, J=J, update='wolff', seed=2)
+    sim_wolff.equilibrate(n_steps=n_equil)
+    mags_wolff, engs_wolff = sim_wolff.run(n_steps=n_meas)
+
+    # Mean energy per site must agree to ≲ 0.05 J (well within thermal fluctuations)
+    np.testing.assert_allclose(np.mean(engs_metro), np.mean(engs_wolff), atol=0.05)
+    # Mean |M| must agree; both should be small in the disordered phase
+    np.testing.assert_allclose(np.mean(mags_metro), np.mean(mags_wolff), atol=0.08)
+
+
+def test_xy_wolff_thermodynamic_consistency():
+    """
+    XY Wolff (Wolff-Evertz reflection) must reproduce the same equilibrium
+    energy as Metropolis checkerboard at T=1.2 (above the BKT transition).
+
+    At this temperature the system is in the high-T plasma phase and both
+    algorithms are well-equilibrated in a few hundred steps on a 10x10 lattice.
+    """
+    L, T, J = 10, 1.2, 1.0
+    n_equil, n_meas = 500, 1000
+
+    sim_metro = XYSimulation(size=L, temp=T, J=J, update='checkerboard', seed=1)
+    sim_metro.equilibrate(n_steps=n_equil)
+    _, engs_metro = sim_metro.run(n_steps=n_meas)
+
+    sim_wolff = XYSimulation(size=L, temp=T, J=J, update='wolff', seed=2)
+    sim_wolff.equilibrate(n_steps=n_equil)
+    _, engs_wolff = sim_wolff.run(n_steps=n_meas)
+
+    np.testing.assert_allclose(np.mean(engs_metro), np.mean(engs_wolff), atol=0.05)

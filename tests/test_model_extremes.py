@@ -81,3 +81,20 @@ def test_xy_vorticity_trigger():
     d = sim._get_vortex_density()
     assert v.shape == (size, size)
     assert 0 <= d <= 1.0
+
+
+def test_wolff_update_accepted():
+    """Verify that update='wolff' is accepted for all applicable models."""
+    IsingSimulation(size=4, temp=2.269, update='wolff')
+    XYSimulation(size=4, temp=0.8, update='wolff')
+    ClockSimulation(size=4, temp=0.5, q=6, update='wolff')
+
+
+def test_wolff_invalid_update_still_rejected():
+    """Verify that adding 'wolff' does not affect rejection of truly invalid schemes."""
+    with pytest.raises(ValueError, match='Unknown update scheme'):
+        IsingSimulation(size=4, temp=1.0, update='swendsen-wang')
+    with pytest.raises(ValueError, match='Unknown update scheme'):
+        XYSimulation(size=4, temp=1.0, update='swendsen-wang')
+    with pytest.raises(ValueError, match='Unknown update scheme'):
+        ClockSimulation(size=4, temp=1.0, update='swendsen-wang')
