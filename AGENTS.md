@@ -39,6 +39,13 @@ This document provides mandatory procedural context and technical constraints fo
 - **Commit Format**: Use **Conventional Commits** (`type(scope): description`). Example: `phys(xy): implement helicity modulus calculation`.
 - **GitHub Sync**: After a successful local commit, ask the user if they wish to push to the remote repository.
 
+### 6. Documentation & Knowledge Management
+- **Docstring Compliance**: All new classes, methods, and kernels MUST include **NumPy-style docstrings**. This is mandatory for automated Sphinx API generation (`sphinx-apidoc`).
+- **Theory Updates**: When introducing new physical models or observables, you MUST update **`PHYSICS.md`** with the relevant Hamiltonian definitions, phase behavior, and mathematical formulations.
+- **Scripts Catalog**: Any new entry-point script added to `scripts/` MUST be registered in **`SCRIPTS.md`** with a brief description of its purpose and usage.
+- **Performance Re-profiling**: If a change significantly impacts simulation throughput or analysis overhead, you MUST re-run the benchmark tool (`benchmark.py`) and update the **`Performance_Benchmarks.ipynb`** summary results.
+- **Cross-linking**: Standalone documentation files MUST be cross-linked in the Sphinx hub (`docs/source/index.md`) to ensure they appear in the hosted documentation site.
+
 ## Directory Map for Agents
 ...
 
