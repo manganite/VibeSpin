@@ -61,7 +61,11 @@
 <li class="toctree-l3"><a class="reference internal" href="#verification-suite">Verification Suite</a></li>
 </ul>
 </li>
-<li class="toctree-l2"><a class="reference internal" href="#documentation">Documentation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#documentation">Documentation</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#sphinx-setup-notes">Sphinx Setup Notes</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#docs-troubleshooting">Docs Troubleshooting</a></li>
+</ul>
+</li>
 <li class="toctree-l2"><a class="reference internal" href="#project-context">Project context</a></li>
 </ul>
 </li>
@@ -191,6 +195,24 @@ mypy<span class="w"> </span>--explicit-package-bases<span class="w"> </span>mode
 make<span class="w"> </span>html
 </pre></div>
 </div>
+<section id="sphinx-setup-notes">
+<h3>Sphinx Setup Notes<a class="headerlink" href="#sphinx-setup-notes" title="Link to this heading"></a></h3>
+<p>The documentation stack uses Sphinx with MyST Markdown and nbsphinx for notebook pages. A standard development install for documentation is:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>pip<span class="w"> </span>install<span class="w"> </span>-e<span class="w"> </span><span class="s2">&quot;.[docs]&quot;</span>
+</pre></div>
+</div>
+<p>In this repository’s devcontainer, documentation dependencies are installed automatically during container creation via the <code class="docutils literal notranslate"><span class="pre">.[dev,notebook,docs]</span></code> extras group.</p>
+<p>Notebook rendering requires Pandoc. The docs configuration includes a fallback that uses the bundled binary from <code class="docutils literal notranslate"><span class="pre">pypandoc-binary</span></code> when a system <code class="docutils literal notranslate"><span class="pre">pandoc</span></code> executable is not available, so normal builds should work without manual Pandoc installation.</p>
+</section>
+<section id="docs-troubleshooting">
+<h3>Docs Troubleshooting<a class="headerlink" href="#docs-troubleshooting" title="Link to this heading"></a></h3>
+<p>If <code class="docutils literal notranslate"><span class="pre">make</span> <span class="pre">html</span></code> fails after opening or rebuilding the container, verify the project environment was created successfully and reinstall extras:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>pip<span class="w"> </span>install<span class="w"> </span>-e<span class="w"> </span><span class="s2">&quot;.[dev,notebook,docs]&quot;</span>
+<span class="nb">cd</span><span class="w"> </span>docs
+make<span class="w"> </span>html
+</pre></div>
+</div>
+<p>If this still fails, check that the selected interpreter is the project virtual environment at <code class="docutils literal notranslate"><span class="pre">.venv/bin/python</span></code>.</p>
 <p>For deeper insights, refer to the source guides:</p>
 <ul class="simple">
 <li><p><a class="reference internal" href="physics.html"><span class="doc">Physics and Algorithm Guide</span></a>: Detailed explanation of physical models, observables, and algorithm prerequisites.</p></li>
@@ -198,6 +220,7 @@ make<span class="w"> </span>html
 <li><p><a class="reference internal" href="agents.html"><span class="doc">Agent Instruction Guide</span></a>: Mandatory technical constraints for AI Agents.</p></li>
 <li><p><a class="reference internal" href="benchmarks.html"><span class="doc">Performance Benchmarks</span></a>: Detailed scaling analysis.</p></li>
 </ul>
+</section>
 </section>
 <section id="project-context">
 <h2>Project context<a class="headerlink" href="#project-context" title="Link to this heading"></a></h2>

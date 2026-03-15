@@ -95,6 +95,30 @@ cd docs
 make html
 ```
 
+### Sphinx Setup Notes
+
+The documentation stack uses Sphinx with MyST Markdown and nbsphinx for notebook pages. A standard development install for documentation is:
+
+```bash
+pip install -e ".[docs]"
+```
+
+In this repository's devcontainer, documentation dependencies are installed automatically during container creation via the `.[dev,notebook,docs]` extras group.
+
+Notebook rendering requires Pandoc. The docs configuration includes a fallback that uses the bundled binary from `pypandoc-binary` when a system `pandoc` executable is not available, so normal builds should work without manual Pandoc installation.
+
+### Docs Troubleshooting
+
+If `make html` fails after opening or rebuilding the container, verify the project environment was created successfully and reinstall extras:
+
+```bash
+pip install -e ".[dev,notebook,docs]"
+cd docs
+make html
+```
+
+If this still fails, check that the selected interpreter is the project virtual environment at `.venv/bin/python`.
+
 For deeper insights, refer to the source guides:
 - {doc}`Physics and Algorithm Guide <physics>`: Detailed explanation of physical models, observables, and algorithm prerequisites.
 - {doc}`Scripts Catalog <scripts>`: Comprehensive catalog of entry-point scripts.
