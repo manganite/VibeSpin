@@ -1,0 +1,430 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>scripts.ising.wolff_efficiency &mdash; VibeSpin 0.1.0 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=9edc463e" />
+
+  
+      <script src="../../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../../_static/documentation_options.js?v=01f34227"></script>
+      <script src="../../../_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="../../../_static/sphinx_highlight.js?v=6ffebe34"></script>
+      <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../../index.html" class="icon icon-home">
+            VibeSpin
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">User Guides:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../introduction.html">VibeSpin</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../physics.html">Physics and Algorithm Guide: VibeSpin</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../scripts.html">Scripts Catalog: VibeSpin</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../agents.html">Agent Instruction Guide: VibeSpin</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Performance:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../benchmarks.html">Performance Benchmarking for VibeSpin</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">API Reference:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../api/modules.html">vibespin</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">VibeSpin</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">scripts.ising.wolff_efficiency</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for scripts.ising.wolff_efficiency</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">Wolff cluster algorithm efficiency demonstration for the 2D Ising model.</span>
+
+<span class="sd">Compares integrated autocorrelation time (tau_int), independent samples per</span>
+<span class="sd">second (ISS), mean cluster size fraction, and susceptibility between the</span>
+<span class="sd">Metropolis checkerboard and Wolff cluster algorithms across a temperature range</span>
+<span class="sd">centred on the critical point T_c ~= 2.269.</span>
+
+<span class="sd">Results are saved to ``results/ising/wolff_efficiency.npz`` for notebook</span>
+<span class="sd">re-use and ``results/ising/wolff_efficiency.png`` as a 4-panel figure.</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">__future__</span><span class="w"> </span><span class="kn">import</span> <span class="n">annotations</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">argparse</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">logging</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">os</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">time</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">matplotlib.pyplot</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">plt</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">models.ising_model</span><span class="w"> </span><span class="kn">import</span> <span class="n">IsingSimulation</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">utils.physics_helpers</span><span class="w"> </span><span class="kn">import</span> <span class="n">calculate_autocorr</span><span class="p">,</span> <span class="n">calculate_thermodynamics</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">utils.system_helpers</span><span class="w"> </span><span class="kn">import</span> <span class="n">adaptive_equilibrate</span><span class="p">,</span> <span class="n">parallel_sweep</span><span class="p">,</span> <span class="n">setup_logging</span>
+
+<span class="c1">#: Exact Onsager critical temperature for the 2D nearest-neighbour Ising model.</span>
+<span class="n">TC_ISING</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">2.0</span> <span class="o">/</span> <span class="n">np</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="mf">1.0</span> <span class="o">+</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="mf">2.0</span><span class="p">))</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_measure_efficiency_point</span><span class="p">(</span>
+    <span class="n">params</span><span class="p">:</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">float</span><span class="p">,</span> <span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">],</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">float</span><span class="p">]:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Worker: measure algorithmic efficiency at one temperature point.</span>
+
+<span class="sd">    Runs the Metropolis checkerboard and Wolff cluster algorithms from</span>
+<span class="sd">    independent equilibrated states at temperature *T*.  For each algorithm</span>
+<span class="sd">    the worker records wall-clock time for *meas_steps* steps via</span>
+<span class="sd">    ``sim.run()``, computes tau_int from the magnetisation series, and derives</span>
+<span class="sd">    ISS = (steps / wall_time) / tau_int.  Cluster sizes are measured in a</span>
+<span class="sd">    separate, short Wolff pass to keep the timing paths clean.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    params : tuple</span>
+<span class="sd">        ``(T, L, eq_steps, meas_steps, seed)`` — temperature, lattice size,</span>
+<span class="sd">        minimum equilibration steps, measurement steps, and base RNG seed.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    dict</span>
+<span class="sd">        Keys: ``T``, ``tau_metro``, ``tau_wolff``, ``iss_metro``,</span>
+<span class="sd">        ``iss_wolff``, ``mean_cluster_frac``, ``chi_metro``, ``chi_wolff``.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">T</span><span class="p">,</span> <span class="n">L</span><span class="p">,</span> <span class="n">eq_steps</span><span class="p">,</span> <span class="n">meas_steps</span><span class="p">,</span> <span class="n">seed</span> <span class="o">=</span> <span class="n">params</span>
+
+    <span class="c1"># ---- Metropolis checkerboard ----</span>
+    <span class="n">sim_m</span> <span class="o">=</span> <span class="n">IsingSimulation</span><span class="p">(</span><span class="n">size</span><span class="o">=</span><span class="n">L</span><span class="p">,</span> <span class="n">temp</span><span class="o">=</span><span class="n">T</span><span class="p">,</span> <span class="n">update</span><span class="o">=</span><span class="s1">&#39;checkerboard&#39;</span><span class="p">,</span> <span class="n">seed</span><span class="o">=</span><span class="n">seed</span><span class="p">)</span>
+    <span class="n">adaptive_equilibrate</span><span class="p">(</span><span class="n">sim_m</span><span class="p">,</span> <span class="n">min_steps</span><span class="o">=</span><span class="n">eq_steps</span><span class="p">)</span>
+    <span class="n">t0</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">perf_counter</span><span class="p">()</span>
+    <span class="n">mags_m</span><span class="p">,</span> <span class="n">engs_m</span> <span class="o">=</span> <span class="n">sim_m</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="n">n_steps</span><span class="o">=</span><span class="n">meas_steps</span><span class="p">)</span>
+    <span class="n">t_metro</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">perf_counter</span><span class="p">()</span> <span class="o">-</span> <span class="n">t0</span>
+    <span class="n">mags_m_arr</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">mags_m</span><span class="p">)</span>
+    <span class="n">engs_m_arr</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">engs_m</span><span class="p">)</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">_</span><span class="p">,</span> <span class="n">tau_metro</span> <span class="o">=</span> <span class="n">calculate_autocorr</span><span class="p">(</span><span class="n">time_series</span><span class="o">=</span><span class="n">mags_m_arr</span><span class="p">)</span>
+    <span class="k">except</span> <span class="ne">ValueError</span><span class="p">:</span>
+        <span class="n">tau_metro</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="s1">&#39;nan&#39;</span><span class="p">)</span>
+    <span class="n">_</span><span class="p">,</span> <span class="n">_</span><span class="p">,</span> <span class="n">chi_metro</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">calculate_thermodynamics</span><span class="p">(</span>
+        <span class="n">mags</span><span class="o">=</span><span class="n">mags_m_arr</span><span class="p">,</span> <span class="n">engs</span><span class="o">=</span><span class="n">engs_m_arr</span><span class="p">,</span> <span class="n">T</span><span class="o">=</span><span class="n">T</span><span class="p">,</span> <span class="n">L</span><span class="o">=</span><span class="n">L</span><span class="p">,</span>
+    <span class="p">)</span>
+    <span class="n">iss_metro</span> <span class="o">=</span> <span class="p">(</span>
+        <span class="p">(</span><span class="n">meas_steps</span> <span class="o">/</span> <span class="n">t_metro</span><span class="p">)</span> <span class="o">/</span> <span class="n">tau_metro</span>
+        <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">isfinite</span><span class="p">(</span><span class="n">tau_metro</span><span class="p">)</span> <span class="ow">and</span> <span class="n">tau_metro</span> <span class="o">&gt;</span> <span class="mi">0</span>
+        <span class="k">else</span> <span class="nb">float</span><span class="p">(</span><span class="s1">&#39;nan&#39;</span><span class="p">)</span>
+    <span class="p">)</span>
+
+    <span class="c1"># ---- Wolff cluster (tau_int and ISS via sim.run for clean timing) ----</span>
+    <span class="n">sim_w</span> <span class="o">=</span> <span class="n">IsingSimulation</span><span class="p">(</span><span class="n">size</span><span class="o">=</span><span class="n">L</span><span class="p">,</span> <span class="n">temp</span><span class="o">=</span><span class="n">T</span><span class="p">,</span> <span class="n">update</span><span class="o">=</span><span class="s1">&#39;wolff&#39;</span><span class="p">,</span> <span class="n">seed</span><span class="o">=</span><span class="n">seed</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span>
+    <span class="n">adaptive_equilibrate</span><span class="p">(</span><span class="n">sim_w</span><span class="p">,</span> <span class="n">min_steps</span><span class="o">=</span><span class="n">eq_steps</span><span class="p">)</span>
+    <span class="n">t0</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">perf_counter</span><span class="p">()</span>
+    <span class="n">mags_w</span><span class="p">,</span> <span class="n">engs_w</span> <span class="o">=</span> <span class="n">sim_w</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="n">n_steps</span><span class="o">=</span><span class="n">meas_steps</span><span class="p">)</span>
+    <span class="n">t_wolff</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">perf_counter</span><span class="p">()</span> <span class="o">-</span> <span class="n">t0</span>
+    <span class="n">mags_w_arr</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">mags_w</span><span class="p">)</span>
+    <span class="n">engs_w_arr</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">engs_w</span><span class="p">)</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">_</span><span class="p">,</span> <span class="n">tau_wolff</span> <span class="o">=</span> <span class="n">calculate_autocorr</span><span class="p">(</span><span class="n">time_series</span><span class="o">=</span><span class="n">mags_w_arr</span><span class="p">)</span>
+    <span class="k">except</span> <span class="ne">ValueError</span><span class="p">:</span>
+        <span class="n">tau_wolff</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="s1">&#39;nan&#39;</span><span class="p">)</span>
+    <span class="n">_</span><span class="p">,</span> <span class="n">_</span><span class="p">,</span> <span class="n">chi_wolff</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">calculate_thermodynamics</span><span class="p">(</span>
+        <span class="n">mags</span><span class="o">=</span><span class="n">mags_w_arr</span><span class="p">,</span> <span class="n">engs</span><span class="o">=</span><span class="n">engs_w_arr</span><span class="p">,</span> <span class="n">T</span><span class="o">=</span><span class="n">T</span><span class="p">,</span> <span class="n">L</span><span class="o">=</span><span class="n">L</span><span class="p">,</span>
+    <span class="p">)</span>
+    <span class="n">iss_wolff</span> <span class="o">=</span> <span class="p">(</span>
+        <span class="p">(</span><span class="n">meas_steps</span> <span class="o">/</span> <span class="n">t_wolff</span><span class="p">)</span> <span class="o">/</span> <span class="n">tau_wolff</span>
+        <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">isfinite</span><span class="p">(</span><span class="n">tau_wolff</span><span class="p">)</span> <span class="ow">and</span> <span class="n">tau_wolff</span> <span class="o">&gt;</span> <span class="mi">0</span>
+        <span class="k">else</span> <span class="nb">float</span><span class="p">(</span><span class="s1">&#39;nan&#39;</span><span class="p">)</span>
+    <span class="p">)</span>
+
+    <span class="c1"># ---- Cluster size: separate short pass to keep timing clean ----</span>
+    <span class="n">cluster_steps</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="n">meas_steps</span><span class="p">,</span> <span class="mi">300</span><span class="p">)</span>
+    <span class="n">sim_c</span> <span class="o">=</span> <span class="n">IsingSimulation</span><span class="p">(</span><span class="n">size</span><span class="o">=</span><span class="n">L</span><span class="p">,</span> <span class="n">temp</span><span class="o">=</span><span class="n">T</span><span class="p">,</span> <span class="n">update</span><span class="o">=</span><span class="s1">&#39;wolff&#39;</span><span class="p">,</span> <span class="n">seed</span><span class="o">=</span><span class="n">seed</span> <span class="o">+</span> <span class="mi">2</span><span class="p">)</span>
+    <span class="n">sim_c</span><span class="o">.</span><span class="n">equilibrate</span><span class="p">(</span><span class="n">n_steps</span><span class="o">=</span><span class="n">eq_steps</span><span class="p">)</span>
+    <span class="n">cluster_sizes</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">cluster_steps</span><span class="p">):</span>
+        <span class="n">current</span> <span class="o">=</span> <span class="n">sim_c</span><span class="o">.</span><span class="n">spins</span>
+        <span class="k">assert</span> <span class="n">current</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
+        <span class="n">spins_before</span> <span class="o">=</span> <span class="n">current</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+        <span class="n">sim_c</span><span class="o">.</span><span class="n">step</span><span class="p">()</span>
+        <span class="n">after</span> <span class="o">=</span> <span class="n">sim_c</span><span class="o">.</span><span class="n">spins</span>
+        <span class="k">assert</span> <span class="n">after</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
+        <span class="n">cluster_sizes</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">after</span> <span class="o">!=</span> <span class="n">spins_before</span><span class="p">)))</span>
+    <span class="n">mean_cluster_frac</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">cluster_sizes</span><span class="p">))</span> <span class="o">/</span> <span class="p">(</span><span class="n">L</span> <span class="o">*</span> <span class="n">L</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="p">{</span>
+        <span class="s1">&#39;T&#39;</span><span class="p">:</span> <span class="n">T</span><span class="p">,</span>
+        <span class="s1">&#39;tau_metro&#39;</span><span class="p">:</span> <span class="n">tau_metro</span><span class="p">,</span>
+        <span class="s1">&#39;tau_wolff&#39;</span><span class="p">:</span> <span class="n">tau_wolff</span><span class="p">,</span>
+        <span class="s1">&#39;iss_metro&#39;</span><span class="p">:</span> <span class="n">iss_metro</span><span class="p">,</span>
+        <span class="s1">&#39;iss_wolff&#39;</span><span class="p">:</span> <span class="n">iss_wolff</span><span class="p">,</span>
+        <span class="s1">&#39;mean_cluster_frac&#39;</span><span class="p">:</span> <span class="n">mean_cluster_frac</span><span class="p">,</span>
+        <span class="s1">&#39;chi_metro&#39;</span><span class="p">:</span> <span class="n">chi_metro</span><span class="p">,</span>
+        <span class="s1">&#39;chi_wolff&#39;</span><span class="p">:</span> <span class="n">chi_wolff</span><span class="p">,</span>
+    <span class="p">}</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_plot_efficiency</span><span class="p">(</span>
+    <span class="o">*</span><span class="p">,</span>
+    <span class="n">temperatures</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
+    <span class="n">tau_metro</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
+    <span class="n">tau_wolff</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
+    <span class="n">iss_metro</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
+    <span class="n">iss_wolff</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
+    <span class="n">mean_cluster_frac</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
+    <span class="n">chi_metro</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
+    <span class="n">chi_wolff</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
+    <span class="n">L</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+    <span class="n">directory</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Produce and save the 4-panel efficiency comparison figure.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    temperatures : np.ndarray</span>
+<span class="sd">        Sorted temperature array.</span>
+<span class="sd">    tau_metro : np.ndarray</span>
+<span class="sd">        Integrated autocorrelation time for Metropolis checkerboard (steps).</span>
+<span class="sd">    tau_wolff : np.ndarray</span>
+<span class="sd">        Integrated autocorrelation time for Wolff cluster (steps).</span>
+<span class="sd">    iss_metro : np.ndarray</span>
+<span class="sd">        Independent samples per second — Metropolis.</span>
+<span class="sd">    iss_wolff : np.ndarray</span>
+<span class="sd">        Independent samples per second — Wolff.</span>
+<span class="sd">    mean_cluster_frac : np.ndarray</span>
+<span class="sd">        Mean cluster size fraction per Wolff step, ``&lt;C&gt; / N^2``.</span>
+<span class="sd">    chi_metro : np.ndarray</span>
+<span class="sd">        Magnetic susceptibility from Metropolis.</span>
+<span class="sd">    chi_wolff : np.ndarray</span>
+<span class="sd">        Magnetic susceptibility from Wolff.</span>
+<span class="sd">    L : int</span>
+<span class="sd">        Lattice size used in the simulation.</span>
+<span class="sd">    directory : str</span>
+<span class="sd">        Output directory for the saved PNG.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">palette</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;metro&#39;</span><span class="p">:</span> <span class="s1">&#39;#4878CF&#39;</span><span class="p">,</span> <span class="s1">&#39;wolff&#39;</span><span class="p">:</span> <span class="s1">&#39;#D65F5F&#39;</span><span class="p">}</span>
+    <span class="n">fig</span><span class="p">,</span> <span class="n">axes</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">11</span><span class="p">,</span> <span class="mi">8</span><span class="p">))</span>
+    <span class="n">fig</span><span class="o">.</span><span class="n">suptitle</span><span class="p">(</span>
+        <span class="sa">f</span><span class="s1">&#39;Wolff vs. Metropolis Efficiency — 2D Ising Model  (L = </span><span class="si">{</span><span class="n">L</span><span class="si">}</span><span class="s1">)&#39;</span><span class="p">,</span>
+        <span class="n">fontsize</span><span class="o">=</span><span class="mi">13</span><span class="p">,</span>
+    <span class="p">)</span>
+
+    <span class="c1"># Panel 1: tau_int(T)</span>
+    <span class="n">ax</span> <span class="o">=</span> <span class="n">axes</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">]</span>
+    <span class="n">ax</span><span class="o">.</span><span class="n">semilogy</span><span class="p">(</span>
+        <span class="n">temperatures</span><span class="p">,</span> <span class="n">tau_metro</span><span class="p">,</span> <span class="s1">&#39;-o&#39;</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="n">palette</span><span class="p">[</span><span class="s1">&#39;metro&#39;</span><span class="p">],</span> <span class="n">ms</span><span class="o">=</span><span class="mi">4</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s1">&#39;Metropolis&#39;</span><span class="p">,</span>
+    <span class="p">)</span>
+    <span class="n">ax</span><span class="o">.</span><span class="n">semilogy</span><span class="p">(</span>
+        <span class="n">temperatures</span><span class="p">,</span> <span class="n">tau_wolff</span><span class="p">,</span> <span class="s1">&#39;-s&#39;</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="n">palette</span><span class="p">[</span><span class="s1">&#39;wolff&#39;</span><span class="p">],</span> <span class="n">ms</span><span class="o">=</span><span class="mi">4</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s1">&#39;Wolff&#39;</span><span class="p">,</span>
+    <span class="p">)</span>
+    <span class="n">ax</span><span class="o">.</span><span class="n">axvline</span><span class="p">(</span><span class="n">TC_ISING</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s1">&#39;0.4&#39;</span><span class="p">,</span> <span class="n">ls</span><span class="o">=</span><span class="s1">&#39;--&#39;</span><span class="p">,</span> <span class="n">lw</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="sa">r</span><span class="s1">&#39;$T_c$&#39;</span><span class="p">)</span>
+    <span class="n">ax</span><span class="o">.</span><span class="n">set_xlabel</span><span class="p">(</span><span class="s1">&#39;Temperature $T$&#39;</span><span class="p">)</span>
+    <span class="n">ax</span><span class="o">.</span><span class="n">set_ylabel</span><span class="p">(</span><span class="sa">r</span><span class="s1">&#39;$\tau_{\mathrm</span><span class="si">{int}</span><span class="s1">}$ (steps)&#39;</span><span class="p">)</span>
+    <span class="n">ax</span><span class="o">.</span><span class="n">set_title</span><span class="p">(</span><span class="s1">&#39;Integrated autocorrelation time&#39;</span><span class="p">)</span>
+    <span class="n">ax</span><span class="o">.</span><span class="n">legend</span><span class="p">(</span><span class="n">fontsize</span><span class="o">=</span><span class="mi">8</span><span class="p">)</span>
+
+    <span class="c1"># Panel 2: ISS(T)</span>
+    <span class="n">ax</span> <span class="o">=</span> <span class="n">axes</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">]</span>
+    <span class="n">ax</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">temperatures</span><span class="p">,</span> <span class="n">iss_metro</span><span class="p">,</span> <span class="s1">&#39;-o&#39;</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="n">palette</span><span class="p">[</span><span class="s1">&#39;metro&#39;</span><span class="p">],</span> <span class="n">ms</span><span class="o">=</span><span class="mi">4</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s1">&#39;Metropolis&#39;</span><span class="p">)</span>
+    <span class="n">ax</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">temperatures</span><span class="p">,</span> <span class="n">iss_wolff</span><span class="p">,</span> <span class="s1">&#39;-s&#39;</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="n">palette</span><span class="p">[</span><span class="s1">&#39;wolff&#39;</span><span class="p">],</span> <span class="n">ms</span><span class="o">=</span><span class="mi">4</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s1">&#39;Wolff&#39;</span><span class="p">)</span>
+    <span class="n">ax</span><span class="o">.</span><span class="n">axvline</span><span class="p">(</span><span class="n">TC_ISING</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s1">&#39;0.4&#39;</span><span class="p">,</span> <span class="n">ls</span><span class="o">=</span><span class="s1">&#39;--&#39;</span><span class="p">,</span> <span class="n">lw</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="sa">r</span><span class="s1">&#39;$T_c$&#39;</span><span class="p">)</span>
+    <span class="n">ax</span><span class="o">.</span><span class="n">set_xlabel</span><span class="p">(</span><span class="s1">&#39;Temperature $T$&#39;</span><span class="p">)</span>
+    <span class="n">ax</span><span class="o">.</span><span class="n">set_ylabel</span><span class="p">(</span><span class="s1">&#39;Independent samples / s&#39;</span><span class="p">)</span>
+    <span class="n">ax</span><span class="o">.</span><span class="n">set_title</span><span class="p">(</span><span class="s1">&#39;Sampling efficiency (ISS)&#39;</span><span class="p">)</span>
+    <span class="n">ax</span><span class="o">.</span><span class="n">legend</span><span class="p">(</span><span class="n">fontsize</span><span class="o">=</span><span class="mi">8</span><span class="p">)</span>
+
+    <span class="c1"># Panel 3: mean cluster size fraction &lt;C&gt;/N^2</span>
+    <span class="n">ax</span> <span class="o">=</span> <span class="n">axes</span><span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">]</span>
+    <span class="n">ax</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">temperatures</span><span class="p">,</span> <span class="n">mean_cluster_frac</span><span class="p">,</span> <span class="s1">&#39;-^&#39;</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="n">palette</span><span class="p">[</span><span class="s1">&#39;wolff&#39;</span><span class="p">],</span> <span class="n">ms</span><span class="o">=</span><span class="mi">4</span><span class="p">)</span>
+    <span class="n">ax</span><span class="o">.</span><span class="n">axvline</span><span class="p">(</span><span class="n">TC_ISING</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s1">&#39;0.4&#39;</span><span class="p">,</span> <span class="n">ls</span><span class="o">=</span><span class="s1">&#39;--&#39;</span><span class="p">,</span> <span class="n">lw</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="sa">r</span><span class="s1">&#39;$T_c$&#39;</span><span class="p">)</span>
+    <span class="n">ax</span><span class="o">.</span><span class="n">set_xlabel</span><span class="p">(</span><span class="s1">&#39;Temperature $T$&#39;</span><span class="p">)</span>
+    <span class="n">ax</span><span class="o">.</span><span class="n">set_ylabel</span><span class="p">(</span><span class="sa">r</span><span class="s1">&#39;$\langle C \rangle \,/\, N^2$&#39;</span><span class="p">)</span>
+    <span class="n">ax</span><span class="o">.</span><span class="n">set_title</span><span class="p">(</span><span class="s1">&#39;Mean cluster size fraction (Wolff)&#39;</span><span class="p">)</span>
+    <span class="n">ax</span><span class="o">.</span><span class="n">legend</span><span class="p">(</span><span class="n">fontsize</span><span class="o">=</span><span class="mi">8</span><span class="p">)</span>
+
+    <span class="c1"># Panel 4: chi(T) consistency check</span>
+    <span class="n">ax</span> <span class="o">=</span> <span class="n">axes</span><span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">]</span>
+    <span class="n">ax</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">temperatures</span><span class="p">,</span> <span class="n">chi_metro</span><span class="p">,</span> <span class="s1">&#39;-o&#39;</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="n">palette</span><span class="p">[</span><span class="s1">&#39;metro&#39;</span><span class="p">],</span> <span class="n">ms</span><span class="o">=</span><span class="mi">4</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s1">&#39;Metropolis&#39;</span><span class="p">)</span>
+    <span class="n">ax</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">temperatures</span><span class="p">,</span> <span class="n">chi_wolff</span><span class="p">,</span> <span class="s1">&#39;-s&#39;</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="n">palette</span><span class="p">[</span><span class="s1">&#39;wolff&#39;</span><span class="p">],</span> <span class="n">ms</span><span class="o">=</span><span class="mi">4</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s1">&#39;Wolff&#39;</span><span class="p">)</span>
+    <span class="n">ax</span><span class="o">.</span><span class="n">axvline</span><span class="p">(</span><span class="n">TC_ISING</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s1">&#39;0.4&#39;</span><span class="p">,</span> <span class="n">ls</span><span class="o">=</span><span class="s1">&#39;--&#39;</span><span class="p">,</span> <span class="n">lw</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="sa">r</span><span class="s1">&#39;$T_c$&#39;</span><span class="p">)</span>
+    <span class="n">ax</span><span class="o">.</span><span class="n">set_xlabel</span><span class="p">(</span><span class="s1">&#39;Temperature $T$&#39;</span><span class="p">)</span>
+    <span class="n">ax</span><span class="o">.</span><span class="n">set_ylabel</span><span class="p">(</span><span class="sa">r</span><span class="s1">&#39;$\chi$&#39;</span><span class="p">)</span>
+    <span class="n">ax</span><span class="o">.</span><span class="n">set_title</span><span class="p">(</span><span class="sa">r</span><span class="s1">&#39;Susceptibility $\chi$ (consistency check)&#39;</span><span class="p">)</span>
+    <span class="n">ax</span><span class="o">.</span><span class="n">legend</span><span class="p">(</span><span class="n">fontsize</span><span class="o">=</span><span class="mi">8</span><span class="p">)</span>
+
+    <span class="n">fig</span><span class="o">.</span><span class="n">tight_layout</span><span class="p">()</span>
+    <span class="n">os</span><span class="o">.</span><span class="n">makedirs</span><span class="p">(</span><span class="n">directory</span><span class="p">,</span> <span class="n">exist_ok</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="n">out_path</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">directory</span><span class="p">,</span> <span class="s1">&#39;wolff_efficiency.png&#39;</span><span class="p">)</span>
+    <span class="n">fig</span><span class="o">.</span><span class="n">savefig</span><span class="p">(</span><span class="n">out_path</span><span class="p">,</span> <span class="n">dpi</span><span class="o">=</span><span class="mi">150</span><span class="p">,</span> <span class="n">bbox_inches</span><span class="o">=</span><span class="s1">&#39;tight&#39;</span><span class="p">)</span>
+    <span class="n">plt</span><span class="o">.</span><span class="n">close</span><span class="p">(</span><span class="n">fig</span><span class="p">)</span>
+
+
+<div class="viewcode-block" id="run_wolff_efficiency_demo">
+<a class="viewcode-back" href="../../../api/vibespin.scripts.ising.html#scripts.ising.wolff_efficiency.run_wolff_efficiency_demo">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">run_wolff_efficiency_demo</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Execute the Wolff efficiency comparison sweep and save figure and data.</span>
+
+<span class="sd">    Runs ``_measure_efficiency_point`` in parallel across the requested</span>
+<span class="sd">    temperature range, then writes a 4-panel PNG and an ``.npz`` data file</span>
+<span class="sd">    to ``--output-dir``.  The ``.npz`` is consumed by</span>
+<span class="sd">    ``Wolff_Efficiency.ipynb`` to avoid re-running the sweep.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">parser</span> <span class="o">=</span> <span class="n">argparse</span><span class="o">.</span><span class="n">ArgumentParser</span><span class="p">(</span>
+        <span class="n">description</span><span class="o">=</span><span class="s1">&#39;Wolff vs. Metropolis efficiency demo for the 2D Ising model.&#39;</span><span class="p">,</span>
+    <span class="p">)</span>
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;--size&#39;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">int</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="mi">64</span><span class="p">,</span> <span class="n">help</span><span class="o">=</span><span class="s1">&#39;Lattice size L (default: 64)&#39;</span><span class="p">)</span>
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span>
+        <span class="s1">&#39;--eq-steps&#39;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">int</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="mi">500</span><span class="p">,</span>
+        <span class="n">help</span><span class="o">=</span><span class="s1">&#39;Minimum equilibration steps per temperature point (default: 500)&#39;</span><span class="p">,</span>
+    <span class="p">)</span>
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span>
+        <span class="s1">&#39;--meas-steps&#39;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">int</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="mi">2000</span><span class="p">,</span>
+        <span class="n">help</span><span class="o">=</span><span class="s1">&#39;Measurement steps per algorithm per temperature point (default: 2000)&#39;</span><span class="p">,</span>
+    <span class="p">)</span>
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;--t-min&#39;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">float</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="mf">1.8</span><span class="p">,</span> <span class="n">help</span><span class="o">=</span><span class="s1">&#39;Minimum T (default: 1.8)&#39;</span><span class="p">)</span>
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;--t-max&#39;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">float</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="mf">3.2</span><span class="p">,</span> <span class="n">help</span><span class="o">=</span><span class="s1">&#39;Maximum T (default: 3.2)&#39;</span><span class="p">)</span>
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span>
+        <span class="s1">&#39;--t-points&#39;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">int</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="mi">20</span><span class="p">,</span> <span class="n">help</span><span class="o">=</span><span class="s1">&#39;Temperature grid points (default: 20)&#39;</span><span class="p">,</span>
+    <span class="p">)</span>
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span>
+        <span class="s1">&#39;--output-dir&#39;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">str</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="s1">&#39;results/ising&#39;</span><span class="p">,</span>
+        <span class="n">help</span><span class="o">=</span><span class="s1">&#39;Output directory (default: results/ising)&#39;</span><span class="p">,</span>
+    <span class="p">)</span>
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;--log-file&#39;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">str</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">help</span><span class="o">=</span><span class="s1">&#39;Optional log file path&#39;</span><span class="p">)</span>
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;--verbose&#39;</span><span class="p">,</span> <span class="n">action</span><span class="o">=</span><span class="s1">&#39;store_true&#39;</span><span class="p">,</span> <span class="n">help</span><span class="o">=</span><span class="s1">&#39;Enable verbose logging&#39;</span><span class="p">)</span>
+    <span class="n">args</span> <span class="o">=</span> <span class="n">parser</span><span class="o">.</span><span class="n">parse_args</span><span class="p">()</span>
+
+    <span class="n">log_level</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">DEBUG</span> <span class="k">if</span> <span class="n">args</span><span class="o">.</span><span class="n">verbose</span> <span class="k">else</span> <span class="n">logging</span><span class="o">.</span><span class="n">INFO</span>
+    <span class="n">logger</span> <span class="o">=</span> <span class="n">setup_logging</span><span class="p">(</span><span class="n">level</span><span class="o">=</span><span class="n">log_level</span><span class="p">,</span> <span class="n">log_file</span><span class="o">=</span><span class="n">args</span><span class="o">.</span><span class="n">log_file</span><span class="p">)</span>
+
+    <span class="n">L</span> <span class="o">=</span> <span class="n">args</span><span class="o">.</span><span class="n">size</span>
+    <span class="n">temperatures</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="n">args</span><span class="o">.</span><span class="n">t_min</span><span class="p">,</span> <span class="n">args</span><span class="o">.</span><span class="n">t_max</span><span class="p">,</span> <span class="n">args</span><span class="o">.</span><span class="n">t_points</span><span class="p">)</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
+        <span class="s1">&#39;Wolff efficiency demo: L=</span><span class="si">%d</span><span class="s1">, T in [</span><span class="si">%.2f</span><span class="s1">, </span><span class="si">%.2f</span><span class="s1">], </span><span class="si">%d</span><span class="s1"> points, </span><span class="si">%d</span><span class="s1"> meas steps.&#39;</span><span class="p">,</span>
+        <span class="n">L</span><span class="p">,</span> <span class="n">args</span><span class="o">.</span><span class="n">t_min</span><span class="p">,</span> <span class="n">args</span><span class="o">.</span><span class="n">t_max</span><span class="p">,</span> <span class="n">args</span><span class="o">.</span><span class="n">t_points</span><span class="p">,</span> <span class="n">args</span><span class="o">.</span><span class="n">meas_steps</span><span class="p">,</span>
+    <span class="p">)</span>
+
+    <span class="n">sweep_params</span> <span class="o">=</span> <span class="p">[</span>
+        <span class="p">(</span><span class="n">T</span><span class="p">,</span> <span class="n">L</span><span class="p">,</span> <span class="n">args</span><span class="o">.</span><span class="n">eq_steps</span><span class="p">,</span> <span class="n">args</span><span class="o">.</span><span class="n">meas_steps</span><span class="p">,</span> <span class="n">idx</span> <span class="o">*</span> <span class="mi">1000</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">idx</span><span class="p">,</span> <span class="n">T</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">temperatures</span><span class="p">)</span>
+    <span class="p">]</span>
+    <span class="n">raw</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">float</span><span class="p">]]</span> <span class="o">=</span> <span class="n">parallel_sweep</span><span class="p">(</span>
+        <span class="n">worker_func</span><span class="o">=</span><span class="n">_measure_efficiency_point</span><span class="p">,</span> <span class="n">params</span><span class="o">=</span><span class="n">sweep_params</span><span class="p">,</span>
+    <span class="p">)</span>
+
+    <span class="n">tau_metro</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">r</span><span class="p">[</span><span class="s1">&#39;tau_metro&#39;</span><span class="p">]</span> <span class="k">for</span> <span class="n">r</span> <span class="ow">in</span> <span class="n">raw</span><span class="p">])</span>
+    <span class="n">tau_wolff</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">r</span><span class="p">[</span><span class="s1">&#39;tau_wolff&#39;</span><span class="p">]</span> <span class="k">for</span> <span class="n">r</span> <span class="ow">in</span> <span class="n">raw</span><span class="p">])</span>
+    <span class="n">iss_metro</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">r</span><span class="p">[</span><span class="s1">&#39;iss_metro&#39;</span><span class="p">]</span> <span class="k">for</span> <span class="n">r</span> <span class="ow">in</span> <span class="n">raw</span><span class="p">])</span>
+    <span class="n">iss_wolff</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">r</span><span class="p">[</span><span class="s1">&#39;iss_wolff&#39;</span><span class="p">]</span> <span class="k">for</span> <span class="n">r</span> <span class="ow">in</span> <span class="n">raw</span><span class="p">])</span>
+    <span class="n">mean_cluster_frac</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">r</span><span class="p">[</span><span class="s1">&#39;mean_cluster_frac&#39;</span><span class="p">]</span> <span class="k">for</span> <span class="n">r</span> <span class="ow">in</span> <span class="n">raw</span><span class="p">])</span>
+    <span class="n">chi_metro</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">r</span><span class="p">[</span><span class="s1">&#39;chi_metro&#39;</span><span class="p">]</span> <span class="k">for</span> <span class="n">r</span> <span class="ow">in</span> <span class="n">raw</span><span class="p">])</span>
+    <span class="n">chi_wolff</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">r</span><span class="p">[</span><span class="s1">&#39;chi_wolff&#39;</span><span class="p">]</span> <span class="k">for</span> <span class="n">r</span> <span class="ow">in</span> <span class="n">raw</span><span class="p">])</span>
+
+    <span class="n">os</span><span class="o">.</span><span class="n">makedirs</span><span class="p">(</span><span class="n">args</span><span class="o">.</span><span class="n">output_dir</span><span class="p">,</span> <span class="n">exist_ok</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="n">npz_path</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">args</span><span class="o">.</span><span class="n">output_dir</span><span class="p">,</span> <span class="s1">&#39;wolff_efficiency.npz&#39;</span><span class="p">)</span>
+    <span class="n">np</span><span class="o">.</span><span class="n">savez</span><span class="p">(</span>
+        <span class="n">npz_path</span><span class="p">,</span>
+        <span class="n">temperatures</span><span class="o">=</span><span class="n">temperatures</span><span class="p">,</span>
+        <span class="n">tau_metro</span><span class="o">=</span><span class="n">tau_metro</span><span class="p">,</span>
+        <span class="n">tau_wolff</span><span class="o">=</span><span class="n">tau_wolff</span><span class="p">,</span>
+        <span class="n">iss_metro</span><span class="o">=</span><span class="n">iss_metro</span><span class="p">,</span>
+        <span class="n">iss_wolff</span><span class="o">=</span><span class="n">iss_wolff</span><span class="p">,</span>
+        <span class="n">mean_cluster_frac</span><span class="o">=</span><span class="n">mean_cluster_frac</span><span class="p">,</span>
+        <span class="n">chi_metro</span><span class="o">=</span><span class="n">chi_metro</span><span class="p">,</span>
+        <span class="n">chi_wolff</span><span class="o">=</span><span class="n">chi_wolff</span><span class="p">,</span>
+        <span class="n">L</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">int64</span><span class="p">(</span><span class="n">L</span><span class="p">),</span>
+    <span class="p">)</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;Data saved to </span><span class="si">%s</span><span class="s1">&#39;</span><span class="p">,</span> <span class="n">npz_path</span><span class="p">)</span>
+
+    <span class="n">_plot_efficiency</span><span class="p">(</span>
+        <span class="n">temperatures</span><span class="o">=</span><span class="n">temperatures</span><span class="p">,</span>
+        <span class="n">tau_metro</span><span class="o">=</span><span class="n">tau_metro</span><span class="p">,</span>
+        <span class="n">tau_wolff</span><span class="o">=</span><span class="n">tau_wolff</span><span class="p">,</span>
+        <span class="n">iss_metro</span><span class="o">=</span><span class="n">iss_metro</span><span class="p">,</span>
+        <span class="n">iss_wolff</span><span class="o">=</span><span class="n">iss_wolff</span><span class="p">,</span>
+        <span class="n">mean_cluster_frac</span><span class="o">=</span><span class="n">mean_cluster_frac</span><span class="p">,</span>
+        <span class="n">chi_metro</span><span class="o">=</span><span class="n">chi_metro</span><span class="p">,</span>
+        <span class="n">chi_wolff</span><span class="o">=</span><span class="n">chi_wolff</span><span class="p">,</span>
+        <span class="n">L</span><span class="o">=</span><span class="n">L</span><span class="p">,</span>
+        <span class="n">directory</span><span class="o">=</span><span class="n">args</span><span class="o">.</span><span class="n">output_dir</span><span class="p">,</span>
+    <span class="p">)</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;Figure saved to </span><span class="si">%s</span><span class="s1">&#39;</span><span class="p">,</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">args</span><span class="o">.</span><span class="n">output_dir</span><span class="p">,</span> <span class="s1">&#39;wolff_efficiency.png&#39;</span><span class="p">))</span></div>
+
+
+
+<span class="k">if</span> <span class="vm">__name__</span> <span class="o">==</span> <span class="s1">&#39;__main__&#39;</span><span class="p">:</span>
+    <span class="n">run_wolff_efficiency_demo</span><span class="p">()</span>
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2026, Thomas Lottermoser.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

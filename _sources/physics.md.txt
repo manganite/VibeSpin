@@ -71,3 +71,37 @@ Two complementary probes measure the spatial structure of equilibrium configurat
 ### Topological Diagnostics
 
 In models with continuous or near-continuous symmetry (XY and large-$q$ clock), point-like topological defects govern the phase behavior. The **vorticity** of a plaquette (elementary square of four sites) is obtained by summing the directed nearest-neighbor phase differences around its perimeter; a non-zero winding number $\pm 1$ identifies a vortex or antivortex core. The **vortex density** — the fraction of plaquettes carrying a defect — rises sharply above the BKT temperature as thermally excited pairs unbind. The **helicity modulus** $\Upsilon$ measures the free-energy cost of imposing an infinitesimal phase twist across the system. In the low-temperature phase $\Upsilon$ remains finite, reflecting superfluid-like stiffness; it drops discontinuously to zero at $T_{\mathrm{BKT}}$ with the universal Nelson–Kosterlitz jump $\Upsilon(T_{\mathrm{BKT}}^-) = 2T_{\mathrm{BKT}}/\pi$, providing the cleanest numerical signature of the BKT transition in two dimensions.
+
+## 4. The Wolff Cluster Algorithm
+
+### Motivation: Critical Slowing Down
+
+The Metropolis single-spin-flip algorithm becomes increasingly inefficient as a continuous phase transition is approached. Near the critical point the correlation length $\xi$ diverges, and the spin configurations develop large coherent domains whose characteristic size $\xi$ sets the natural unit of any proposed single-site change. Because a single flip disturbs only one spin at a time, the algorithm must perform $O(\xi^z)$ sweeps to decorrelate the system from one independent sample to the next, where the dynamic critical exponent $z \approx 2.17$ for the 2D Ising model. This quadratic growth of autocorrelation time with lattice size — the critical slowing down — makes precise equilibrium measurements near $T_c$ computationally expensive with Metropolis alone.
+
+The Wolff cluster algorithm eliminates critical slowing down by operating at the scale of the correlated domain rather than the individual spin. Rather than proposing a single flip, it grows an entire correlated cluster and flips it as a single collective move. The dynamic exponent drops to $z \approx 0.25$ for the 2D Ising model — an order-of-magnitude reduction in autocorrelation time at criticality.
+
+### Ising Wolff: Fortuin-Kasteleyn Construction
+
+The theoretical basis for the Ising Wolff algorithm is the Fortuin-Kasteleyn (FK) random-cluster representation, which maps the Ising partition function onto a bond-percolation problem. Starting from a randomly chosen seed site with spin $\sigma_0 = \pm 1$, the algorithm explores all connected same-spin neighbors. Each bond $(i,j)$ between two aligned spins is activated independently with the probability
+
+$$P_{\mathrm{add}} = 1 - e^{-2\beta J}.$$
+
+After the cluster $\mathcal{C}$ is fully grown, all spins in $\mathcal{C}$ are flipped simultaneously: $\sigma_i \to -\sigma_i$ for all $i \in \mathcal{C}$. The bond probability is derived precisely so that this collective move satisfies detailed balance without any rejection step — the cluster flip is always accepted. This zero-rejection property, combined with the divergence of the mean cluster size $\langle|\mathcal{C}|\rangle \sim \xi^{d_f}$ at $T_c$ (where $d_f$ is the fractal dimension of the FK cluster), is the mechanism behind the dramatic acceleration near criticality.
+
+### XY and Clock Wolff: The Reflection Trick
+
+The single-component Ising flip does not generalise directly to models with continuous $O(2)$ symmetry such as the XY and clock models — there is no natural binary decomposition. The Wolff-Evertz generalisation proceeds via a random mirror-plane construction. A unit vector $\hat{r} = (\cos\phi,\,\sin\phi)$ is drawn uniformly from the unit circle. Each spin is projected onto $\hat{r}$: $\sigma_i = \mathbf{s}_i \cdot \hat{r}$. This projection maps the $O(2)$ spins onto a real-valued "Ising-like" field, and bonds between neighbouring sites with aligned projections ($\sigma_i \sigma_j > 0$) are activated with probability
+
+$$P_{\mathrm{add}} = 1 - e^{-2\beta J\,\sigma_i \sigma_j}.$$
+
+Once the cluster is formed, every cluster spin is reflected through the hyperplane perpendicular to $\hat{r}$:
+
+$$\mathbf{s}_i \to \mathbf{s}_i - 2(\mathbf{s}_i \cdot \hat{r})\,\hat{r}.$$
+
+This reflection preserves the Euclidean norm $|\mathbf{s}_i| = 1$ exactly, requires no renormalisation, and satisfies detailed balance for the pure Heisenberg exchange term $-J \mathbf{s}_i \cdot \mathbf{s}_j$. For the **continuous clock model**, which includes an additional crystal-field anisotropy $-A\cos(q\theta_i)$, the reflection symmetry required by the FK bond construction holds only for the exchange part of the Hamiltonian; the anisotropy term breaks this symmetry and falls outside the standard Wolff-Evertz derivation. The Wolff kernel therefore satisfies detailed balance exactly only when $A = 0$, and converges to an approximation of the correct equilibrium distribution for $A > 0$. Its use in the clock model is most appropriate when $A \ll J$, or as a diagnostic in the XY-like regime.
+
+### Practical Semantics
+
+One call to a Wolff `step()` constitutes one cluster sweep, meaning a single cluster is grown and flipped. This differs from the Metropolis convention, where one `step()` comprises $N^2$ single-spin-flip attempts. The two schemes are therefore not directly comparable on a per-step basis near $T_c$; the relevant comparison is per unit of computational time or per independent sample. Because the mean cluster size scales with the correlation length, the cost per cluster sweep also scales with $\xi$, but the autocorrelation time in units of sweeps falls far faster than it rises in cost, resulting in a substantial net gain precisely where it is most needed.
+
+The `parallel=True` flag is silently ignored when `update='wolff'`. Cluster growth is a sequential depth-first search whose frontier depends on each newly added site; it cannot be decomposed into independent sublattices and is therefore incompatible with the checkerboard parallelisation strategy. The Wolff algorithm is inherently a single-threaded traversal, and its performance advantage over Metropolis is algorithmic rather than hardware-parallel.

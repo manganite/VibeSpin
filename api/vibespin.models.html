@@ -105,7 +105,7 @@
 </section>
 <section id="module-models.clock_model">
 <span id="models-clock-model-module"></span><h2>models.clock_model module<a class="headerlink" href="#module-models.clock_model" title="Link to this heading"></a></h2>
-<p>2D q-state Clock Model simulation using the Metropolis-Hastings algorithm.</p>
+<p>2D q-state Clock Model simulation using Metropolis-Hastings and Wolff cluster algorithms.</p>
 <dl class="py class">
 <dt class="sig sig-object py" id="models.clock_model.ClockSimulation">
 <span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">models.clock_model.</span></span><span class="sig-name descname"><span class="pre">ClockSimulation</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">size</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">temp</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">J</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">1.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">A</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">1.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">q</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">6</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">update</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'checkerboard'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">parallel</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">seed</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/models/clock_model.html#ClockSimulation"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#models.clock_model.ClockSimulation" title="Link to this definition"></a></dt>
@@ -212,6 +212,39 @@ Uses a checkerboard update pattern for better Numba optimization.</p>
 </dd></dl>
 
 <dl class="py function">
+<dt class="sig sig-object py" id="models.clock_model.clock_wolff_step_numba">
+<span class="sig-prename descclassname"><span class="pre">models.clock_model.</span></span><span class="sig-name descname"><span class="pre">clock_wolff_step_numba</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">spins</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">beta</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">J</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">idx_next</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">idx_prev</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">ndarray</span></span></span><a class="reference internal" href="../_modules/models/clock_model.html#clock_wolff_step_numba"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#models.clock_model.clock_wolff_step_numba" title="Link to this definition"></a></dt>
+<dd><p>Perform one Wolff cluster flip on the continuous Clock Model lattice.</p>
+<p>Implements the Wolff-Evertz reflection scheme for O(2) spins using only
+the Heisenberg exchange coupling J.  A random mirror-plane axis r̂ is
+sampled from S^1, and bonds are activated with probability
+<code class="docutils literal notranslate"><span class="pre">P_add</span> <span class="pre">=</span> <span class="pre">1</span> <span class="pre">-</span> <span class="pre">exp(-2</span> <span class="pre">beta</span> <span class="pre">J</span> <span class="pre">sigma_i</span> <span class="pre">sigma_j)</span></code> where
+<code class="docutils literal notranslate"><span class="pre">sigma_i</span> <span class="pre">=</span> <span class="pre">s_i</span> <span class="pre">·</span> <span class="pre">r̂</span></code>.  Cluster spins are reflected:
+<code class="docutils literal notranslate"><span class="pre">s</span> <span class="pre">-&gt;</span> <span class="pre">s</span> <span class="pre">-</span> <span class="pre">2</span> <span class="pre">(s</span> <span class="pre">·</span> <span class="pre">r̂)</span> <span class="pre">r̂</span></code>.</p>
+<p><strong>Limitation</strong>: the crystal-field anisotropy term <code class="docutils literal notranslate"><span class="pre">A</span> <span class="pre">cos(q</span> <span class="pre">phi)</span></code> breaks
+the O(2) reflection symmetry required by the Fortuin-Kasteleyn bond
+construction.  This kernel therefore satisfies detailed balance only for
+the exchange part of the Hamiltonian; use it at parameters where the
+anisotropy is weak relative to J, or set A=0 for pure XY-like studies.</p>
+<p>One call constitutes one cluster sweep.  <code class="docutils literal notranslate"><span class="pre">parallel=True</span></code> is silently
+ignored.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>spins</strong> (<em>(</em><em>N</em><em>, </em><em>N</em><em>, </em><em>2</em><em>) </em><em>array</em><em> of </em><em>unit vectors.</em>)</p></li>
+<li><p><strong>beta</strong> (<em>Inverse temperature 1/kT.</em>)</p></li>
+<li><p><strong>J</strong> (<em>Coupling constant.</em>)</p></li>
+<li><p><strong>idx_next</strong> (<em>Pre-calculated next-neighbor indices</em><em> (</em><em>PBC</em><em>)</em><em>.</em>)</p></li>
+<li><p><strong>idx_prev</strong> (<em>Pre-calculated previous-neighbor indices</em><em> (</em><em>PBC</em><em>)</em><em>.</em>)</p></li>
+</ul>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>Updated spins array.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
 <dt class="sig sig-object py" id="models.clock_model.discrete_clock_energy_numba">
 <span class="sig-prename descclassname"><span class="pre">models.clock_model.</span></span><span class="sig-name descname"><span class="pre">discrete_clock_energy_numba</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">spins</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">J</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">q</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cos_table</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">idx_next</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">float</span></span></span><a class="reference internal" href="../_modules/models/clock_model.html#discrete_clock_energy_numba"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#models.clock_model.discrete_clock_energy_numba" title="Link to this definition"></a></dt>
 <dd><p>Total energy per site of the discrete clock model.</p>
@@ -293,7 +326,7 @@ stochastic dynamics suitable for kinetics studies.</p>
 </section>
 <section id="module-models.ising_model">
 <span id="models-ising-model-module"></span><h2>models.ising_model module<a class="headerlink" href="#module-models.ising_model" title="Link to this heading"></a></h2>
-<p>2D Ising Model simulation using the Metropolis-Hastings algorithm.</p>
+<p>2D Ising Model simulation using Metropolis-Hastings and Wolff cluster algorithms.</p>
 <dl class="py class">
 <dt class="sig sig-object py" id="models.ising_model.IsingSimulation">
 <span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">models.ising_model.</span></span><span class="sig-name descname"><span class="pre">IsingSimulation</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">size</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">temp</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">J</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">1.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">update</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'checkerboard'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">parallel</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">seed</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/models/ising_model.html#IsingSimulation"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#models.ising_model.IsingSimulation" title="Link to this definition"></a></dt>
@@ -374,6 +407,35 @@ are pre-calculated outside the inner loop to avoid repeated calls to
 <li><p><strong>J</strong> (<em>Coupling constant.</em>)</p></li>
 <li><p><strong>idx_next</strong> (<em>Pre-calculated next-neighbor indices.</em>)</p></li>
 <li><p><strong>idx_prev</strong> (<em>Pre-calculated previous-neighbor indices.</em>)</p></li>
+</ul>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>Updated spins array.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="models.ising_model.ising_wolff_step_numba">
+<span class="sig-prename descclassname"><span class="pre">models.ising_model.</span></span><span class="sig-name descname"><span class="pre">ising_wolff_step_numba</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">spins</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">beta</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">J</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">idx_next</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">idx_prev</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">ndarray</span></span></span><a class="reference internal" href="../_modules/models/ising_model.html#ising_wolff_step_numba"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#models.ising_model.ising_wolff_step_numba" title="Link to this definition"></a></dt>
+<dd><p>Perform one Wolff cluster flip on the Ising lattice.</p>
+<p>A single cluster is grown by probabilistic DFS from a random seed site and
+then flipped in a single collective move.  The bond acceptance probability
+<code class="docutils literal notranslate"><span class="pre">P_add</span> <span class="pre">=</span> <span class="pre">1</span> <span class="pre">-</span> <span class="pre">exp(-2</span> <span class="pre">beta</span> <span class="pre">J)</span></code> is derived from the Fortuin-Kasteleyn
+representation and guarantees detailed balance without rejections.</p>
+<p>One call constitutes one <em>cluster sweep</em>.  The effective number of site
+updates per call scales as the mean cluster size <code class="docutils literal notranslate"><span class="pre">&lt;C&gt;</span></code> and diverges at
+T_c, which is precisely where Metropolis suffers maximum critical slowing
+down.  <code class="docutils literal notranslate"><span class="pre">parallel=True</span></code> is silently ignored: cluster growth is
+inherently sequential.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>spins</strong> (<em>(</em><em>N</em><em>, </em><em>N</em><em>) </em><em>array</em><em> of </em><em>spins</em><em> (</em><em>+1</em><em> or </em><em>-1</em><em>)</em><em>.</em>)</p></li>
+<li><p><strong>beta</strong> (<em>Inverse temperature 1/kT.</em>)</p></li>
+<li><p><strong>J</strong> (<em>Coupling constant.</em>)</p></li>
+<li><p><strong>idx_next</strong> (<em>Pre-calculated next-neighbor indices</em><em> (</em><em>PBC</em><em>)</em><em>.</em>)</p></li>
+<li><p><strong>idx_prev</strong> (<em>Pre-calculated previous-neighbor indices</em><em> (</em><em>PBC</em><em>)</em><em>.</em>)</p></li>
 </ul>
 </dd>
 <dt class="field-even">Return type<span class="colon">:</span></dt>
@@ -497,7 +559,7 @@ Optimized by calculating angles first and then using a fast wrapping kernel.</p>
 </section>
 <section id="module-models.xy_model">
 <span id="models-xy-model-module"></span><h2>models.xy_model module<a class="headerlink" href="#module-models.xy_model" title="Link to this heading"></a></h2>
-<p>2D XY Model simulation using the Metropolis-Hastings algorithm.</p>
+<p>2D XY Model simulation using Metropolis-Hastings and Wolff cluster algorithms.</p>
 <dl class="py class">
 <dt class="sig sig-object py" id="models.xy_model.XYSimulation">
 <span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">models.xy_model.</span></span><span class="sig-name descname"><span class="pre">XYSimulation</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">size</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">temp</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">J</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">1.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">update</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'checkerboard'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">parallel</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">seed</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/models/xy_model.html#XYSimulation"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#models.xy_model.XYSimulation" title="Link to this definition"></a></dt>
@@ -577,6 +639,35 @@ Uses a checkerboard update pattern for better Numba optimization.</p>
 <li><p><strong>J</strong> (<em>Coupling constant.</em>)</p></li>
 <li><p><strong>idx_next</strong> (<em>Pre-calculated next-neighbor indices.</em>)</p></li>
 <li><p><strong>idx_prev</strong> (<em>Pre-calculated previous-neighbor indices.</em>)</p></li>
+</ul>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>Updated spins array.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="models.xy_model.xy_wolff_step_numba">
+<span class="sig-prename descclassname"><span class="pre">models.xy_model.</span></span><span class="sig-name descname"><span class="pre">xy_wolff_step_numba</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">spins</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">beta</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">J</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">idx_next</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">idx_prev</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">ndarray</span></span></span><a class="reference internal" href="../_modules/models/xy_model.html#xy_wolff_step_numba"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#models.xy_model.xy_wolff_step_numba" title="Link to this definition"></a></dt>
+<dd><p>Perform one Wolff cluster flip on the XY lattice (Wolff-Evertz reflection).</p>
+<p>A random mirror-plane axis r̂ is sampled uniformly from S^1.  Each spin
+projects onto r̂ as sigma_i = s_i · r̂.  Bonds between neighbouring sites
+with aligned projections (sigma_i * sigma_j &gt; 0) are activated with
+probability <code class="docutils literal notranslate"><span class="pre">P_add</span> <span class="pre">=</span> <span class="pre">1</span> <span class="pre">-</span> <span class="pre">exp(-2</span> <span class="pre">beta</span> <span class="pre">J</span> <span class="pre">sigma_i</span> <span class="pre">sigma_j)</span></code>.  All cluster
+spins are then reflected through the plane perpendicular to r̂:
+<code class="docutils literal notranslate"><span class="pre">s</span> <span class="pre">-&gt;</span> <span class="pre">s</span> <span class="pre">-</span> <span class="pre">2</span> <span class="pre">(s</span> <span class="pre">·</span> <span class="pre">r̂)</span> <span class="pre">r̂</span></code>, which preserves unit length exactly and
+satisfies detailed balance for the pure exchange term.</p>
+<p>One call constitutes one cluster sweep.  <code class="docutils literal notranslate"><span class="pre">parallel=True</span></code> is silently
+ignored.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>spins</strong> (<em>(</em><em>N</em><em>, </em><em>N</em><em>, </em><em>2</em><em>) </em><em>array</em><em> of </em><em>unit vectors.</em>)</p></li>
+<li><p><strong>beta</strong> (<em>Inverse temperature 1/kT.</em>)</p></li>
+<li><p><strong>J</strong> (<em>Coupling constant.</em>)</p></li>
+<li><p><strong>idx_next</strong> (<em>Pre-calculated next-neighbor indices</em><em> (</em><em>PBC</em><em>)</em><em>.</em>)</p></li>
+<li><p><strong>idx_prev</strong> (<em>Pre-calculated previous-neighbor indices</em><em> (</em><em>PBC</em><em>)</em><em>.</em>)</p></li>
 </ul>
 </dd>
 <dt class="field-even">Return type<span class="colon">:</span></dt>

@@ -44,6 +44,14 @@ scripts.ising.temperature\_sweep module
    :show-inheritance:
    :undoc-members:
 
+scripts.ising.wolff\_efficiency module
+--------------------------------------
+
+.. automodule:: scripts.ising.wolff_efficiency
+   :members:
+   :show-inheritance:
+   :undoc-members:
+
 Module contents
 ---------------
 

@@ -202,6 +202,32 @@ Calculates and plots magnetization, energy, susceptibility, and specific heat.</
 </dd></dl>
 
 </section>
+<section id="module-scripts.ising.wolff_efficiency">
+<span id="scripts-ising-wolff-efficiency-module"></span><h2>scripts.ising.wolff_efficiency module<a class="headerlink" href="#module-scripts.ising.wolff_efficiency" title="Link to this heading"></a></h2>
+<p>Wolff cluster algorithm efficiency demonstration for the 2D Ising model.</p>
+<p>Compares integrated autocorrelation time (tau_int), independent samples per
+second (ISS), mean cluster size fraction, and susceptibility between the
+Metropolis checkerboard and Wolff cluster algorithms across a temperature range
+centred on the critical point T_c ~= 2.269.</p>
+<p>Results are saved to <code class="docutils literal notranslate"><span class="pre">results/ising/wolff_efficiency.npz</span></code> for notebook
+re-use and <code class="docutils literal notranslate"><span class="pre">results/ising/wolff_efficiency.png</span></code> as a 4-panel figure.</p>
+<dl class="py data">
+<dt class="sig sig-object py" id="scripts.ising.wolff_efficiency.TC_ISING">
+<span class="sig-prename descclassname"><span class="pre">scripts.ising.wolff_efficiency.</span></span><span class="sig-name descname"><span class="pre">TC_ISING</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">float</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">np.float64(2.269185314213022)</span></span><a class="headerlink" href="#scripts.ising.wolff_efficiency.TC_ISING" title="Link to this definition"></a></dt>
+<dd><p>Exact Onsager critical temperature for the 2D nearest-neighbour Ising model.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="scripts.ising.wolff_efficiency.run_wolff_efficiency_demo">
+<span class="sig-prename descclassname"><span class="pre">scripts.ising.wolff_efficiency.</span></span><span class="sig-name descname"><span class="pre">run_wolff_efficiency_demo</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="../_modules/scripts/ising/wolff_efficiency.html#run_wolff_efficiency_demo"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#scripts.ising.wolff_efficiency.run_wolff_efficiency_demo" title="Link to this definition"></a></dt>
+<dd><p>Execute the Wolff efficiency comparison sweep and save figure and data.</p>
+<p>Runs <code class="docutils literal notranslate"><span class="pre">_measure_efficiency_point</span></code> in parallel across the requested
+temperature range, then writes a 4-panel PNG and an <code class="docutils literal notranslate"><span class="pre">.npz</span></code> data file
+to <code class="docutils literal notranslate"><span class="pre">--output-dir</span></code>.  The <code class="docutils literal notranslate"><span class="pre">.npz</span></code> is consumed by
+<code class="docutils literal notranslate"><span class="pre">Wolff_Efficiency.ipynb</span></code> to avoid re-running the sweep.</p>
+</dd></dl>
+
+</section>
 <section id="module-scripts.ising">
 <span id="module-contents"></span><h2>Module contents<a class="headerlink" href="#module-scripts.ising" title="Link to this heading"></a></h2>
 </section>

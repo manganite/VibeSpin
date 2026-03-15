@@ -114,7 +114,7 @@
 <p>The implementation is optimized for speed, scalability, and physical repeatability. Core kernels utilize <strong>Numba JIT compilation</strong> with optional <strong>multi-core parallelization</strong>, periodic boundaries are handled via precomputed index arrays, and all stochastic trajectories are fully deterministic when seeded.</p>
 <section id="scope-and-methods">
 <h2>Scope and methods<a class="headerlink" href="#scope-and-methods" title="Link to this heading"></a></h2>
-<p>VibeSpin supports both <strong>Checkerboard Updates</strong> (optimized for equilibrium throughput and SIMD vectorization) and <strong>Random Site Selection</strong> (mandatory for non-equilibrium kinetics and aging studies).</p>
+<p>VibeSpin supports three update schemes: <strong>Checkerboard Updates</strong> (optimized for equilibrium throughput and SIMD vectorization), <strong>Random Site Selection</strong> (mandatory for non-equilibrium kinetics and aging studies), and the <strong>Wolff Cluster Algorithm</strong> (highly efficient near critical temperatures due to vanishing critical slowing down).</p>
 <section id="physical-analysis">
 <h3>Physical Analysis<a class="headerlink" href="#physical-analysis" title="Link to this heading"></a></h3>
 <ul class="simple">
@@ -165,10 +165,14 @@ python<span class="w"> </span>benchmark.py<span class="w"> </span>--sizes<span c
 <div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>python<span class="w"> </span>scripts/xy/ordering_evolution.py<span class="w"> </span>--size<span class="w"> </span><span class="m">256</span><span class="w"> </span>--targets<span class="w"> </span><span class="m">1</span><span class="w"> </span><span class="m">10</span><span class="w"> </span><span class="m">100</span><span class="w"> </span><span class="m">1000</span><span class="w"> </span><span class="m">5000</span>
 </pre></div>
 </div>
+<p>Compare Wolff cluster and Metropolis efficiency near the Ising critical point:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>python<span class="w"> </span>scripts/ising/wolff_efficiency.py<span class="w"> </span>--size<span class="w"> </span><span class="m">64</span><span class="w"> </span>--t-min<span class="w"> </span><span class="m">1</span>.8<span class="w"> </span>--t-max<span class="w"> </span><span class="m">3</span>.2<span class="w"> </span>--t-points<span class="w"> </span><span class="m">20</span>
+</pre></div>
+</div>
 </section>
 <section id="development-guidance">
 <h2>Development guidance<a class="headerlink" href="#development-guidance" title="Link to this heading"></a></h2>
-<p>VibeSpin maintains rigorous engineering and physical standards. All simulation code must strictly adhere to <strong>Metropolis-Hastings prerequisites</strong>, including detailed balance and ergodicity.</p>
+<p>VibeSpin maintains rigorous engineering and physical standards. All update algorithms must strictly satisfy <strong>detailed balance</strong> and <strong>ergodicity</strong> — whether via the Metropolis-Hastings acceptance rule (for single-spin updates) or the Fortuin-Kasteleyn bond construction (for Wolff cluster updates).</p>
 <section id="kernel-constraints">
 <h3>Kernel Constraints<a class="headerlink" href="#kernel-constraints" title="Link to this heading"></a></h3>
 <ul class="simple">

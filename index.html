@@ -17,6 +17,9 @@
       <script src="_static/doctools.js?v=fd6eb6e6"></script>
       <script src="_static/sphinx_highlight.js?v=6ffebe34"></script>
       <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+      <script>window.MathJax = {"options": {"processHtmlClass": "tex2jax_process|mathjax_process|math|output_area"}}</script>
+      <script>window.MathJax = {"tex": {"inlineMath": [["$", "$"], ["\\(", "\\)"]], "processEscapes": true}, "options": {"ignoreHtmlClass": "tex2jax_ignore|mathjax_ignore|document", "processHtmlClass": "tex2jax_process|mathjax_process|math|output_area"}}</script>
+      <script defer="defer" src="https://cdn.jsdelivr.net/npm/mathjax@4/tex-mml-chtml.js"></script>
     <script src="_static/js/theme.js"></script>
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
@@ -102,6 +105,7 @@
 <li class="toctree-l2"><a class="reference internal" href="physics.html#physical-models">1. Physical Models</a></li>
 <li class="toctree-l2"><a class="reference internal" href="physics.html#the-metropolis-hastings-algorithm">2. The Metropolis-Hastings Algorithm</a></li>
 <li class="toctree-l2"><a class="reference internal" href="physics.html#physical-observables">3. Physical Observables</a></li>
+<li class="toctree-l2"><a class="reference internal" href="physics.html#the-wolff-cluster-algorithm">4. The Wolff Cluster Algorithm</a></li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="scripts.html">Scripts Catalog: VibeSpin</a><ul>
@@ -127,6 +131,7 @@
 <li class="toctree-l1"><a class="reference internal" href="benchmarks.html">Performance Benchmarking for VibeSpin</a></li>
 </ul>
 </div>
+<p>See also <a class="reference external" href="https://github.com/manganite/VibeSpin/blob/master/Wolff_Efficiency.ipynb">Wolff_Efficiency.ipynb</a> for a didactic demonstration of the Wolff cluster algorithm’s efficiency advantage near the critical temperature, including <span class="math notranslate nohighlight">\(\tau_{\mathrm{int}}\)</span> comparisons, ISS improvement factors, and the FK cluster-size mechanism.</p>
 <div class="toctree-wrapper compound">
 <p class="caption" role="heading"><span class="caption-text">API Reference:</span></p>
 <ul>

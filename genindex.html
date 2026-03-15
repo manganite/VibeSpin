@@ -94,6 +94,7 @@
  | <a href="#P"><strong>P</strong></a>
  | <a href="#R"><strong>R</strong></a>
  | <a href="#S"><strong>S</strong></a>
+ | <a href="#T"><strong>T</strong></a>
  | <a href="#U"><strong>U</strong></a>
  | <a href="#X"><strong>X</strong></a>
  
@@ -141,6 +142,8 @@
       <li><a href="api/vibespin.models.html#models.clock_model.clock_step_parallel_numba">clock_step_parallel_numba() (in module models.clock_model)</a>
 </li>
       <li><a href="api/vibespin.models.html#models.clock_model.clock_step_random_numba">clock_step_random_numba() (in module models.clock_model)</a>
+</li>
+      <li><a href="api/vibespin.models.html#models.clock_model.clock_wolff_step_numba">clock_wolff_step_numba() (in module models.clock_model)</a>
 </li>
       <li><a href="api/vibespin.models.html#models.clock_model.ClockSimulation">ClockSimulation (class in models.clock_model)</a>
 </li>
@@ -202,11 +205,13 @@
 </li>
       <li><a href="api/vibespin.models.html#models.ising_model.ising_step_numba">ising_step_numba() (in module models.ising_model)</a>
 </li>
-  </ul></td>
-  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="api/vibespin.models.html#models.ising_model.ising_step_parallel_numba">ising_step_parallel_numba() (in module models.ising_model)</a>
 </li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="api/vibespin.models.html#models.ising_model.ising_step_random_numba">ising_step_random_numba() (in module models.ising_model)</a>
+</li>
+      <li><a href="api/vibespin.models.html#models.ising_model.ising_wolff_step_numba">ising_wolff_step_numba() (in module models.ising_model)</a>
 </li>
       <li><a href="api/vibespin.models.html#models.ising_model.IsingSimulation">IsingSimulation (class in models.ising_model)</a>
 </li>
@@ -319,6 +324,8 @@
 </li>
         <li><a href="api/vibespin.scripts.ising.html#module-scripts.ising.temperature_sweep">scripts.ising.temperature_sweep</a>
 </li>
+        <li><a href="api/vibespin.scripts.ising.html#module-scripts.ising.wolff_efficiency">scripts.ising.wolff_efficiency</a>
+</li>
         <li><a href="api/vibespin.scripts.xy.html#module-scripts.xy">scripts.xy</a>
 </li>
         <li><a href="api/vibespin.scripts.xy.html#module-scripts.xy.bkt_transition">scripts.xy.bkt_transition</a>
@@ -378,10 +385,10 @@
 </li>
       <li><a href="api/vibespin.scripts.ising.html#scripts.ising.correlation_divergence.run_divergence_analysis">run_divergence_analysis() (in module scripts.ising.correlation_divergence)</a>
 </li>
-  </ul></td>
-  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="api/vibespin.scripts.xy.html#scripts.xy.helicity_modulus.run_helicity_sweep">run_helicity_sweep() (in module scripts.xy.helicity_modulus)</a>
 </li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="api/vibespin.html#benchmark.run_scaling_benchmark">run_scaling_benchmark() (in module benchmark)</a>
 </li>
       <li><a href="api/vibespin.scripts.clock.html#scripts.clock.temperature_sweep.run_sweep">run_sweep() (in module scripts.clock.temperature_sweep)</a>
@@ -392,6 +399,8 @@
         <li><a href="api/vibespin.scripts.xy.html#scripts.xy.temperature_sweep.run_sweep">(in module scripts.xy.temperature_sweep)</a>
 </li>
       </ul></li>
+      <li><a href="api/vibespin.scripts.ising.html#scripts.ising.wolff_efficiency.run_wolff_efficiency_demo">run_wolff_efficiency_demo() (in module scripts.ising.wolff_efficiency)</a>
+</li>
   </ul></td>
 </tr></table>
 
@@ -485,14 +494,21 @@
 </li>
       </ul></li>
       <li>
+    scripts.ising.wolff_efficiency
+
+      <ul>
+        <li><a href="api/vibespin.scripts.ising.html#module-scripts.ising.wolff_efficiency">module</a>
+</li>
+      </ul></li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li>
     scripts.xy
 
       <ul>
         <li><a href="api/vibespin.scripts.xy.html#module-scripts.xy">module</a>
 </li>
       </ul></li>
-  </ul></td>
-  <td style="width: 33%; vertical-align: top;"><ul>
       <li>
     scripts.xy.bkt_transition
 
@@ -572,6 +588,14 @@
   </ul></td>
 </tr></table>
 
+<h2 id="T">T</h2>
+<table style="width: 100%" class="indextable genindextable"><tr>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="api/vibespin.scripts.ising.html#scripts.ising.wolff_efficiency.TC_ISING">TC_ISING (in module scripts.ising.wolff_efficiency)</a>
+</li>
+  </ul></td>
+</tr></table>
+
 <h2 id="U">U</h2>
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%; vertical-align: top;"><ul>
@@ -608,11 +632,13 @@
 </li>
       <li><a href="api/vibespin.models.html#models.xy_model.xy_step_numba">xy_step_numba() (in module models.xy_model)</a>
 </li>
-  </ul></td>
-  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="api/vibespin.models.html#models.xy_model.xy_step_parallel_numba">xy_step_parallel_numba() (in module models.xy_model)</a>
 </li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="api/vibespin.models.html#models.xy_model.xy_step_random_numba">xy_step_random_numba() (in module models.xy_model)</a>
+</li>
+      <li><a href="api/vibespin.models.html#models.xy_model.xy_wolff_step_numba">xy_wolff_step_numba() (in module models.xy_model)</a>
 </li>
       <li><a href="api/vibespin.models.html#models.xy_model.XYSimulation">XYSimulation (class in models.xy_model)</a>
 </li>

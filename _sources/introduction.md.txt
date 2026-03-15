@@ -9,7 +9,7 @@ The implementation is optimized for speed, scalability, and physical repeatabili
 
 ## Scope and methods
 
-VibeSpin supports both **Checkerboard Updates** (optimized for equilibrium throughput and SIMD vectorization) and **Random Site Selection** (mandatory for non-equilibrium kinetics and aging studies). 
+VibeSpin supports three update schemes: **Checkerboard Updates** (optimized for equilibrium throughput and SIMD vectorization), **Random Site Selection** (mandatory for non-equilibrium kinetics and aging studies), and the **Wolff Cluster Algorithm** (highly efficient near critical temperatures due to vanishing critical slowing down). 
 
 ### Physical Analysis
 - **Thermodynamics**: Magnetization magnitude $|M|$, total energy $E$, susceptibility $\chi$, and specific heat $C_v$.
@@ -66,9 +66,15 @@ Generate a visual ordering evolution for the XY model:
 python scripts/xy/ordering_evolution.py --size 256 --targets 1 10 100 1000 5000
 ```
 
+Compare Wolff cluster and Metropolis efficiency near the Ising critical point:
+
+```bash
+python scripts/ising/wolff_efficiency.py --size 64 --t-min 1.8 --t-max 3.2 --t-points 20
+```
+
 ## Development guidance
 
-VibeSpin maintains rigorous engineering and physical standards. All simulation code must strictly adhere to **Metropolis-Hastings prerequisites**, including detailed balance and ergodicity.
+VibeSpin maintains rigorous engineering and physical standards. All update algorithms must strictly satisfy **detailed balance** and **ergodicity** — whether via the Metropolis-Hastings acceptance rule (for single-spin updates) or the Fortuin-Kasteleyn bond construction (for Wolff cluster updates).
 
 ### Kernel Constraints
 - Simulation kernels must use `@njit(cache=True, fastmath=True)` and minimize memory allocation.

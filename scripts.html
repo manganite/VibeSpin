@@ -108,6 +108,7 @@
 <li><p><strong><code class="docutils literal notranslate"><span class="pre">ordering_evolution.py</span></code></strong>: Generates visual snapshots of the lattice configuration, structure factor, and correlation functions during a quench.</p></li>
 <li><p><strong><code class="docutils literal notranslate"><span class="pre">correlation_divergence.py</span></code></strong>: Extracts the critical exponent <span class="math notranslate nohighlight">\(\nu\)</span> by fitting the correlation length divergence near <span class="math notranslate nohighlight">\(T_c\)</span>.</p></li>
 <li><p><strong><code class="docutils literal notranslate"><span class="pre">correlation_comparison.py</span></code></strong>: Compares the functional form of <span class="math notranslate nohighlight">\(G(r)\)</span> in the ferromagnetic, critical, and paramagnetic phases.</p></li>
+<li><p><strong><code class="docutils literal notranslate"><span class="pre">wolff_efficiency.py</span></code></strong>: Compares the Metropolis checkerboard and Wolff cluster algorithms across the critical regime. Reports integrated autocorrelation time <span class="math notranslate nohighlight">\(\tau_{\mathrm{int}}\)</span>, independent samples per second (ISS), mean cluster size fraction <span class="math notranslate nohighlight">\(\langle C \rangle/N^2\)</span>, and susceptibility <span class="math notranslate nohighlight">\(\chi(T)\)</span> for both algorithms. Saves results to <code class="docutils literal notranslate"><span class="pre">results/ising/wolff_efficiency.npz</span></code> for re-use by <code class="docutils literal notranslate"><span class="pre">Wolff_Efficiency.ipynb</span></code> and a 4-panel summary figure to <code class="docutils literal notranslate"><span class="pre">results/ising/wolff_efficiency.png</span></code>.</p></li>
 </ul>
 </section>
 <section id="xy-model-scripts-xy">
@@ -144,6 +145,7 @@
 <ul class="simple">
 <li><p>Use <strong><code class="docutils literal notranslate"><span class="pre">--update</span> <span class="pre">random</span></code></strong> (or default in kinetics scripts) for any time-dependent study.</p></li>
 <li><p>Use <strong><code class="docutils literal notranslate"><span class="pre">--update</span> <span class="pre">checkerboard</span></code></strong> (default in sweep scripts) for equilibrium measurements.</p></li>
+<li><p>Use <strong><code class="docutils literal notranslate"><span class="pre">--update</span> <span class="pre">wolff</span></code></strong> when sweeping temperatures within roughly 20% of <span class="math notranslate nohighlight">\(T_c\)</span>. The Wolff cluster algorithm reduces <span class="math notranslate nohighlight">\(\tau_{\mathrm{int}}\)</span> by an order of magnitude near criticality, improving the ISS rate proportionally. See <code class="docutils literal notranslate"><span class="pre">Wolff_Efficiency.ipynb</span></code> for a quantitative demonstration.</p></li>
 </ul>
 </section>
 <section id="results">
