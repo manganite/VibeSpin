@@ -18,7 +18,7 @@
 	// "forwardPorts": [],
 
 	// Use 'postCreateCommand' to run commands after the container is created.
-	"postCreateCommand": "bash -lc 'set -euo pipefail; python -m venv --clear --copies .venv; ./.venv/bin/python -m pip install --upgrade pip; ./.venv/bin/python -m pip install -e \".[dev,notebook]\"; mkdir -p \"$HOME/.gemini\"; npm install -g @google/gemini-cli@latest'",
+	"postCreateCommand": "bash -lc 'set -euo pipefail; python -m venv --clear --copies .venv; ./.venv/bin/python -m pip install --upgrade pip; ./.venv/bin/python -m pip install -e \".[dev,notebook,docs]\"; mkdir -p \"$HOME/.gemini\"; npm install -g @google/gemini-cli@latest'",
 	"postStartCommand": "bash .devcontainer/scripts/check-ssh-agent.sh",
 	"customizations": {
 		"vscode": {
