@@ -1,0 +1,230 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="./">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Physics and Algorithm Guide: VibeSpin &mdash; VibeSpin 0.1.0 documentation</title>
+      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=9edc463e" />
+
+  
+      <script src="_static/jquery.js?v=5d32c60e"></script>
+      <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="_static/documentation_options.js?v=01f34227"></script>
+      <script src="_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="_static/sphinx_highlight.js?v=6ffebe34"></script>
+      <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+      <script>window.MathJax = {"options": {"processHtmlClass": "tex2jax_process|mathjax_process|math|output_area"}}</script>
+      <script>window.MathJax = {"tex": {"inlineMath": [["$", "$"], ["\\(", "\\)"]], "processEscapes": true}, "options": {"ignoreHtmlClass": "tex2jax_ignore|mathjax_ignore|document", "processHtmlClass": "tex2jax_process|mathjax_process|math|output_area"}}</script>
+      <script defer="defer" src="https://cdn.jsdelivr.net/npm/mathjax@4/tex-mml-chtml.js"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Scripts Catalog: VibeSpin" href="scripts.html" />
+    <link rel="prev" title="VibeSpin" href="introduction.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="index.html" class="icon icon-home">
+            VibeSpin
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">User Guides:</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="introduction.html">VibeSpin</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Physics and Algorithm Guide: VibeSpin</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#physical-models">1. Physical Models</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#ising-model">Ising Model</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#xy-model">XY Model</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#q-state-clock-model">q-state Clock Model</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#the-metropolis-hastings-algorithm">2. The Metropolis-Hastings Algorithm</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#detailed-balance">Detailed Balance</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#ergodicity">Ergodicity</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#update-schemes">Update Schemes</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#physical-observables">3. Physical Observables</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#thermodynamic-averages">Thermodynamic Averages</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#spatial-diagnostics">Spatial Diagnostics</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#topological-diagnostics">Topological Diagnostics</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="scripts.html">Scripts Catalog: VibeSpin</a></li>
+<li class="toctree-l1"><a class="reference internal" href="agents.html">Agent Instruction Guide: VibeSpin</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Performance:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="benchmarks.html">Performance Benchmarking for VibeSpin</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">API Reference:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="api/modules.html">vibespin</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">VibeSpin</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">Physics and Algorithm Guide: VibeSpin</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="_sources/physics.md.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section class="tex2jax_ignore mathjax_ignore" id="physics-and-algorithm-guide-vibespin">
+<h1>Physics and Algorithm Guide: VibeSpin<a class="headerlink" href="#physics-and-algorithm-guide-vibespin" title="Link to this heading"></a></h1>
+<p>This document details the theoretical foundations, physical models, and algorithmic requirements of the VibeSpin framework.</p>
+<section id="physical-models">
+<h2>1. Physical Models<a class="headerlink" href="#physical-models" title="Link to this heading"></a></h2>
+<p>VibeSpin implements three foundational 2D lattice spin models. Each is defined by its Hamiltonian (energy function) and state space.</p>
+<section id="ising-model">
+<h3>Ising Model<a class="headerlink" href="#ising-model" title="Link to this heading"></a></h3>
+<p>The simplest model of ferromagnetism.</p>
+<ul class="simple">
+<li><p><strong>State Space</strong>: Discrete spins <span class="math notranslate nohighlight">\(s_i \in \{+1, -1\}\)</span>.</p></li>
+<li><p><strong>Hamiltonian</strong>: <span class="math notranslate nohighlight">\(E = -J \sum_{\langle i,j \rangle} s_i s_j\)</span>, where <span class="math notranslate nohighlight">\(\langle i,j \rangle\)</span> denotes nearest-neighbor pairs.</p></li>
+<li><p><strong>Physics</strong>: Exhibits a second-order phase transition at <span class="math notranslate nohighlight">\(T_c \approx 2.269J/k_B\)</span> in 2D.</p></li>
+</ul>
+</section>
+<section id="xy-model">
+<h3>XY Model<a class="headerlink" href="#xy-model" title="Link to this heading"></a></h3>
+<p>A continuous model for planar spins.</p>
+<ul class="simple">
+<li><p><strong>State Space</strong>: 2D unit vectors <span class="math notranslate nohighlight">\(\mathbf{s}_i = (\cos\theta_i, \sin\theta_i)\)</span>.</p></li>
+<li><p><strong>Hamiltonian</strong>: <span class="math notranslate nohighlight">\(E = -J \sum_{\langle i,j \rangle} \mathbf{s}_i \cdot \mathbf{s}_j = -J \sum_{\langle i,j \rangle} \cos(\theta_i - \theta_j)\)</span>.</p></li>
+<li><p><strong>Physics</strong>: Exhibits the Berezinskii–Kosterlitz–Thouless (BKT) transition driven by vortex-antivortex pairing.</p></li>
+</ul>
+</section>
+<section id="q-state-clock-model">
+<h3>q-state Clock Model<a class="headerlink" href="#q-state-clock-model" title="Link to this heading"></a></h3>
+<p>Interpolates between Ising (<span class="math notranslate nohighlight">\(q=2\)</span>) and XY (<span class="math notranslate nohighlight">\(q \to \infty\)</span>).</p>
+<ul class="simple">
+<li><p><strong>State Space</strong>: Spins constrained to <span class="math notranslate nohighlight">\(q\)</span> discrete angles <span class="math notranslate nohighlight">\(\theta_k = 2\pi k/q\)</span>.</p></li>
+<li><p><strong>Implementation</strong>: VibeSpin provides both <strong>Continuous</strong> (XY with anisotropy) and <strong>Discrete</strong> (integer lookup) versions.</p></li>
+<li><p><strong>Hamiltonian</strong>: Same as XY, but with discrete allowed states.</p></li>
+</ul>
+</section>
+</section>
+<section id="the-metropolis-hastings-algorithm">
+<h2>2. The Metropolis-Hastings Algorithm<a class="headerlink" href="#the-metropolis-hastings-algorithm" title="Link to this heading"></a></h2>
+<p>All simulations in VibeSpin utilize the Metropolis-Hastings algorithm to sample the Boltzmann distribution <span class="math notranslate nohighlight">\(P(s) \propto \exp(-\beta E(s))\)</span>.</p>
+<section id="detailed-balance">
+<h3>Detailed Balance<a class="headerlink" href="#detailed-balance" title="Link to this heading"></a></h3>
+<p>To ensure the simulation converges to the correct equilibrium distribution, the transition probability <span class="math notranslate nohighlight">\(W(A \to B)\)</span> must satisfy:
+<span class="math notranslate nohighlight">\(P(A) W(A \to B) = P(B) W(B \to A)\)</span>
+This is achieved using the Metropolis acceptance rule:
+<span class="math notranslate nohighlight">\(P_{acc} = \min(1, \exp(-\beta \Delta E))\)</span></p>
+</section>
+<section id="ergodicity">
+<h3>Ergodicity<a class="headerlink" href="#ergodicity" title="Link to this heading"></a></h3>
+<p>The proposal distribution must allow the system to reach any state from any other state in a finite number of steps.</p>
+<ul class="simple">
+<li><p><strong>Ising</strong>: Single-spin flips ensure ergodicity.</p></li>
+<li><p><strong>Discrete Clock</strong>: Global site-state proposals (<code class="docutils literal notranslate"><span class="pre">randint(0,</span> <span class="pre">q)</span></code>) provide high ergodicity.</p></li>
+<li><p><strong>XY</strong>: Uniform phase proposals in <span class="math notranslate nohighlight">\([-\delta, \delta]\)</span> ensure any configuration is reachable over multiple steps.</p></li>
+</ul>
+</section>
+<section id="update-schemes">
+<h3>Update Schemes<a class="headerlink" href="#update-schemes" title="Link to this heading"></a></h3>
+<ul class="simple">
+<li><p><strong>Checkerboard Update</strong>: Used for <strong>Equilibrium/Thermodynamics</strong>. Divides the lattice into two independent sublattices (like a chessboard). Each sublattice is updated in parallel, maximizing cache efficiency and SIMD vectorization.</p></li>
+<li><p><strong>Random Site Selection</strong>: Mandatory for <strong>Kinetics/Dynamics</strong>. Randomly selects <span class="math notranslate nohighlight">\(N^2\)</span> sites per sweep. This preserves the exact stochastic trajectory required for studying coarsening and aging.</p></li>
+</ul>
+</section>
+</section>
+<section id="physical-observables">
+<h2>3. Physical Observables<a class="headerlink" href="#physical-observables" title="Link to this heading"></a></h2>
+<section id="thermodynamic-averages">
+<h3>Thermodynamic Averages<a class="headerlink" href="#thermodynamic-averages" title="Link to this heading"></a></h3>
+<ul class="simple">
+<li><p><strong>Magnetization</strong>: <span class="math notranslate nohighlight">\(M = \frac{1}{N} \sum_i s_i\)</span>. Measures order.</p></li>
+<li><p><strong>Energy</strong>: <span class="math notranslate nohighlight">\(E = \langle H \rangle / N\)</span>.</p></li>
+<li><p><strong>Susceptibility</strong>: <span class="math notranslate nohighlight">\(\chi = \frac{N}{T} (\langle M^2 \rangle - \langle M \rangle^2)\)</span>.</p></li>
+<li><p><strong>Specific Heat</strong>: <span class="math notranslate nohighlight">\(C_v = \frac{N}{T^2} (\langle E^2 \rangle - \langle E \rangle^2)\)</span>.</p></li>
+</ul>
+</section>
+<section id="spatial-diagnostics">
+<h3>Spatial Diagnostics<a class="headerlink" href="#spatial-diagnostics" title="Link to this heading"></a></h3>
+<ul class="simple">
+<li><p><strong>Correlation Function <span class="math notranslate nohighlight">\(G(r)\)</span></strong>: <span class="math notranslate nohighlight">\(\langle \mathbf{s}(0) \cdot \mathbf{s}(r) \rangle\)</span>. Measures the decay of order over distance.</p></li>
+<li><p><strong>Structure Factor <span class="math notranslate nohighlight">\(S(k)\)</span></strong>: The Fourier transform of the spin field. Identifies dominant fluctuation modes.</p></li>
+</ul>
+</section>
+<section id="topological-diagnostics">
+<h3>Topological Diagnostics<a class="headerlink" href="#topological-diagnostics" title="Link to this heading"></a></h3>
+<ul class="simple">
+<li><p><strong>Vorticity</strong>: Calculated by summing directed phase differences around each plaquette (square of 4 sites).</p></li>
+<li><p><strong>Vortex Density</strong>: The fraction of plaquettes with non-zero winding number.</p></li>
+<li><p><strong>Helicity Modulus</strong>: Measures the system’s stiffness against a phase-twist, used to identify the BKT transition.</p></li>
+</ul>
+</section>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="introduction.html" class="btn btn-neutral float-left" title="VibeSpin" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="scripts.html" class="btn btn-neutral float-right" title="Scripts Catalog: VibeSpin" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2026, Thomas Lottermoser.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

@@ -1,0 +1,245 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="./">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Agent Instruction Guide: VibeSpin &mdash; VibeSpin 0.1.0 documentation</title>
+      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=9edc463e" />
+
+  
+      <script src="_static/jquery.js?v=5d32c60e"></script>
+      <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="_static/documentation_options.js?v=01f34227"></script>
+      <script src="_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="_static/sphinx_highlight.js?v=6ffebe34"></script>
+      <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Performance Benchmarking for VibeSpin" href="benchmarks.html" />
+    <link rel="prev" title="Scripts Catalog: VibeSpin" href="scripts.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="index.html" class="icon icon-home">
+            VibeSpin
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">User Guides:</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="introduction.html">VibeSpin</a></li>
+<li class="toctree-l1"><a class="reference internal" href="physics.html">Physics and Algorithm Guide: VibeSpin</a></li>
+<li class="toctree-l1"><a class="reference internal" href="scripts.html">Scripts Catalog: VibeSpin</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Agent Instruction Guide: VibeSpin</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#mandatory-development-policies">Mandatory Development Policies</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#high-performance-computing-numba-jit">1. High Performance Computing (Numba JIT)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#code-quality-type-safety">2. Code Quality &amp; Type Safety</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#physical-fidelity-algorithm-integrity">3. Physical Fidelity &amp; Algorithm Integrity</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#verification-testing">4. Verification &amp; Testing</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#source-control-delivery">5. Source Control &amp; Delivery</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#directory-map-for-agents">Directory Map for Agents</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#common-operational-workflows">Common Operational Workflows</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#task-implement-a-new-physical-observable">Task: Implement a New Physical Observable</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#task-investigate-performance-regression">Task: Investigate Performance Regression</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#explanatory-writing-style">Explanatory Writing Style</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#role">Role</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#instructions">Instructions</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Performance:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="benchmarks.html">Performance Benchmarking for VibeSpin</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">API Reference:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="api/modules.html">vibespin</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">VibeSpin</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">Agent Instruction Guide: VibeSpin</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="_sources/agents.md.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section class="tex2jax_ignore mathjax_ignore" id="agent-instruction-guide-vibespin">
+<h1>Agent Instruction Guide: VibeSpin<a class="headerlink" href="#agent-instruction-guide-vibespin" title="Link to this heading"></a></h1>
+<p>This document provides mandatory procedural context and technical constraints for AI Agents working on this codebase.</p>
+<section id="mandatory-development-policies">
+<h2>Mandatory Development Policies<a class="headerlink" href="#mandatory-development-policies" title="Link to this heading"></a></h2>
+<section id="high-performance-computing-numba-jit">
+<h3>1. High Performance Computing (Numba JIT)<a class="headerlink" href="#high-performance-computing-numba-jit" title="Link to this heading"></a></h3>
+<ul class="simple">
+<li><p><strong>Constraint</strong>: All simulation loops and kernels MUST be JIT-compiled. Use <code class="docutils literal notranslate"><span class="pre">&#64;njit(cache=True,</span> <span class="pre">fastmath=True)</span></code>.</p></li>
+<li><p><strong>Constraint</strong>: Optional multi-core parallelization should be implemented for checkerboard kernels using <code class="docutils literal notranslate"><span class="pre">parallel=True</span></code> and <code class="docutils literal notranslate"><span class="pre">prange</span></code>.</p></li>
+<li><p><strong>Constraint</strong>: Do not use <code class="docutils literal notranslate"><span class="pre">np.mod</span></code> or <code class="docutils literal notranslate"><span class="pre">%</span></code> for Periodic Boundary Conditions (PBCs). Use pre-calculated indices <code class="docutils literal notranslate"><span class="pre">self.idx_next</span></code> and <code class="docutils literal notranslate"><span class="pre">self.idx_prev</span></code>.</p></li>
+<li><p><strong>Constraint</strong>: Minimize memory allocation inside JIT loops; update arrays in-place whenever possible.</p></li>
+</ul>
+</section>
+<section id="code-quality-type-safety">
+<h3>2. Code Quality &amp; Type Safety<a class="headerlink" href="#code-quality-type-safety" title="Link to this heading"></a></h3>
+<ul class="simple">
+<li><p><strong>Type Hints</strong>: Every source file MUST include <code class="docutils literal notranslate"><span class="pre">from</span> <span class="pre">__future__</span> <span class="pre">import</span> <span class="pre">annotations</span></code> as the first import.</p></li>
+<li><p><strong>API Safety</strong>: Use <code class="docutils literal notranslate"><span class="pre">*</span></code> to force <strong>keyword-only arguments</strong> for all public simulation and analysis methods.</p></li>
+<li><p><strong>CLI Patterns</strong>: Simulation models MUST include a <code class="docutils literal notranslate"><span class="pre">main()</span></code> entry point refactoring the CLI logic to support unit testing via mocking.</p></li>
+<li><p><strong>Import Strategy</strong>: Use <strong>relative imports</strong> within the same package namespace. Use <strong>absolute imports</strong> for cross-package and script/test imports.</p></li>
+</ul>
+</section>
+<section id="physical-fidelity-algorithm-integrity">
+<h3>3. Physical Fidelity &amp; Algorithm Integrity<a class="headerlink" href="#physical-fidelity-algorithm-integrity" title="Link to this heading"></a></h3>
+<ul class="simple">
+<li><p><strong>Metropolis Prerequisites</strong>: All update algorithms MUST strictly fulfill the conditions for the Metropolis-Hastings algorithm: <strong>Detailed Balance</strong>, <strong>Ergodicity</strong>, and <strong>Symmetric Proposals</strong>.</p></li>
+<li><p><strong>Dynamics/Kinetics Mandate</strong>: Use <strong>Random Site Selection</strong> for non-equilibrium studies. Sequential/checkerboard updates are physically invalid for these regimes.</p></li>
+<li><p><strong>Thermodynamics/Equilibrium Mandate</strong>: Use <strong>Checkerboard Updates</strong> for steady-state measurements to maximize SIMD and multi-core throughput.</p></li>
+<li><p><strong>Discrete Speedup</strong>: Prefer discrete state representations (integer state indices) for q-state models to avoid per-site trigonometric evaluations.</p></li>
+</ul>
+</section>
+<section id="verification-testing">
+<h3>4. Verification &amp; Testing<a class="headerlink" href="#verification-testing" title="Link to this heading"></a></h3>
+<ul>
+<li><p><strong>Comprehensive Testing</strong>: Any modification to simulation kernels or observables must be verified by running the full test suite:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>pytest
+</pre></div>
+</div>
+</li>
+<li><p><strong>Integrity Probes</strong>: Ensure new physical logic is covered by microscopic integrity tests (e.g., in <code class="docutils literal notranslate"><span class="pre">tests/test_algorithm_integrity.py</span></code>) and parameter validation (e.g., in <code class="docutils literal notranslate"><span class="pre">tests/test_model_extremes.py</span></code>).</p></li>
+<li><p><strong>Static Analysis</strong>: Maintain strict quality standards:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>ruff<span class="w"> </span>check<span class="w"> </span>.
+mypy<span class="w"> </span>--explicit-package-bases<span class="w"> </span>models/<span class="w"> </span>utils/<span class="w"> </span>scripts/
+</pre></div>
+</div>
+</li>
+</ul>
+</section>
+<section id="source-control-delivery">
+<h3>5. Source Control &amp; Delivery<a class="headerlink" href="#source-control-delivery" title="Link to this heading"></a></h3>
+<ul class="simple">
+<li><p><strong>Pre-Commit Check</strong>: Before proposing a commit, you MUST run all tests, linting, and type checking.</p></li>
+<li><p><strong>Commit Format</strong>: Use <strong>Conventional Commits</strong> (<code class="docutils literal notranslate"><span class="pre">type(scope):</span> <span class="pre">description</span></code>). Example: <code class="docutils literal notranslate"><span class="pre">phys(xy):</span> <span class="pre">implement</span> <span class="pre">helicity</span> <span class="pre">modulus</span> <span class="pre">calculation</span></code>.</p></li>
+<li><p><strong>GitHub Sync</strong>: After a successful local commit, ask the user if they wish to push to the remote repository.</p></li>
+</ul>
+</section>
+</section>
+<section id="directory-map-for-agents">
+<h2>Directory Map for Agents<a class="headerlink" href="#directory-map-for-agents" title="Link to this heading"></a></h2>
+<p>…</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">models/</span></code>: Refactored simulation classes with <code class="docutils literal notranslate"><span class="pre">main()</span></code> entry points.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">utils/</span></code>: Physics and system-level helper functions.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">tests/</span></code>: High-coverage test suite including integrity, CLI, and extreme case verification.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">scripts/</span></code>: Physics experiments and equilibrium/kinetics drivers.</p></li>
+</ul>
+</section>
+<section id="common-operational-workflows">
+<h2>Common Operational Workflows<a class="headerlink" href="#common-operational-workflows" title="Link to this heading"></a></h2>
+<section id="task-implement-a-new-physical-observable">
+<h3>Task: Implement a New Physical Observable<a class="headerlink" href="#task-implement-a-new-physical-observable" title="Link to this heading"></a></h3>
+<ol class="arabic simple">
+<li><p>Add the <code class="docutils literal notranslate"><span class="pre">&#64;njit</span></code> kernel to <code class="docutils literal notranslate"><span class="pre">models/simulation_base.py</span></code> or the specific model.</p></li>
+<li><p>Add a <code class="docutils literal notranslate"><span class="pre">_get_&lt;name&gt;</span></code> method to the Simulation class.</p></li>
+<li><p>Add a test case in <code class="docutils literal notranslate"><span class="pre">tests/test_coverage_enhancement.py</span></code> or a specialized test file.</p></li>
+<li><p>Verify the physical limits (e.g., ground state) in <code class="docutils literal notranslate"><span class="pre">tests/test_model_extremes.py</span></code>.</p></li>
+</ol>
+</section>
+<section id="task-investigate-performance-regression">
+<h3>Task: Investigate Performance Regression<a class="headerlink" href="#task-investigate-performance-regression" title="Link to this heading"></a></h3>
+<ol class="arabic simple">
+<li><p>Run the benchmark tool: <code class="docutils literal notranslate"><span class="pre">python</span> <span class="pre">benchmark.py</span> <span class="pre">--sizes</span> <span class="pre">512</span> <span class="pre">1024</span> <span class="pre">--sweeps</span> <span class="pre">100</span></code>.</p></li>
+<li><p>Check the <strong>Pure Simulation Time</strong> vs. overhead in the summary table.</p></li>
+<li><p>Profile the kernel for unexpected allocations or <code class="docutils literal notranslate"><span class="pre">object</span> <span class="pre">mode</span></code> fallbacks.</p></li>
+</ol>
+</section>
+</section>
+<section id="explanatory-writing-style">
+<h2>Explanatory Writing Style<a class="headerlink" href="#explanatory-writing-style" title="Link to this heading"></a></h2>
+<section id="role">
+<h3>Role<a class="headerlink" href="#role" title="Link to this heading"></a></h3>
+<p>You are an excellent human writer with a high-level scientific background. Write explanatory text in a human voice with clarity, precision, and conciseness.</p>
+</section>
+<section id="instructions">
+<h3>Instructions<a class="headerlink" href="#instructions" title="Link to this heading"></a></h3>
+<ul class="simple">
+<li><p><strong>Destroy the List</strong>: In explanatory prose, do not use bullet points unless procedural. Use continuous, flowing prose.</p></li>
+<li><p><strong>Vary Sentence Length</strong>: Avoid a monotonous rhythm of medium-length sentences.</p></li>
+<li><p><strong>Mechanism over Slogan</strong>: Favor technical interpretation over abstract praise. Plainly describe crossovers, plateaus, and decay laws.</p></li>
+<li><p><strong>Regime Awareness</strong>: Always specify whether a claim concerns equilibrium, kinetics, topological defects, or numerical cost.</p></li>
+<li><p><strong>No Conversational Filler</strong>: Adopt a direct, professional tone suitable for a CLI environment. Fulfill the user’s request thoroughly while maintaining simplicity.</p></li>
+</ul>
+</section>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="scripts.html" class="btn btn-neutral float-left" title="Scripts Catalog: VibeSpin" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="benchmarks.html" class="btn btn-neutral float-right" title="Performance Benchmarking for VibeSpin" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2026, Thomas Lottermoser.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

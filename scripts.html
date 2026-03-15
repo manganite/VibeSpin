@@ -1,0 +1,180 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="./">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Scripts Catalog: VibeSpin &mdash; VibeSpin 0.1.0 documentation</title>
+      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=9edc463e" />
+
+  
+      <script src="_static/jquery.js?v=5d32c60e"></script>
+      <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="_static/documentation_options.js?v=01f34227"></script>
+      <script src="_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="_static/sphinx_highlight.js?v=6ffebe34"></script>
+      <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+      <script>window.MathJax = {"options": {"processHtmlClass": "tex2jax_process|mathjax_process|math|output_area"}}</script>
+      <script>window.MathJax = {"tex": {"inlineMath": [["$", "$"], ["\\(", "\\)"]], "processEscapes": true}, "options": {"ignoreHtmlClass": "tex2jax_ignore|mathjax_ignore|document", "processHtmlClass": "tex2jax_process|mathjax_process|math|output_area"}}</script>
+      <script defer="defer" src="https://cdn.jsdelivr.net/npm/mathjax@4/tex-mml-chtml.js"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Agent Instruction Guide: VibeSpin" href="agents.html" />
+    <link rel="prev" title="Physics and Algorithm Guide: VibeSpin" href="physics.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="index.html" class="icon icon-home">
+            VibeSpin
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">User Guides:</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="introduction.html">VibeSpin</a></li>
+<li class="toctree-l1"><a class="reference internal" href="physics.html">Physics and Algorithm Guide: VibeSpin</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Scripts Catalog: VibeSpin</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#ising-model-scripts-ising">1. Ising Model (<code class="docutils literal notranslate"><span class="pre">scripts/ising/</span></code>)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#xy-model-scripts-xy">2. XY Model (<code class="docutils literal notranslate"><span class="pre">scripts/xy/</span></code>)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#clock-model-scripts-clock">3. Clock Model (<code class="docutils literal notranslate"><span class="pre">scripts/clock/</span></code>)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#usage-guidelines">Usage Guidelines</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#update-schemes">Update Schemes</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#results">Results</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="agents.html">Agent Instruction Guide: VibeSpin</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Performance:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="benchmarks.html">Performance Benchmarking for VibeSpin</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">API Reference:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="api/modules.html">vibespin</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">VibeSpin</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">Scripts Catalog: VibeSpin</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="_sources/scripts.md.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section class="tex2jax_ignore mathjax_ignore" id="scripts-catalog-vibespin">
+<h1>Scripts Catalog: VibeSpin<a class="headerlink" href="#scripts-catalog-vibespin" title="Link to this heading"></a></h1>
+<p>VibeSpin provides a suite of entry-point scripts for conducting physics experiments. These are organized by model family in the <code class="docutils literal notranslate"><span class="pre">scripts/</span></code> directory.</p>
+<section id="ising-model-scripts-ising">
+<h2>1. Ising Model (<code class="docutils literal notranslate"><span class="pre">scripts/ising/</span></code>)<a class="headerlink" href="#ising-model-scripts-ising" title="Link to this heading"></a></h2>
+<ul class="simple">
+<li><p><strong><code class="docutils literal notranslate"><span class="pre">temperature_sweep.py</span></code></strong>: Conducts a full thermodynamic sweep across a range of temperatures. Plots <span class="math notranslate nohighlight">\(|M|\)</span>, <span class="math notranslate nohighlight">\(E\)</span>, <span class="math notranslate nohighlight">\(\chi\)</span>, and <span class="math notranslate nohighlight">\(C_v\)</span>.</p></li>
+<li><p><strong><code class="docutils literal notranslate"><span class="pre">ordering_kinetics.py</span></code></strong>: Quenches the system to <span class="math notranslate nohighlight">\(T &lt; T_c\)</span> and tracks the growth of domain size <span class="math notranslate nohighlight">\(R(t)\)</span> over time.</p></li>
+<li><p><strong><code class="docutils literal notranslate"><span class="pre">ordering_evolution.py</span></code></strong>: Generates visual snapshots of the lattice configuration, structure factor, and correlation functions during a quench.</p></li>
+<li><p><strong><code class="docutils literal notranslate"><span class="pre">correlation_divergence.py</span></code></strong>: Extracts the critical exponent <span class="math notranslate nohighlight">\(\nu\)</span> by fitting the correlation length divergence near <span class="math notranslate nohighlight">\(T_c\)</span>.</p></li>
+<li><p><strong><code class="docutils literal notranslate"><span class="pre">correlation_comparison.py</span></code></strong>: Compares the functional form of <span class="math notranslate nohighlight">\(G(r)\)</span> in the ferromagnetic, critical, and paramagnetic phases.</p></li>
+</ul>
+</section>
+<section id="xy-model-scripts-xy">
+<h2>2. XY Model (<code class="docutils literal notranslate"><span class="pre">scripts/xy/</span></code>)<a class="headerlink" href="#xy-model-scripts-xy" title="Link to this heading"></a></h2>
+<ul class="simple">
+<li><p><strong><code class="docutils literal notranslate"><span class="pre">temperature_sweep.py</span></code></strong>: Standard thermodynamic sweep for continuous vector spins.</p></li>
+<li><p><strong><code class="docutils literal notranslate"><span class="pre">ordering_kinetics.py</span></code></strong>: Quenches to <span class="math notranslate nohighlight">\(T &lt; T_{BKT}\)</span> and tracks the decay of vortex density and the growth of the correlation length.</p></li>
+<li><p><strong><code class="docutils literal notranslate"><span class="pre">ordering_evolution.py</span></code></strong>: Visual snapshots including phase maps and vorticity configurations during ordering.</p></li>
+<li><p><strong><code class="docutils literal notranslate"><span class="pre">bkt_transition.py</span></code></strong>: Specifically focuses on the BKT transition by measuring average vortex density vs. temperature.</p></li>
+<li><p><strong><code class="docutils literal notranslate"><span class="pre">helicity_modulus.py</span></code></strong>: Calculates the superfluid stiffness to identify the universal jump at <span class="math notranslate nohighlight">\(T_{BKT}\)</span>.</p></li>
+<li><p><strong><code class="docutils literal notranslate"><span class="pre">compare_correlations.py</span></code></strong>: Contrasts power-law decay (topological order) with exponential decay (disordered phase).</p></li>
+</ul>
+</section>
+<section id="clock-model-scripts-clock">
+<h2>3. Clock Model (<code class="docutils literal notranslate"><span class="pre">scripts/clock/</span></code>)<a class="headerlink" href="#clock-model-scripts-clock" title="Link to this heading"></a></h2>
+<ul class="simple">
+<li><p><strong><code class="docutils literal notranslate"><span class="pre">temperature_sweep.py</span></code></strong>: Thermodynamic sweep for the q-state clock model.</p></li>
+<li><p><strong><code class="docutils literal notranslate"><span class="pre">ordering_kinetics.py</span></code></strong>: Analyzes the ordering dynamics after a quench.</p></li>
+<li><p><strong><code class="docutils literal notranslate"><span class="pre">ordering_evolution.py</span></code></strong>: Visualizes the evolution of discrete phase domains.</p></li>
+<li><p><strong><code class="docutils literal notranslate"><span class="pre">compare_discrete_vs_continuous.py</span></code></strong>: Provides a side-by-side performance and physical comparison between the continuous (XY + anisotropy) and discrete implementations.</p></li>
+</ul>
+</section>
+<section id="usage-guidelines">
+<h2>Usage Guidelines<a class="headerlink" href="#usage-guidelines" title="Link to this heading"></a></h2>
+<section id="update-schemes">
+<h3>Update Schemes<a class="headerlink" href="#update-schemes" title="Link to this heading"></a></h3>
+<p>As mandated in <code class="docutils literal notranslate"><span class="pre">AGENTS.md</span></code>:</p>
+<ul class="simple">
+<li><p>Use <strong><code class="docutils literal notranslate"><span class="pre">--update</span> <span class="pre">random</span></code></strong> (or default in kinetics scripts) for any time-dependent study.</p></li>
+<li><p>Use <strong><code class="docutils literal notranslate"><span class="pre">--update</span> <span class="pre">checkerboard</span></code></strong> (default in sweep scripts) for equilibrium measurements.</p></li>
+</ul>
+</section>
+<section id="results">
+<h3>Results<a class="headerlink" href="#results" title="Link to this heading"></a></h3>
+<p>All scripts save their output (plots and data files) to the <code class="docutils literal notranslate"><span class="pre">results/</span></code> directory, sub-divided by model and experiment type.</p>
+</section>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="physics.html" class="btn btn-neutral float-left" title="Physics and Algorithm Guide: VibeSpin" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="agents.html" class="btn btn-neutral float-right" title="Agent Instruction Guide: VibeSpin" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2026, Thomas Lottermoser.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>
