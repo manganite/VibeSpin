@@ -65,10 +65,14 @@
 <li class="toctree-l2"><a class="reference internal" href="#Scaling-Exponents">Scaling Exponents</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#Cost-per-Spin-Update">Cost per Spin Update</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#Summary-Table-and-Speedup-Analysis">Summary Table and Speedup Analysis</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#id1">Summary Table and Speedup Analysis</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#Autocorrelation-Time-and-Sampling-Efficiency">Autocorrelation Time and Sampling Efficiency</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#Hardware-Scaling-&amp;-Multi-core-Performance">Hardware Scaling &amp; Multi-core Performance</a><ul>
 <li class="toctree-l3"><a class="reference internal" href="#Efficiency:-Nanoseconds-per-site-update">Efficiency: Nanoseconds per site update</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#Topological-and-Vector-Analysis-Cost">Topological and Vector Analysis Cost</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#id2">Topological and Vector Analysis Cost</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#Parallel-Scaling-Benchmark">Parallel Scaling Benchmark</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#Comprehensive-Performance-Dashboard">Comprehensive Performance Dashboard</a></li>
 </ul>
 </li>
 </ul>
@@ -110,7 +114,7 @@
 <span class="math notranslate nohighlight">\(\tau_\mathrm{int}\)</span> — are computed once after the window closes from the stored M and E series or from a spin-field snapshot. They carry no per-step cost. Sections below treat each tier separately: the thermodynamic cost section covers per-step M and E collection; G(r) and <span class="math notranslate nohighlight">\(\tau_\mathrm{int}\)</span> have dedicated sections since their scaling and use differ from per-step collection.</p>
 <p>Because Numba JIT compiles each kernel on first call, reported times are only stable after warm-up. The <code class="docutils literal notranslate"><span class="pre">measure_performance</span></code> helper runs three warm-up steps before starting any clock. For reproducible numbers, execute all cells once to compile, then re-run the benchmark cell.</p>
 <div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[8]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">time</span>
@@ -137,7 +141,7 @@
 <p>The second code cell defines <code class="docutils literal notranslate"><span class="pre">measure_performance</span></code>. It accepts a live simulation instance and runs three silent warm-up steps to trigger JIT compilation for sweep, thermodynamic, and <span class="math notranslate nohighlight">\(G(r)\)</span> kernels before any timing begins. (Compiling the <span class="math notranslate nohighlight">\(G(r)\)</span> kernel at this stage means the dedicated <span class="math notranslate nohighlight">\(G(r)\)</span> section later gets stable timings without its own warm-up pass.) Sweep throughput is then measured over the full <code class="docutils literal notranslate"><span class="pre">sweeps</span></code> count. Thermodynamic collection cost is averaged over
 <code class="docutils literal notranslate"><span class="pre">analysis_iters</span></code> independent calls to <code class="docutils literal notranslate"><span class="pre">_get_energy()</span></code> and <code class="docutils literal notranslate"><span class="pre">_get_magnetization()</span></code>, which represent the per-step overhead incurred inside a measurement window.</p>
 <div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[9]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># --- Benchmark configuration -------------------------------------------------</span>
@@ -173,7 +177,7 @@
 </div>
 </div>
 <div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[10]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">measure_performance</span><span class="p">(</span><span class="n">sim</span><span class="p">,</span> <span class="n">sweeps</span><span class="o">=</span><span class="mi">100</span><span class="p">,</span> <span class="n">analysis_iters</span><span class="o">=</span><span class="mi">50</span><span class="p">):</span>
@@ -225,8 +229,8 @@
 <p>The benchmark runs all eight model variants at lattice sizes <span class="math notranslate nohighlight">\(L \in \{32, 64, 128, 256, 512\}\)</span>. Temperatures are fixed at physically relevant points: <span class="math notranslate nohighlight">\(T = 2.269\)</span> for Ising (within 0.1% of the known 2D critical temperature <span class="math notranslate nohighlight">\(T_c \approx 2.2692\)</span>), <span class="math notranslate nohighlight">\(T = 0.89\)</span> for XY (near the Berezinskii:nbsphinx-math:<cite>u2`013Kosterlitz:nbsphinx-math:</cite>u2`013Thouless transition at <span class="math notranslate nohighlight">\(T_{\text{BKT}} \approx 0.89\)</span>), and <span class="math notranslate nohighlight">\(T = 0.5\)</span> for both <span class="math notranslate nohighlight">\(q = 6\)</span> clock variants (well inside the
 ordered phase). Choosing these points ensures realistic acceptance rates rather than trivial cases where nearly every or nearly no proposal is accepted.</p>
 <p>Results are stored in <code class="docutils literal notranslate"><span class="pre">results[model_name][L]</span></code> as a dict with keys <code class="docutils literal notranslate"><span class="pre">sps</span></code> (sweeps per second) and <code class="docutils literal notranslate"><span class="pre">thermo_ms</span></code> (per-step thermodynamic collection cost in milliseconds). All subsequent plots up to the <span class="math notranslate nohighlight">\(G(r)\)</span> section read from this structure.</p>
-<div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[11]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">sizes</span> <span class="o">=</span> <span class="p">[</span><span class="mi">32</span><span class="p">,</span> <span class="mi">64</span><span class="p">,</span> <span class="mi">128</span><span class="p">,</span> <span class="mi">256</span><span class="p">,</span> <span class="mi">512</span><span class="p">]</span>
@@ -270,14 +274,20 @@ ordered phase). Choosing these points ensures realistic acceptance rates rather 
 </pre></div>
 </div>
 </div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<script type="application/vnd.jupyter.widget-view+json">{"model_id": "2c6c74321eda4f829b3503872447882d", "version_major": 2, "version_minor": 0}</script></div>
+</div>
 </section>
 <section id="Throughput:-Log-Log-Plot">
 <h2>Throughput: Log-Log Plot<a class="headerlink" href="#Throughput:-Log-Log-Plot" title="Link to this heading"></a></h2>
 <p>The plot below shows sweeps per second on a log-log scale against system size <span class="math notranslate nohighlight">\(N = L^2\)</span>. One sweep corresponds to a full lattice pass: <span class="math notranslate nohighlight">\(N\)</span> randomly chosen flip attempts for random-sequential updates, or two sublattice passes for checkerboard. On a log-log scale, a line with slope <span class="math notranslate nohighlight">\(-1\)</span> would indicate constant cost per spin (ideal <span class="math notranslate nohighlight">\(O(N)\)</span> scaling).</p>
 <p>The Ising model occupies the top of the chart. Its binary spin space limits each Metropolis evaluation to two pre-computed Boltzmann factors (<span class="math notranslate nohighlight">\(e^{-4J\beta}\)</span> and <span class="math notranslate nohighlight">\(e^{-8J\beta}\)</span>), with no per-site transcendental functions. XY and the continuous clock both compute <code class="docutils literal notranslate"><span class="pre">arctan2</span></code> and trigonometric evaluations per proposal, which is visible as a substantial throughput drop. The discrete clock reaches for the same Hamiltonian as the continuous clock but evaluates <span class="math notranslate nohighlight">\(\Delta E\)</span> via a
 length-<span class="math notranslate nohighlight">\(q\)</span> cosine table, recovering much of the Ising advantage.</p>
-<div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[12]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">plt</span><span class="o">.</span><span class="n">figure</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">10</span><span class="p">,</span> <span class="mi">6</span><span class="p">))</span>
@@ -300,6 +310,13 @@ length-<span class="math notranslate nohighlight">\(q\)</span> cosine table, rec
 </pre></div>
 </div>
 </div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="_images/benchmarks_8_0.png" src="_images/benchmarks_8_0.png" />
+</div>
+</div>
 </section>
 <section id="Thermodynamic-Analysis-Cost:-Per-Step-Collection">
 <h2>Thermodynamic Analysis Cost: Per-Step Collection<a class="headerlink" href="#Thermodynamic-Analysis-Cost:-Per-Step-Collection" title="Link to this heading"></a></h2>
@@ -308,8 +325,8 @@ length-<span class="math notranslate nohighlight">\(q\)</span> cosine table, rec
 \[\chi = \frac{N}{T}\bigl(\langle M^2 \rangle - \langle M \rangle^2\bigr), \qquad C_v = \frac{N}{T^2}\bigl(\langle E^2 \rangle - \langle E \rangle^2\bigr)\]</div>
 <p>This post-hoc step costs a fixed amount regardless of <span class="math notranslate nohighlight">\(N\)</span> or model — it does not appear in the per-step timings plotted here. <span class="math notranslate nohighlight">\(G(r)\)</span> and <span class="math notranslate nohighlight">\(\tau_\mathrm{int}\)</span> are likewise post-hoc: <span class="math notranslate nohighlight">\(G(r)\)</span> operates on a single spin-field snapshot, and <span class="math notranslate nohighlight">\(\tau_\mathrm{int}\)</span> is extracted from the full <span class="math notranslate nohighlight">\(M(t)\)</span> series; both receive dedicated sections further below.</p>
 <p>The plot shows per-call timing of <code class="docutils literal notranslate"><span class="pre">_get_energy()</span></code> + <code class="docutils literal notranslate"><span class="pre">_get_magnetization()</span></code> vs system size <span class="math notranslate nohighlight">\(N\)</span>. The cost difference between models reflects how each computes instantaneous observables from its spin representation. Ising sums a scalar <span class="math notranslate nohighlight">\(\pm 1\)</span> array in one pass. XY and the clock models project per-site vector components or query lookup tables, roughly doubling the Ising cost. All models scale <span class="math notranslate nohighlight">\(\propto N\)</span>, consistent with a single linear traversal per call.</p>
-<div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[13]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">plt</span><span class="o">.</span><span class="n">figure</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">10</span><span class="p">,</span> <span class="mi">6</span><span class="p">))</span>
@@ -333,14 +350,21 @@ length-<span class="math notranslate nohighlight">\(q\)</span> cosine table, rec
 </pre></div>
 </div>
 </div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="_images/benchmarks_10_0.png" src="_images/benchmarks_10_0.png" />
+</div>
+</div>
 </section>
 <section id="Thermodynamic-Overhead-Ratio">
 <h2>Thermodynamic Overhead Ratio<a class="headerlink" href="#Thermodynamic-Overhead-Ratio" title="Link to this heading"></a></h2>
 <p>This plot shows (per-step M+E collection time) / (sweep time) — the fraction of each sweep’s budget consumed by recording the two per-step observables. The ratio only covers the quantities that must be collected at every step; post-hoc observables (χ, C_v, G(r), τ_int) are paid once per window regardless of its length and do not contribute to this ratio.</p>
 <p>When the ratio exceeds 1.0 (dashed reference), calling <code class="docutils literal notranslate"><span class="pre">_get_energy()</span></code> and <code class="docutils literal notranslate"><span class="pre">_get_magnetization()</span></code> at every sweep adds more overhead than the sweep itself. Fast-sweeping models such as Ising approach or exceed that crossover at large <span class="math notranslate nohighlight">\(L\)</span> because their sweep time is suppressed by integer arithmetic while the observable evaluation still scans the full <span class="math notranslate nohighlight">\(N\)</span>-site array. Slow-sweeping models such as the continuous clock stay well below 1.0: each sweep is already expensive relative to
 the measurement pass. The discrete clock sits between the two, in line with its intermediate sweep cost.</p>
-<div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[14]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">plt</span><span class="o">.</span><span class="n">figure</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">10</span><span class="p">,</span> <span class="mi">6</span><span class="p">))</span>
@@ -368,14 +392,21 @@ the measurement pass. The discrete clock sits between the two, in line with its 
 </pre></div>
 </div>
 </div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="_images/benchmarks_12_0.png" src="_images/benchmarks_12_0.png" />
+</div>
+</div>
 </section>
 <section id="Scaling-Exponents">
 <h2>Scaling Exponents<a class="headerlink" href="#Scaling-Exponents" title="Link to this heading"></a></h2>
 <p>The plot below fits a power law <span class="math notranslate nohighlight">\(t_{\text{sweep}} \propto N^\alpha\)</span> to the measured sweep times via log-log linear regression, then reports <span class="math notranslate nohighlight">\(\alpha\)</span> in the legend for each model. Ideal <span class="math notranslate nohighlight">\(O(N)\)</span> cost gives <span class="math notranslate nohighlight">\(\alpha = 1.0\)</span> exactly. Values above 1 indicate super-linear growth, which can arise from cache pressure at large <span class="math notranslate nohighlight">\(L\)</span> (a full <span class="math notranslate nohighlight">\(512 \times 512\)</span> float64 spin array occupies 2 MB for a scalar field and 4 MB for a two-component vector field, exceeding L2 cache on
 most CPUs). Values slightly below 1 are possible when Numba vectorizes inner loops aggressively and memory bandwidth is not yet saturated.</p>
 <p>Comparing <span class="math notranslate nohighlight">\(\alpha\)</span> across models separates models where cost per spin is genuinely constant from those where it drifts with size, independent of the absolute sweep rate shown in earlier plots.</p>
-<div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[15]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">analyze_scaling</span><span class="p">(</span><span class="n">sizes</span><span class="p">,</span> <span class="n">results</span><span class="p">):</span>
@@ -408,14 +439,21 @@ most CPUs). Values slightly below 1 are possible when Numba vectorizes inner loo
 </pre></div>
 </div>
 </div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="_images/benchmarks_14_0.png" src="_images/benchmarks_14_0.png" />
+</div>
+</div>
 </section>
 <section id="Cost-per-Spin-Update">
 <h2>Cost per Spin Update<a class="headerlink" href="#Cost-per-Spin-Update" title="Link to this heading"></a></h2>
 <p>Dividing sweep time by <span class="math notranslate nohighlight">\(N = L^2\)</span> gives a size-normalized cost in nanoseconds per attempted spin flip. This collapses the <span class="math notranslate nohighlight">\(O(N)\)</span> factor and reveals whether the per-spin cost is truly constant or carries a hidden size dependence — for instance, through rising cache-miss rates as the spin array grows beyond LLC capacity.</p>
 <p>The Ising model sits at the bottom of this chart because each Metropolis proposal requires only a comparison of two integers and one random number; there are only six distinct <span class="math notranslate nohighlight">\(\Delta E\)</span> values, so no per-site trig is needed. XY and the continuous clock pay a full <code class="docutils literal notranslate"><span class="pre">atan2</span></code> plus cosine evaluation per proposal. The discrete clock avoids that by looking up <span class="math notranslate nohighlight">\(\cos(2\pi\,\Delta k/q)\)</span> in a length-<span class="math notranslate nohighlight">\(q\)</span> table, closing roughly 60% of the gap between continuous clock and Ising.
 Random-sequential update variants show slightly higher cost than checkerboard at large <span class="math notranslate nohighlight">\(L\)</span> because random index generation adds a non-trivial per-site overhead relative to the deterministic sublattice stride.</p>
-<div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[16]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">plt</span><span class="o">.</span><span class="n">figure</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">10</span><span class="p">,</span> <span class="mi">6</span><span class="p">))</span>
@@ -438,6 +476,13 @@ Random-sequential update variants show slightly higher cost than checkerboard at
 </pre></div>
 </div>
 </div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="_images/benchmarks_16_0.png" src="_images/benchmarks_16_0.png" />
+</div>
+</div>
 </section>
 <section id="Summary-Table-and-Speedup-Analysis">
 <h2>Summary Table and Speedup Analysis<a class="headerlink" href="#Summary-Table-and-Speedup-Analysis" title="Link to this heading"></a></h2>
@@ -450,8 +495,8 @@ Random-sequential update variants show slightly higher cost than checkerboard at
 <li><p><strong>Overhead (%)</strong>: Percentage of the total sweep budget consumed by measurements.</p></li>
 </ul>
 <p>We quantify two major optimizations below the table: the <strong>Checkerboard Speedup</strong> (achieved via cache-friendly striding and SIMD vectorization) and the <strong>Discrete Speedup</strong> (achieved by replacing trigonometric evaluations with integer lookups).</p>
-<div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[17]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">L_max</span> <span class="o">=</span> <span class="n">sizes</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
@@ -487,12 +532,42 @@ Random-sequential update variants show slightly higher cost than checkerboard at
 <br/></pre></div>
 </div>
 </div>
-<p>L_max = sizes[-1] print(f”Performance metrics at L = {L_max} (N = {L_max<em>L_max})”) print(“-”</em> 105) header = f”{‘Model’:&lt;35} | {‘Sweeps/s’:&gt;10} | {‘Sweep (ms)’:&gt;10} | {‘Pure (ms)’:&gt;10} | {‘Thermo (ms)’:&gt;11} | {‘Overhead (%)’:&gt;12}” print(header) print(“-” * 105)</p>
-<p>for name in results: m = results[name][L_max] sweep_ms = (1.0 / m[‘sps’]) * 1000 pure_ms = sweep_ms - m[‘thermo_ms’] overhead_pct = (m[‘thermo_ms’] / sweep_ms) * 100.0 row = f”{name:&lt;35} | {m[‘sps’]:&gt;10.1f} | {sweep_ms:&gt;10.2f} | {pure_ms:&gt;10.2f} | {m[‘thermo_ms’]:&gt;11.3f} | {overhead_pct:&gt;11.1f}%” print(row)</p>
-<p>print(”<span class="math">\n1</span>. Checkerboard vs Random Speedup (at constant model representation):”) for base in [‘Ising’, ‘XY’, ‘Clock Continuous’, ‘Clock Discrete’]: cb_key = f’{base} (Checkerboard)’ rnd_key = f’{base} (Random)’ cb_sps = results[cb_key][L_max][‘sps’] rnd_sps = results[rnd_key][L_max][‘sps’] speedup = cb_sps / rnd_sps print(f” {base:&lt;18}: {speedup:5.2f}x faster with Checkerboard updates”)</p>
-<p>print(”<span class="math">\n2</span>. Discrete vs Continuous Speedup (at constant update scheme):”) for scheme in [‘Checkerboard’, ‘Random’]: cont_key = f’Clock Continuous ({scheme})’ disc_key = f’Clock Discrete ({scheme})’ cont_sps = results[cont_key][L_max][‘sps’] disc_sps = results[disc_key][L_max][‘sps’] speedup = disc_sps / cont_sps print(f” {scheme:&lt;12}: {speedup:5.2f}x faster with Discrete representation”)</p>
-<div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+Performance metrics at L = 512 (N = 262144)
+---------------------------------------------------------------------------------------------------------
+Model                               |   Sweeps/s | Sweep (ms) |  Pure (ms) | Thermo (ms) | Overhead (%)
+---------------------------------------------------------------------------------------------------------
+Ising (Checkerboard)                |      169.8 |       5.89 |       5.33 |       0.565 |         9.6%
+Ising (Random)                      |       54.8 |      18.24 |      17.76 |       0.478 |         2.6%
+XY (Checkerboard)                   |       43.7 |      22.87 |      16.56 |       6.310 |        27.6%
+XY (Random)                         |       21.3 |      47.04 |      40.16 |       6.882 |        14.6%
+Clock Continuous (Checkerboard)     |       18.8 |      53.26 |      24.89 |      28.363 |        53.3%
+Clock Continuous (Random)           |       11.2 |      89.34 |      66.95 |      22.390 |        25.1%
+Clock Discrete (Checkerboard)       |       56.6 |      17.67 |      13.17 |       4.500 |        25.5%
+Clock Discrete (Random)             |       32.7 |      30.62 |      26.32 |       4.304 |        14.1%
+
+1. Checkerboard vs Random Speedup (at constant model representation):
+  Ising             :  3.10x faster with Checkerboard updates
+  XY                :  2.06x faster with Checkerboard updates
+  Clock Continuous  :  1.68x faster with Checkerboard updates
+  Clock Discrete    :  1.73x faster with Checkerboard updates
+
+2. Discrete vs Continuous Speedup (at constant update scheme):
+  Checkerboard:  3.01x faster with Discrete representation
+  Random      :  2.92x faster with Discrete representation
+</pre></div></div>
+</div>
+</section>
+<section id="id1">
+<h2>Summary Table and Speedup Analysis<a class="headerlink" href="#id1" title="Link to this heading"></a></h2>
+<p>The table above reports performance at the largest lattice size and separates total sweep time from measurement overhead. Pure simulation time isolates update-kernel cost, while thermodynamic time captures per-step collection of energy and magnetization during measurement windows.</p>
+<p>Use the checkerboard-versus-random speedup lines to assess update-order efficiency at fixed spin representation, and use the discrete-versus-continuous clock comparison to quantify the gain from lookup-table arithmetic over per-site trigonometric evaluation.</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[18]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">CORR_ITERS</span> <span class="o">=</span> <span class="mi">50</span>  <span class="c1"># timed calls per (model, size)</span>
@@ -576,6 +651,42 @@ Random-sequential update variants show slightly higher cost than checkerboard at
 <br/></pre></div>
 </div>
 </div>
+<div class="nboutput docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<script type="application/vnd.jupyter.widget-view+json">{"model_id": "adc054d5f71c498eabd71484211b0976", "version_major": 2, "version_minor": 0}</script></div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="_images/benchmarks_20_1.png" src="_images/benchmarks_20_1.png" />
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+G(r) cost per call at L=512 (N=262144)
+Model                                 ms/call  representation
+------------------------------------------------------------------------
+Ising (Checkerboard)                    12.16  scalar, 1 FFT
+Ising (Random)                          18.02  scalar, 1 FFT
+XY (Checkerboard)                       21.84  2-component float, 2 FFTs
+XY (Random)                             19.44  2-component float, 2 FFTs
+Clock Continuous (Checkerboard)         18.58  2-component float, 2 FFTs
+Clock Continuous (Random)               15.94  2-component float, 2 FFTs
+Clock Discrete (Checkerboard)           31.27  int -&gt; float + 2 FFTs
+Clock Discrete (Random)                 24.68  int -&gt; float + 2 FFTs
+
+Tier means:
+  Ising (scalar, 1 FFT)               15.09 ms  (reference)
+  XY / Clock Continuous (2 FFTs)      18.95 ms  (1.26x Ising)
+  Clock Discrete (convert + 2 FFTs)   27.98 ms  (1.48x XY tier,  1.85x Ising)
+</pre></div></div>
+</div>
 </section>
 <section id="Autocorrelation-Time-and-Sampling-Efficiency">
 <h2>Autocorrelation Time and Sampling Efficiency<a class="headerlink" href="#Autocorrelation-Time-and-Sampling-Efficiency" title="Link to this heading"></a></h2>
@@ -583,8 +694,8 @@ Random-sequential update variants show slightly higher cost than checkerboard at
 <p>Raw throughput in sweeps per second is therefore not the complete figure of merit for equilibrium sampling. The relevant rate is the independent samples per second, <span class="math notranslate nohighlight">\(\text{ISS} = \text{sweeps/s} \div \tau_{\text{int}}\)</span>. A model with twice the throughput but four times the autocorrelation time explores configuration space at half the effective rate.</p>
 <p><span class="math notranslate nohighlight">\(\tau_{\text{int}}\)</span> is estimated via an FFT-based autocorrelation estimator with the Madras:nbsphinx-math:<cite>u2`013Sokal automatic windowing rule, which cuts integration at lag :math:`W = 6,tau_{text{int}}</cite> to suppress noise accumulation at large lags. Each model is run for a <span class="math notranslate nohighlight">\(500\)</span>-sweep burn-in then a <span class="math notranslate nohighlight">\(2000\)</span>-sweep magnetization series at <span class="math notranslate nohighlight">\(L=64\)</span>; this is long enough for well-separated phases but may under-resolve <span class="math notranslate nohighlight">\(\tau_{\text{int}}\)</span> right at a critical point where
 the true value diverges with <span class="math notranslate nohighlight">\(L\)</span>. In that case the reported number is a lower bound.</p>
-<div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[19]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">TAU_L</span>      <span class="o">=</span> <span class="mi">64</span>    <span class="c1"># lattice size for autocorrelation measurement</span>
@@ -617,8 +728,33 @@ the true value diverges with <span class="math notranslate nohighlight">\(L\)</s
 </pre></div>
 </div>
 </div>
-<div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+<div class="nboutput docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<script type="application/vnd.jupyter.widget-view+json">{"model_id": "5080848c83794c3f9764fed032fe103d", "version_major": 2, "version_minor": 0}</script></div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+MC autocorrelation at L=64  (2000-sweep series, 500-step burn-in)
+------------------------------------------------------------------------
+Model                                 tau_int (sweeps)    ISS (samples/s)
+------------------------------------------------------------------------
+Ising (Checkerboard)                            153.1              52.4
+Ising (Random)                                  269.1              16.6
+XY (Checkerboard)                               145.6              17.7
+XY (Random)                                     296.1               7.0
+Clock Continuous (Checkerboard)                  97.9              12.6
+Clock Continuous (Random)                       139.6               7.2
+Clock Discrete (Checkerboard)                   313.7               5.9
+Clock Discrete (Random)                          75.2              26.3
+</pre></div></div>
+</div>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[20]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">fig</span><span class="p">,</span> <span class="p">(</span><span class="n">ax1</span><span class="p">,</span> <span class="n">ax2</span><span class="p">)</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">14</span><span class="p">,</span> <span class="mi">6</span><span class="p">))</span>
@@ -655,6 +791,13 @@ the true value diverges with <span class="math notranslate nohighlight">\(L\)</s
 </pre></div>
 </div>
 </div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="_images/benchmarks_23_0.png" src="_images/benchmarks_23_0.png" />
+</div>
+</div>
 </section>
 <section id="Hardware-Scaling-&amp;-Multi-core-Performance">
 <h2>Hardware Scaling &amp; Multi-core Performance<a class="headerlink" href="#Hardware-Scaling-&-Multi-core-Performance" title="Link to this heading"></a></h2>
@@ -662,8 +805,8 @@ the true value diverges with <span class="math notranslate nohighlight">\(L\)</s
 <section id="Efficiency:-Nanoseconds-per-site-update">
 <h3>Efficiency: Nanoseconds per site update<a class="headerlink" href="#Efficiency:-Nanoseconds-per-site-update" title="Link to this heading"></a></h3>
 <p>Throughput (sweeps/s) decreases as <span class="math notranslate nohighlight">\(N\)</span> increases, but the cost per spin update should ideally remain constant. The plot below shows this metric for all models. Upward drifts at large <span class="math notranslate nohighlight">\(L\)</span> indicate hardware bottlenecks (cache misses or memory bandwidth saturation), while downward drifts suggest Numba’s vectorization becoming more effective.</p>
-<div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[21]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">plt</span><span class="o">.</span><span class="n">figure</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">10</span><span class="p">,</span> <span class="mi">6</span><span class="p">))</span>
@@ -686,12 +829,19 @@ the true value diverges with <span class="math notranslate nohighlight">\(L\)</s
 </pre></div>
 </div>
 </div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="_images/benchmarks_26_0.png" src="_images/benchmarks_26_0.png" />
+</div>
+</div>
 </section>
 <section id="Topological-and-Vector-Analysis-Cost">
 <h3>Topological and Vector Analysis Cost<a class="headerlink" href="#Topological-and-Vector-Analysis-Cost" title="Link to this heading"></a></h3>
 <p>Physical studies of the XY and Clock models often depend on detecting topological defects (vortices) or calculating the helicity modulus (phase-twist response). These operations involve multiple trigonometric sums and phase-wrapping operations per site, making them significantly costlier than standard thermodynamic measurements.</p>
-<div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[22]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">topo_results</span> <span class="o">=</span> <span class="p">{</span><span class="n">name</span><span class="p">:</span> <span class="p">{}</span> <span class="k">for</span> <span class="n">name</span><span class="p">,</span> <span class="n">_</span> <span class="ow">in</span> <span class="n">model_configs</span> <span class="k">if</span> <span class="s1">&#39;Ising&#39;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">name</span><span class="p">}</span>
@@ -726,20 +876,26 @@ the true value diverges with <span class="math notranslate nohighlight">\(L\)</s
 </pre></div>
 </div>
 </div>
-<p>topo_results = {name: {} for name, _ in model_configs if ‘Ising’ not in name}</p>
-<p>for L in tqdm(sizes, desc=’Topological Analysis’): for name, constructor in model_configs: if ‘Ising’ in name: continue sim = constructor(L) # Warm-up if hasattr(sim, ‘_calculate_vorticity’): sim._calculate_vorticity() if hasattr(sim, ‘_get_helicity_data’): sim._get_helicity_data()</p>
-<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>start = time.perf_counter()
-for _ in range(ANALYSIS_ITERS):
-    v_dens = sim._get_vortex_density()
-    heli = sim._get_helicity_data()
-topo_ms = (time.perf_counter() - start) / ANALYSIS_ITERS * 1000
-topo_results[name][L] = topo_ms
-</pre></div>
+<div class="nboutput docutils container">
+<div class="prompt empty docutils container">
 </div>
-<p>plt.figure(figsize=(10, 6)) for name in topo_results: L_vals = sorted(topo_results[name].keys()) plt.loglog(L_vals, [topo_results[name][L] for L in L_vals], marker=MODEL_MARKERS[name], color=MODEL_COLORS[name], label=name)</p>
-<p>plt.title(‘Topological Analysis Cost (Vortex Density + Helicity)’, fontsize=14) plt.xlabel(‘Lattice Size <span class="math notranslate nohighlight">\(L\)</span>’, fontsize=12) plt.ylabel(‘Time per call (ms)’, fontsize=12) plt.grid(True, which=’both’, alpha=0.3) plt.legend() plt.show()</p>
-<div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+<div class="output_area docutils container">
+<script type="application/vnd.jupyter.widget-view+json">{"model_id": "2ab3b57832b14447961e88db5ad8929c", "version_major": 2, "version_minor": 0}</script></div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="_images/benchmarks_28_1.png" src="_images/benchmarks_28_1.png" />
+</div>
+</div>
+</section>
+<section id="id2">
+<h3>Topological and Vector Analysis Cost<a class="headerlink" href="#id2" title="Link to this heading"></a></h3>
+<p>This section times non-local observables for XY and clock-family models, focusing on vortex-density and helicity related computations that require plaquette traversals and additional phase operations.</p>
+<p>Compared with per-step thermodynamic collection, these routines are analysis-heavy and are typically evaluated intermittently rather than every sweep. The plot above should be read as an analysis budget curve versus lattice size, not as an update-kernel throughput metric.</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[23]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">p_sizes</span> <span class="o">=</span> <span class="p">[</span><span class="mi">128</span><span class="p">,</span> <span class="mi">256</span><span class="p">,</span> <span class="mi">512</span><span class="p">,</span> <span class="mi">1024</span><span class="p">]</span>
@@ -780,21 +936,25 @@ topo_results[name][L] = topo_ms
 </pre></div>
 </div>
 </div>
-<p>p_sizes = [128, 256, 512, 1024] p_results = {‘Serial’: [], ‘Parallel’: []}</p>
-<p>for L in tqdm(p_sizes, desc=’Parallel Benchmark’): # Serial s_sim = IsingSimulation(size=L, temp=2.269, update=’checkerboard’, parallel=False) s_sim.step() # Warm-up start = time.perf_counter() for _ in range(50): s_sim.step() p_results[‘Serial’].append(50 / (time.perf_counter() - start))</p>
-<div class="highlight-none notranslate"><div class="highlight"><pre><span></span># Parallel
-p_sim = IsingSimulation(size=L, temp=2.269, update=&#39;checkerboard&#39;, parallel=True)
-p_sim.step() # Warm-up
-start = time.perf_counter()
-for _ in range(50):
-    p_sim.step()
-p_results[&#39;Parallel&#39;].append(50 / (time.perf_counter() - start))
-</pre></div>
+<div class="nboutput docutils container">
+<div class="prompt empty docutils container">
 </div>
-<p>fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(14, 5)) ax1.plot(p_sizes, p_results[‘Serial’], ‘o-’, label=’Serial’) ax1.plot(p_sizes, p_results[‘Parallel’], ‘s-’, label=’Parallel’) ax1.set_title(‘Ising Throughput: Serial vs Parallel’) ax1.set_xlabel(‘Lattice Size <span class="math notranslate nohighlight">\(L\)</span>’) ax1.set_ylabel(‘Sweeps / sec’) ax1.legend() ax1.grid(True, alpha=0.3)</p>
-<p>speedup = [p/s for p, s in zip(p_results[‘Parallel’], p_results[‘Serial’], strict=True)] ax2.plot(p_sizes, speedup, ‘D-’, color=’tab:green’) ax2.axhline(1.0, color=’black’, linestyle=’–’, alpha=0.5) ax2.set_title(‘Multi-core Speedup Ratio’) ax2.set_xlabel(‘Lattice Size <span class="math notranslate nohighlight">\(L\)</span>’) ax2.set_ylabel(‘Speedup (Parallel / Serial)’) ax2.grid(True, alpha=0.3) plt.show()</p>
-<div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+<div class="output_area docutils container">
+<script type="application/vnd.jupyter.widget-view+json">{"model_id": "930453b8808d4e56b48871907721355a", "version_major": 2, "version_minor": 0}</script></div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="_images/benchmarks_30_1.png" src="_images/benchmarks_30_1.png" />
+</div>
+</div>
+</section>
+<section id="Parallel-Scaling-Benchmark">
+<h3>Parallel Scaling Benchmark<a class="headerlink" href="#Parallel-Scaling-Benchmark" title="Link to this heading"></a></h3>
+<p>This section benchmarks checkerboard Metropolis throughput in serial and parallel modes for the Ising model across increasing lattice sizes. The code cell above computes sweeps per second and plots both absolute throughput and the parallel speedup ratio. Interpret the right panel as a hardware-plus-size dependent crossover: small lattices can be overhead bound, while larger lattices benefit more from multithreading.</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[24]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">fig</span><span class="p">,</span> <span class="n">axes</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">15</span><span class="p">,</span> <span class="mi">18</span><span class="p">))</span>
@@ -842,44 +1002,17 @@ p_results[&#39;Parallel&#39;].append(50 / (time.perf_counter() - start))
 </pre></div>
 </div>
 </div>
-<p>fig, axes = plt.subplots(3, 2, figsize=(15, 18)) fig.suptitle(‘VibeSpin Comprehensive Performance Summary’, fontsize=16) ax1, ax2, ax3, ax4, ax5, ax6 = axes.flatten()</p>
-<p>for name in results: L_vals = sorted(results[name].keys()) N_vals = [L*L for L in L_vals]</p>
-<div class="highlight-none notranslate"><div class="highlight"><pre><span></span># 1. Throughput
-ax1.loglog(N_vals, [results[name][L][&#39;sps&#39;] for L in L_vals],
-           marker=MODEL_MARKERS[name], color=MODEL_COLORS[name], label=name)
-
-# 2. ns per site
-ns_site = [( (1.0/results[name][L][&#39;sps&#39;]) / (L*L) ) * 1e9 for L in L_vals]
-ax2.semilogx(N_vals, ns_site, marker=MODEL_MARKERS[name], color=MODEL_COLORS[name])
-
-# 3. Correlation function G(r)
-if &#39;corr_results&#39; in locals() and name in corr_results:
-    c_L = sorted(corr_results[name].keys())
-    ax3.loglog([size*size for size in c_L], [corr_results[name][size] for size in c_L],
-               marker=MODEL_MARKERS[name], color=MODEL_COLORS[name])
-
-# 4. Topological Analysis
-if &#39;topo_results&#39; in locals() and name in topo_results:
-    t_L_vals = sorted(topo_results[name].keys())
-    ax4.loglog([size*size for size in t_L_vals], [topo_results[name][size] for size in t_L_vals],
-               marker=MODEL_MARKERS[name], color=MODEL_COLORS[name])
-
-# 5. Thermodynamic Measurement
-ax5.loglog(N_vals, [results[name][L][&#39;thermo_ms&#39;] for L in L_vals],
-           marker=MODEL_MARKERS[name], color=MODEL_COLORS[name])
-
-# 6. Per-Step Overhead Ratio
-overheads = [results[name][L][&#39;thermo_ms&#39;] / (1000.0/results[name][L][&#39;sps&#39;]) for L in L_vals]
-ax6.plot(L_vals, overheads, marker=MODEL_MARKERS[name], color=MODEL_COLORS[name])
-</pre></div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
 </div>
-<p>ax1.set_title(‘Throughput (Sweeps/sec)’) ax1.set_ylabel(‘Sweeps/s’) ax1.legend(fontsize=’x-small’, ncol=2)</p>
-<p>ax2.set_title(‘Update Cost per Spin’) ax2.set_ylabel(‘Time (ns/site)’)</p>
-<p>ax3.set_title(‘Correlation Function Cost (FFT-based)’) ax3.set_ylabel(‘Time (ms)’)</p>
-<p>ax4.set_title(‘Topological Analysis Cost (Vort+Heli)’) ax4.set_ylabel(‘Time (ms)’)</p>
-<p>ax5.set_title(‘Thermodynamic Measurement (M+E)’) ax5.set_ylabel(‘Time (ms)’)</p>
-<p>ax6.set_title(‘Per-Step Overhead Ratio’) ax6.set_ylabel(‘Ratio’) ax6.axhline(1.0, color=’black’, ls=’–’, alpha=0.5)</p>
-<p>for ax in axes.flatten(): ax.grid(True, alpha=0.3) plt.tight_layout(rect=[0, 0.03, 1, 0.95]) plt.show()</p>
+<div class="output_area docutils container">
+<img alt="_images/benchmarks_32_0.png" src="_images/benchmarks_32_0.png" />
+</div>
+</div>
+</section>
+<section id="Comprehensive-Performance-Dashboard">
+<h3>Comprehensive Performance Dashboard<a class="headerlink" href="#Comprehensive-Performance-Dashboard" title="Link to this heading"></a></h3>
+<p>The final panelized figure aggregates update throughput, per-spin update cost, observable overheads, and analysis-time scaling across models. Use this summary to compare asymptotic trends rather than single-point values, since warm-up costs and finite-size effects can distort small-system timings. In equilibrium workflows near criticality, combine these timing curves with autocorrelation behavior to estimate effective independent-sample throughput.</p>
 </section>
 </section>
 </section>
