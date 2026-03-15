@@ -368,3 +368,99 @@ def test_discrete_clock_random_update_step():
     sim.step()
     assert sim.steps == 1
     assert np.all((sim.spins >= 0) & (sim.spins < q))
+
+
+# ---- Update scheme dispatch ----
+
+
+def test_numba_seed():
+    """Verify that _seed_numba runs without error."""
+    from models.simulation_base import _seed_numba
+    _seed_numba(seed=42)
+
+
+def test_ising_random_update():
+    """Verify Ising random update scheme."""
+    sim = IsingSimulation(size=10, temp=2.0, update='random')
+    sim.step()
+    assert sim.steps == 1
+    assert sim.update == 'random'
+    assert np.all(np.logical_or(sim.spins == 1, sim.spins == -1))
+
+
+def test_ising_checkerboard_update():
+    """Verify Ising standard checkerboard update."""
+    sim = IsingSimulation(size=10, temp=2.0, update='checkerboard')
+    sim.step()
+    assert sim.steps == 1
+    assert sim.update == 'checkerboard'
+
+
+def test_ising_parallel_update():
+    """Verify Ising parallel checkerboard update."""
+    sim = IsingSimulation(size=16, temp=2.0, parallel=True)
+    sim.step()
+    assert sim.steps == 1
+    assert sim.parallel is True
+
+
+def test_xy_random_update():
+    """Verify XY random update scheme."""
+    sim = XYSimulation(size=10, temp=1.0, update='random')
+    sim.step()
+    assert sim.steps == 1
+    assert sim.update == 'random'
+    norms = np.linalg.norm(sim.spins, axis=-1)
+    np.testing.assert_allclose(norms, 1.0)
+
+
+def test_xy_checkerboard_update():
+    """Verify XY standard checkerboard update."""
+    sim = XYSimulation(size=10, temp=1.0, update='checkerboard')
+    sim.step()
+    assert sim.steps == 1
+
+
+def test_xy_parallel_update():
+    """Verify XY parallel checkerboard update."""
+    sim = XYSimulation(size=16, temp=1.0, parallel=True)
+    sim.step()
+    assert sim.steps == 1
+    assert sim.parallel is True
+
+
+def test_clock_random_update():
+    """Verify Clock random update scheme."""
+    sim = ClockSimulation(size=10, temp=0.5, q=6, update='random')
+    sim.step()
+    assert sim.steps == 1
+    norms = np.linalg.norm(sim.spins, axis=-1)
+    np.testing.assert_allclose(norms, 1.0)
+
+
+def test_clock_checkerboard_update():
+    """Verify Clock standard checkerboard update."""
+    sim = ClockSimulation(size=10, temp=0.5, q=6, update='checkerboard')
+    sim.step()
+    assert sim.steps == 1
+
+
+def test_clock_parallel_update():
+    """Verify Clock parallel checkerboard update."""
+    sim = ClockSimulation(size=16, temp=0.5, q=6, parallel=True)
+    sim.step()
+    assert sim.steps == 1
+
+
+def test_discrete_clock_checkerboard_update():
+    """Verify DiscreteClock standard checkerboard update."""
+    sim = DiscreteClockSimulation(size=10, temp=0.5, q=6, update='checkerboard')
+    sim.step()
+    assert sim.steps == 1
+
+
+def test_discrete_clock_parallel_update():
+    """Verify DiscreteClock parallel checkerboard update."""
+    sim = DiscreteClockSimulation(size=16, temp=0.5, q=6, parallel=True)
+    sim.step()
+    assert sim.steps == 1
