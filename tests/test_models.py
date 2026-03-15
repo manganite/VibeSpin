@@ -6,7 +6,7 @@ from __future__ import annotations
 import numpy as np
 import pytest
 
-from models.clock_model import ClockSimulation
+from models.clock_model import ClockSimulation, DiscreteClockSimulation
 from models.ising_model import IsingSimulation
 from models.xy_model import XYSimulation
 
@@ -258,3 +258,113 @@ def test_reproducibility():
     np.testing.assert_array_almost_equal(sim1_c.spins, sim2_c.spins)
     np.testing.assert_array_almost_equal(m1_c, m2_c)
     np.testing.assert_array_almost_equal(e1_c, e2_c)
+
+
+# ---- DiscreteClockSimulation tests ----
+
+
+def test_discrete_clock_initialization(standard_params):
+    """Verify correct initialization of the discrete clock model."""
+    size, temp = standard_params['size'], standard_params['temp']
+    q = 6
+    sim = DiscreteClockSimulation(size=size, temp=temp, q=q)
+    assert sim.size == size
+    assert sim.q == q
+    assert sim.spins.shape == (size, size)
+    assert sim.spins.dtype == np.int32
+    assert np.all((sim.spins >= 0) & (sim.spins < q))
+
+
+def test_discrete_clock_step(standard_params):
+    """Verify that a single MC step keeps spins as valid discrete states."""
+    q = 6
+    sim = DiscreteClockSimulation(**standard_params, q=q)
+    sim.step()
+    assert sim.steps == 1
+    assert np.all((sim.spins >= 0) & (sim.spins < q))
+
+
+def test_discrete_clock_run(standard_params):
+    """Verify that a short run returns the expected number of measurements."""
+    sim = DiscreteClockSimulation(**standard_params)
+    n_steps = 5
+    mags, engs = sim.run(n_steps=n_steps)
+    assert len(mags) == n_steps
+    assert len(engs) == n_steps
+    for m in mags:
+        assert 0 <= m <= 1.0
+
+
+def test_discrete_clock_low_temp_magnetization():
+    """Verify high magnetization at very low temperature."""
+    size = 20
+    sim = DiscreteClockSimulation(size=size, temp=0.1, q=6)
+    # Start from ground state: all spins aligned
+    sim.spins = np.zeros((size, size), dtype=np.int32)
+    sim.equilibrate(n_steps=100)
+    mags, _ = sim.run(n_steps=100)
+    assert np.mean(mags) > 0.95
+
+
+def test_discrete_clock_high_temp_magnetization():
+    """Verify low magnetization at very high temperature."""
+    size = 20
+    sim = DiscreteClockSimulation(size=size, temp=100.0, q=6)
+    sim.equilibrate(n_steps=500)
+    mags, _ = sim.run(n_steps=100)
+    assert np.mean(mags) < 0.2
+
+
+def test_discrete_clock_ground_state_energy():
+    """All spins aligned: E = -2J (2 unique neighbor pairs per site, cos(0)=1)."""
+    size = 10
+    sim = DiscreteClockSimulation(size=size, temp=1.0, q=6, J=1.0)
+    sim.spins = np.zeros((size, size), dtype=np.int32)
+    energy = sim._get_energy()
+    assert energy == pytest.approx(-2.0)
+
+
+def test_discrete_clock_vortex_density_uniform_state_is_zero():
+    """Verify discrete clock vortex density is zero for a uniform spin field."""
+    size = 6
+    sim = DiscreteClockSimulation(size=size, temp=1.0, q=6)
+    sim.spins = np.zeros((size, size), dtype=np.int32)
+    density = sim._get_vortex_density()
+    assert density == pytest.approx(0.0)
+
+
+def test_discrete_clock_invalid_q():
+    """q < 2 must raise ValueError."""
+    with pytest.raises(ValueError):
+        DiscreteClockSimulation(size=10, temp=1.0, q=1)
+
+
+def test_discrete_clock_invalid_update():
+    """Unknown update scheme must raise ValueError."""
+    with pytest.raises(ValueError):
+        DiscreteClockSimulation(size=10, temp=1.0, update='invalid_scheme')
+
+
+def test_discrete_clock_reproducibility():
+    """Identical seeds must produce identical trajectories."""
+    seed = 42
+    size = 10
+    temp = 2.0
+    n_steps = 10
+
+    sim1 = DiscreteClockSimulation(size=size, temp=temp, seed=seed)
+    sim2 = DiscreteClockSimulation(size=size, temp=temp, seed=seed)
+    m1, e1 = sim1.run(n_steps=n_steps)
+    m2, e2 = sim2.run(n_steps=n_steps)
+    np.testing.assert_array_equal(sim1.spins, sim2.spins)
+    np.testing.assert_array_almost_equal(m1, m2)
+    np.testing.assert_array_almost_equal(e1, e2)
+
+
+def test_discrete_clock_random_update_step():
+    """Verify that the random update scheme executes and keeps spins valid."""
+    q = 6
+    sim = DiscreteClockSimulation(size=10, temp=2.0, q=q, update='random')
+    sim.step()
+    assert sim.steps == 1
+    assert np.all((sim.spins >= 0) & (sim.spins < q))

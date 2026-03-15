@@ -9,7 +9,7 @@ import logging
 
 import numpy as np
 
-from models.clock_model import ClockSimulation
+from models.clock_model import ClockSimulation, DiscreteClockSimulation
 from utils.physics_helpers import calculate_autocorr, calculate_entropy, calculate_thermodynamics
 from utils.system_helpers import (
     adaptive_equilibrate,
@@ -20,13 +20,17 @@ from utils.system_helpers import (
 
 
 def simulate_temperature(
-    params: tuple[float, int, int, float, int, int, int, float, int],
+    params: tuple[float, int, int, float, int, int, int, float, int, bool],
 ) -> tuple[float, float, float, float, float]:
     """
     Worker function to simulate a single temperature point for the Clock model.
     """
-    T, L, Q, A, eq_steps, meas_steps, eq_probe_steps, eq_factor, eq_max_steps = params
-    sim = ClockSimulation(size=L, temp=T, A=A, q=Q)
+    T, L, Q, A, eq_steps, meas_steps, eq_probe_steps, eq_factor, eq_max_steps, discrete = params
+    sim: ClockSimulation | DiscreteClockSimulation
+    if discrete:
+        sim = DiscreteClockSimulation(size=L, temp=T, q=Q)
+    else:
+        sim = ClockSimulation(size=L, temp=T, A=A, q=Q)
     adaptive_equilibrate(
         sim,
         min_steps=eq_steps,
@@ -70,6 +74,10 @@ def run_sweep() -> None:
         help='Hard cap on adaptive equilibration steps',
     )
     parser.add_argument('--meas-steps', type=int, default=20000, help='Measurement steps')
+    parser.add_argument(
+        '--discrete', action='store_true',
+        help='Use discrete integer-spin clock model instead of continuous+anisotropy',
+    )
     parser.add_argument('--t-min', type=float, default=0.1, help='Minimum temperature')
     parser.add_argument('--t-max', type=float, default=2.0, help='Maximum temperature')
     parser.add_argument('--t-points', type=int, default=40, help='Number of temperature points')
@@ -86,9 +94,11 @@ def run_sweep() -> None:
     L = args.size
     Q = args.q
     A = args.aniso
+    discrete = args.discrete
     temperatures: np.ndarray = np.linspace(args.t_min, args.t_max, args.t_points)
 
-    logger.info(f'Starting {Q}-state Clock temperature sweep (L={L}, A={A})...')
+    variant = 'discrete' if discrete else f'continuous (A={A})'
+    logger.info(f'Starting {Q}-state Clock temperature sweep (L={L}, {variant})...')
     # Bundle parameters for parallel sweep
     sweep_params = [
         (
@@ -101,6 +111,7 @@ def run_sweep() -> None:
             args.eq_probe_steps,
             args.eq_factor,
             args.eq_max_steps,
+            discrete,
         )
         for T in temperatures
     ]
@@ -122,7 +133,7 @@ def run_sweep() -> None:
         spec_h=spec_h,
         entropy=entropy,
         tau_int=tau_int_vals,
-        title=f'2D {Q}-state Clock Model: Temperature Sweep (L={L}, A={A})',
+        title=f'2D {Q}-state Clock Model: Temperature Sweep (L={L}, {variant})',
         filename='temperature_sweep.png',
         directory=args.output_dir,
     )

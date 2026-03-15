@@ -333,6 +333,346 @@ class ClockSimulation(MonteCarloSimulation):
         return np.array([])
 
 
+# ---------------------------------------------------------------------------
+# Discrete q-state clock model (integer spin representation)
+# ---------------------------------------------------------------------------
+
+
+@njit(cache=True, fastmath=True)
+def discrete_clock_step_numba(
+    *,
+    spins: np.ndarray,
+    beta: float,
+    J: float,
+    q: int,
+    cos_table: np.ndarray,
+    idx_next: np.ndarray,
+    idx_prev: np.ndarray,
+) -> np.ndarray:
+    """
+    One Metropolis sweep of the discrete clock model (checkerboard update).
+
+    Args:
+        spins: (N, N) array of integer spin states in {0, ..., q-1}.
+        beta: Inverse temperature 1/kT.
+        J: Coupling constant.
+        q: Number of clock states.
+        cos_table: Pre-computed cos(2*pi*d/q) for d in {0, ..., q-1}.
+        idx_next: Pre-calculated next-neighbor indices.
+        idx_prev: Pre-calculated previous-neighbor indices.
+
+    Returns:
+        Updated spins array.
+    """
+    N = spins.shape[0]
+    proposals = np.random.randint(0, q, size=(N, N))
+    random_vals = np.random.random(size=(N, N))
+
+    for parity in range(2):
+        for i in range(N):
+            start_j = (parity + i) % 2
+            inxt = idx_next[i]
+            iprv = idx_prev[i]
+            for j in range(start_j, N, 2):
+                jnxt = idx_next[j]
+                jprv = idx_prev[j]
+
+                s_old = spins[i, j]
+                s_new = proposals[i, j]
+                if s_new == s_old:
+                    continue
+
+                # Neighbor states
+                n0 = spins[iprv, j]
+                n1 = spins[inxt, j]
+                n2 = spins[i, jprv]
+                n3 = spins[i, jnxt]
+
+                # dE = -J * sum_nn [cos(theta_new - theta_nn) - cos(theta_old - theta_nn)]
+                dE = -J * (
+                    cos_table[(s_new - n0) % q]
+                    + cos_table[(s_new - n1) % q]
+                    + cos_table[(s_new - n2) % q]
+                    + cos_table[(s_new - n3) % q]
+                    - cos_table[(s_old - n0) % q]
+                    - cos_table[(s_old - n1) % q]
+                    - cos_table[(s_old - n2) % q]
+                    - cos_table[(s_old - n3) % q]
+                )
+
+                if dE <= 0 or random_vals[i, j] < np.exp(-dE * beta):
+                    spins[i, j] = s_new
+    return spins
+
+
+@njit(cache=True, fastmath=True)
+def discrete_clock_step_random_numba(
+    *,
+    spins: np.ndarray,
+    beta: float,
+    J: float,
+    q: int,
+    cos_table: np.ndarray,
+    idx_next: np.ndarray,
+    idx_prev: np.ndarray,
+) -> np.ndarray:
+    """
+    One Metropolis sweep of the discrete clock model (random sequential update).
+
+    N^2 single-spin flip attempts at uniformly random sites, giving physical
+    stochastic dynamics suitable for kinetics studies.
+
+    Args:
+        spins: (N, N) array of integer spin states in {0, ..., q-1}.
+        beta: Inverse temperature 1/kT.
+        J: Coupling constant.
+        q: Number of clock states.
+        cos_table: Pre-computed cos(2*pi*d/q) for d in {0, ..., q-1}.
+        idx_next: Pre-calculated next-neighbor indices.
+        idx_prev: Pre-calculated previous-neighbor indices.
+
+    Returns:
+        Updated spins array.
+    """
+    N = spins.shape[0]
+    num_attempts = N * N
+    indices = np.random.randint(0, num_attempts, size=num_attempts)
+    proposals = np.random.randint(0, q, size=num_attempts)
+    random_vals = np.random.random(size=num_attempts)
+
+    for k in range(num_attempts):
+        idx = indices[k]
+        i = idx // N
+        j = idx % N
+
+        s_old = spins[i, j]
+        s_new = proposals[k]
+        if s_new == s_old:
+            continue
+
+        inxt = idx_next[i]
+        iprv = idx_prev[i]
+        jnxt = idx_next[j]
+        jprv = idx_prev[j]
+
+        n0 = spins[iprv, j]
+        n1 = spins[inxt, j]
+        n2 = spins[i, jprv]
+        n3 = spins[i, jnxt]
+
+        dE = -J * (
+            cos_table[(s_new - n0) % q]
+            + cos_table[(s_new - n1) % q]
+            + cos_table[(s_new - n2) % q]
+            + cos_table[(s_new - n3) % q]
+            - cos_table[(s_old - n0) % q]
+            - cos_table[(s_old - n1) % q]
+            - cos_table[(s_old - n2) % q]
+            - cos_table[(s_old - n3) % q]
+        )
+
+        if dE <= 0 or random_vals[k] < np.exp(-dE * beta):
+            spins[i, j] = s_new
+    return spins
+
+
+@njit(cache=True, fastmath=True)
+def discrete_clock_energy_numba(
+    *,
+    spins: np.ndarray,
+    J: float,
+    q: int,
+    cos_table: np.ndarray,
+    idx_next: np.ndarray,
+) -> float:
+    """
+    Total energy per site of the discrete clock model.
+
+    Sums -J * cos(theta_i - theta_j) over unique right/down neighbor pairs.
+
+    Args:
+        spins: (N, N) array of integer spin states in {0, ..., q-1}.
+        J: Coupling constant.
+        q: Number of clock states.
+        cos_table: Pre-computed cos(2*pi*d/q) for d in {0, ..., q-1}.
+        idx_next: Pre-calculated next-neighbor indices.
+
+    Returns:
+        Energy per site.
+    """
+    N = spins.shape[0]
+    energy = 0.0
+    for i in range(N):
+        inxt = idx_next[i]
+        for j in range(N):
+            jnxt = idx_next[j]
+            s = spins[i, j]
+            energy -= J * (
+                cos_table[(s - spins[i, jnxt]) % q]
+                + cos_table[(s - spins[inxt, j]) % q]
+            )
+    return energy / (N * N)
+
+
+class DiscreteClockSimulation(MonteCarloSimulation):
+    """
+    Simulation of the 2D q-state clock model with discrete integer spins.
+
+    Each spin takes one of q evenly spaced orientations theta_k = 2*pi*k/q.
+    The Hamiltonian is E = -J * sum_<i,j> cos(theta_i - theta_j).
+
+    Unlike ``ClockSimulation``, which uses continuous unit-vector spins plus
+    an anisotropy term, this class represents spins as integers in {0, ..., q-1}
+    and enforces the discrete symmetry exactly.
+    """
+
+    _VALID_UPDATES: frozenset = frozenset({'checkerboard', 'random'})
+
+    def __init__(
+        self,
+        *,
+        size: int,
+        temp: float,
+        J: float = 1.0,
+        q: int = 6,
+        update: str = 'checkerboard',
+        seed: int | None = None,
+    ):
+        """
+        Initialize the discrete clock model simulation.
+
+        Args:
+            size: Linear dimension L of the L x L lattice.
+            temp: Temperature T.
+            J: Coupling constant (default 1.0).
+            q: Number of clock states (default 6). Must be >= 2.
+            update: Update scheme - ``'checkerboard'`` (default, faster) or
+                ``'random'`` (random sequential Metropolis, more physical
+                stochastic dynamics for kinetics studies).
+            seed: Optional random seed for reproducibility.
+
+        Raises:
+            ValueError: If ``q`` is less than 2 or update scheme is unknown.
+        """
+        super().__init__(size=size, temp=temp, seed=seed)
+        if q < 2:
+            raise ValueError(f'q must be >= 2 (number of clock states), got {q}')
+        if update not in self._VALID_UPDATES:
+            valid_opts = sorted(self._VALID_UPDATES)
+            raise ValueError(
+                f'Unknown update scheme {update!r}. Valid options: {valid_opts}'
+            )
+        self.J = J
+        self.q = q
+        self.update = update
+
+        # Pre-compute lookup tables (no trig inside kernels)
+        angles = 2.0 * np.pi * np.arange(q) / q
+        self.cos_table = np.cos(angles)  # cos(2*pi*d/q)  for dE calculation
+        self._cos_angles = np.cos(angles)  # per-state cos for observables
+        self._sin_angles = np.sin(angles)  # per-state sin for observables
+
+        # Initialize random discrete spins
+        self.spins = self.rng.integers(0, q, size=(size, size), dtype=np.int32)
+
+    def step(self) -> None:
+        """Perform one Monte Carlo sweep using Numba."""
+        if self.spins is not None:
+            if self.seed is not None:
+                from .simulation_base import _seed_numba
+
+                _seed_numba(seed=self.seed + self.steps)
+
+            if self.update == 'random':
+                self.spins = discrete_clock_step_random_numba(
+                    spins=self.spins,
+                    beta=self.beta,
+                    J=self.J,
+                    q=self.q,
+                    cos_table=self.cos_table,
+                    idx_next=self.idx_next,
+                    idx_prev=self.idx_prev,
+                )
+            else:
+                self.spins = discrete_clock_step_numba(
+                    spins=self.spins,
+                    beta=self.beta,
+                    J=self.J,
+                    q=self.q,
+                    cos_table=self.cos_table,
+                    idx_next=self.idx_next,
+                    idx_prev=self.idx_prev,
+                )
+        self.steps += 1
+
+    def _get_magnetization(self) -> float:
+        """Calculate magnetization magnitude per spin."""
+        if self.spins is not None:
+            mx = np.sum(self._cos_angles[self.spins])
+            my = np.sum(self._sin_angles[self.spins])
+            return float(np.sqrt(mx**2 + my**2) / (self.size**2))
+        return 0.0
+
+    def _get_energy(self) -> float:
+        """Calculate energy per spin."""
+        if self.spins is not None:
+            return float(
+                discrete_clock_energy_numba(
+                    spins=self.spins,
+                    J=self.J,
+                    q=self.q,
+                    cos_table=self.cos_table,
+                    idx_next=self.idx_next,
+                )
+            )
+        return 0.0
+
+    def _spins_as_vectors(self) -> np.ndarray:
+        """Convert integer spin states to (N, N, 2) unit-vector representation."""
+        sx = self._cos_angles[self.spins]
+        sy = self._sin_angles[self.spins]
+        return np.stack([sx, sy], axis=-1)
+
+    def _calculate_vorticity(self) -> np.ndarray:
+        """Calculate the vorticity (winding number) of each plaquette."""
+        if self.spins is not None:
+            vectors = self._spins_as_vectors()
+            return np.asarray(
+                calculate_vorticity_numba(spins=vectors, idx_next=self.idx_next)
+            )
+        return np.array([])
+
+    def _get_vortex_density(self) -> float:
+        """Calculate vortex density n_v, the fraction of plaquettes with non-zero winding."""
+        if self.spins is not None:
+            vectors = self._spins_as_vectors()
+            return float(
+                calculate_vortex_density_numba(spins=vectors, idx_next=self.idx_next)
+            )
+        return 0.0
+
+    def _get_helicity_data(self) -> tuple[float, float]:
+        """Calculate sum of cos and sin of angle differences in x-direction."""
+        if self.spins is not None:
+            vectors = self._spins_as_vectors()
+            cos_sum, sin_sum = get_helicity_data_numba(
+                spins=vectors, idx_next=self.idx_next
+            )
+            return float(cos_sum), float(sin_sum)
+        return 0.0, 0.0
+
+    def _get_structure_factor_squared_unshifted(self) -> np.ndarray:
+        """Calculate the unshifted squared magnitude of the Fourier transform."""
+        if self.spins is not None:
+            vectors = self._spins_as_vectors()
+            sx = vectors[..., 0]
+            sy = vectors[..., 1]
+            Sk_x = np.fft.fft2(sx)
+            Sk_y = np.fft.fft2(sy)
+            return np.asarray(np.abs(Sk_x) ** 2 + np.abs(Sk_y) ** 2)
+        return np.array([])
+
+
 if __name__ == '__main__':
     import argparse
     import logging
