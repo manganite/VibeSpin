@@ -39,6 +39,10 @@ jobs:
         cd docs
         make html SPHINXOPTS="-W --keep-going"
 
+    - name: Enable GitHub Pages static asset serving
+      run: |
+        touch docs/_build/html/.nojekyll
+
     - name: Deploy to GitHub Pages
       uses: JamesIves/github-pages-deploy-action@v4
       with:
