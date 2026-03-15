@@ -59,7 +59,7 @@ This document provides mandatory procedural context and technical constraints fo
 ### Task: Implement a New Physical Observable
 1. Add the `@njit` kernel to `models/simulation_base.py` or the specific model.
 2. Add a `_get_<name>` method to the Simulation class.
-3. Add a test case in `tests/test_coverage_enhancement.py` or a specialized test file.
+3. Add a test case in `tests/test_physics_helpers.py` or a specialized test file.
 4. Verify the physical limits (e.g., ground state) in `tests/test_model_extremes.py`.
 
 ### Task: Investigate Performance Regression
