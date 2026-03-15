@@ -4,7 +4,7 @@ VibeSpin provides a suite of entry-point scripts for conducting physics experime
 
 ## 1. Ising Model (`scripts/ising/`)
 
-- **`temperature_sweep.py`**: Conducts a full thermodynamic sweep across a range of temperatures. Plots $|M|$, $E$, $\chi$, and $C_v$.
+- **`temperature_sweep.py`**: Conducts a full thermodynamic sweep across a range of temperatures. Reports $|M|$, $E$, $\chi$, $C_v$, entropy $S(T)$ from $C_v/T$ integration, and integrated autocorrelation time $\tau_{\mathrm{int}}$.
 - **`ordering_kinetics.py`**: Quenches the system to $T < T_c$ and tracks the growth of domain size $R(t)$ over time.
 - **`ordering_evolution.py`**: Generates visual snapshots of the lattice configuration, structure factor, and correlation functions during a quench.
 - **`correlation_divergence.py`**: Extracts the critical exponent $\nu$ by fitting the correlation length divergence near $T_c$.
@@ -12,7 +12,7 @@ VibeSpin provides a suite of entry-point scripts for conducting physics experime
 
 ## 2. XY Model (`scripts/xy/`)
 
-- **`temperature_sweep.py`**: Standard thermodynamic sweep for continuous vector spins.
+- **`temperature_sweep.py`**: Standard thermodynamic sweep for continuous vector spins, including $|M|$, $E$, $\chi$, $C_v$, entropy $S(T)$, and integrated autocorrelation time $\tau_{\mathrm{int}}$.
 - **`ordering_kinetics.py`**: Quenches to $T < T_{BKT}$ and tracks the decay of vortex density and the growth of the correlation length.
 - **`ordering_evolution.py`**: Visual snapshots including phase maps and vorticity configurations during ordering.
 - **`bkt_transition.py`**: Specifically focuses on the BKT transition by measuring average vortex density vs. temperature.
@@ -21,10 +21,14 @@ VibeSpin provides a suite of entry-point scripts for conducting physics experime
 
 ## 3. Clock Model (`scripts/clock/`)
 
-- **`temperature_sweep.py`**: Thermodynamic sweep for the q-state clock model.
+- **`temperature_sweep.py`**: Thermodynamic sweep for the q-state clock model, including $|M|$, $E$, $\chi$, $C_v$, entropy $S(T)$ (with optional $S_{\mathrm{ref}}=\ln q$ normalization), and integrated autocorrelation time $\tau_{\mathrm{int}}$.
 - **`ordering_kinetics.py`**: Analyzes the ordering dynamics after a quench.
 - **`ordering_evolution.py`**: Visualizes the evolution of discrete phase domains.
 - **`compare_discrete_vs_continuous.py`**: Provides a side-by-side performance and physical comparison between the continuous (XY + anisotropy) and discrete implementations.
+
+## 4. Project-Level Benchmarking
+
+- **`benchmark.py`**: Top-level performance benchmark driver for cross-model throughput and scaling studies. Produces comparative metrics (sweeps/s, ns/site, pure-vs-analysis timing splits) and feeds the benchmark notebook summary.
 
 ## Usage Guidelines
 
