@@ -18,10 +18,12 @@ def simulate_bkt_point(params: tuple[float, int, int, int]) -> float:
     """
     Worker function to simulate a single temperature and measure average vortex density.
 
-    Args:
+    Parameters
+    ----------
         params: Tuple of (T, L, eq_steps, meas_steps).
 
-    Returns:
+    Returns
+    -------
         Average vortex density n_v.
     """
     T, L, eq_steps, meas_steps = params

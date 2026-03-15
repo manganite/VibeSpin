@@ -44,11 +44,13 @@ def calculate_vorticity_numba(*, spins: np.ndarray, idx_next: np.ndarray) -> np.
     Calculate the vorticity (winding number) of each plaquette for 2D vector spins.
     Optimized by calculating angles first and then using a fast wrapping kernel.
 
-    Args:
+    Parameters
+    ----------
         spins: (N, N, 2) array of unit vectors.
         idx_next: Pre-calculated next-neighbor indices.
 
-    Returns:
+    Returns
+    -------
         vorticity: (N, N) array containing winding numbers (+1, -1, or 0).
     """
     # Vectorized arctan2 is much faster than calling it inside a Numba loop
@@ -72,11 +74,13 @@ def calculate_vortex_density_numba(*, spins: np.ndarray, idx_next: np.ndarray) -
     """
     Calculate vortex density n_v, i.e. the fraction of plaquettes with non-zero winding.
 
-    Args:
+    Parameters
+    ----------
         spins: (N, N, 2) array of unit vectors.
         idx_next: Pre-calculated next-neighbor indices.
 
-    Returns:
+    Returns
+    -------
         Vortex density n_v in [0, 1].
     """
     vorticity = calculate_vorticity_numba(spins=spins, idx_next=idx_next)
@@ -88,11 +92,13 @@ def get_helicity_data_numba(*, spins: np.ndarray, idx_next: np.ndarray) -> tuple
     """
     Calculate sum of cos and sin of angle differences in x-direction for helicity modulus.
 
-    Args:
+    Parameters
+    ----------
         spins: (N, N, 2) array of unit vectors.
         idx_next: Pre-calculated next-neighbor indices for PBCs.
 
-    Returns:
+    Returns
+    -------
         cos_sum: Sum of cosine of angle differences.
         sin_sum: Sum of sine of angle differences.
     """
@@ -119,12 +125,14 @@ class MonteCarloSimulation(ABC):
         """
         Initialize the simulation.
 
-        Args:
+        Parameters
+        ----------
             size: Linear dimension L of the N x N lattice.
             temp: Temperature T of the system.
             seed: Optional random seed for reproducibility.
 
-        Raises:
+        Raises
+        ------
             ValueError: If ``size`` is not a positive integer or ``temp`` is not positive.
         """
         if not isinstance(size, (int, np.integer)) or size < 1:
@@ -177,7 +185,8 @@ class MonteCarloSimulation(ABC):
         Calculate the real-space spin-spin correlation function G(r)
         by taking the inverse Fourier transform of the structure factor S(k).
 
-        Returns:
+        Returns
+        -------
             r: Radial distances.
             G_r: Radially averaged correlation values.
         """
@@ -208,7 +217,8 @@ class MonteCarloSimulation(ABC):
         """
         Perform equilibration steps without recording measurements.
 
-        Args:
+        Parameters
+        ----------
             n_steps: Number of MC steps to perform.
         """
         for _ in range(n_steps):
@@ -218,10 +228,12 @@ class MonteCarloSimulation(ABC):
         """
         Run the simulation and record magnetization and energy at each step.
 
-        Args:
+        Parameters
+        ----------
             n_steps: Number of MC steps to perform and record.
 
-        Returns:
+        Returns
+        -------
             magnetization: Array of recorded magnetization values.
             energies: Array of recorded energy values.
         """

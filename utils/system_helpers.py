@@ -19,11 +19,13 @@ def setup_logging(*, level: int = logging.INFO, log_file: str | None = None) -> 
     """
     Configure project-wide logging.
 
-    Args:
+    Parameters
+    ----------
         level: Logging level (e.g., logging.INFO).
         log_file: Optional path to a file to save logs to.
 
-    Returns:
+    Returns
+    -------
         The configured logger instance.
     """
     logger = logging.getLogger('vibespin')
@@ -54,10 +56,12 @@ def ensure_results_dir(*, directory: str = 'results') -> str:
     """
     Ensure the results directory exists.
 
-    Args:
+    Parameters
+    ----------
         directory: Name of the directory to create.
 
-    Returns:
+    Returns
+    -------
         The path to the directory.
     """
     if directory:
@@ -69,7 +73,8 @@ def save_plot(*, filename: str, directory: str = 'results', tight_layout: bool =
     """
     Save the current matplotlib plot to the results directory.
 
-    Args:
+    Parameters
+    ----------
         filename: Name of the output file (e.g., 'plot.png').
         directory: Output directory name.
         tight_layout: Whether to apply plt.tight_layout() before saving.
@@ -97,12 +102,14 @@ def parallel_sweep(
     Run a parallel sweep over a set of parameters using a worker function.
     Uses multiprocessing.Pool and tqdm for progress tracking.
 
-    Args:
+    Parameters
+    ----------
         worker_func: Function to execute in parallel.
         params: Iterable of parameters to pass to the worker function.
         num_processes: Number of processes to use. Defaults to CPU count.
 
-    Returns:
+    Returns
+    -------
         List of results from the worker function.
     """
     # Try to get the length of params for tqdm without converting to list if possible
@@ -134,14 +141,15 @@ def adaptive_equilibrate(
 
     After the mandatory ``min_steps`` burn-in, the function repeatedly runs a
     ``probe_steps`` measurement via ``sim.run()`` and computes ``tau_int`` from
-    the resulting magnetization series.  If
-    ``probe_steps >= factor * tau_int``, the probe spans enough correlation
-    times for the initial state to be forgotten and equilibration is declared
-    complete.  Otherwise the probe has advanced the system state and the loop
-    continues.  In the ordered phase the magnetization series has zero variance;
-    this is treated as full equilibration and the function returns immediately.
+    the resulting magnetization series. If ``probe_steps >= factor * tau_int``,
+    the probe spans enough correlation times for the initial state to be
+    forgotten and equilibration is declared complete. Otherwise the probe has
+    advanced the system state and the loop continues. In the ordered phase the
+    magnetization series has zero variance; this is treated as full
+    equilibration and the function returns immediately.
 
-    Args:
+    Parameters
+    ----------
         sim: Any simulation object implementing ``equilibrate`` and ``run``.
         min_steps: Mandatory burn-in passed to ``sim.equilibrate`` before probing.
         probe_steps: MC steps per probe run (default 500).
@@ -149,7 +157,8 @@ def adaptive_equilibrate(
         max_steps: Hard cap on total steps to prevent unbounded runtime near
             criticality (default 200 000).
 
-    Returns:
+    Returns
+    -------
         Total number of MC steps run (burn-in + probes).
     """
     from .physics_helpers import calculate_autocorr  # lazy import; avoids pickle issues
@@ -194,11 +203,12 @@ def plot_temperature_sweep(
     Generate and save a standardized temperature sweep plot.
 
     Displays magnetization, energy, susceptibility, and specific heat as
-    functions of temperature.  When *entropy* or *tau_int* are provided the
+    functions of temperature. When *entropy* or *tau_int* are provided the
     layout expands to 3×2; otherwise the classic 2×2 is used.
     Saves the figure via :func:`save_plot`.
 
-    Args:
+    Parameters
+    ----------
         temperatures: Array of temperature values (x-axis).
         avg_m: Average absolute magnetization per temperature point.
         avg_e: Average energy per temperature point.
@@ -290,7 +300,8 @@ def plot_ordering_kinetics(
     Left Panel: Growth of length scales R_sk and xi.
     Right Panel: Growth/Decay of a third metric (Vortex density or MIL).
 
-    Args:
+    Parameters
+    ----------
         t: Time array (Monte Carlo sweeps).
         R_sk: Domain size from structure factor.
         R_xi: Correlation length from G(r).
@@ -372,10 +383,11 @@ def plot_ordering_evolution(
     Generate and save a multi-row figure showing order evolution over time.
 
     Row 0: Spin configurations (binary for Ising, HSV for XY/Clock).
-    Row 1: Circularly-averaged structure factor S(|k|) or Vorticity maps.
+    Row 1: Circularly-averaged structure factor :math:`S(|k|)` or vorticity maps.
     Row 2: Radially averaged correlation functions G(r) with xi estimates.
 
-    Args:
+    Parameters
+    ----------
         targets: List of MC steps for each snapshot.
         snapshots: List of spin arrays.
         gr_data: List of (r, G) tuples.

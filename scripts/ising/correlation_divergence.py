@@ -18,10 +18,12 @@ from utils.system_helpers import ensure_results_dir, parallel_sweep, save_plot, 
 def get_correlation_length(params: tuple[float, int, int, int, int]) -> tuple[float, float]:
     """Simulate and extract correlation length xi for a given temperature.
 
-    Args:
+    Parameters
+    ----------
         params: Tuple of (T, L, steps, eq_steps, sample_interval).
 
-    Returns:
+    Returns
+    -------
         A tuple of (T, xi).
     """
     T, L, steps, eq_steps, sample_interval = params

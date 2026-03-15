@@ -4,18 +4,18 @@ vibespin.utils package
 Submodules
 ----------
 
-vibespin.utils.physics\_helpers module
---------------------------------------
+utils.physics\_helpers module
+-----------------------------
 
-.. automodule:: vibespin.utils.physics_helpers
+.. automodule:: utils.physics_helpers
    :members:
    :show-inheritance:
    :undoc-members:
 
-vibespin.utils.system\_helpers module
--------------------------------------
+utils.system\_helpers module
+----------------------------
 
-.. automodule:: vibespin.utils.system_helpers
+.. automodule:: utils.system_helpers
    :members:
    :show-inheritance:
    :undoc-members:
@@ -23,7 +23,7 @@ vibespin.utils.system\_helpers module
 Module contents
 ---------------
 
-.. automodule:: vibespin.utils
+.. automodule:: utils
    :members:
    :show-inheritance:
    :undoc-members:

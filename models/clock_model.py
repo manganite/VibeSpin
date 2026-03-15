@@ -32,7 +32,8 @@ def clock_step_numba(
     Perform one full Monte Carlo sweep of the Clock Model lattice.
     Uses a checkerboard update pattern for better Numba optimization.
 
-    Args:
+    Parameters
+    ----------
         spins: (N, N, 2) array of unit vectors.
         beta: Inverse temperature 1/kT.
         J: Coupling constant.
@@ -41,7 +42,8 @@ def clock_step_numba(
         idx_next: Pre-calculated next-neighbor indices.
         idx_prev: Pre-calculated previous-neighbor indices.
 
-    Returns:
+    Returns
+    -------
         Updated spins array.
     """
     N = spins.shape[0]
@@ -162,7 +164,8 @@ def clock_step_random_numba(
     """
     Perform one full Monte Carlo sweep of the Clock Model lattice using random sequential updates.
 
-    Args:
+    Parameters
+    ----------
         spins: (N, N, 2) array of unit vectors.
         beta: Inverse temperature 1/kT.
         J: Coupling constant.
@@ -171,7 +174,8 @@ def clock_step_random_numba(
         idx_next: Pre-calculated next-neighbor indices.
         idx_prev: Pre-calculated previous-neighbor indices.
 
-    Returns:
+    Returns
+    -------
         Updated spins array.
     """
     N = spins.shape[0]
@@ -232,14 +236,16 @@ def clock_energy_numba(
     """
     Calculate the total energy of the Clock Model lattice.
 
-    Args:
+    Parameters
+    ----------
         spins: (N, N, 2) array of unit vectors.
         J: Coupling constant.
         A: Anisotropy strength.
         q: Number of clock states.
         idx_next: Pre-calculated next-neighbor indices.
 
-    Returns:
+    Returns
+    -------
         energy: Total energy per site.
     """
     N = spins.shape[0]
@@ -281,7 +287,8 @@ class ClockSimulation(MonteCarloSimulation):
         """
         Initialize the Clock Model simulation.
 
-        Args:
+        Parameters
+        ----------
             size: Linear dimension L of the L x L lattice.
             temp: Temperature T.
             J: Coupling constant (default 1.0).
@@ -293,7 +300,8 @@ class ClockSimulation(MonteCarloSimulation):
             parallel: Whether to use parallelized Numba kernels (only for checkerboard).
             seed: Optional random seed for reproducibility.
 
-        Raises:
+        Raises
+        ------
             ValueError: If ``q`` is less than 2 or update scheme is unknown.
         """
         super().__init__(size=size, temp=temp, seed=seed)
@@ -419,7 +427,8 @@ def discrete_clock_step_numba(
     """
     One Metropolis sweep of the discrete clock model (checkerboard update).
 
-    Args:
+    Parameters
+    ----------
         spins: (N, N) array of integer spin states in {0, ..., q-1}.
         beta: Inverse temperature 1/kT.
         J: Coupling constant.
@@ -428,7 +437,8 @@ def discrete_clock_step_numba(
         idx_next: Pre-calculated next-neighbor indices.
         idx_prev: Pre-calculated previous-neighbor indices.
 
-    Returns:
+    Returns
+    -------
         Updated spins array.
     """
     N = spins.shape[0]
@@ -540,7 +550,8 @@ def discrete_clock_step_random_numba(
     N^2 single-spin flip attempts at uniformly random sites, giving physical
     stochastic dynamics suitable for kinetics studies.
 
-    Args:
+    Parameters
+    ----------
         spins: (N, N) array of integer spin states in {0, ..., q-1}.
         beta: Inverse temperature 1/kT.
         J: Coupling constant.
@@ -549,7 +560,8 @@ def discrete_clock_step_random_numba(
         idx_next: Pre-calculated next-neighbor indices.
         idx_prev: Pre-calculated previous-neighbor indices.
 
-    Returns:
+    Returns
+    -------
         Updated spins array.
     """
     N = spins.shape[0]
@@ -608,14 +620,16 @@ def discrete_clock_energy_numba(
 
     Sums -J * cos(theta_i - theta_j) over unique right/down neighbor pairs.
 
-    Args:
+    Parameters
+    ----------
         spins: (N, N) array of integer spin states in {0, ..., q-1}.
         J: Coupling constant.
         q: Number of clock states.
         cos_table: Pre-computed cos(2*pi*d/q) for d in {0, ..., q-1}.
         idx_next: Pre-calculated next-neighbor indices.
 
-    Returns:
+    Returns
+    -------
         Energy per site.
     """
     N = spins.shape[0]
@@ -659,7 +673,8 @@ class DiscreteClockSimulation(MonteCarloSimulation):
         """
         Initialize the discrete clock model simulation.
 
-        Args:
+        Parameters
+        ----------
             size: Linear dimension L of the L x L lattice.
             temp: Temperature T.
             J: Coupling constant (default 1.0).
@@ -670,7 +685,8 @@ class DiscreteClockSimulation(MonteCarloSimulation):
             parallel: Whether to use parallelized Numba kernels (only for checkerboard).
             seed: Optional random seed for reproducibility.
 
-        Raises:
+        Raises
+        ------
             ValueError: If ``q`` is less than 2 or update scheme is unknown.
         """
         super().__init__(size=size, temp=temp, seed=seed)

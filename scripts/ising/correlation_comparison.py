@@ -18,10 +18,12 @@ from utils.system_helpers import ensure_results_dir, parallel_sweep, save_plot, 
 def simulate_correlation(params: tuple[float, int, int, int, int]) -> tuple[np.ndarray, np.ndarray]:
     """Worker function: simulate and return the averaged correlation function at temperature T.
 
-    Args:
+    Parameters
+    ----------
         params: Tuple of (T, L, steps, eq_steps, sample_interval).
 
-    Returns:
+    Returns
+    -------
         A tuple of (r, G_r) - radial distances and averaged correlations.
     """
     T, L, steps, eq_steps, sample_interval = params

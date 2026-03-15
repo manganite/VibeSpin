@@ -35,6 +35,7 @@ docs = [
     "sphinx-rtd-theme",
     "nbsphinx",
     "ipython",
+    "pypandoc-binary",
 ]
 
 [tool.setuptools.packages.find]

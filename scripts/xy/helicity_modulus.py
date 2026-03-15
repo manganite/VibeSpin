@@ -18,13 +18,16 @@ def simulate_helicity(params: tuple[float, int, int, int]) -> float:
     """
     Run simulation for a single temperature and compute the helicity modulus.
 
-    Args:
+    Parameters
+    ----------
         params: Tuple of (T, L, eq_steps, meas_steps).
 
-    Returns:
+    Returns
+    -------
         Helicity modulus (Upsilon) for this temperature.
 
-    Raises:
+    Raises
+    ------
         ValueError: If ``T`` is less than or equal to 0.
     """
     T, L, eq_steps, meas_steps = params

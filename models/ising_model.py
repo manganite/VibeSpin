@@ -20,14 +20,16 @@ def ising_step_numba(
     Perform one full Monte Carlo sweep of the Ising lattice.
     Uses a checkerboard update pattern for better Numba optimization.
 
-    Args:
+    Parameters
+    ----------
         spins: (N, N) array of spins (+1 or -1).
         beta: Inverse temperature 1/kT.
         J: Coupling constant.
         idx_next: Pre-calculated next-neighbor indices.
         idx_prev: Pre-calculated previous-neighbor indices.
 
-    Returns:
+    Returns
+    -------
         Updated spins array.
     """
     N = spins.shape[0]
@@ -98,12 +100,14 @@ def ising_energy_numba(*, spins: np.ndarray, J: float, idx_next: np.ndarray) -> 
     """
     Calculate the total energy of the Ising lattice.
 
-    Args:
+    Parameters
+    ----------
         spins: (N, N) array of spins.
         J: Coupling constant.
         idx_next: Pre-calculated next-neighbor indices.
 
-    Returns:
+    Returns
+    -------
         energy: Total energy per site.
     """
     N = spins.shape[0]
@@ -133,14 +137,16 @@ def ising_step_random_numba(
     are pre-calculated outside the inner loop to avoid repeated calls to
     ``np.exp``, matching the optimisation used in ``ising_step_numba``.
 
-    Args:
+    Parameters
+    ----------
         spins: (N, N) array of spins (+1 or -1).
         beta: Inverse temperature 1/kT.
         J: Coupling constant.
         idx_next: Pre-calculated next-neighbor indices.
         idx_prev: Pre-calculated previous-neighbor indices.
 
-    Returns:
+    Returns
+    -------
         Updated spins array.
     """
     N = spins.shape[0]
@@ -190,7 +196,8 @@ class IsingSimulation(MonteCarloSimulation):
         """
         Initialize the Ising simulation.
 
-        Args:
+        Parameters
+        ----------
             size: Linear dimension L of the L x L lattice.
             temp: Temperature T.
             J: Coupling constant (default 1.0).
@@ -200,7 +207,8 @@ class IsingSimulation(MonteCarloSimulation):
             parallel: Whether to use parallelized Numba kernels (only for checkerboard).
             seed: Optional random seed for reproducibility.
 
-        Raises:
+        Raises
+        ------
             ValueError: If ``update`` is not one of the recognised schemes.
         """
         super().__init__(size=size, temp=temp, seed=seed)

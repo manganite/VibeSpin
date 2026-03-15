@@ -1,8 +1,32 @@
 # Configuration file for the Sphinx documentation builder.
 import os
+import shutil
 import sys
+
 # Path to the root of the project
 sys.path.insert(0, os.path.abspath('../..'))
+
+
+def _ensure_pandoc_on_path() -> None:
+    """Add a bundled pandoc binary to PATH when no system pandoc is available."""
+    if shutil.which('pandoc') is not None:
+        return
+
+    try:
+        import pypandoc
+    except ImportError:
+        return
+
+    try:
+        pandoc_path = pypandoc.get_pandoc_path()
+    except OSError:
+        return
+
+    pandoc_dir = os.path.dirname(pandoc_path)
+    os.environ['PATH'] = pandoc_dir + os.pathsep + os.environ.get('PATH', '')
+
+
+_ensure_pandoc_on_path()
 
 # -- Project information -----------------------------------------------------
 project = 'VibeSpin'

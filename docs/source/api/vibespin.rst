@@ -14,18 +14,11 @@ Subpackages
 Submodules
 ----------
 
-vibespin.benchmark module
--------------------------
+benchmark module
+----------------
 
-.. automodule:: vibespin.benchmark
+.. automodule:: benchmark
    :members:
    :show-inheritance:
    :undoc-members:
 
-Module contents
----------------
-
-.. automodule:: vibespin
-   :members:
-   :show-inheritance:
-   :undoc-members:

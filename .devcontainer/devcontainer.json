@@ -40,7 +40,8 @@
 				"GitHub.vscode-github-actions",
 				"ms-python.vscode-python-envs",
 				"ms-python.mypy-type-checker",
-				"google.gemini-cli-vscode-ide-companion"
+				"google.gemini-cli-vscode-ide-companion",
+				"ms-vscode.live-server"
 			]
 		}
 	}

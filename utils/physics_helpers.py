@@ -15,16 +15,19 @@ def calculate_thermodynamics(
     """
     Calculate average magnetization, energy, susceptibility, and specific heat.
 
-    Args:
+    Parameters
+    ----------
         mags: Array of magnetization measurements.
         engs: Array of energy measurements.
         T: Temperature.
         L: Linear lattice size.
 
-    Returns:
+    Returns
+    -------
         A tuple of (avg_mag, avg_eng, susceptibility, specific_heat).
 
-    Raises:
+    Raises
+    ------
         ValueError: If ``T`` is not positive or ``L`` is not a positive integer.
     """
     if T <= 0.0:
@@ -58,18 +61,21 @@ def calculate_entropy(
     This avoids the C/T divergence near T = 0 and anchors the result at the
     high-temperature limit where the entropy is analytically known.
 
-    Args:
+    Parameters
+    ----------
         temperatures: 1-D array of temperature values. Need not be sorted.
         specific_heat: Specific heat C_v at each temperature (same length).
         s_ref: Reference entropy at the highest temperature. Pass ``0.0``
             for relative entropy or ``np.log(q)`` (per site, in units of
             k_B) for absolute entropy of a q-state model.
 
-    Returns:
+    Returns
+    -------
         1-D array of entropy values, one per temperature, in the original
         unsorted order of ``temperatures``.
 
-    Raises:
+    Raises
+    ------
         ValueError: If arrays differ in length, contain fewer than 2 points,
             or include non-positive temperatures.
     """
@@ -124,17 +130,20 @@ def calculate_autocorr(
     at the lag W where W = ``window_constant`` * tau_int, preventing the estimator
     from accumulating noise at large lags.
 
-    Args:
+    Parameters
+    ----------
         time_series: 1-D array of sequential measurements (e.g. magnetization).
         max_lag: Maximum lag to compute.  Defaults to ``len(time_series) // 2``.
         window_constant: Multiplier for the Madras-Sokal window (default 6.0).
 
-    Returns:
+    Returns
+    -------
         A tuple ``(C_t, tau_int)`` where ``C_t`` is the normalized autocorrelation
         array truncated at the window endpoint, and ``tau_int`` is the integrated
         autocorrelation time (scalar).
 
-    Raises:
+    Raises
+    ------
         ValueError: If ``time_series`` has fewer than 3 elements or zero variance.
     """
     x = np.asarray(time_series, dtype=np.float64)
@@ -179,16 +188,19 @@ def get_averaged_correlation(
     """
     Run simulation and average the correlation function over multiple configurations.
 
-    Args:
+    Parameters
+    ----------
         sim: An instance of MonteCarloSimulation.
         total_steps: Total number of MC steps to run.
         sample_interval: Interval between correlation samples. Must be ≥ 1.
 
-    Returns:
+    Returns
+    -------
         r: Radial distances.
         G_r_avg: Averaged correlation values.
 
-    Raises:
+    Raises
+    ------
         ValueError: If ``sample_interval`` is less than 1 or ``total_steps`` is negative.
     """
     if sample_interval < 1:
@@ -220,15 +232,17 @@ def get_averaged_correlation(
 
 
 def radial_average_sk(*, spins: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
-    """Compute the circularly averaged structure factor S(|k|).
+    """Compute the circularly averaged structure factor :math:`S(|k|)`.
 
-    Bins S(k) by integer pixel radius from the DC centre of the shifted FFT,
+    Bins :math:`S(k)` by integer pixel radius from the DC centre of the shifted FFT,
     then averages within each annular bin.
 
-    Args:
+    Parameters
+    ----------
         spins: (N, N) or (N, N, 2) spin array.
 
-    Returns:
+    Returns
+    -------
         k_vals: Wavevector magnitudes in units of 2π/N (reciprocal lattice).
         S_radial: Mean S(k) value for each annular bin.
     """
@@ -267,10 +281,12 @@ def pair_correlation_x(*, spins: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
     inverse FFT of the row's power spectrum.  Results are averaged over all
     rows (y positions) and normalised so G(0) = 1.
 
-    Args:
+    Parameters
+    ----------
         spins: (N, N) or (N, N, 2) spin array.
 
-    Returns:
+    Returns
+    -------
         r_vals: Lag distances r = 0 … N//2 in lattice units.
         G: Normalised pair correlation G(r) / G(0).
     """
@@ -302,10 +318,12 @@ def compute_kinetics_metrics(*, sim: MonteCarloSimulation) -> dict[str, float]:
     """
     Calculate common kinetics metrics (R_sk, xi) for a simulation state.
 
-    Args:
+    Parameters
+    ----------
         sim: MonteCarloSimulation instance.
 
-    Returns:
+    Returns
+    -------
         Dictionary containing 'R_sk' and 'xi'.
     """
     if sim.spins is None:
