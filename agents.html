@@ -55,6 +55,7 @@
 <li class="toctree-l3"><a class="reference internal" href="#physical-fidelity-algorithm-integrity">3. Physical Fidelity &amp; Algorithm Integrity</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#verification-testing">4. Verification &amp; Testing</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#source-control-delivery">5. Source Control &amp; Delivery</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#documentation-knowledge-management">6. Documentation &amp; Knowledge Management</a></li>
 </ul>
 </li>
 <li class="toctree-l2"><a class="reference internal" href="#directory-map-for-agents">Directory Map for Agents</a></li>
@@ -159,6 +160,16 @@ mypy<span class="w"> </span>--explicit-package-bases<span class="w"> </span>mode
 <li><p><strong>Pre-Commit Check</strong>: Before proposing a commit, you MUST run all tests, linting, and type checking.</p></li>
 <li><p><strong>Commit Format</strong>: Use <strong>Conventional Commits</strong> (<code class="docutils literal notranslate"><span class="pre">type(scope):</span> <span class="pre">description</span></code>). Example: <code class="docutils literal notranslate"><span class="pre">phys(xy):</span> <span class="pre">implement</span> <span class="pre">helicity</span> <span class="pre">modulus</span> <span class="pre">calculation</span></code>.</p></li>
 <li><p><strong>GitHub Sync</strong>: After a successful local commit, ask the user if they wish to push to the remote repository.</p></li>
+</ul>
+</section>
+<section id="documentation-knowledge-management">
+<h3>6. Documentation &amp; Knowledge Management<a class="headerlink" href="#documentation-knowledge-management" title="Link to this heading"></a></h3>
+<ul class="simple">
+<li><p><strong>Docstring Compliance</strong>: All new classes, methods, and kernels MUST include <strong>NumPy-style docstrings</strong>. This is mandatory for automated Sphinx API generation (<code class="docutils literal notranslate"><span class="pre">sphinx-apidoc</span></code>).</p></li>
+<li><p><strong>Theory Updates</strong>: When introducing new physical models or observables, you MUST update <strong><code class="docutils literal notranslate"><span class="pre">PHYSICS.md</span></code></strong> with the relevant Hamiltonian definitions, phase behavior, and mathematical formulations.</p></li>
+<li><p><strong>Scripts Catalog</strong>: Any new entry-point script added to <code class="docutils literal notranslate"><span class="pre">scripts/</span></code> MUST be registered in <strong><code class="docutils literal notranslate"><span class="pre">SCRIPTS.md</span></code></strong> with a brief description of its purpose and usage.</p></li>
+<li><p><strong>Performance Re-profiling</strong>: If a change significantly impacts simulation throughput or analysis overhead, you MUST re-run the benchmark tool (<code class="docutils literal notranslate"><span class="pre">benchmark.py</span></code>) and update the <strong><code class="docutils literal notranslate"><span class="pre">Performance_Benchmarks.ipynb</span></code></strong> summary results.</p></li>
+<li><p><strong>Cross-linking</strong>: Standalone documentation files MUST be cross-linked in the Sphinx hub (<code class="docutils literal notranslate"><span class="pre">docs/source/index.md</span></code>) to ensure they appear in the hosted documentation site.</p></li>
 </ul>
 </section>
 </section>
