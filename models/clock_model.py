@@ -7,7 +7,7 @@ import os
 
 import matplotlib.pyplot as plt
 import numpy as np
-from numba import njit
+from numba import njit, prange
 
 from .simulation_base import (
     MonteCarloSimulation,
@@ -81,6 +81,61 @@ def clock_step_numba(
                 dE_inter = -J * ((sx_new * nx + sy_new * ny) - (sx * nx + sy * ny))
 
                 # Anisotropy Energy Change
+                phi_old = np.arctan2(sy, sx)
+                phi_new = phi_old + delta
+                dE_aniso = -A * (np.cos(q * phi_new) - np.cos(q * phi_old))
+
+                dE = dE_inter + dE_aniso
+
+                if dE <= 0 or random_vals[i, j] < np.exp(-dE * beta):
+                    spins[i, j, 0] = sx_new
+                    spins[i, j, 1] = sy_new
+    return spins
+
+
+@njit(cache=True, fastmath=True, parallel=True)
+def clock_step_parallel_numba(
+    *,
+    spins: np.ndarray,
+    beta: float,
+    J: float,
+    A: float,
+    q: int,
+    idx_next: np.ndarray,
+    idx_prev: np.ndarray,
+) -> np.ndarray:
+    """
+    Parallel version of clock_step_numba.
+    """
+    N = spins.shape[0]
+    deltas = np.random.uniform(-0.5, 0.5, size=(N, N))
+    cos_vals = np.cos(deltas)
+    sin_vals = np.sin(deltas)
+    random_vals = np.random.random(size=(N, N))
+
+    for parity in range(2):
+        for i in prange(N):
+            start_j = (parity + i) % 2
+            inxt = idx_next[i]
+            iprv = idx_prev[i]
+            for j in range(start_j, N, 2):
+                jnxt = idx_next[j]
+                jprv = idx_prev[j]
+
+                nx = spins[iprv, j, 0] + spins[inxt, j, 0] + spins[i, jprv, 0] + spins[i, jnxt, 0]
+                ny = spins[iprv, j, 1] + spins[inxt, j, 1] + spins[i, jprv, 1] + spins[i, jnxt, 1]
+
+                sx, sy = spins[i, j, 0], spins[i, j, 1]
+                delta = deltas[i, j]
+                c, s = cos_vals[i, j], sin_vals[i, j]
+
+                sx_new = sx * c - sy * s
+                sy_new = sx * s + sy * c
+                norm = np.sqrt(sx_new**2 + sy_new**2)
+                sx_new /= norm
+                sy_new /= norm
+
+                dE_inter = -J * ((sx_new * nx + sy_new * ny) - (sx * nx + sy * ny))
                 phi_old = np.arctan2(sy, sx)
                 phi_new = phi_old + delta
                 dE_aniso = -A * (np.cos(q * phi_new) - np.cos(q * phi_old))
@@ -220,6 +275,7 @@ class ClockSimulation(MonteCarloSimulation):
         A: float = 1.0,
         q: int = 6,
         update: str = 'checkerboard',
+        parallel: bool = False,
         seed: int | None = None,
     ):
         """
@@ -234,6 +290,7 @@ class ClockSimulation(MonteCarloSimulation):
             update: Update scheme - ``'checkerboard'`` (default, faster) or
                 ``'random'`` (random sequential Metropolis, more physical
                 stochastic dynamics for kinetics studies).
+            parallel: Whether to use parallelized Numba kernels (only for checkerboard).
             seed: Optional random seed for reproducibility.
 
         Raises:
@@ -249,6 +306,7 @@ class ClockSimulation(MonteCarloSimulation):
         self.A = A
         self.q = q
         self.update = update
+        self.parallel = parallel
 
         # Initialize random spins as 2D unit vectors
         # spin = (spin_x, spin_y)
@@ -265,6 +323,16 @@ class ClockSimulation(MonteCarloSimulation):
 
             if self.update == 'random':
                 self.spins = clock_step_random_numba(
+                    spins=self.spins,
+                    beta=self.beta,
+                    J=self.J,
+                    A=self.A,
+                    q=self.q,
+                    idx_next=self.idx_next,
+                    idx_prev=self.idx_prev,
+                )
+            elif self.parallel:
+                self.spins = clock_step_parallel_numba(
                     spins=self.spins,
                     beta=self.beta,
                     J=self.J,
@@ -389,6 +457,57 @@ def discrete_clock_step_numba(
                 n3 = spins[i, jnxt]
 
                 # dE = -J * sum_nn [cos(theta_new - theta_nn) - cos(theta_old - theta_nn)]
+                dE = -J * (
+                    cos_table[(s_new - n0) % q]
+                    + cos_table[(s_new - n1) % q]
+                    + cos_table[(s_new - n2) % q]
+                    + cos_table[(s_new - n3) % q]
+                    - cos_table[(s_old - n0) % q]
+                    - cos_table[(s_old - n1) % q]
+                    - cos_table[(s_old - n2) % q]
+                    - cos_table[(s_old - n3) % q]
+                )
+
+                if dE <= 0 or random_vals[i, j] < np.exp(-dE * beta):
+                    spins[i, j] = s_new
+    return spins
+
+
+@njit(cache=True, fastmath=True, parallel=True)
+def discrete_clock_step_parallel_numba(
+    *,
+    spins: np.ndarray,
+    beta: float,
+    J: float,
+    q: int,
+    cos_table: np.ndarray,
+    idx_next: np.ndarray,
+    idx_prev: np.ndarray,
+) -> np.ndarray:
+    """
+    Parallel version of discrete_clock_step_numba.
+    """
+    N = spins.shape[0]
+    proposals = np.random.randint(0, q, size=(N, N))
+    random_vals = np.random.random(size=(N, N))
+
+    for parity in range(2):
+        for i in prange(N):
+            start_j = (parity + i) % 2
+            inxt = idx_next[i]
+            iprv = idx_prev[i]
+            for j in range(start_j, N, 2):
+                jnxt = idx_next[j]
+                jprv = idx_prev[j]
+
+                s_old = spins[i, j]
+                s_new = proposals[i, j]
+                if s_new == s_old:
+                    continue
+
+                n0, n1 = spins[iprv, j], spins[inxt, j]
+                n2, n3 = spins[i, jprv], spins[i, jnxt]
+
                 dE = -J * (
                     cos_table[(s_new - n0) % q]
                     + cos_table[(s_new - n1) % q]
@@ -536,6 +655,7 @@ class DiscreteClockSimulation(MonteCarloSimulation):
         J: float = 1.0,
         q: int = 6,
         update: str = 'checkerboard',
+        parallel: bool = False,
         seed: int | None = None,
     ):
         """
@@ -549,6 +669,7 @@ class DiscreteClockSimulation(MonteCarloSimulation):
             update: Update scheme - ``'checkerboard'`` (default, faster) or
                 ``'random'`` (random sequential Metropolis, more physical
                 stochastic dynamics for kinetics studies).
+            parallel: Whether to use parallelized Numba kernels (only for checkerboard).
             seed: Optional random seed for reproducibility.
 
         Raises:
@@ -565,6 +686,7 @@ class DiscreteClockSimulation(MonteCarloSimulation):
         self.J = J
         self.q = q
         self.update = update
+        self.parallel = parallel
 
         # Pre-compute lookup tables (no trig inside kernels)
         angles = 2.0 * np.pi * np.arange(q) / q
@@ -585,6 +707,16 @@ class DiscreteClockSimulation(MonteCarloSimulation):
 
             if self.update == 'random':
                 self.spins = discrete_clock_step_random_numba(
+                    spins=self.spins,
+                    beta=self.beta,
+                    J=self.J,
+                    q=self.q,
+                    cos_table=self.cos_table,
+                    idx_next=self.idx_next,
+                    idx_prev=self.idx_prev,
+                )
+            elif self.parallel:
+                self.spins = discrete_clock_step_parallel_numba(
                     spins=self.spins,
                     beta=self.beta,
                     J=self.J,
@@ -685,14 +817,20 @@ if __name__ == '__main__':
     parser.add_argument('--q', type=int, default=6, help='Clock states q')
     parser.add_argument('--steps', type=int, default=500, help='MC steps')
     parser.add_argument('--seed', type=int, default=None, help='Random seed')
+    parser.add_argument('--parallel', action='store_true', help='Use parallel kernels')
     parser.add_argument('--verbose', action='store_true', help='Enable verbose logging')
     args = parser.parse_args()
 
     log_level = logging.DEBUG if args.verbose else logging.INFO
     logger = setup_logging(level=log_level)
 
-    logger.info(f'Initializing {args.q}-state Clock Model (L={args.size}, T={args.temp})...')
-    sim = ClockSimulation(size=args.size, temp=args.temp, q=args.q, seed=args.seed)
+    logger.info(
+        f'Initializing {args.q}-state Clock Model (L={args.size}, '
+        f'T={args.temp}, parallel={args.parallel})...'
+    )
+    sim = ClockSimulation(
+        size=args.size, temp=args.temp, q=args.q, seed=args.seed, parallel=args.parallel
+    )
 
     logger.info(f'Running for {args.steps} steps...')
     mag_history, energy_history = sim.run(n_steps=args.steps)
@@ -731,4 +869,3 @@ if __name__ == '__main__':
     output_file = os.path.join(output_dir, 'clock_example.png')
     plt.savefig(output_file)
     logger.info(f'Simulation finished. Plot saved to {output_file}')
-

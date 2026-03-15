@@ -38,6 +38,14 @@ This document provides mandatory procedural context and technical constraints fo
 - **Commit Format**: Use **Conventional Commits** (`type(scope): description`). Valid types: `phys` (physics logic), `feat`, `fix`, `perf`, `docs`, `test`, `chore`. Example: `phys(xy): implement helicity modulus calculation`.
 - **GitHub Sync**: After a successful local commit, always ask the user if they wish to push to the remote repository.
 
+### 6. Statistical Mechanics & Algorithm Integrity
+- **Metropolis Prerequisites**: All simulation code MUST strictly fulfill the conditions for the Metropolis-Hastings algorithm to ensure convergence to the Boltzmann distribution.
+- **Detailed Balance**: Every transition kernel MUST satisfy the detailed balance condition. Use the standard Metropolis acceptance probability: $P(\text{acc}) = \min(1, \exp(-\beta \Delta E))$.
+- **Ergodicity**: Proposals MUST ensure that the entire configuration space is reachable from any starting state. For continuous models (XY, Clock), the update range must be sufficient to avoid trapping; for discrete models, the proposal distribution must allow for global site-state exploration.
+- **Symmetric Proposals**: If the proposal distribution $g(i \to j)$ is asymmetric, you MUST include the Hastings correction factor in the acceptance probability. Preferred strategy: use symmetric proposals (e.g., $\Delta \phi \in [-\delta, \delta]$) to maintain $g(i \to j) = g(j \to i)$.
+- **Markov Property**: The transition probability MUST depend only on the current configuration. Avoid introducing hidden history or non-Markovian biases in the update kernels.
+- **Audit Requirement**: Any new update algorithm or kernel modification must be audited for these three properties before implementation.
+
 ## Directory Map for Agents
 ...
 

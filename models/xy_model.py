@@ -7,7 +7,7 @@ import os
 
 import matplotlib.pyplot as plt
 import numpy as np
-from numba import njit
+from numba import njit, prange
 
 from .simulation_base import (
     MonteCarloSimulation,
@@ -72,6 +72,48 @@ def xy_step_numba(
                 sy_new /= norm
 
                 # Energy change: -J * (s_new - s_old) . neighbors
+                dE = -J * ((sx_new * nx + sy_new * ny) - (sx * nx + ny * sy))
+
+                if dE <= 0 or random_vals[i, j] < np.exp(-dE * beta):
+                    spins[i, j, 0] = sx_new
+                    spins[i, j, 1] = sy_new
+    return spins
+
+
+@njit(cache=True, fastmath=True, parallel=True)
+def xy_step_parallel_numba(
+    *, spins: np.ndarray, beta: float, J: float, idx_next: np.ndarray, idx_prev: np.ndarray
+) -> np.ndarray:
+    """
+    Parallel version of xy_step_numba.
+    """
+    N = spins.shape[0]
+    deltas = np.random.uniform(-0.5, 0.5, size=(N, N))
+    cos_vals = np.cos(deltas)
+    sin_vals = np.sin(deltas)
+    random_vals = np.random.random(size=(N, N))
+
+    for parity in range(2):
+        for i in prange(N):
+            start_j = (parity + i) % 2
+            inxt = idx_next[i]
+            iprv = idx_prev[i]
+            for j in range(start_j, N, 2):
+                jnxt = idx_next[j]
+                jprv = idx_prev[j]
+
+                nx = spins[iprv, j, 0] + spins[inxt, j, 0] + spins[i, jprv, 0] + spins[i, jnxt, 0]
+                ny = spins[iprv, j, 1] + spins[inxt, j, 1] + spins[i, jprv, 1] + spins[i, jnxt, 1]
+
+                sx, sy = spins[i, j, 0], spins[i, j, 1]
+                c, s = cos_vals[i, j], sin_vals[i, j]
+
+                sx_new = sx * c - sy * s
+                sy_new = sx * s + sy * c
+                norm = np.sqrt(sx_new**2 + sy_new**2)
+                sx_new /= norm
+                sy_new /= norm
+
                 dE = -J * ((sx_new * nx + sy_new * ny) - (sx * nx + sy * ny))
 
                 if dE <= 0 or random_vals[i, j] < np.exp(-dE * beta):
@@ -184,6 +226,7 @@ class XYSimulation(MonteCarloSimulation):
         temp: float,
         J: float = 1.0,
         update: str = 'checkerboard',
+        parallel: bool = False,
         seed: int | None = None,
     ):
         """
@@ -196,6 +239,7 @@ class XYSimulation(MonteCarloSimulation):
             update: Update scheme - ``'checkerboard'`` (default, faster) or
                 ``'random'`` (random sequential Metropolis, more physical
                 stochastic dynamics for kinetics studies).
+            parallel: Whether to use parallelized Numba kernels (only for checkerboard).
             seed: Optional random seed for reproducibility.
 
         Raises:
@@ -207,6 +251,7 @@ class XYSimulation(MonteCarloSimulation):
             raise ValueError(f'Unknown update scheme {update!r}. Valid options: {valid_opts}')
         self.J = J
         self.update = update
+        self.parallel = parallel
 
         # Initialize random spins as 2D unit vectors
         # spin = (spin_x, spin_y)
@@ -223,6 +268,14 @@ class XYSimulation(MonteCarloSimulation):
 
             if self.update == 'random':
                 self.spins = xy_step_random_numba(
+                    spins=self.spins,
+                    beta=self.beta,
+                    J=self.J,
+                    idx_next=self.idx_next,
+                    idx_prev=self.idx_prev,
+                )
+            elif self.parallel:
+                self.spins = xy_step_parallel_numba(
                     spins=self.spins,
                     beta=self.beta,
                     J=self.J,
@@ -294,14 +347,20 @@ if __name__ == '__main__':
     parser.add_argument('--temp', type=float, default=0.5, help='Temperature T')
     parser.add_argument('--steps', type=int, default=500, help='MC steps')
     parser.add_argument('--seed', type=int, default=None, help='Random seed')
+    parser.add_argument('--parallel', action='store_true', help='Use parallel kernels')
     parser.add_argument('--verbose', action='store_true', help='Enable verbose logging')
     args = parser.parse_args()
 
     log_level = logging.DEBUG if args.verbose else logging.INFO
     logger = setup_logging(level=log_level)
 
-    logger.info(f'Initializing XY Model (L={args.size}, T={args.temp})...')
-    sim = XYSimulation(size=args.size, temp=args.temp, seed=args.seed)
+    logger.info(
+        f'Initializing XY Model (L={args.size}, T={args.temp}, '
+        f'parallel={args.parallel})...'
+    )
+    sim = XYSimulation(
+        size=args.size, temp=args.temp, seed=args.seed, parallel=args.parallel
+    )
 
     logger.info(f'Running for {args.steps} steps...')
     sim.run(n_steps=args.steps)
