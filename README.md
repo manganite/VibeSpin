@@ -83,6 +83,14 @@ mypy --explicit-package-bases models/ utils/ scripts/
 
 New models or analysis kernels must be audited for statistical mechanics integrity and include unit tests verifying physical limits (e.g., ground state energy or high-temperature randomization).
 
+## Documentation
+
+For deeper insights into the project, refer to the following guides:
+- [PHYSICS.md](PHYSICS.md): Detailed explanation of physical models, observables, and the Metropolis algorithm prerequisites.
+- [SCRIPTS.md](SCRIPTS.md): Comprehensive catalog of the entry-point scripts organized by model family.
+- [AGENTS.md](AGENTS.md): Mandatory procedural context and technical constraints for AI Agents.
+- [Performance_Benchmarks.ipynb](Performance_Benchmarks.ipynb): Detailed scaling analysis and multi-core performance metrics.
+
 ## Project context
 
 VibeSpin was developed using AI-assisted scientific coding workflows. The framework demonstrates how high-level physical design and validation can be accelerated through iterative modeling, benchmarking, and automated testing.
