@@ -1,84 +1,90 @@
 # VibeSpin
 
-VibeSpin is a Python framework for simulation and analysis of two-dimensional lattice spin models. The codebase focuses on three systems, the Ising model, the XY model, and the q-state Clock model. It combines Monte Carlo dynamics with analysis tools for equilibrium observables, coarsening kinetics, topological defects, and finite-size trends.
+VibeSpin is a Python framework for high-performance simulation and analysis of two-dimensional lattice spin models. The codebase focuses on three foundational systems: the **Ising model**, the **XY model**, and the **q-state Clock model** (in both continuous and discrete representations). It combines Numba-accelerated Monte Carlo dynamics with a robust analysis suite for equilibrium observables, coarsening kinetics, and topological defect tracking.
 
-The implementation is built for speed and repeatability. Core kernels run through Numba JIT compilation, periodic boundaries are handled with precomputed index arrays, and seeded runs are deterministic across repeated executions. This makes side-by-side comparisons across update rules and model families straightforward.
+The implementation is optimized for speed, scalability, and physical repeatability. Core kernels utilize **Numba JIT compilation** with optional **multi-core parallelization**, periodic boundaries are handled via precomputed index arrays, and all stochastic trajectories are fully deterministic when seeded.
 
 ## Scope and methods
 
-The project supports checkerboard and random-site updates, with a clear distinction between equilibrium sweeps and non-equilibrium kinetics. Thermodynamic measurements include magnetization, energy, susceptibility, and heat capacity. Spatial diagnostics include correlation functions, structure factor analysis, vorticity maps, and helicity-related quantities for vector-spin models.
+VibeSpin supports both **Checkerboard Updates** (optimized for equilibrium throughput and SIMD vectorization) and **Random Site Selection** (mandatory for non-equilibrium kinetics and aging studies). 
+
+### Physical Analysis
+- **Thermodynamics**: Magnetization magnitude $|M|$, total energy $E$, susceptibility $\chi$, and specific heat $C_v$.
+- **Spatial Diagnostics**: Radially averaged spin-spin correlation functions $G(r)$ and 2D structure factor $S(k)$ mapping.
+- **Topological Analysis**: Directed phase-wrapping for vorticity maps, vortex density tracking, and helicity modulus calculations.
+- **Kinetics**: Integrated autocorrelation time $\tau_{\text{int}}$ and phase-ordering growth law extraction.
 
 ## Installation
 
-For runtime use:
+For standard simulation use:
 
 ```bash
 pip install -e .
 ```
 
-For development (tests, linting, and type checking):
+For full development capabilities (benchmarking, tests, and notebooks):
 
 ```bash
 pip install -e ".[dev,notebook]"
 pre-commit install
-pre-commit install --hook-type pre-push
 ```
+
+## Benchmarking & Performance
+
+VibeSpin includes a comprehensive performance analysis suite. The benchmark tool measures throughput (sweeps/s), identifies hardware-bound scaling regimes (ns/site), and quantifies the overhead of thermodynamic vs. topological measurements.
+
+```bash
+# Run a scaling benchmark across multiple lattice sizes
+python benchmark.py --sizes 128 256 512 1024 --sweeps 100
+```
+
+Key performance features include:
+- **Parallel Numba**: Checkerboard updates can be distributed across multiple CPU cores using `parallel=True`.
+- **Discrete Representation**: The discrete Clock model replaces trigonometric evaluations with integer lookups, providing up to a ~2.5x speedup over continuous variants.
+- **Pure Metrics**: Benchmarking isolates **Pure Simulation Time** from measurement overhead, allowing for deep algorithmic profiling.
 
 ## Typical usage
 
-A temperature sweep for XY equilibrium analysis can be launched with the command below.
+Launch an equilibrium temperature sweep for the XY model:
 
 ```bash
-python scripts/xy/temperature_sweep.py --size 32 --t-min 0.2 --t-max 1.5 --t-points 10
+python scripts/xy/temperature_sweep.py --size 64 --t-min 0.2 --t-max 1.5 --t-points 20
 ```
 
-BKT-focused analysis can be started with the following script.
+Investigate phase-ordering kinetics in the Ising model using random-site updates:
 
 ```bash
-python scripts/xy/bkt_transition.py --size 64 --temp 0.89
+python scripts/ising/ordering_kinetics.py --size 512 --max-steps 5000
 ```
 
-Ising phase-ordering kinetics can be explored with:
+Generate a visual ordering evolution for the XY model:
 
 ```bash
-python scripts/ising/ordering_kinetics.py --size 256 --max-steps 1000
+python scripts/xy/ordering_evolution.py --size 256 --targets 1 10 100 1000 5000
 ```
-
-XY ordering evolution with snapshot targets can be run with:
-
-```bash
-python scripts/xy/ordering_evolution.py --size 256 --targets 1 10 100 1000
-```
-
-Performance trends across different lattice sizes and update schemes can be analyzed with the benchmark tool. This generates a summary of sweeps per second and identifies overhead from thermodynamic and correlation measurements.
-
-```bash
-python benchmark.py --sizes 64 128 --sweeps 1000
-```
-
-Generated figures and analysis reports are saved to the `results/` directory, organized by model type and experiment category.
 
 ## Development guidance
 
-Simulation kernels should remain in `@njit(cache=True, fastmath=True)` functions, and reproducibility-sensitive runs should specify `seed` values. Logging should go through `utils/system_helpers.py:setup_logging` rather than direct print calls. 
+VibeSpin maintains rigorous engineering and physical standards. All simulation code must strictly adhere to **Metropolis-Hastings prerequisites**, including detailed balance and ergodicity.
 
-For non-equilibrium kinetics scripts (`*_kinetics.py` and `*_evolution.py`), use random-site updates. Temperature sweep scripts (`*_sweep.py`) should keep checkerboard updates for equilibrium throughput.
+### Kernel Constraints
+- Simulation kernels must use `@njit(cache=True, fastmath=True)` and minimize memory allocation.
+- Periodic boundaries must use `idx_next` and `idx_prev` arrays (no `%` or `np.mod` in inner loops).
+- Models must sync Numba's internal RNG using `_seed_numba(seed)`.
 
-Before proposing a commit, run the full verification suite:
+### Verification Suite
+Before proposing changes, ensure all verification checks pass:
 
 ```bash
 pytest
 ruff check .
 mypy --explicit-package-bases models/ utils/ scripts/
-pre-commit run --all-files
 ```
 
-Ensure that new physical logic or utility functions include unit tests in the `tests/` directory to maintain high standards of physical fidelity and code quality.
-
-When a Numba typing failure appears, include the traceback and the kernel source in the debugging prompt. That usually reveals unsupported object usage quickly.
+New models or analysis kernels must be audited for statistical mechanics integrity and include unit tests verifying physical limits (e.g., ground state energy or high-temperature randomization).
 
 ## Project context
 
-This repository was developed with AI-assisted coding workflows in VS Code using Copilot Chat and Gemini CLI during iterative modeling, testing, and documentation work. The goal is to show a practical workflow in which a researcher drives the physical design and validation while AI tools accelerate implementation.
+VibeSpin was developed using AI-assisted scientific coding workflows. The framework demonstrates how high-level physical design and validation can be accelerated through iterative modeling, benchmarking, and automated testing.
 
-For detailed developer and agent instructions, see [AGENTS.md](AGENTS.md).
+For detailed procedural instructions, see [AGENTS.md](AGENTS.md).
