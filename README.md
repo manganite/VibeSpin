@@ -1,5 +1,8 @@
 # VibeSpin
 
+[![Documentation](https://img.shields.io/badge/docs-GitHub%20Pages-blue)](https://manganite.github.io/VibeSpin/)
+[![Tests](https://github.com/manganite/VibeSpin/actions/workflows/tests.yml/badge.svg)](https://github.com/manganite/VibeSpin/actions/workflows/tests.yml)
+
 VibeSpin is a Python framework for high-performance simulation and analysis of two-dimensional lattice spin models. The codebase focuses on three foundational systems: the **Ising model**, the **XY model**, and the **q-state Clock model** (in both continuous and discrete representations). It combines Numba-accelerated Monte Carlo dynamics with a robust analysis suite for equilibrium observables, coarsening kinetics, and topological defect tracking.
 
 The implementation is optimized for speed, scalability, and physical repeatability. Core kernels utilize **Numba JIT compilation** with optional **multi-core parallelization**, periodic boundaries are handled via precomputed index arrays, and all stochastic trajectories are fully deterministic when seeded.
@@ -22,10 +25,10 @@ For standard simulation use:
 pip install -e .
 ```
 
-For full development capabilities (benchmarking, tests, and notebooks):
+For full development capabilities (benchmarking, tests, and documentation):
 
 ```bash
-pip install -e ".[dev,notebook]"
+pip install -e ".[dev,notebook,docs]"
 pre-commit install
 ```
 
@@ -81,15 +84,22 @@ ruff check .
 mypy --explicit-package-bases models/ utils/ scripts/
 ```
 
-New models or analysis kernels must be audited for statistical mechanics integrity and include unit tests verifying physical limits (e.g., ground state energy or high-temperature randomization).
-
 ## Documentation
 
-For deeper insights into the project, refer to the following guides:
-- [PHYSICS.md](PHYSICS.md): Detailed explanation of physical models, observables, and the Metropolis algorithm prerequisites.
-- [SCRIPTS.md](SCRIPTS.md): Comprehensive catalog of the entry-point scripts organized by model family.
-- [AGENTS.md](AGENTS.md): Mandatory procedural context and technical constraints for AI Agents.
-- [Performance_Benchmarks.ipynb](Performance_Benchmarks.ipynb): Detailed scaling analysis and multi-core performance metrics.
+Full documentation is available at **[https://manganite.github.io/VibeSpin/](https://manganite.github.io/VibeSpin/)**.
+
+To build the documentation locally:
+
+```bash
+cd docs
+make html
+```
+
+For deeper insights, refer to the source guides:
+- [PHYSICS.md](PHYSICS.md): Detailed explanation of physical models, observables, and algorithm prerequisites.
+- [SCRIPTS.md](SCRIPTS.md): Comprehensive catalog of entry-point scripts.
+- [AGENTS.md](AGENTS.md): Mandatory technical constraints for AI Agents.
+- [Performance_Benchmarks.ipynb](Performance_Benchmarks.ipynb): Detailed scaling analysis.
 
 ## Project context
 
