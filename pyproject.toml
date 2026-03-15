@@ -29,6 +29,13 @@ notebook = [
     "notebook",
     "ipywidgets",
 ]
+docs = [
+    "sphinx",
+    "myst-parser",
+    "sphinx-rtd-theme",
+    "nbsphinx",
+    "ipython",
+]
 
 [tool.setuptools.packages.find]
 where = ["."]
