@@ -96,13 +96,13 @@ make html
 ```
 
 For deeper insights, refer to the source guides:
-- [PHYSICS.md](PHYSICS.md): Detailed explanation of physical models, observables, and algorithm prerequisites.
-- [SCRIPTS.md](SCRIPTS.md): Comprehensive catalog of entry-point scripts.
-- [AGENTS.md](AGENTS.md): Mandatory technical constraints for AI Agents.
-- [Performance_Benchmarks.ipynb](Performance_Benchmarks.ipynb): Detailed scaling analysis.
+- {doc}`Physics and Algorithm Guide <physics>`: Detailed explanation of physical models, observables, and algorithm prerequisites.
+- {doc}`Scripts Catalog <scripts>`: Comprehensive catalog of entry-point scripts.
+- {doc}`Agent Instruction Guide <agents>`: Mandatory technical constraints for AI Agents.
+- {doc}`Performance Benchmarks <benchmarks>`: Detailed scaling analysis.
 
 ## Project context
 
 VibeSpin was developed using AI-assisted scientific coding workflows. The framework demonstrates how high-level physical design and validation can be accelerated through iterative modeling, benchmarking, and automated testing.
 
-For detailed procedural instructions, see [AGENTS.md](AGENTS.md).
+For detailed procedural instructions, see {doc}`Agent Instruction Guide <agents>`.

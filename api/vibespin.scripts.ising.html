@@ -65,8 +65,7 @@
 </ul>
 </li>
 <li class="toctree-l3"><a class="reference internal" href="vibespin.html#submodules">Submodules</a></li>
-<li class="toctree-l3"><a class="reference internal" href="vibespin.html#vibespin-benchmark-module">vibespin.benchmark module</a></li>
-<li class="toctree-l3"><a class="reference internal" href="vibespin.html#module-contents">Module contents</a></li>
+<li class="toctree-l3"><a class="reference internal" href="vibespin.html#module-benchmark">benchmark module</a></li>
 </ul>
 </li>
 </ul>
@@ -105,23 +104,106 @@
 <section id="submodules">
 <h2>Submodules<a class="headerlink" href="#submodules" title="Link to this heading"></a></h2>
 </section>
-<section id="vibespin-scripts-ising-correlation-comparison-module">
-<h2>vibespin.scripts.ising.correlation_comparison module<a class="headerlink" href="#vibespin-scripts-ising-correlation-comparison-module" title="Link to this heading"></a></h2>
+<section id="module-scripts.ising.correlation_comparison">
+<span id="scripts-ising-correlation-comparison-module"></span><h2>scripts.ising.correlation_comparison module<a class="headerlink" href="#module-scripts.ising.correlation_comparison" title="Link to this heading"></a></h2>
+<p>Comparison of spin-spin correlation functions for the 2D Ising model.
+Analyzes correlation behavior in ferromagnetic, critical, and paramagnetic phases.</p>
+<dl class="py function">
+<dt class="sig sig-object py" id="scripts.ising.correlation_comparison.main">
+<span class="sig-prename descclassname"><span class="pre">scripts.ising.correlation_comparison.</span></span><span class="sig-name descname"><span class="pre">main</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="../_modules/scripts/ising/correlation_comparison.html#main"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#scripts.ising.correlation_comparison.main" title="Link to this definition"></a></dt>
+<dd><p>Run the correlation comparison analysis.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="scripts.ising.correlation_comparison.simulate_correlation">
+<span class="sig-prename descclassname"><span class="pre">scripts.ising.correlation_comparison.</span></span><span class="sig-name descname"><span class="pre">simulate_correlation</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">params</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">float</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">int</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">int</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">int</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">int</span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">ndarray</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">ndarray</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="../_modules/scripts/ising/correlation_comparison.html#simulate_correlation"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#scripts.ising.correlation_comparison.simulate_correlation" title="Link to this definition"></a></dt>
+<dd><p>Worker function: simulate and return the averaged correlation function at temperature T.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>params</strong> (<em>Tuple</em><em> of </em><em>(</em><em>T</em><em>, </em><em>L</em><em>, </em><em>steps</em><em>, </em><em>eq_steps</em><em>, </em><em>sample_interval</em><em>)</em><em>.</em>)</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>A tuple of (r, G_r) - radial distances and averaged correlations.</p>
+</dd>
+</dl>
+</dd></dl>
+
 </section>
-<section id="vibespin-scripts-ising-correlation-divergence-module">
-<h2>vibespin.scripts.ising.correlation_divergence module<a class="headerlink" href="#vibespin-scripts-ising-correlation-divergence-module" title="Link to this heading"></a></h2>
+<section id="module-scripts.ising.correlation_divergence">
+<span id="scripts-ising-correlation-divergence-module"></span><h2>scripts.ising.correlation_divergence module<a class="headerlink" href="#module-scripts.ising.correlation_divergence" title="Link to this heading"></a></h2>
+<p>Analysis of correlation length divergence in the 2D Ising model.
+Extracts the critical exponent nu by fitting correlation lengths near Tc.</p>
+<dl class="py function">
+<dt class="sig sig-object py" id="scripts.ising.correlation_divergence.get_correlation_length">
+<span class="sig-prename descclassname"><span class="pre">scripts.ising.correlation_divergence.</span></span><span class="sig-name descname"><span class="pre">get_correlation_length</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">params</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">float</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">int</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">int</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">int</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">int</span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">float</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">float</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="../_modules/scripts/ising/correlation_divergence.html#get_correlation_length"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#scripts.ising.correlation_divergence.get_correlation_length" title="Link to this definition"></a></dt>
+<dd><p>Simulate and extract correlation length xi for a given temperature.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>params</strong> (<em>Tuple</em><em> of </em><em>(</em><em>T</em><em>, </em><em>L</em><em>, </em><em>steps</em><em>, </em><em>eq_steps</em><em>, </em><em>sample_interval</em><em>)</em><em>.</em>)</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>A tuple of (T, xi).</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="scripts.ising.correlation_divergence.run_divergence_analysis">
+<span class="sig-prename descclassname"><span class="pre">scripts.ising.correlation_divergence.</span></span><span class="sig-name descname"><span class="pre">run_divergence_analysis</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="../_modules/scripts/ising/correlation_divergence.html#run_divergence_analysis"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#scripts.ising.correlation_divergence.run_divergence_analysis" title="Link to this definition"></a></dt>
+<dd><p>Run parallel simulation to extract the critical exponent nu from xi(T) divergence.</p>
+</dd></dl>
+
 </section>
-<section id="vibespin-scripts-ising-ordering-evolution-module">
-<h2>vibespin.scripts.ising.ordering_evolution module<a class="headerlink" href="#vibespin-scripts-ising-ordering-evolution-module" title="Link to this heading"></a></h2>
+<section id="module-scripts.ising.ordering_evolution">
+<span id="scripts-ising-ordering-evolution-module"></span><h2>scripts.ising.ordering_evolution module<a class="headerlink" href="#module-scripts.ising.ordering_evolution" title="Link to this heading"></a></h2>
+<p>Domain ordering evolution visualisation for the 2D Ising model.</p>
+<p>Quenches from a disordered state to T &lt; T_c and records the spin configuration
+at multiple time steps, plotting spin configurations, structure factors, and
+radially averaged correlation functions G(r).</p>
+<dl class="py function">
+<dt class="sig sig-object py" id="scripts.ising.ordering_evolution.main">
+<span class="sig-prename descclassname"><span class="pre">scripts.ising.ordering_evolution.</span></span><span class="sig-name descname"><span class="pre">main</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="../_modules/scripts/ising/ordering_evolution.html#main"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#scripts.ising.ordering_evolution.main" title="Link to this definition"></a></dt>
+<dd><p>Run the simulation and generate a multi-row domain ordering figure.</p>
+</dd></dl>
+
 </section>
-<section id="vibespin-scripts-ising-ordering-kinetics-module">
-<h2>vibespin.scripts.ising.ordering_kinetics module<a class="headerlink" href="#vibespin-scripts-ising-ordering-kinetics-module" title="Link to this heading"></a></h2>
+<section id="module-scripts.ising.ordering_kinetics">
+<span id="scripts-ising-ordering-kinetics-module"></span><h2>scripts.ising.ordering_kinetics module<a class="headerlink" href="#module-scripts.ising.ordering_kinetics" title="Link to this heading"></a></h2>
+<p>Ordering kinetics analysis for the 2D Ising model.</p>
+<p>Starting from a disordered state, quenches to T &lt; T_c and tracks the growth of
+domain size R(t) and the evolution of domain boundaries.</p>
+<dl class="py function">
+<dt class="sig sig-object py" id="scripts.ising.ordering_kinetics.compute_mean_intercept_length">
+<span class="sig-prename descclassname"><span class="pre">scripts.ising.ordering_kinetics.</span></span><span class="sig-name descname"><span class="pre">compute_mean_intercept_length</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">sim</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="vibespin.models.html#models.ising_model.IsingSimulation" title="models.ising_model.IsingSimulation"><span class="pre">IsingSimulation</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">float</span></span></span><a class="reference internal" href="../_modules/scripts/ising/ordering_kinetics.html#compute_mean_intercept_length"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#scripts.ising.ordering_kinetics.compute_mean_intercept_length" title="Link to this definition"></a></dt>
+<dd><p>Estimate domain size using the stereological mean intercept length (MIL).</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="scripts.ising.ordering_kinetics.main">
+<span class="sig-prename descclassname"><span class="pre">scripts.ising.ordering_kinetics.</span></span><span class="sig-name descname"><span class="pre">main</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="../_modules/scripts/ising/ordering_kinetics.html#main"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#scripts.ising.ordering_kinetics.main" title="Link to this definition"></a></dt>
+<dd><p>Run the Ising ordering kinetics simulation.</p>
+</dd></dl>
+
 </section>
-<section id="vibespin-scripts-ising-temperature-sweep-module">
-<h2>vibespin.scripts.ising.temperature_sweep module<a class="headerlink" href="#vibespin-scripts-ising-temperature-sweep-module" title="Link to this heading"></a></h2>
+<section id="module-scripts.ising.temperature_sweep">
+<span id="scripts-ising-temperature-sweep-module"></span><h2>scripts.ising.temperature_sweep module<a class="headerlink" href="#module-scripts.ising.temperature_sweep" title="Link to this heading"></a></h2>
+<p>Standardized temperature sweep for the 2D Ising model.
+Calculates and plots magnetization, energy, susceptibility, and specific heat.</p>
+<dl class="py function">
+<dt class="sig sig-object py" id="scripts.ising.temperature_sweep.run_sweep">
+<span class="sig-prename descclassname"><span class="pre">scripts.ising.temperature_sweep.</span></span><span class="sig-name descname"><span class="pre">run_sweep</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="../_modules/scripts/ising/temperature_sweep.html#run_sweep"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#scripts.ising.temperature_sweep.run_sweep" title="Link to this definition"></a></dt>
+<dd><p>Execute the temperature sweep and generate standardized 4-panel plots.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="scripts.ising.temperature_sweep.simulate_temperature">
+<span class="sig-prename descclassname"><span class="pre">scripts.ising.temperature_sweep.</span></span><span class="sig-name descname"><span class="pre">simulate_temperature</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">params</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">float</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">int</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">int</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">int</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">int</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">float</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">int</span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">float</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">float</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">float</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">float</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">float</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="../_modules/scripts/ising/temperature_sweep.html#simulate_temperature"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#scripts.ising.temperature_sweep.simulate_temperature" title="Link to this definition"></a></dt>
+<dd><p>Worker function to simulate a single temperature point for the Ising model.</p>
+</dd></dl>
+
 </section>
-<section id="module-contents">
-<h2>Module contents<a class="headerlink" href="#module-contents" title="Link to this heading"></a></h2>
+<section id="module-scripts.ising">
+<span id="module-contents"></span><h2>Module contents<a class="headerlink" href="#module-scripts.ising" title="Link to this heading"></a></h2>
 </section>
 </section>
 

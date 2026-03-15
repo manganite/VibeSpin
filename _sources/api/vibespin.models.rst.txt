@@ -4,34 +4,34 @@ vibespin.models package
 Submodules
 ----------
 
-vibespin.models.clock\_model module
------------------------------------
+models.clock\_model module
+--------------------------
 
-.. automodule:: vibespin.models.clock_model
+.. automodule:: models.clock_model
    :members:
    :show-inheritance:
    :undoc-members:
 
-vibespin.models.ising\_model module
------------------------------------
+models.ising\_model module
+--------------------------
 
-.. automodule:: vibespin.models.ising_model
+.. automodule:: models.ising_model
    :members:
    :show-inheritance:
    :undoc-members:
 
-vibespin.models.simulation\_base module
----------------------------------------
+models.simulation\_base module
+------------------------------
 
-.. automodule:: vibespin.models.simulation_base
+.. automodule:: models.simulation_base
    :members:
    :show-inheritance:
    :undoc-members:
 
-vibespin.models.xy\_model module
---------------------------------
+models.xy\_model module
+-----------------------
 
-.. automodule:: vibespin.models.xy_model
+.. automodule:: models.xy_model
    :members:
    :show-inheritance:
    :undoc-members:
@@ -39,7 +39,7 @@ vibespin.models.xy\_model module
 Module contents
 ---------------
 
-.. automodule:: vibespin.models
+.. automodule:: models
    :members:
    :show-inheritance:
    :undoc-members:

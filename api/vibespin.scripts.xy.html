@@ -65,8 +65,7 @@
 </ul>
 </li>
 <li class="toctree-l3"><a class="reference internal" href="vibespin.html#submodules">Submodules</a></li>
-<li class="toctree-l3"><a class="reference internal" href="vibespin.html#vibespin-benchmark-module">vibespin.benchmark module</a></li>
-<li class="toctree-l3"><a class="reference internal" href="vibespin.html#module-contents">Module contents</a></li>
+<li class="toctree-l3"><a class="reference internal" href="vibespin.html#module-benchmark">benchmark module</a></li>
 </ul>
 </li>
 </ul>
@@ -105,26 +104,128 @@
 <section id="submodules">
 <h2>Submodules<a class="headerlink" href="#submodules" title="Link to this heading"></a></h2>
 </section>
-<section id="vibespin-scripts-xy-bkt-transition-module">
-<h2>vibespin.scripts.xy.bkt_transition module<a class="headerlink" href="#vibespin-scripts-xy-bkt-transition-module" title="Link to this heading"></a></h2>
+<section id="module-scripts.xy.bkt_transition">
+<span id="scripts-xy-bkt-transition-module"></span><h2>scripts.xy.bkt_transition module<a class="headerlink" href="#module-scripts.xy.bkt_transition" title="Link to this heading"></a></h2>
+<p>Analysis of the Berezinskii-Kosterlitz-Thouless (BKT) transition in the 2D XY model.
+Measures the average vortex density as a function of temperature.</p>
+<dl class="py function">
+<dt class="sig sig-object py" id="scripts.xy.bkt_transition.run_bkt_study">
+<span class="sig-prename descclassname"><span class="pre">scripts.xy.bkt_transition.</span></span><span class="sig-name descname"><span class="pre">run_bkt_study</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="../_modules/scripts/xy/bkt_transition.html#run_bkt_study"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#scripts.xy.bkt_transition.run_bkt_study" title="Link to this definition"></a></dt>
+<dd><p>Run temperature sweep to observe vortex-density growth near T_BKT.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="scripts.xy.bkt_transition.simulate_bkt_point">
+<span class="sig-prename descclassname"><span class="pre">scripts.xy.bkt_transition.</span></span><span class="sig-name descname"><span class="pre">simulate_bkt_point</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">params</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">float</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">int</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">int</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">int</span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">float</span></span></span><a class="reference internal" href="../_modules/scripts/xy/bkt_transition.html#simulate_bkt_point"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#scripts.xy.bkt_transition.simulate_bkt_point" title="Link to this definition"></a></dt>
+<dd><p>Worker function to simulate a single temperature and measure average vortex density.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>params</strong> (<em>Tuple</em><em> of </em><em>(</em><em>T</em><em>, </em><em>L</em><em>, </em><em>eq_steps</em><em>, </em><em>meas_steps</em><em>)</em><em>.</em>)</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>Average vortex density n_v.</p>
+</dd>
+</dl>
+</dd></dl>
+
 </section>
-<section id="vibespin-scripts-xy-compare-correlations-module">
-<h2>vibespin.scripts.xy.compare_correlations module<a class="headerlink" href="#vibespin-scripts-xy-compare-correlations-module" title="Link to this heading"></a></h2>
+<section id="module-scripts.xy.compare_correlations">
+<span id="scripts-xy-compare-correlations-module"></span><h2>scripts.xy.compare_correlations module<a class="headerlink" href="#module-scripts.xy.compare_correlations" title="Link to this heading"></a></h2>
+<p>Comparison of spin-spin correlation functions G(r) for the XY model.
+Contrasts power-law decay (low T) with exponential decay (high T).</p>
+<dl class="py function">
+<dt class="sig sig-object py" id="scripts.xy.compare_correlations.main">
+<span class="sig-prename descclassname"><span class="pre">scripts.xy.compare_correlations.</span></span><span class="sig-name descname"><span class="pre">main</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="../_modules/scripts/xy/compare_correlations.html#main"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#scripts.xy.compare_correlations.main" title="Link to this definition"></a></dt>
+<dd><p>Run the correlation comparison analysis for the XY model.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="scripts.xy.compare_correlations.simulate_correlation">
+<span class="sig-prename descclassname"><span class="pre">scripts.xy.compare_correlations.</span></span><span class="sig-name descname"><span class="pre">simulate_correlation</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">params</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">float</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">int</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">int</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">int</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">int</span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">ndarray</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">ndarray</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="../_modules/scripts/xy/compare_correlations.html#simulate_correlation"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#scripts.xy.compare_correlations.simulate_correlation" title="Link to this definition"></a></dt>
+<dd><p>Worker function: simulate and return the averaged correlation function at temperature T.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>params</strong> (<em>Tuple</em><em> of </em><em>(</em><em>T</em><em>, </em><em>L</em><em>, </em><em>steps</em><em>, </em><em>eq_steps</em><em>, </em><em>sample_interval</em><em>)</em><em>.</em>)</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>A tuple of (r, G_r) - radial distances and averaged correlations.</p>
+</dd>
+</dl>
+</dd></dl>
+
 </section>
-<section id="vibespin-scripts-xy-helicity-modulus-module">
-<h2>vibespin.scripts.xy.helicity_modulus module<a class="headerlink" href="#vibespin-scripts-xy-helicity-modulus-module" title="Link to this heading"></a></h2>
+<section id="module-scripts.xy.helicity_modulus">
+<span id="scripts-xy-helicity-modulus-module"></span><h2>scripts.xy.helicity_modulus module<a class="headerlink" href="#module-scripts.xy.helicity_modulus" title="Link to this heading"></a></h2>
+<p>Analysis of the helicity modulus (superfluid stiffness) in the 2D XY model.
+Used to identify the universal jump at the BKT transition.</p>
+<dl class="py function">
+<dt class="sig sig-object py" id="scripts.xy.helicity_modulus.run_helicity_sweep">
+<span class="sig-prename descclassname"><span class="pre">scripts.xy.helicity_modulus.</span></span><span class="sig-name descname"><span class="pre">run_helicity_sweep</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="../_modules/scripts/xy/helicity_modulus.html#run_helicity_sweep"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#scripts.xy.helicity_modulus.run_helicity_sweep" title="Link to this definition"></a></dt>
+<dd><p>Run parallel sweep to calculate helicity modulus across the BKT region.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="scripts.xy.helicity_modulus.simulate_helicity">
+<span class="sig-prename descclassname"><span class="pre">scripts.xy.helicity_modulus.</span></span><span class="sig-name descname"><span class="pre">simulate_helicity</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">params</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">float</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">int</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">int</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">int</span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">float</span></span></span><a class="reference internal" href="../_modules/scripts/xy/helicity_modulus.html#simulate_helicity"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#scripts.xy.helicity_modulus.simulate_helicity" title="Link to this definition"></a></dt>
+<dd><p>Run simulation for a single temperature and compute the helicity modulus.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>params</strong> (<em>Tuple</em><em> of </em><em>(</em><em>T</em><em>, </em><em>L</em><em>, </em><em>eq_steps</em><em>, </em><em>meas_steps</em><em>)</em><em>.</em>)</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>Helicity modulus (Upsilon) for this temperature.</p>
+</dd>
+<dt class="field-odd">Raises<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>ValueError</strong> – If <code class="docutils literal notranslate"><span class="pre">T</span></code> is less than or equal to 0.:</p>
+</dd>
+</dl>
+</dd></dl>
+
 </section>
-<section id="vibespin-scripts-xy-ordering-evolution-module">
-<h2>vibespin.scripts.xy.ordering_evolution module<a class="headerlink" href="#vibespin-scripts-xy-ordering-evolution-module" title="Link to this heading"></a></h2>
+<section id="module-scripts.xy.ordering_evolution">
+<span id="scripts-xy-ordering-evolution-module"></span><h2>scripts.xy.ordering_evolution module<a class="headerlink" href="#module-scripts.xy.ordering_evolution" title="Link to this heading"></a></h2>
+<p>Phase ordering evolution visualisation for the 2D XY model.</p>
+<p>Quenches from a disordered state to T &lt; T_BKT and records the spin configuration
+at multiple time steps, plotting phase configurations, vorticity maps, and
+radially averaged correlation functions G(r).</p>
+<dl class="py function">
+<dt class="sig sig-object py" id="scripts.xy.ordering_evolution.main">
+<span class="sig-prename descclassname"><span class="pre">scripts.xy.ordering_evolution.</span></span><span class="sig-name descname"><span class="pre">main</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="../_modules/scripts/xy/ordering_evolution.html#main"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#scripts.xy.ordering_evolution.main" title="Link to this definition"></a></dt>
+<dd><p>Run the simulation and generate a multi-row phase ordering figure.</p>
+</dd></dl>
+
 </section>
-<section id="vibespin-scripts-xy-ordering-kinetics-module">
-<h2>vibespin.scripts.xy.ordering_kinetics module<a class="headerlink" href="#vibespin-scripts-xy-ordering-kinetics-module" title="Link to this heading"></a></h2>
+<section id="module-scripts.xy.ordering_kinetics">
+<span id="scripts-xy-ordering-kinetics-module"></span><h2>scripts.xy.ordering_kinetics module<a class="headerlink" href="#module-scripts.xy.ordering_kinetics" title="Link to this heading"></a></h2>
+<p>Ordering kinetics analysis for the 2D XY model.</p>
+<p>Quenches from a disordered state to T &lt; T_BKT and records length scale
+growth and vortex density decay over time.</p>
+<dl class="py function">
+<dt class="sig sig-object py" id="scripts.xy.ordering_kinetics.main">
+<span class="sig-prename descclassname"><span class="pre">scripts.xy.ordering_kinetics.</span></span><span class="sig-name descname"><span class="pre">main</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="../_modules/scripts/xy/ordering_kinetics.html#main"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#scripts.xy.ordering_kinetics.main" title="Link to this definition"></a></dt>
+<dd><p>Run the XY ordering kinetics simulation.</p>
+</dd></dl>
+
 </section>
-<section id="vibespin-scripts-xy-temperature-sweep-module">
-<h2>vibespin.scripts.xy.temperature_sweep module<a class="headerlink" href="#vibespin-scripts-xy-temperature-sweep-module" title="Link to this heading"></a></h2>
+<section id="module-scripts.xy.temperature_sweep">
+<span id="scripts-xy-temperature-sweep-module"></span><h2>scripts.xy.temperature_sweep module<a class="headerlink" href="#module-scripts.xy.temperature_sweep" title="Link to this heading"></a></h2>
+<p>Standardized temperature sweep for the 2D XY model.
+Calculates and plots magnetization, energy, susceptibility, and specific heat.</p>
+<dl class="py function">
+<dt class="sig sig-object py" id="scripts.xy.temperature_sweep.run_sweep">
+<span class="sig-prename descclassname"><span class="pre">scripts.xy.temperature_sweep.</span></span><span class="sig-name descname"><span class="pre">run_sweep</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="../_modules/scripts/xy/temperature_sweep.html#run_sweep"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#scripts.xy.temperature_sweep.run_sweep" title="Link to this definition"></a></dt>
+<dd><p>Execute the temperature sweep and generate standardized 4-panel plots.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="scripts.xy.temperature_sweep.simulate_temperature">
+<span class="sig-prename descclassname"><span class="pre">scripts.xy.temperature_sweep.</span></span><span class="sig-name descname"><span class="pre">simulate_temperature</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">params</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">float</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">int</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">int</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">int</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">int</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">float</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">int</span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">float</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">float</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">float</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">float</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">float</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="../_modules/scripts/xy/temperature_sweep.html#simulate_temperature"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#scripts.xy.temperature_sweep.simulate_temperature" title="Link to this definition"></a></dt>
+<dd><p>Worker function to simulate a single temperature point for the XY model.</p>
+</dd></dl>
+
 </section>
-<section id="module-contents">
-<h2>Module contents<a class="headerlink" href="#module-contents" title="Link to this heading"></a></h2>
+<section id="module-scripts.xy">
+<span id="module-contents"></span><h2>Module contents<a class="headerlink" href="#module-scripts.xy" title="Link to this heading"></a></h2>
 </section>
 </section>
 

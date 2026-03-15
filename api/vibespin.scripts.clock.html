@@ -65,8 +65,7 @@
 </ul>
 </li>
 <li class="toctree-l3"><a class="reference internal" href="vibespin.html#submodules">Submodules</a></li>
-<li class="toctree-l3"><a class="reference internal" href="vibespin.html#vibespin-benchmark-module">vibespin.benchmark module</a></li>
-<li class="toctree-l3"><a class="reference internal" href="vibespin.html#module-contents">Module contents</a></li>
+<li class="toctree-l3"><a class="reference internal" href="vibespin.html#module-benchmark">benchmark module</a></li>
 </ul>
 </li>
 </ul>
@@ -105,20 +104,64 @@
 <section id="submodules">
 <h2>Submodules<a class="headerlink" href="#submodules" title="Link to this heading"></a></h2>
 </section>
-<section id="vibespin-scripts-clock-compare-discrete-vs-continuous-module">
-<h2>vibespin.scripts.clock.compare_discrete_vs_continuous module<a class="headerlink" href="#vibespin-scripts-clock-compare-discrete-vs-continuous-module" title="Link to this heading"></a></h2>
+<section id="module-scripts.clock.compare_discrete_vs_continuous">
+<span id="scripts-clock-compare-discrete-vs-continuous-module"></span><h2>scripts.clock.compare_discrete_vs_continuous module<a class="headerlink" href="#module-scripts.clock.compare_discrete_vs_continuous" title="Link to this heading"></a></h2>
+<p>Side-by-side temperature sweep: continuous clock (XY + anisotropy) vs discrete clock.</p>
+<dl class="py function">
+<dt class="sig sig-object py" id="scripts.clock.compare_discrete_vs_continuous.main">
+<span class="sig-prename descclassname"><span class="pre">scripts.clock.compare_discrete_vs_continuous.</span></span><span class="sig-name descname"><span class="pre">main</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="../_modules/scripts/clock/compare_discrete_vs_continuous.html#main"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#scripts.clock.compare_discrete_vs_continuous.main" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="scripts.clock.compare_discrete_vs_continuous.sweep_model">
+<span class="sig-prename descclassname"><span class="pre">scripts.clock.compare_discrete_vs_continuous.</span></span><span class="sig-name descname"><span class="pre">sweep_model</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">model_cls</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">type</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">temperatures</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">L</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">q</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">eq_steps</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">meas_steps</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">extra_kwargs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">list</span><span class="p"><span class="pre">[</span></span><span class="pre">float</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">list</span><span class="p"><span class="pre">[</span></span><span class="pre">float</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">list</span><span class="p"><span class="pre">[</span></span><span class="pre">float</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">list</span><span class="p"><span class="pre">[</span></span><span class="pre">float</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="../_modules/scripts/clock/compare_discrete_vs_continuous.html#sweep_model"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#scripts.clock.compare_discrete_vs_continuous.sweep_model" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
 </section>
-<section id="vibespin-scripts-clock-ordering-evolution-module">
-<h2>vibespin.scripts.clock.ordering_evolution module<a class="headerlink" href="#vibespin-scripts-clock-ordering-evolution-module" title="Link to this heading"></a></h2>
+<section id="module-scripts.clock.ordering_evolution">
+<span id="scripts-clock-ordering-evolution-module"></span><h2>scripts.clock.ordering_evolution module<a class="headerlink" href="#module-scripts.clock.ordering_evolution" title="Link to this heading"></a></h2>
+<p>Phase ordering evolution visualisation for the 2D q-state Clock model.</p>
+<p>Quenches from a disordered state to T &lt; T_c and records the spin configuration
+at multiple time steps, plotting phase configurations, vorticity maps, and
+radially averaged correlation functions G(r).</p>
+<dl class="py function">
+<dt class="sig sig-object py" id="scripts.clock.ordering_evolution.main">
+<span class="sig-prename descclassname"><span class="pre">scripts.clock.ordering_evolution.</span></span><span class="sig-name descname"><span class="pre">main</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="../_modules/scripts/clock/ordering_evolution.html#main"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#scripts.clock.ordering_evolution.main" title="Link to this definition"></a></dt>
+<dd><p>Run the simulation and generate a multi-row phase ordering figure.</p>
+</dd></dl>
+
 </section>
-<section id="vibespin-scripts-clock-ordering-kinetics-module">
-<h2>vibespin.scripts.clock.ordering_kinetics module<a class="headerlink" href="#vibespin-scripts-clock-ordering-kinetics-module" title="Link to this heading"></a></h2>
+<section id="module-scripts.clock.ordering_kinetics">
+<span id="scripts-clock-ordering-kinetics-module"></span><h2>scripts.clock.ordering_kinetics module<a class="headerlink" href="#module-scripts.clock.ordering_kinetics" title="Link to this heading"></a></h2>
+<p>Ordering kinetics analysis for the 2D q-state Clock model.</p>
+<p>Quenches from a disordered state to T &lt; T_c and records length scale
+growth and vortex density decay over time.</p>
+<dl class="py function">
+<dt class="sig sig-object py" id="scripts.clock.ordering_kinetics.main">
+<span class="sig-prename descclassname"><span class="pre">scripts.clock.ordering_kinetics.</span></span><span class="sig-name descname"><span class="pre">main</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="../_modules/scripts/clock/ordering_kinetics.html#main"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#scripts.clock.ordering_kinetics.main" title="Link to this definition"></a></dt>
+<dd><p>Run the Clock ordering kinetics simulation.</p>
+</dd></dl>
+
 </section>
-<section id="vibespin-scripts-clock-temperature-sweep-module">
-<h2>vibespin.scripts.clock.temperature_sweep module<a class="headerlink" href="#vibespin-scripts-clock-temperature-sweep-module" title="Link to this heading"></a></h2>
+<section id="module-scripts.clock.temperature_sweep">
+<span id="scripts-clock-temperature-sweep-module"></span><h2>scripts.clock.temperature_sweep module<a class="headerlink" href="#module-scripts.clock.temperature_sweep" title="Link to this heading"></a></h2>
+<p>Standardized temperature sweep for the 2D q-state Clock model.
+Calculates and plots magnetization, energy, susceptibility, and specific heat.</p>
+<dl class="py function">
+<dt class="sig sig-object py" id="scripts.clock.temperature_sweep.run_sweep">
+<span class="sig-prename descclassname"><span class="pre">scripts.clock.temperature_sweep.</span></span><span class="sig-name descname"><span class="pre">run_sweep</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="../_modules/scripts/clock/temperature_sweep.html#run_sweep"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#scripts.clock.temperature_sweep.run_sweep" title="Link to this definition"></a></dt>
+<dd><p>Execute the temperature sweep and generate standardized 4-panel plots.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="scripts.clock.temperature_sweep.simulate_temperature">
+<span class="sig-prename descclassname"><span class="pre">scripts.clock.temperature_sweep.</span></span><span class="sig-name descname"><span class="pre">simulate_temperature</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">params</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">float</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">int</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">int</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">float</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">int</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">int</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">int</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">float</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">int</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">bool</span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">float</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">float</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">float</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">float</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">float</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="../_modules/scripts/clock/temperature_sweep.html#simulate_temperature"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#scripts.clock.temperature_sweep.simulate_temperature" title="Link to this definition"></a></dt>
+<dd><p>Worker function to simulate a single temperature point for the Clock model.</p>
+</dd></dl>
+
 </section>
-<section id="module-contents">
-<h2>Module contents<a class="headerlink" href="#module-contents" title="Link to this heading"></a></h2>
+<section id="module-scripts.clock">
+<span id="module-contents"></span><h2>Module contents<a class="headerlink" href="#module-scripts.clock" title="Link to this heading"></a></h2>
 </section>
 </section>
 

@@ -14,7 +14,7 @@ Subpackages
 Module contents
 ---------------
 
-.. automodule:: vibespin.scripts
+.. automodule:: scripts
    :members:
    :show-inheritance:
    :undoc-members:
