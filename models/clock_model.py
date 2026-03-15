@@ -370,7 +370,6 @@ class ClockSimulation(MonteCarloSimulation):
             )
         return 0.0
 
-
     def _calculate_vorticity(self) -> np.ndarray:
         """Calculate the vorticity (winding number) of each plaquette."""
         if self.spins is not None:
@@ -627,8 +626,7 @@ def discrete_clock_energy_numba(
             jnxt = idx_next[j]
             s = spins[i, j]
             energy -= J * (
-                cos_table[(s - spins[i, jnxt]) % q]
-                + cos_table[(s - spins[inxt, j]) % q]
+                cos_table[(s - spins[i, jnxt]) % q] + cos_table[(s - spins[inxt, j]) % q]
             )
     return energy / (N * N)
 
@@ -680,9 +678,7 @@ class DiscreteClockSimulation(MonteCarloSimulation):
             raise ValueError(f'q must be >= 2 (number of clock states), got {q}')
         if update not in self._VALID_UPDATES:
             valid_opts = sorted(self._VALID_UPDATES)
-            raise ValueError(
-                f'Unknown update scheme {update!r}. Valid options: {valid_opts}'
-            )
+            raise ValueError(f'Unknown update scheme {update!r}. Valid options: {valid_opts}')
         self.J = J
         self.q = q
         self.update = update
@@ -769,27 +765,21 @@ class DiscreteClockSimulation(MonteCarloSimulation):
         """Calculate the vorticity (winding number) of each plaquette."""
         if self.spins is not None:
             vectors = self._spins_as_vectors()
-            return np.asarray(
-                calculate_vorticity_numba(spins=vectors, idx_next=self.idx_next)
-            )
+            return np.asarray(calculate_vorticity_numba(spins=vectors, idx_next=self.idx_next))
         return np.array([])
 
     def _get_vortex_density(self) -> float:
         """Calculate vortex density n_v, the fraction of plaquettes with non-zero winding."""
         if self.spins is not None:
             vectors = self._spins_as_vectors()
-            return float(
-                calculate_vortex_density_numba(spins=vectors, idx_next=self.idx_next)
-            )
+            return float(calculate_vortex_density_numba(spins=vectors, idx_next=self.idx_next))
         return 0.0
 
     def _get_helicity_data(self) -> tuple[float, float]:
         """Calculate sum of cos and sin of angle differences in x-direction."""
         if self.spins is not None:
             vectors = self._spins_as_vectors()
-            cos_sum, sin_sum = get_helicity_data_numba(
-                spins=vectors, idx_next=self.idx_next
-            )
+            cos_sum, sin_sum = get_helicity_data_numba(spins=vectors, idx_next=self.idx_next)
             return float(cos_sum), float(sin_sum)
         return 0.0, 0.0
 
@@ -805,7 +795,8 @@ class DiscreteClockSimulation(MonteCarloSimulation):
         return np.array([])
 
 
-if __name__ == '__main__':
+def main() -> None:
+    """CLI entry point for Clock simulation example."""
     import argparse
     import logging
 
@@ -825,8 +816,8 @@ if __name__ == '__main__':
     logger = setup_logging(level=log_level)
 
     logger.info(
-        f'Initializing {args.q}-state Clock Model (L={args.size}, '
-        f'T={args.temp}, parallel={args.parallel})...'
+        f'Initializing {args.q}-state Clock Model (L={args.size}, T={args.temp}, '
+        f'parallel={args.parallel})...'
     )
     sim = ClockSimulation(
         size=args.size, temp=args.temp, q=args.q, seed=args.seed, parallel=args.parallel
@@ -869,3 +860,7 @@ if __name__ == '__main__':
     output_file = os.path.join(output_dir, 'clock_example.png')
     plt.savefig(output_file)
     logger.info(f'Simulation finished. Plot saved to {output_file}')
+
+
+if __name__ == '__main__':
+    main()

@@ -271,7 +271,8 @@ class IsingSimulation(MonteCarloSimulation):
         return np.array([])
 
 
-if __name__ == '__main__':
+def main() -> None:
+    """CLI entry point for Ising simulation example."""
     import argparse
     import logging
 
@@ -331,3 +332,7 @@ if __name__ == '__main__':
     output_file = os.path.join(output_dir, 'ising_example.png')
     plt.savefig(output_file)
     logger.info(f'Simulation finished. Plot saved to {output_file}')
+
+
+if __name__ == '__main__':
+    main()

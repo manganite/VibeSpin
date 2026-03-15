@@ -305,7 +305,6 @@ class XYSimulation(MonteCarloSimulation):
             return float(xy_energy_numba(spins=self.spins, J=self.J, idx_next=self.idx_next))
         return 0.0
 
-
     def _calculate_vorticity(self) -> np.ndarray:
         """Calculate the vorticity (winding number) of each plaquette."""
         if self.spins is not None:
@@ -336,7 +335,8 @@ class XYSimulation(MonteCarloSimulation):
         return np.array([])
 
 
-if __name__ == '__main__':
+def main() -> None:
+    """CLI entry point for XY simulation example."""
     import argparse
     import logging
 
@@ -355,12 +355,9 @@ if __name__ == '__main__':
     logger = setup_logging(level=log_level)
 
     logger.info(
-        f'Initializing XY Model (L={args.size}, T={args.temp}, '
-        f'parallel={args.parallel})...'
+        f'Initializing XY Model (L={args.size}, T={args.temp}, parallel={args.parallel})...'
     )
-    sim = XYSimulation(
-        size=args.size, temp=args.temp, seed=args.seed, parallel=args.parallel
-    )
+    sim = XYSimulation(size=args.size, temp=args.temp, seed=args.seed, parallel=args.parallel)
 
     logger.info(f'Running for {args.steps} steps...')
     sim.run(n_steps=args.steps)
@@ -411,3 +408,7 @@ if __name__ == '__main__':
     output_file = os.path.join(output_dir, 'xy_example.png')
     plt.savefig(output_file)
     logger.info(f'Simulation finished. Plot saved to {output_file}')
+
+
+if __name__ == '__main__':
+    main()
