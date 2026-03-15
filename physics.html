@@ -111,87 +111,66 @@
 <p>This document details the theoretical foundations, physical models, and algorithmic requirements of the VibeSpin framework.</p>
 <section id="physical-models">
 <h2>1. Physical Models<a class="headerlink" href="#physical-models" title="Link to this heading"></a></h2>
-<p>VibeSpin implements three foundational 2D lattice spin models. Each is defined by its Hamiltonian (energy function) and state space.</p>
+<p>VibeSpin implements three foundational 2D lattice spin models, each defined by its Hamiltonian and state space. They span the full spectrum from discrete to continuous on-site symmetry, and together they cover the major universality classes accessible in two dimensions.</p>
 <section id="ising-model">
 <h3>Ising Model<a class="headerlink" href="#ising-model" title="Link to this heading"></a></h3>
-<p>The simplest model of ferromagnetism.</p>
-<ul class="simple">
-<li><p><strong>State Space</strong>: Discrete spins <span class="math notranslate nohighlight">\(s_i \in \{+1, -1\}\)</span>.</p></li>
-<li><p><strong>Hamiltonian</strong>: <span class="math notranslate nohighlight">\(E = -J \sum_{\langle i,j \rangle} s_i s_j\)</span>, where <span class="math notranslate nohighlight">\(\langle i,j \rangle\)</span> denotes nearest-neighbor pairs.</p></li>
-<li><p><strong>Physics</strong>: Exhibits a second-order phase transition at <span class="math notranslate nohighlight">\(T_c \approx 2.269J/k_B\)</span> in 2D.</p></li>
-</ul>
+<p>The Ising model assigns a scalar spin <span class="math notranslate nohighlight">\(s_i \in \{+1, -1\}\)</span> to every site of a square lattice. Nearest-neighbor pairs interact through the Hamiltonian</p>
+<div class="math notranslate nohighlight">
+\[E = -J \sum_{\langle i,j \rangle} s_i s_j,\]</div>
+<p>where <span class="math notranslate nohighlight">\(\langle i,j \rangle\)</span> runs over all distinct neighbor bonds. The competition between the ferromagnetic coupling <span class="math notranslate nohighlight">\(J &gt; 0\)</span>, which favors alignment, and thermal fluctuations drives a second-order phase transition at the Onsager critical point <span class="math notranslate nohighlight">\(T_c \approx 2.269\,J/k_B\)</span>. Below <span class="math notranslate nohighlight">\(T_c\)</span> the system spontaneously magnetizes; above it, entropy dominates and the net magnetization vanishes.</p>
 </section>
 <section id="xy-model">
 <h3>XY Model<a class="headerlink" href="#xy-model" title="Link to this heading"></a></h3>
-<p>A continuous model for planar spins.</p>
-<ul class="simple">
-<li><p><strong>State Space</strong>: 2D unit vectors <span class="math notranslate nohighlight">\(\mathbf{s}_i = (\cos\theta_i, \sin\theta_i)\)</span>.</p></li>
-<li><p><strong>Hamiltonian</strong>: <span class="math notranslate nohighlight">\(E = -J \sum_{\langle i,j \rangle} \mathbf{s}_i \cdot \mathbf{s}_j = -J \sum_{\langle i,j \rangle} \cos(\theta_i - \theta_j)\)</span>.</p></li>
-<li><p><strong>Physics</strong>: Exhibits the Berezinskii–Kosterlitz–Thouless (BKT) transition driven by vortex-antivortex pairing.</p></li>
-</ul>
+<p>In the XY model each spin is a 2D unit vector <span class="math notranslate nohighlight">\(\mathbf{s}_i = (\cos\theta_i,\,\sin\theta_i)\)</span> free to point in any planar direction. The Hamiltonian takes the form</p>
+<div class="math notranslate nohighlight">
+\[E = -J \sum_{\langle i,j \rangle} \cos(\theta_i - \theta_j).\]</div>
+<p>Because continuous symmetry cannot break spontaneously in two dimensions (Mermin–Wagner theorem), the XY model does not develop true long-range order at any finite temperature. Instead it undergoes the Berezinskii–Kosterlitz–Thouless (BKT) transition: at low temperature, bound vortex–antivortex pairs maintain quasi-long-range order with algebraically decaying correlations, while above <span class="math notranslate nohighlight">\(T_{\mathrm{BKT}}\)</span> the pairs unbind and correlations decay exponentially. This topological mechanism makes the 2D XY model qualitatively distinct from conventional order–disorder transitions.</p>
 </section>
 <section id="q-state-clock-model">
 <h3>q-state Clock Model<a class="headerlink" href="#q-state-clock-model" title="Link to this heading"></a></h3>
-<p>Interpolates between Ising (<span class="math notranslate nohighlight">\(q=2\)</span>) and XY (<span class="math notranslate nohighlight">\(q \to \infty\)</span>).</p>
-<ul class="simple">
-<li><p><strong>State Space</strong>: Spins constrained to <span class="math notranslate nohighlight">\(q\)</span> discrete angles <span class="math notranslate nohighlight">\(\theta_k = 2\pi k/q\)</span>.</p></li>
-<li><p><strong>Implementation</strong>: VibeSpin provides both <strong>Continuous</strong> (XY with anisotropy) and <strong>Discrete</strong> (integer lookup) versions.</p></li>
-<li><p><strong>Hamiltonian</strong>: Same as XY, but with discrete allowed states.</p></li>
-</ul>
+<p>The clock model interpolates between the Ising limit (<span class="math notranslate nohighlight">\(q = 2\)</span>) and the XY limit (<span class="math notranslate nohighlight">\(q \to \infty\)</span>) by restricting spins to <span class="math notranslate nohighlight">\(q\)</span> equally spaced angles <span class="math notranslate nohighlight">\(\theta_k = 2\pi k / q\)</span>. VibeSpin provides two representations. The <strong>continuous</strong> form retains the XY interaction and adds an anisotropy potential that pins spins toward the discrete directions:</p>
+<div class="math notranslate nohighlight">
+\[E = -J \sum_{\langle i,j \rangle} \cos(\theta_i - \theta_j) \;-\; A \sum_i \cos(q\,\theta_i).\]</div>
+<p>The <strong>discrete</strong> form evaluates the same interaction directly on integer state indices <span class="math notranslate nohighlight">\(k_i \in \{0,\dots,q-1\}\)</span> using precomputed cosine lookup tables, eliminating per-site trigonometric calls. For large <span class="math notranslate nohighlight">\(q\)</span> the model exhibits two successive BKT-type crossovers — one for the onset of quasi-long-range order and a lower one for the discrete locking transition — while for small <span class="math notranslate nohighlight">\(q\)</span> the behavior collapses to an Ising-like single transition.</p>
 </section>
 </section>
 <section id="the-metropolis-hastings-algorithm">
 <h2>2. The Metropolis-Hastings Algorithm<a class="headerlink" href="#the-metropolis-hastings-algorithm" title="Link to this heading"></a></h2>
-<p>All simulations in VibeSpin utilize the Metropolis-Hastings algorithm to sample the Boltzmann distribution <span class="math notranslate nohighlight">\(P(s) \propto \exp(-\beta E(s))\)</span>.</p>
+<p>All simulations in VibeSpin sample the Boltzmann distribution <span class="math notranslate nohighlight">\(P(s) \propto \exp(-\beta E(s))\)</span> via the Metropolis-Hastings algorithm.</p>
 <section id="detailed-balance">
 <h3>Detailed Balance<a class="headerlink" href="#detailed-balance" title="Link to this heading"></a></h3>
-<p>To ensure the simulation converges to the correct equilibrium distribution, the transition probability <span class="math notranslate nohighlight">\(W(A \to B)\)</span> must satisfy:
-<span class="math notranslate nohighlight">\(P(A) W(A \to B) = P(B) W(B \to A)\)</span>
-This is achieved using the Metropolis acceptance rule:
-<span class="math notranslate nohighlight">\(P_{acc} = \min(1, \exp(-\beta \Delta E))\)</span></p>
+<p>Convergence to the target distribution requires that every pair of configurations <span class="math notranslate nohighlight">\(A\)</span> and <span class="math notranslate nohighlight">\(B\)</span> satisfies <span class="math notranslate nohighlight">\(P(A)\,W(A \to B) = P(B)\,W(B \to A)\)</span>. The Metropolis acceptance rule</p>
+<div class="math notranslate nohighlight">
+\[P_{\mathrm{acc}} = \min\!\bigl(1,\;\exp(-\beta\,\Delta E)\bigr)\]</div>
+<p>fulfills this condition exactly, accepting all energy-lowering moves and accepting energy-raising moves with an exponentially suppressed probability.</p>
 </section>
 <section id="ergodicity">
 <h3>Ergodicity<a class="headerlink" href="#ergodicity" title="Link to this heading"></a></h3>
-<p>The proposal distribution must allow the system to reach any state from any other state in a finite number of steps.</p>
-<ul class="simple">
-<li><p><strong>Ising</strong>: Single-spin flips ensure ergodicity.</p></li>
-<li><p><strong>Discrete Clock</strong>: Global site-state proposals (<code class="docutils literal notranslate"><span class="pre">randint(0,</span> <span class="pre">q)</span></code>) provide high ergodicity.</p></li>
-<li><p><strong>XY</strong>: Uniform phase proposals in <span class="math notranslate nohighlight">\([-\delta, \delta]\)</span> ensure any configuration is reachable over multiple steps.</p></li>
-</ul>
+<p>The proposal distribution must connect every configuration to every other in a finite number of steps. In the Ising model, single-spin flips are sufficient because any configuration can be reached one flip at a time. The discrete clock model draws each proposal uniformly from the full set of <span class="math notranslate nohighlight">\(q\)</span> states (<code class="docutils literal notranslate"><span class="pre">randint(0,</span> <span class="pre">q)</span></code>), so every site can reach any allowed orientation in a single move. For the XY model, uniform phase perturbations drawn from <span class="math notranslate nohighlight">\([-\delta,\,\delta]\)</span> ensure that successive proposals can accumulate to traverse the entire <span class="math notranslate nohighlight">\([0, 2\pi)\)</span> circle.</p>
 </section>
 <section id="update-schemes">
 <h3>Update Schemes<a class="headerlink" href="#update-schemes" title="Link to this heading"></a></h3>
-<ul class="simple">
-<li><p><strong>Checkerboard Update</strong>: Used for <strong>Equilibrium/Thermodynamics</strong>. Divides the lattice into two independent sublattices (like a chessboard). Each sublattice is updated in parallel, maximizing cache efficiency and SIMD vectorization.</p></li>
-<li><p><strong>Random Site Selection</strong>: Mandatory for <strong>Kinetics/Dynamics</strong>. Randomly selects <span class="math notranslate nohighlight">\(N^2\)</span> sites per sweep. This preserves the exact stochastic trajectory required for studying coarsening and aging.</p></li>
-</ul>
+<p>VibeSpin enforces a strict separation between two update strategies, each valid only in its own physical regime. <strong>Checkerboard updates</strong> are used exclusively for equilibrium and thermodynamic measurements: the lattice is divided into two independent sublattices (analogous to the black and white squares of a chessboard), and each sublattice is swept in parallel. Because no two simultaneously updated sites share a neighbor, this scheme is both correct and highly vectorizable, maximizing SIMD and multi-core throughput. <strong>Random site selection</strong> is mandatory for kinetics and non-equilibrium dynamics: <span class="math notranslate nohighlight">\(N^2\)</span> sites are chosen uniformly at random per sweep, preserving the exact stochastic trajectory needed to study coarsening, domain growth, and aging phenomena. Mixing the two schemes across regimes would invalidate either the parallelism guarantee or the physical time evolution.</p>
 </section>
 </section>
 <section id="physical-observables">
 <h2>3. Physical Observables<a class="headerlink" href="#physical-observables" title="Link to this heading"></a></h2>
 <section id="thermodynamic-averages">
 <h3>Thermodynamic Averages<a class="headerlink" href="#thermodynamic-averages" title="Link to this heading"></a></h3>
-<ul class="simple">
-<li><p><strong>Magnetization</strong>: <span class="math notranslate nohighlight">\(M = \frac{1}{N} \sum_i s_i\)</span>. Measures order.</p></li>
-<li><p><strong>Energy</strong>: <span class="math notranslate nohighlight">\(E = \langle H \rangle / N\)</span>.</p></li>
-<li><p><strong>Susceptibility</strong>: <span class="math notranslate nohighlight">\(\chi = \frac{N}{T} (\langle M^2 \rangle - \langle M \rangle^2)\)</span>.</p></li>
-<li><p><strong>Specific Heat</strong>: <span class="math notranslate nohighlight">\(C_v = \frac{N}{T^2} (\langle E^2 \rangle - \langle E \rangle^2)\)</span>.</p></li>
-</ul>
+<p>The equilibrium state of each model is characterized by four primary thermodynamic quantities. The <strong>magnetization</strong> <span class="math notranslate nohighlight">\(M = N^{-1}\sum_i s_i\)</span> tracks the degree of spontaneous symmetry breaking — it saturates to unity in the ground state and vanishes in the paramagnetic phase. The <strong>energy per site</strong> <span class="math notranslate nohighlight">\(E = \langle H \rangle / N\)</span> reflects the average bond alignment. Fluctuations of these quantities yield two response functions: the <strong>magnetic susceptibility</strong> <span class="math notranslate nohighlight">\(\chi = (N/T)\bigl(\langle M^2 \rangle - \langle M \rangle^2\bigr)\)</span>, which diverges at a continuous phase transition, and the <strong>specific heat</strong> <span class="math notranslate nohighlight">\(C_v = (N/T^2)\bigl(\langle E^2 \rangle - \langle E \rangle^2\bigr)\)</span>, whose peak marks the critical region.</p>
+<p>Temperature-sweep simulations also compute the <strong>entropy</strong> by integrating the specific-heat curve downward from a high-temperature reference:</p>
+<div class="math notranslate nohighlight">
+\[S(T) = S_{\mathrm{ref}} - \int_T^{T_{\mathrm{ref}}} \frac{C_v(T')}{T'}\,dT'.\]</div>
+<p>The highest simulated temperature serves as the reference point. For clock models the absolute high-temperature limit is <span class="math notranslate nohighlight">\(S_{\mathrm{ref}} = \ln q\)</span> per site (in units of <span class="math notranslate nohighlight">\(k_B\)</span>), corresponding to equipartition over all <span class="math notranslate nohighlight">\(q\)</span> orientations.</p>
+<p>Finally, the <strong>integrated autocorrelation time</strong> <span class="math notranslate nohighlight">\(\tau_{\mathrm{int}}\)</span>, extracted from the magnetization time series, quantifies how many sweeps separate statistically independent samples. Near a critical point <span class="math notranslate nohighlight">\(\tau_{\mathrm{int}}\)</span> diverges — the hallmark of critical slowing down — and its magnitude directly governs the statistical efficiency of the Monte Carlo run.</p>
 </section>
 <section id="spatial-diagnostics">
 <h3>Spatial Diagnostics<a class="headerlink" href="#spatial-diagnostics" title="Link to this heading"></a></h3>
-<ul class="simple">
-<li><p><strong>Correlation Function <span class="math notranslate nohighlight">\(G(r)\)</span></strong>: <span class="math notranslate nohighlight">\(\langle \mathbf{s}(0) \cdot \mathbf{s}(r) \rangle\)</span>. Measures the decay of order over distance.</p></li>
-<li><p><strong>Structure Factor <span class="math notranslate nohighlight">\(S(k)\)</span></strong>: The Fourier transform of the spin field. Identifies dominant fluctuation modes.</p></li>
-</ul>
+<p>Two complementary probes measure the spatial structure of equilibrium configurations. The <strong>pair correlation function</strong> <span class="math notranslate nohighlight">\(G(r) = \langle \mathbf{s}(0) \cdot \mathbf{s}(r) \rangle\)</span> reveals how spin–spin alignment decays with distance: exponentially in the disordered phase (with a correlation length <span class="math notranslate nohighlight">\(\xi\)</span>) and algebraically in the quasi-long-range-ordered regime of the XY model. Its Fourier counterpart, the <strong>structure factor</strong> <span class="math notranslate nohighlight">\(S(k)\)</span>, highlights the dominant fluctuation wavevectors — a sharp peak at <span class="math notranslate nohighlight">\(k = 0\)</span> signals ferromagnetic order, while a broad ring indicates short-range correlations at a characteristic length scale.</p>
 </section>
 <section id="topological-diagnostics">
 <h3>Topological Diagnostics<a class="headerlink" href="#topological-diagnostics" title="Link to this heading"></a></h3>
-<ul class="simple">
-<li><p><strong>Vorticity</strong>: Calculated by summing directed phase differences around each plaquette (square of 4 sites).</p></li>
-<li><p><strong>Vortex Density</strong>: The fraction of plaquettes with non-zero winding number.</p></li>
-<li><p><strong>Helicity Modulus</strong>: Measures the system’s stiffness against a phase-twist, used to identify the BKT transition.</p></li>
-</ul>
+<p>In models with continuous or near-continuous symmetry (XY and large-<span class="math notranslate nohighlight">\(q\)</span> clock), point-like topological defects govern the phase behavior. The <strong>vorticity</strong> of a plaquette (elementary square of four sites) is obtained by summing the directed nearest-neighbor phase differences around its perimeter; a non-zero winding number <span class="math notranslate nohighlight">\(\pm 1\)</span> identifies a vortex or antivortex core. The <strong>vortex density</strong> — the fraction of plaquettes carrying a defect — rises sharply above the BKT temperature as thermally excited pairs unbind. The <strong>helicity modulus</strong> <span class="math notranslate nohighlight">\(\Upsilon\)</span> measures the free-energy cost of imposing an infinitesimal phase twist across the system. In the low-temperature phase <span class="math notranslate nohighlight">\(\Upsilon\)</span> remains finite, reflecting superfluid-like stiffness; it drops discontinuously to zero at <span class="math notranslate nohighlight">\(T_{\mathrm{BKT}}\)</span> with the universal Nelson–Kosterlitz jump <span class="math notranslate nohighlight">\(\Upsilon(T_{\mathrm{BKT}}^-) = 2T_{\mathrm{BKT}}/\pi\)</span>, providing the cleanest numerical signature of the BKT transition in two dimensions.</p>
 </section>
 </section>
 </section>

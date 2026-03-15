@@ -54,6 +54,7 @@
 <li class="toctree-l2"><a class="reference internal" href="#ising-model-scripts-ising">1. Ising Model (<code class="docutils literal notranslate"><span class="pre">scripts/ising/</span></code>)</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#xy-model-scripts-xy">2. XY Model (<code class="docutils literal notranslate"><span class="pre">scripts/xy/</span></code>)</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#clock-model-scripts-clock">3. Clock Model (<code class="docutils literal notranslate"><span class="pre">scripts/clock/</span></code>)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#project-level-benchmarking">4. Project-Level Benchmarking</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#usage-guidelines">Usage Guidelines</a><ul>
 <li class="toctree-l3"><a class="reference internal" href="#update-schemes">Update Schemes</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#results">Results</a></li>
@@ -102,7 +103,7 @@
 <section id="ising-model-scripts-ising">
 <h2>1. Ising Model (<code class="docutils literal notranslate"><span class="pre">scripts/ising/</span></code>)<a class="headerlink" href="#ising-model-scripts-ising" title="Link to this heading"></a></h2>
 <ul class="simple">
-<li><p><strong><code class="docutils literal notranslate"><span class="pre">temperature_sweep.py</span></code></strong>: Conducts a full thermodynamic sweep across a range of temperatures. Plots <span class="math notranslate nohighlight">\(|M|\)</span>, <span class="math notranslate nohighlight">\(E\)</span>, <span class="math notranslate nohighlight">\(\chi\)</span>, and <span class="math notranslate nohighlight">\(C_v\)</span>.</p></li>
+<li><p><strong><code class="docutils literal notranslate"><span class="pre">temperature_sweep.py</span></code></strong>: Conducts a full thermodynamic sweep across a range of temperatures. Reports <span class="math notranslate nohighlight">\(|M|\)</span>, <span class="math notranslate nohighlight">\(E\)</span>, <span class="math notranslate nohighlight">\(\chi\)</span>, <span class="math notranslate nohighlight">\(C_v\)</span>, entropy <span class="math notranslate nohighlight">\(S(T)\)</span> from <span class="math notranslate nohighlight">\(C_v/T\)</span> integration, and integrated autocorrelation time <span class="math notranslate nohighlight">\(\tau_{\mathrm{int}}\)</span>.</p></li>
 <li><p><strong><code class="docutils literal notranslate"><span class="pre">ordering_kinetics.py</span></code></strong>: Quenches the system to <span class="math notranslate nohighlight">\(T &lt; T_c\)</span> and tracks the growth of domain size <span class="math notranslate nohighlight">\(R(t)\)</span> over time.</p></li>
 <li><p><strong><code class="docutils literal notranslate"><span class="pre">ordering_evolution.py</span></code></strong>: Generates visual snapshots of the lattice configuration, structure factor, and correlation functions during a quench.</p></li>
 <li><p><strong><code class="docutils literal notranslate"><span class="pre">correlation_divergence.py</span></code></strong>: Extracts the critical exponent <span class="math notranslate nohighlight">\(\nu\)</span> by fitting the correlation length divergence near <span class="math notranslate nohighlight">\(T_c\)</span>.</p></li>
@@ -112,7 +113,7 @@
 <section id="xy-model-scripts-xy">
 <h2>2. XY Model (<code class="docutils literal notranslate"><span class="pre">scripts/xy/</span></code>)<a class="headerlink" href="#xy-model-scripts-xy" title="Link to this heading"></a></h2>
 <ul class="simple">
-<li><p><strong><code class="docutils literal notranslate"><span class="pre">temperature_sweep.py</span></code></strong>: Standard thermodynamic sweep for continuous vector spins.</p></li>
+<li><p><strong><code class="docutils literal notranslate"><span class="pre">temperature_sweep.py</span></code></strong>: Standard thermodynamic sweep for continuous vector spins, including <span class="math notranslate nohighlight">\(|M|\)</span>, <span class="math notranslate nohighlight">\(E\)</span>, <span class="math notranslate nohighlight">\(\chi\)</span>, <span class="math notranslate nohighlight">\(C_v\)</span>, entropy <span class="math notranslate nohighlight">\(S(T)\)</span>, and integrated autocorrelation time <span class="math notranslate nohighlight">\(\tau_{\mathrm{int}}\)</span>.</p></li>
 <li><p><strong><code class="docutils literal notranslate"><span class="pre">ordering_kinetics.py</span></code></strong>: Quenches to <span class="math notranslate nohighlight">\(T &lt; T_{BKT}\)</span> and tracks the decay of vortex density and the growth of the correlation length.</p></li>
 <li><p><strong><code class="docutils literal notranslate"><span class="pre">ordering_evolution.py</span></code></strong>: Visual snapshots including phase maps and vorticity configurations during ordering.</p></li>
 <li><p><strong><code class="docutils literal notranslate"><span class="pre">bkt_transition.py</span></code></strong>: Specifically focuses on the BKT transition by measuring average vortex density vs. temperature.</p></li>
@@ -123,10 +124,16 @@
 <section id="clock-model-scripts-clock">
 <h2>3. Clock Model (<code class="docutils literal notranslate"><span class="pre">scripts/clock/</span></code>)<a class="headerlink" href="#clock-model-scripts-clock" title="Link to this heading"></a></h2>
 <ul class="simple">
-<li><p><strong><code class="docutils literal notranslate"><span class="pre">temperature_sweep.py</span></code></strong>: Thermodynamic sweep for the q-state clock model.</p></li>
+<li><p><strong><code class="docutils literal notranslate"><span class="pre">temperature_sweep.py</span></code></strong>: Thermodynamic sweep for the q-state clock model, including <span class="math notranslate nohighlight">\(|M|\)</span>, <span class="math notranslate nohighlight">\(E\)</span>, <span class="math notranslate nohighlight">\(\chi\)</span>, <span class="math notranslate nohighlight">\(C_v\)</span>, entropy <span class="math notranslate nohighlight">\(S(T)\)</span> (with optional <span class="math notranslate nohighlight">\(S_{\mathrm{ref}}=\ln q\)</span> normalization), and integrated autocorrelation time <span class="math notranslate nohighlight">\(\tau_{\mathrm{int}}\)</span>.</p></li>
 <li><p><strong><code class="docutils literal notranslate"><span class="pre">ordering_kinetics.py</span></code></strong>: Analyzes the ordering dynamics after a quench.</p></li>
 <li><p><strong><code class="docutils literal notranslate"><span class="pre">ordering_evolution.py</span></code></strong>: Visualizes the evolution of discrete phase domains.</p></li>
 <li><p><strong><code class="docutils literal notranslate"><span class="pre">compare_discrete_vs_continuous.py</span></code></strong>: Provides a side-by-side performance and physical comparison between the continuous (XY + anisotropy) and discrete implementations.</p></li>
+</ul>
+</section>
+<section id="project-level-benchmarking">
+<h2>4. Project-Level Benchmarking<a class="headerlink" href="#project-level-benchmarking" title="Link to this heading"></a></h2>
+<ul class="simple">
+<li><p><strong><code class="docutils literal notranslate"><span class="pre">benchmark.py</span></code></strong>: Top-level performance benchmark driver for cross-model throughput and scaling studies. Produces comparative metrics (sweeps/s, ns/site, pure-vs-analysis timing splits) and feeds the benchmark notebook summary.</p></li>
 </ul>
 </section>
 <section id="usage-guidelines">
