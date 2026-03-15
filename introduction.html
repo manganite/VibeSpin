@@ -104,6 +104,8 @@
              
   <section class="tex2jax_ignore mathjax_ignore" id="vibespin">
 <h1>VibeSpin<a class="headerlink" href="#vibespin" title="Link to this heading"></a></h1>
+<p><a class="reference external" href="https://manganite.github.io/VibeSpin/"><img alt="Documentation" src="https://img.shields.io/badge/docs-GitHub%20Pages-blue" /></a>
+<a class="reference external" href="https://github.com/manganite/VibeSpin/actions/workflows/tests.yml"><img alt="Tests" src="https://github.com/manganite/VibeSpin/actions/workflows/tests.yml/badge.svg" /></a></p>
 <p>VibeSpin is a Python framework for high-performance simulation and analysis of two-dimensional lattice spin models. The codebase focuses on three foundational systems: the <strong>Ising model</strong>, the <strong>XY model</strong>, and the <strong>q-state Clock model</strong> (in both continuous and discrete representations). It combines Numba-accelerated Monte Carlo dynamics with a robust analysis suite for equilibrium observables, coarsening kinetics, and topological defect tracking.</p>
 <p>The implementation is optimized for speed, scalability, and physical repeatability. Core kernels utilize <strong>Numba JIT compilation</strong> with optional <strong>multi-core parallelization</strong>, periodic boundaries are handled via precomputed index arrays, and all stochastic trajectories are fully deterministic when seeded.</p>
 <section id="scope-and-methods">
@@ -125,8 +127,8 @@
 <div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>pip<span class="w"> </span>install<span class="w"> </span>-e<span class="w"> </span>.
 </pre></div>
 </div>
-<p>For full development capabilities (benchmarking, tests, and notebooks):</p>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>pip<span class="w"> </span>install<span class="w"> </span>-e<span class="w"> </span><span class="s2">&quot;.[dev,notebook]&quot;</span>
+<p>For full development capabilities (benchmarking, tests, and documentation):</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>pip<span class="w"> </span>install<span class="w"> </span>-e<span class="w"> </span><span class="s2">&quot;.[dev,notebook,docs]&quot;</span>
 pre-commit<span class="w"> </span>install
 </pre></div>
 </div>
@@ -179,17 +181,22 @@ ruff<span class="w"> </span>check<span class="w"> </span>.
 mypy<span class="w"> </span>--explicit-package-bases<span class="w"> </span>models/<span class="w"> </span>utils/<span class="w"> </span>scripts/
 </pre></div>
 </div>
-<p>New models or analysis kernels must be audited for statistical mechanics integrity and include unit tests verifying physical limits (e.g., ground state energy or high-temperature randomization).</p>
 </section>
 </section>
 <section id="documentation">
 <h2>Documentation<a class="headerlink" href="#documentation" title="Link to this heading"></a></h2>
-<p>For deeper insights into the project, refer to the following guides:</p>
+<p>Full documentation is available at <strong><a class="reference external" href="https://manganite.github.io/VibeSpin/">https://manganite.github.io/VibeSpin/</a></strong>.</p>
+<p>To build the documentation locally:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="nb">cd</span><span class="w"> </span>docs
+make<span class="w"> </span>html
+</pre></div>
+</div>
+<p>For deeper insights, refer to the source guides:</p>
 <ul class="simple">
-<li><p><a class="reference internal" href="#PHYSICS.md"><span class="xref myst">PHYSICS.md</span></a>: Detailed explanation of physical models, observables, and the Metropolis algorithm prerequisites.</p></li>
-<li><p><a class="reference internal" href="#SCRIPTS.md"><span class="xref myst">SCRIPTS.md</span></a>: Comprehensive catalog of the entry-point scripts organized by model family.</p></li>
-<li><p><a class="reference internal" href="#AGENTS.md"><span class="xref myst">AGENTS.md</span></a>: Mandatory procedural context and technical constraints for AI Agents.</p></li>
-<li><p><a class="reference internal" href="#Performance_Benchmarks.ipynb"><span class="xref myst">Performance_Benchmarks.ipynb</span></a>: Detailed scaling analysis and multi-core performance metrics.</p></li>
+<li><p><a class="reference internal" href="#PHYSICS.md"><span class="xref myst">PHYSICS.md</span></a>: Detailed explanation of physical models, observables, and algorithm prerequisites.</p></li>
+<li><p><a class="reference internal" href="#SCRIPTS.md"><span class="xref myst">SCRIPTS.md</span></a>: Comprehensive catalog of entry-point scripts.</p></li>
+<li><p><a class="reference internal" href="#AGENTS.md"><span class="xref myst">AGENTS.md</span></a>: Mandatory technical constraints for AI Agents.</p></li>
+<li><p><a class="reference internal" href="#Performance_Benchmarks.ipynb"><span class="xref myst">Performance_Benchmarks.ipynb</span></a>: Detailed scaling analysis.</p></li>
 </ul>
 </section>
 <section id="project-context">
