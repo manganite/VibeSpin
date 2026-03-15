@@ -66,6 +66,7 @@ exclude_lines = [
 # Target Python version (matches local .venv / Python 3.12)
 target-version = "py312"
 line-length = 100
+extend-exclude = ["*.ipynb"]
 
 [tool.ruff.lint]
 # Enable specific rule sets:
