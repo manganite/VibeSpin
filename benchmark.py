@@ -2,6 +2,7 @@
 Comprehensive scaling benchmark for the VibeSpin Simulation Project.
 Measures performance of MC sweeps and analysis functions across different lattice sizes.
 """
+from __future__ import annotations
 
 import argparse
 import time
@@ -11,11 +12,14 @@ import numpy as np
 
 from models.clock_model import ClockSimulation, DiscreteClockSimulation
 from models.ising_model import IsingSimulation
+from models.simulation_base import MonteCarloSimulation
 from models.xy_model import XYSimulation
 from utils.system_helpers import ensure_results_dir, save_plot
 
 
-def measure_performance(sim, sweeps=100, analysis_iters=50):
+def measure_performance(
+    sim: MonteCarloSimulation, sweeps: int = 100, analysis_iters: int = 50
+) -> dict[str, float]:
     """Measure sweeps/sec and analysis times for a simulation instance."""
     # Warm-up: trigger JIT
     sim.step()
@@ -83,7 +87,7 @@ def measure_performance(sim, sweeps=100, analysis_iters=50):
     }
 
 
-def run_scaling_benchmark():
+def run_scaling_benchmark() -> None:
     parser = argparse.ArgumentParser(description='Scaling Benchmark')
     parser.add_argument(
         '--sizes',
@@ -122,7 +126,7 @@ def run_scaling_benchmark():
         ),
     ]
 
-    all_results = {name: {} for name, _ in model_configs}
+    all_results: dict[str, dict[int, dict[str, float]]] = {name: {} for name, _ in model_configs}
 
     print(f'Starting scaling benchmark for sizes: {sizes}\n')
 
@@ -213,7 +217,7 @@ def run_scaling_benchmark():
     ax6.axhline(1.0, color='black', linestyle='--', alpha=0.5)
     ax6.grid(True, alpha=0.3)
 
-    plt.tight_layout(rect=[0, 0.03, 1, 0.95])
+    plt.tight_layout(rect=(0, 0.03, 1, 0.95))
     ensure_results_dir(directory=args.output_dir)
     save_plot(filename='scaling_benchmark.png', directory=args.output_dir)
 
@@ -230,12 +234,12 @@ def run_scaling_benchmark():
         m = all_results[name][L_max]
         sw_ms = (1.0 / m['sps']) * 1000
         ns_site = sw_ms / (L_max * L_max) * 1e6
-        topo_ms = m['vort_ms'] + m['vden_ms'] + m['heli_ms']
-        ratio = (m['thermo_ms'] + m['corr_ms'] + topo_ms) / sw_ms
+        topo_total_ms: float = m['vort_ms'] + m['vden_ms'] + m['heli_ms']
+        ratio = (m['thermo_ms'] + m['corr_ms'] + topo_total_ms) / sw_ms
         print(
             f'{name:<20} | {m["sps"]:>10.1f} | {ns_site:>10.2f} | '
             f'{m["thermo_ms"]:>10.3f} | {m["corr_ms"]:>10.3f} | '
-            f'{topo_ms:>10.3f} | {ratio:>10.2f}x'
+            f'{topo_total_ms:>10.3f} | {ratio:>10.2f}x'
         )
     print('=' * 115)
 
