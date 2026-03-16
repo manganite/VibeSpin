@@ -9,7 +9,7 @@ VibeSpin provides a suite of entry-point scripts for conducting physics experime
 - **`ordering_evolution.py`**: Generates visual snapshots of the lattice configuration, structure factor, and correlation functions during a quench.
 - **`correlation_divergence.py`**: Extracts the critical exponent $\nu$ by fitting the correlation length divergence near $T_c$.
 - **`correlation_comparison.py`**: Compares the functional form of $G(r)$ in the ferromagnetic, critical, and paramagnetic phases.
-- **`wolff_efficiency.py`**: Compares the Metropolis checkerboard and Wolff cluster algorithms across the critical regime. Reports integrated autocorrelation time $\tau_{\mathrm{int}}$, independent samples per second (ISS), mean cluster size fraction $\langle C \rangle/N^2$, and susceptibility $\chi(T)$ for both algorithms. Saves results to `results/ising/wolff_efficiency.npz` for re-use by `Wolff_Efficiency.ipynb` and a 4-panel summary figure to `results/ising/wolff_efficiency.png`.
+- **`wolff_efficiency.py`**: Compares the Metropolis checkerboard and Wolff cluster algorithms across the critical regime. Reports integrated autocorrelation time $\tau_{\mathrm{int}}$, independent samples per second (ISS), mean cluster size fraction $\langle C \rangle/N^2$, and susceptibility $\chi(T)$ for both algorithms. Saves results to `results/ising/wolff_efficiency.npz` for re-use by `notebooks/Wolff_Efficiency.ipynb` and a 4-panel summary figure to `results/ising/wolff_efficiency.png`.
 
 ## 2. XY Model (`scripts/xy/`)
 
@@ -37,7 +37,7 @@ VibeSpin provides a suite of entry-point scripts for conducting physics experime
 As mandated in `AGENTS.md`:
 - Use **`--update random`** (or default in kinetics scripts) for any time-dependent study.
 - Use **`--update checkerboard`** (default in sweep scripts) for equilibrium measurements.
-- Use **`--update wolff`** when sweeping temperatures within roughly 20% of $T_c$. The Wolff cluster algorithm reduces $\tau_{\mathrm{int}}$ by an order of magnitude near criticality, improving the ISS rate proportionally. See `Wolff_Efficiency.ipynb` for a quantitative demonstration.
+- Use **`--update wolff`** when sweeping temperatures within roughly 20% of $T_c$. The Wolff cluster algorithm reduces $\tau_{\mathrm{int}}$ by an order of magnitude near criticality, improving the ISS rate proportionally. See `notebooks/Wolff_Efficiency.ipynb` for a quantitative demonstration.
 
 ### Results
 All scripts save their output (plots and data files) to the `results/` directory, sub-divided by model and experiment type.
