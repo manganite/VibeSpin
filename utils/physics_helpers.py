@@ -356,7 +356,20 @@ def compute_kinetics_metrics(*, sim: MonteCarloSimulation) -> dict[str, float]:
 def power_fit(
     *, t_arr: np.ndarray, y_arr: np.ndarray, mask: np.ndarray
 ) -> tuple[float, float] | tuple[None, None]:
-    """Return (exponent, prefactor) from a log-log linear fit, or (None, None)."""
+    """
+    Fit a power law y = prefactor * t^exponent via log-log linear regression.
+
+    Parameters
+    ----------
+        t_arr: Independent variable array (e.g., time or length scale).
+        y_arr: Dependent variable array; only positive values are used in the fit.
+        mask: Boolean mask selecting the subset of points to include.
+
+    Returns
+    -------
+        exponent: Fitted power-law exponent, or None if fewer than 3 valid points.
+        prefactor: Fitted prefactor, or None if fewer than 3 valid points.
+    """
     valid = mask & (y_arr > 0)
     if valid.sum() < 3:
         return None, None

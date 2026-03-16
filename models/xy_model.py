@@ -88,6 +88,18 @@ def xy_step_parallel_numba(
 ) -> np.ndarray:
     """
     Parallel version of xy_step_numba.
+
+    Parameters
+    ----------
+        spins: (N, N, 2) array of unit vectors.
+        beta: Inverse temperature 1/kT.
+        J: Coupling constant.
+        idx_next: Pre-calculated next-neighbor indices.
+        idx_prev: Pre-calculated previous-neighbor indices.
+
+    Returns
+    -------
+        Updated spins array.
     """
     N = spins.shape[0]
     deltas = np.random.uniform(-0.5, 0.5, size=(N, N))

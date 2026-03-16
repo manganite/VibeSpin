@@ -108,6 +108,20 @@ def clock_step_parallel_numba(
 ) -> np.ndarray:
     """
     Parallel version of clock_step_numba.
+
+    Parameters
+    ----------
+        spins: (N, N, 2) array of unit vectors.
+        beta: Inverse temperature 1/kT.
+        J: Coupling constant.
+        A: Anisotropy strength.
+        q: Number of clock states.
+        idx_next: Pre-calculated next-neighbor indices.
+        idx_prev: Pre-calculated previous-neighbor indices.
+
+    Returns
+    -------
+        Updated spins array.
     """
     N = spins.shape[0]
     deltas = np.random.uniform(-0.5, 0.5, size=(N, N))
@@ -622,6 +636,20 @@ def discrete_clock_step_parallel_numba(
 ) -> np.ndarray:
     """
     Parallel version of discrete_clock_step_numba.
+
+    Parameters
+    ----------
+        spins: (N, N) array of integer spin states in {0, ..., q-1}.
+        beta: Inverse temperature 1/kT.
+        J: Coupling constant.
+        q: Number of clock states.
+        cos_table: Pre-computed cos(2*pi*d/q) for d in {0, ..., q-1}.
+        idx_next: Pre-calculated next-neighbor indices.
+        idx_prev: Pre-calculated previous-neighbor indices.
+
+    Returns
+    -------
+        Updated spins array.
     """
     N = spins.shape[0]
     proposals = np.random.randint(0, q, size=(N, N))

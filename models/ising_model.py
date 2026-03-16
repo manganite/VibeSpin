@@ -69,6 +69,18 @@ def ising_step_parallel_numba(
 ) -> np.ndarray:
     """
     Parallel version of ising_step_numba using numba.prange.
+
+    Parameters
+    ----------
+        spins: (N, N) array of spins (+1 or -1).
+        beta: Inverse temperature 1/kT.
+        J: Coupling constant.
+        idx_next: Pre-calculated next-neighbor indices.
+        idx_prev: Pre-calculated previous-neighbor indices.
+
+    Returns
+    -------
+        Updated spins array.
     """
     N = spins.shape[0]
     prob4 = np.exp(-4.0 * J * beta)
