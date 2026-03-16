@@ -34,7 +34,7 @@ pre-commit install
 
 ### Devcontainer Jupyter Auto-Start
 
-In this repository's devcontainer, JupyterLab starts automatically and listens on port 8888. The startup path is configured in [.devcontainer/devcontainer.json](.devcontainer/devcontainer.json) and launches [start-jupyter.sh](.devcontainer/scripts/start-jupyter.sh), which waits for the project virtual environment to be ready and then starts JupyterLab in detached mode.
+In this repository's devcontainer, JupyterLab starts automatically and listens on port 8888. The startup path is defined in the repository's [devcontainer.json on GitHub](https://github.com/manganite/VibeSpin/blob/master/.devcontainer/devcontainer.json) and launches the companion [start-jupyter.sh helper on GitHub](https://github.com/manganite/VibeSpin/blob/master/.devcontainer/scripts/start-jupyter.sh), which waits for the project virtual environment to be ready and then starts JupyterLab in detached mode.
 
 After rebuilding the container, verify the server with the venv binary directly:
 
