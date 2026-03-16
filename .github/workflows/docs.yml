@@ -39,6 +39,10 @@ jobs:
       run: |
         git diff --exit-code -- docs/source/api
 
+    - name: Validate docs markdown links
+      run: |
+        python docs/check_markdown_links.py
+
     - name: Build documentation
       run: |
         cd docs

@@ -19,6 +19,13 @@ repos:
 
   - repo: local
     hooks:
+      - id: docs-markdown-links
+        name: docs markdown link guard
+        entry: .venv/bin/python docs/check_markdown_links.py
+        language: system
+        pass_filenames: false
+        stages: [pre-commit]
+
       - id: sphinx-api-docs-sync
         name: sphinx api docs sync
         entry: bash -lc '.venv/bin/python docs/generate_api_docs.py && git diff --exit-code -- docs/source/api'
