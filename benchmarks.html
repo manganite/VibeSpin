@@ -24,7 +24,7 @@
     <script src="_static/js/theme.js"></script>
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
-    <link rel="next" title="vibespin" href="api/modules.html" />
+    <link rel="next" title="Wolff vs. Metropolis: Algorithmic Efficiency in the Critical Regime" href="wolff_efficiency.html" />
     <link rel="prev" title="Agent Instruction Guide: VibeSpin" href="agents.html" /> 
 </head>
 
@@ -77,6 +77,7 @@
 </li>
 </ul>
 </li>
+<li class="toctree-l1"><a class="reference internal" href="wolff_efficiency.html">Wolff vs. Metropolis: Algorithmic Efficiency in the Critical Regime</a></li>
 </ul>
 <p class="caption" role="heading"><span class="caption-text">API Reference:</span></p>
 <ul>
@@ -114,7 +115,7 @@
 <span class="math notranslate nohighlight">\(\tau_\mathrm{int}\)</span> — are computed once after the window closes from the stored M and E series or from a spin-field snapshot. They carry no per-step cost. Sections below treat each tier separately: the thermodynamic cost section covers per-step M and E collection; G(r) and <span class="math notranslate nohighlight">\(\tau_\mathrm{int}\)</span> have dedicated sections since their scaling and use differ from per-step collection.</p>
 <p>Because Numba JIT compiles each kernel on first call, reported times are only stable after warm-up. The <code class="docutils literal notranslate"><span class="pre">measure_performance</span></code> helper runs three warm-up steps before starting any clock. For reproducible numbers, execute all cells once to compile, then re-run the benchmark cell.</p>
 <div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[8]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[1]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">time</span>
@@ -141,7 +142,7 @@
 <p>The second code cell defines <code class="docutils literal notranslate"><span class="pre">measure_performance</span></code>. It accepts a live simulation instance and runs three silent warm-up steps to trigger JIT compilation for sweep, thermodynamic, and <span class="math notranslate nohighlight">\(G(r)\)</span> kernels before any timing begins. (Compiling the <span class="math notranslate nohighlight">\(G(r)\)</span> kernel at this stage means the dedicated <span class="math notranslate nohighlight">\(G(r)\)</span> section later gets stable timings without its own warm-up pass.) Sweep throughput is then measured over the full <code class="docutils literal notranslate"><span class="pre">sweeps</span></code> count. Thermodynamic collection cost is averaged over
 <code class="docutils literal notranslate"><span class="pre">analysis_iters</span></code> independent calls to <code class="docutils literal notranslate"><span class="pre">_get_energy()</span></code> and <code class="docutils literal notranslate"><span class="pre">_get_magnetization()</span></code>, which represent the per-step overhead incurred inside a measurement window.</p>
 <div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[9]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[2]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># --- Benchmark configuration -------------------------------------------------</span>
@@ -177,7 +178,7 @@
 </div>
 </div>
 <div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[10]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[3]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">measure_performance</span><span class="p">(</span><span class="n">sim</span><span class="p">,</span> <span class="n">sweeps</span><span class="o">=</span><span class="mi">100</span><span class="p">,</span> <span class="n">analysis_iters</span><span class="o">=</span><span class="mi">50</span><span class="p">):</span>
@@ -230,7 +231,7 @@
 ordered phase). Choosing these points ensures realistic acceptance rates rather than trivial cases where nearly every or nearly no proposal is accepted.</p>
 <p>Results are stored in <code class="docutils literal notranslate"><span class="pre">results[model_name][L]</span></code> as a dict with keys <code class="docutils literal notranslate"><span class="pre">sps</span></code> (sweeps per second) and <code class="docutils literal notranslate"><span class="pre">thermo_ms</span></code> (per-step thermodynamic collection cost in milliseconds). All subsequent plots up to the <span class="math notranslate nohighlight">\(G(r)\)</span> section read from this structure.</p>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[11]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[4]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">sizes</span> <span class="o">=</span> <span class="p">[</span><span class="mi">32</span><span class="p">,</span> <span class="mi">64</span><span class="p">,</span> <span class="mi">128</span><span class="p">,</span> <span class="mi">256</span><span class="p">,</span> <span class="mi">512</span><span class="p">]</span>
@@ -278,7 +279,7 @@ ordered phase). Choosing these points ensures realistic acceptance rates rather 
 <div class="prompt empty docutils container">
 </div>
 <div class="output_area docutils container">
-<script type="application/vnd.jupyter.widget-view+json">{"model_id": "2c6c74321eda4f829b3503872447882d", "version_major": 2, "version_minor": 0}</script></div>
+<script type="application/vnd.jupyter.widget-view+json">{"model_id": "9ae08a0c3c5146b592466585abf632ad", "version_major": 2, "version_minor": 0}</script></div>
 </div>
 </section>
 <section id="Throughput:-Log-Log-Plot">
@@ -287,7 +288,7 @@ ordered phase). Choosing these points ensures realistic acceptance rates rather 
 <p>The Ising model occupies the top of the chart. Its binary spin space limits each Metropolis evaluation to two pre-computed Boltzmann factors (<span class="math notranslate nohighlight">\(e^{-4J\beta}\)</span> and <span class="math notranslate nohighlight">\(e^{-8J\beta}\)</span>), with no per-site transcendental functions. XY and the continuous clock both compute <code class="docutils literal notranslate"><span class="pre">arctan2</span></code> and trigonometric evaluations per proposal, which is visible as a substantial throughput drop. The discrete clock reaches for the same Hamiltonian as the continuous clock but evaluates <span class="math notranslate nohighlight">\(\Delta E\)</span> via a
 length-<span class="math notranslate nohighlight">\(q\)</span> cosine table, recovering much of the Ising advantage.</p>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[12]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[5]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">plt</span><span class="o">.</span><span class="n">figure</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">10</span><span class="p">,</span> <span class="mi">6</span><span class="p">))</span>
@@ -326,7 +327,7 @@ length-<span class="math notranslate nohighlight">\(q\)</span> cosine table, rec
 <p>This post-hoc step costs a fixed amount regardless of <span class="math notranslate nohighlight">\(N\)</span> or model — it does not appear in the per-step timings plotted here. <span class="math notranslate nohighlight">\(G(r)\)</span> and <span class="math notranslate nohighlight">\(\tau_\mathrm{int}\)</span> are likewise post-hoc: <span class="math notranslate nohighlight">\(G(r)\)</span> operates on a single spin-field snapshot, and <span class="math notranslate nohighlight">\(\tau_\mathrm{int}\)</span> is extracted from the full <span class="math notranslate nohighlight">\(M(t)\)</span> series; both receive dedicated sections further below.</p>
 <p>The plot shows per-call timing of <code class="docutils literal notranslate"><span class="pre">_get_energy()</span></code> + <code class="docutils literal notranslate"><span class="pre">_get_magnetization()</span></code> vs system size <span class="math notranslate nohighlight">\(N\)</span>. The cost difference between models reflects how each computes instantaneous observables from its spin representation. Ising sums a scalar <span class="math notranslate nohighlight">\(\pm 1\)</span> array in one pass. XY and the clock models project per-site vector components or query lookup tables, roughly doubling the Ising cost. All models scale <span class="math notranslate nohighlight">\(\propto N\)</span>, consistent with a single linear traversal per call.</p>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[13]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[6]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">plt</span><span class="o">.</span><span class="n">figure</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">10</span><span class="p">,</span> <span class="mi">6</span><span class="p">))</span>
@@ -364,7 +365,7 @@ length-<span class="math notranslate nohighlight">\(q\)</span> cosine table, rec
 <p>When the ratio exceeds 1.0 (dashed reference), calling <code class="docutils literal notranslate"><span class="pre">_get_energy()</span></code> and <code class="docutils literal notranslate"><span class="pre">_get_magnetization()</span></code> at every sweep adds more overhead than the sweep itself. Fast-sweeping models such as Ising approach or exceed that crossover at large <span class="math notranslate nohighlight">\(L\)</span> because their sweep time is suppressed by integer arithmetic while the observable evaluation still scans the full <span class="math notranslate nohighlight">\(N\)</span>-site array. Slow-sweeping models such as the continuous clock stay well below 1.0: each sweep is already expensive relative to
 the measurement pass. The discrete clock sits between the two, in line with its intermediate sweep cost.</p>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[14]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[7]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">plt</span><span class="o">.</span><span class="n">figure</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">10</span><span class="p">,</span> <span class="mi">6</span><span class="p">))</span>
@@ -406,7 +407,7 @@ the measurement pass. The discrete clock sits between the two, in line with its 
 most CPUs). Values slightly below 1 are possible when Numba vectorizes inner loops aggressively and memory bandwidth is not yet saturated.</p>
 <p>Comparing <span class="math notranslate nohighlight">\(\alpha\)</span> across models separates models where cost per spin is genuinely constant from those where it drifts with size, independent of the absolute sweep rate shown in earlier plots.</p>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[15]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[8]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">analyze_scaling</span><span class="p">(</span><span class="n">sizes</span><span class="p">,</span> <span class="n">results</span><span class="p">):</span>
@@ -453,7 +454,7 @@ most CPUs). Values slightly below 1 are possible when Numba vectorizes inner loo
 <p>The Ising model sits at the bottom of this chart because each Metropolis proposal requires only a comparison of two integers and one random number; there are only six distinct <span class="math notranslate nohighlight">\(\Delta E\)</span> values, so no per-site trig is needed. XY and the continuous clock pay a full <code class="docutils literal notranslate"><span class="pre">atan2</span></code> plus cosine evaluation per proposal. The discrete clock avoids that by looking up <span class="math notranslate nohighlight">\(\cos(2\pi\,\Delta k/q)\)</span> in a length-<span class="math notranslate nohighlight">\(q\)</span> table, closing roughly 60% of the gap between continuous clock and Ising.
 Random-sequential update variants show slightly higher cost than checkerboard at large <span class="math notranslate nohighlight">\(L\)</span> because random index generation adds a non-trivial per-site overhead relative to the deterministic sublattice stride.</p>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[16]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[9]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">plt</span><span class="o">.</span><span class="n">figure</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">10</span><span class="p">,</span> <span class="mi">6</span><span class="p">))</span>
@@ -496,7 +497,7 @@ Random-sequential update variants show slightly higher cost than checkerboard at
 </ul>
 <p>We quantify two major optimizations below the table: the <strong>Checkerboard Speedup</strong> (achieved via cache-friendly striding and SIMD vectorization) and the <strong>Discrete Speedup</strong> (achieved by replacing trigonometric evaluations with integer lookups).</p>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[17]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[10]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">L_max</span> <span class="o">=</span> <span class="n">sizes</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
@@ -541,24 +542,24 @@ Performance metrics at L = 512 (N = 262144)
 ---------------------------------------------------------------------------------------------------------
 Model                               |   Sweeps/s | Sweep (ms) |  Pure (ms) | Thermo (ms) | Overhead (%)
 ---------------------------------------------------------------------------------------------------------
-Ising (Checkerboard)                |      169.8 |       5.89 |       5.33 |       0.565 |         9.6%
-Ising (Random)                      |       54.8 |      18.24 |      17.76 |       0.478 |         2.6%
-XY (Checkerboard)                   |       43.7 |      22.87 |      16.56 |       6.310 |        27.6%
-XY (Random)                         |       21.3 |      47.04 |      40.16 |       6.882 |        14.6%
-Clock Continuous (Checkerboard)     |       18.8 |      53.26 |      24.89 |      28.363 |        53.3%
-Clock Continuous (Random)           |       11.2 |      89.34 |      66.95 |      22.390 |        25.1%
-Clock Discrete (Checkerboard)       |       56.6 |      17.67 |      13.17 |       4.500 |        25.5%
-Clock Discrete (Random)             |       32.7 |      30.62 |      26.32 |       4.304 |        14.1%
+Ising (Checkerboard)                |      411.1 |       2.43 |       2.25 |       0.180 |         7.4%
+Ising (Random)                      |      136.4 |       7.33 |       7.15 |       0.186 |         2.5%
+XY (Checkerboard)                   |       94.8 |      10.55 |       7.23 |       3.320 |        31.5%
+XY (Random)                         |       46.2 |      21.63 |      18.25 |       3.371 |        15.6%
+Clock Continuous (Checkerboard)     |       31.9 |      31.36 |      14.36 |      17.004 |        54.2%
+Clock Continuous (Random)           |       19.8 |      50.42 |      35.12 |      15.294 |        30.3%
+Clock Discrete (Checkerboard)       |       82.0 |      12.19 |       9.32 |       2.875 |        23.6%
+Clock Discrete (Random)             |       51.7 |      19.36 |      16.66 |       2.700 |        13.9%
 
 1. Checkerboard vs Random Speedup (at constant model representation):
-  Ising             :  3.10x faster with Checkerboard updates
-  XY                :  2.06x faster with Checkerboard updates
-  Clock Continuous  :  1.68x faster with Checkerboard updates
-  Clock Discrete    :  1.73x faster with Checkerboard updates
+  Ising             :  3.01x faster with Checkerboard updates
+  XY                :  2.05x faster with Checkerboard updates
+  Clock Continuous  :  1.61x faster with Checkerboard updates
+  Clock Discrete    :  1.59x faster with Checkerboard updates
 
 2. Discrete vs Continuous Speedup (at constant update scheme):
-  Checkerboard:  3.01x faster with Discrete representation
-  Random      :  2.92x faster with Discrete representation
+  Checkerboard:  2.57x faster with Discrete representation
+  Random      :  2.60x faster with Discrete representation
 </pre></div></div>
 </div>
 </section>
@@ -567,7 +568,7 @@ Clock Discrete (Random)             |       32.7 |      30.62 |      26.32 |    
 <p>The table above reports performance at the largest lattice size and separates total sweep time from measurement overhead. Pure simulation time isolates update-kernel cost, while thermodynamic time captures per-step collection of energy and magnetization during measurement windows.</p>
 <p>Use the checkerboard-versus-random speedup lines to assess update-order efficiency at fixed spin representation, and use the discrete-versus-continuous clock comparison to quantify the gain from lookup-table arithmetic over per-site trigonometric evaluation.</p>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[18]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[11]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">CORR_ITERS</span> <span class="o">=</span> <span class="mi">50</span>  <span class="c1"># timed calls per (model, size)</span>
@@ -655,7 +656,7 @@ Clock Discrete (Random)             |       32.7 |      30.62 |      26.32 |    
 <div class="prompt empty docutils container">
 </div>
 <div class="output_area docutils container">
-<script type="application/vnd.jupyter.widget-view+json">{"model_id": "adc054d5f71c498eabd71484211b0976", "version_major": 2, "version_minor": 0}</script></div>
+<script type="application/vnd.jupyter.widget-view+json">{"model_id": "8a95c43abfb0439b9aaf189dda814b46", "version_major": 2, "version_minor": 0}</script></div>
 </div>
 <div class="nboutput docutils container">
 <div class="prompt empty docutils container">
@@ -672,19 +673,19 @@ Clock Discrete (Random)             |       32.7 |      30.62 |      26.32 |    
 G(r) cost per call at L=512 (N=262144)
 Model                                 ms/call  representation
 ------------------------------------------------------------------------
-Ising (Checkerboard)                    12.16  scalar, 1 FFT
-Ising (Random)                          18.02  scalar, 1 FFT
-XY (Checkerboard)                       21.84  2-component float, 2 FFTs
-XY (Random)                             19.44  2-component float, 2 FFTs
-Clock Continuous (Checkerboard)         18.58  2-component float, 2 FFTs
-Clock Continuous (Random)               15.94  2-component float, 2 FFTs
-Clock Discrete (Checkerboard)           31.27  int -&gt; float + 2 FFTs
-Clock Discrete (Random)                 24.68  int -&gt; float + 2 FFTs
+Ising (Checkerboard)                    10.53  scalar, 1 FFT
+Ising (Random)                          10.07  scalar, 1 FFT
+XY (Checkerboard)                       12.11  2-component float, 2 FFTs
+XY (Random)                             12.20  2-component float, 2 FFTs
+Clock Continuous (Checkerboard)         12.20  2-component float, 2 FFTs
+Clock Continuous (Random)               12.30  2-component float, 2 FFTs
+Clock Discrete (Checkerboard)           18.37  int -&gt; float + 2 FFTs
+Clock Discrete (Random)                 19.01  int -&gt; float + 2 FFTs
 
 Tier means:
-  Ising (scalar, 1 FFT)               15.09 ms  (reference)
-  XY / Clock Continuous (2 FFTs)      18.95 ms  (1.26x Ising)
-  Clock Discrete (convert + 2 FFTs)   27.98 ms  (1.48x XY tier,  1.85x Ising)
+  Ising (scalar, 1 FFT)               10.30 ms  (reference)
+  XY / Clock Continuous (2 FFTs)      12.20 ms  (1.18x Ising)
+  Clock Discrete (convert + 2 FFTs)   18.69 ms  (1.53x XY tier,  1.81x Ising)
 </pre></div></div>
 </div>
 </section>
@@ -695,7 +696,7 @@ Tier means:
 <p><span class="math notranslate nohighlight">\(\tau_{\text{int}}\)</span> is estimated via an FFT-based autocorrelation estimator with the Madras:nbsphinx-math:<cite>u2`013Sokal automatic windowing rule, which cuts integration at lag :math:`W = 6,tau_{text{int}}</cite> to suppress noise accumulation at large lags. Each model is run for a <span class="math notranslate nohighlight">\(500\)</span>-sweep burn-in then a <span class="math notranslate nohighlight">\(2000\)</span>-sweep magnetization series at <span class="math notranslate nohighlight">\(L=64\)</span>; this is long enough for well-separated phases but may under-resolve <span class="math notranslate nohighlight">\(\tau_{\text{int}}\)</span> right at a critical point where
 the true value diverges with <span class="math notranslate nohighlight">\(L\)</span>. In that case the reported number is a lower bound.</p>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[19]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[12]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">TAU_L</span>      <span class="o">=</span> <span class="mi">64</span>    <span class="c1"># lattice size for autocorrelation measurement</span>
@@ -732,7 +733,7 @@ the true value diverges with <span class="math notranslate nohighlight">\(L\)</s
 <div class="prompt empty docutils container">
 </div>
 <div class="output_area docutils container">
-<script type="application/vnd.jupyter.widget-view+json">{"model_id": "5080848c83794c3f9764fed032fe103d", "version_major": 2, "version_minor": 0}</script></div>
+<script type="application/vnd.jupyter.widget-view+json">{"model_id": "115f43a55ead4a2fab707367d9e4eb4f", "version_major": 2, "version_minor": 0}</script></div>
 </div>
 <div class="nboutput nblast docutils container">
 <div class="prompt empty docutils container">
@@ -743,18 +744,18 @@ MC autocorrelation at L=64  (2000-sweep series, 500-step burn-in)
 ------------------------------------------------------------------------
 Model                                 tau_int (sweeps)    ISS (samples/s)
 ------------------------------------------------------------------------
-Ising (Checkerboard)                            153.1              52.4
-Ising (Random)                                  269.1              16.6
-XY (Checkerboard)                               145.6              17.7
-XY (Random)                                     296.1               7.0
-Clock Continuous (Checkerboard)                  97.9              12.6
-Clock Continuous (Random)                       139.6               7.2
-Clock Discrete (Checkerboard)                   313.7               5.9
-Clock Discrete (Random)                          75.2              26.3
+Ising (Checkerboard)                            153.1             137.2
+Ising (Random)                                  269.1              33.6
+XY (Checkerboard)                               145.6              40.9
+XY (Random)                                     296.1              15.2
+Clock Continuous (Checkerboard)                  97.9              27.9
+Clock Continuous (Random)                       139.6              16.7
+Clock Discrete (Checkerboard)                   313.7              18.5
+Clock Discrete (Random)                          75.2              47.6
 </pre></div></div>
 </div>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[20]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[13]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">fig</span><span class="p">,</span> <span class="p">(</span><span class="n">ax1</span><span class="p">,</span> <span class="n">ax2</span><span class="p">)</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">14</span><span class="p">,</span> <span class="mi">6</span><span class="p">))</span>
@@ -806,7 +807,7 @@ Clock Discrete (Random)                          75.2              26.3
 <h3>Efficiency: Nanoseconds per site update<a class="headerlink" href="#Efficiency:-Nanoseconds-per-site-update" title="Link to this heading"></a></h3>
 <p>Throughput (sweeps/s) decreases as <span class="math notranslate nohighlight">\(N\)</span> increases, but the cost per spin update should ideally remain constant. The plot below shows this metric for all models. Upward drifts at large <span class="math notranslate nohighlight">\(L\)</span> indicate hardware bottlenecks (cache misses or memory bandwidth saturation), while downward drifts suggest Numba’s vectorization becoming more effective.</p>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[21]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[14]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">plt</span><span class="o">.</span><span class="n">figure</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">10</span><span class="p">,</span> <span class="mi">6</span><span class="p">))</span>
@@ -841,7 +842,7 @@ Clock Discrete (Random)                          75.2              26.3
 <h3>Topological and Vector Analysis Cost<a class="headerlink" href="#Topological-and-Vector-Analysis-Cost" title="Link to this heading"></a></h3>
 <p>Physical studies of the XY and Clock models often depend on detecting topological defects (vortices) or calculating the helicity modulus (phase-twist response). These operations involve multiple trigonometric sums and phase-wrapping operations per site, making them significantly costlier than standard thermodynamic measurements.</p>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[22]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[15]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">topo_results</span> <span class="o">=</span> <span class="p">{</span><span class="n">name</span><span class="p">:</span> <span class="p">{}</span> <span class="k">for</span> <span class="n">name</span><span class="p">,</span> <span class="n">_</span> <span class="ow">in</span> <span class="n">model_configs</span> <span class="k">if</span> <span class="s1">&#39;Ising&#39;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">name</span><span class="p">}</span>
@@ -880,7 +881,7 @@ Clock Discrete (Random)                          75.2              26.3
 <div class="prompt empty docutils container">
 </div>
 <div class="output_area docutils container">
-<script type="application/vnd.jupyter.widget-view+json">{"model_id": "2ab3b57832b14447961e88db5ad8929c", "version_major": 2, "version_minor": 0}</script></div>
+<script type="application/vnd.jupyter.widget-view+json">{"model_id": "2f2bb259efa84b4e9740fa3836c0c1a9", "version_major": 2, "version_minor": 0}</script></div>
 </div>
 <div class="nboutput nblast docutils container">
 <div class="prompt empty docutils container">
@@ -895,7 +896,7 @@ Clock Discrete (Random)                          75.2              26.3
 <p>This section times non-local observables for XY and clock-family models, focusing on vortex-density and helicity related computations that require plaquette traversals and additional phase operations.</p>
 <p>Compared with per-step thermodynamic collection, these routines are analysis-heavy and are typically evaluated intermittently rather than every sweep. The plot above should be read as an analysis budget curve versus lattice size, not as an update-kernel throughput metric.</p>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[23]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[16]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">p_sizes</span> <span class="o">=</span> <span class="p">[</span><span class="mi">128</span><span class="p">,</span> <span class="mi">256</span><span class="p">,</span> <span class="mi">512</span><span class="p">,</span> <span class="mi">1024</span><span class="p">]</span>
@@ -940,7 +941,7 @@ Clock Discrete (Random)                          75.2              26.3
 <div class="prompt empty docutils container">
 </div>
 <div class="output_area docutils container">
-<script type="application/vnd.jupyter.widget-view+json">{"model_id": "930453b8808d4e56b48871907721355a", "version_major": 2, "version_minor": 0}</script></div>
+<script type="application/vnd.jupyter.widget-view+json">{"model_id": "be98f0825b5a45f1aca4accd37b864d1", "version_major": 2, "version_minor": 0}</script></div>
 </div>
 <div class="nboutput nblast docutils container">
 <div class="prompt empty docutils container">
@@ -954,7 +955,7 @@ Clock Discrete (Random)                          75.2              26.3
 <h3>Parallel Scaling Benchmark<a class="headerlink" href="#Parallel-Scaling-Benchmark" title="Link to this heading"></a></h3>
 <p>This section benchmarks checkerboard Metropolis throughput in serial and parallel modes for the Ising model across increasing lattice sizes. The code cell above computes sweeps per second and plots both absolute throughput and the parallel speedup ratio. Interpret the right panel as a hardware-plus-size dependent crossover: small lattices can be overhead bound, while larger lattices benefit more from multithreading.</p>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[24]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[17]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">fig</span><span class="p">,</span> <span class="n">axes</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">15</span><span class="p">,</span> <span class="mi">18</span><span class="p">))</span>
@@ -1022,7 +1023,7 @@ Clock Discrete (Random)                          75.2              26.3
           </div>
           <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
         <a href="agents.html" class="btn btn-neutral float-left" title="Agent Instruction Guide: VibeSpin" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
-        <a href="api/modules.html" class="btn btn-neutral float-right" title="vibespin" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+        <a href="wolff_efficiency.html" class="btn btn-neutral float-right" title="Wolff vs. Metropolis: Algorithmic Efficiency in the Critical Regime" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
     </div>
 
   <hr/>

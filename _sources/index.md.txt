@@ -17,9 +17,8 @@ agents
 :caption: Performance:
 
 benchmarks
+wolff_efficiency
 ```
-
-See also [Wolff_Efficiency.ipynb](https://github.com/manganite/VibeSpin/blob/master/Wolff_Efficiency.ipynb) for a didactic demonstration of the Wolff cluster algorithm's efficiency advantage near the critical temperature, including $\tau_{\mathrm{int}}$ comparisons, ISS improvement factors, and the FK cluster-size mechanism.
 
 ```{toctree}
 :maxdepth: 2

@@ -90,6 +90,7 @@ Optimize for four outcomes: correct statistical-physics behavior, high simulatio
 - **Theory Updates**: When introducing new physical models or observables, you MUST update **`PHYSICS.md`** with the relevant Hamiltonian definitions, phase behavior, and mathematical formulations.
 - **Scripts Catalog**: Any new entry-point script added to `scripts/` MUST be registered in **`SCRIPTS.md`** with a brief description of its purpose and usage.
 - **Performance Re-profiling**: If a change significantly impacts simulation throughput or analysis overhead, you MUST re-run the benchmark tool (`benchmark.py`) and update the **`Performance_Benchmarks.ipynb`** summary results.
+- **Notebook Location**: All Jupyter notebooks live in `notebooks/`. When referencing a notebook by path, use `notebooks/<name>.ipynb`.
 - **Cross-linking**: Standalone documentation files MUST be cross-linked in the Sphinx hub (`docs/source/index.md`) to ensure they appear in the hosted documentation site.
 
 ## Directory Map for Agents
@@ -102,8 +103,6 @@ The workspace root contains the following key files and directories.
 - `SCRIPTS.md`: Catalog of entry-point scripts with usage descriptions.
 - `AGENTS.md`: This agent instruction guide.
 - `benchmark.py`: Throughput benchmark tool for profiling simulation kernels.
-- `Performance_Benchmarks.ipynb`: Benchmark summary results and analysis.
-- `Wolff_Efficiency.ipynb`: Wolff cluster algorithm efficiency analysis.
 - `pyproject.toml`: Project metadata, dependencies, and tool configuration (ruff, mypy, pytest).
 
 **Directories:**
@@ -113,6 +112,7 @@ The workspace root contains the following key files and directories.
 - `scripts/`: Physics experiments and equilibrium/kinetics drivers.
 - `docs/`: Sphinx documentation source (`docs/source/`) and HTML build output (`docs/_build/html/`).
 - `results/`: Simulation output files organized by model (`ising/`, `xy/`, `clock/`, `benchmarks/`).
+- `notebooks/`: Jupyter notebooks for analysis and exploration. Current notebooks: `Performance_Benchmarks.ipynb` (throughput benchmark results) and `Wolff_Efficiency.ipynb` (Wolff cluster algorithm efficiency analysis). Add new analysis notebooks here.
 
 ## Common Operational Workflows
 

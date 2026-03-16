@@ -93,6 +93,7 @@
 <p class="caption" role="heading"><span class="caption-text">Performance:</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="benchmarks.html">Performance Benchmarking for VibeSpin</a></li>
+<li class="toctree-l1"><a class="reference internal" href="wolff_efficiency.html">Wolff vs. Metropolis: Algorithmic Efficiency in the Critical Regime</a></li>
 </ul>
 <p class="caption" role="heading"><span class="caption-text">API Reference:</span></p>
 <ul>
@@ -249,6 +250,7 @@ mypy<span class="w"> </span>--explicit-package-bases<span class="w"> </span>mode
 <li><p><strong>Theory Updates</strong>: When introducing new physical models or observables, you MUST update <strong><code class="docutils literal notranslate"><span class="pre">PHYSICS.md</span></code></strong> with the relevant Hamiltonian definitions, phase behavior, and mathematical formulations.</p></li>
 <li><p><strong>Scripts Catalog</strong>: Any new entry-point script added to <code class="docutils literal notranslate"><span class="pre">scripts/</span></code> MUST be registered in <strong><code class="docutils literal notranslate"><span class="pre">SCRIPTS.md</span></code></strong> with a brief description of its purpose and usage.</p></li>
 <li><p><strong>Performance Re-profiling</strong>: If a change significantly impacts simulation throughput or analysis overhead, you MUST re-run the benchmark tool (<code class="docutils literal notranslate"><span class="pre">benchmark.py</span></code>) and update the <strong><code class="docutils literal notranslate"><span class="pre">Performance_Benchmarks.ipynb</span></code></strong> summary results.</p></li>
+<li><p><strong>Notebook Location</strong>: All Jupyter notebooks live in <code class="docutils literal notranslate"><span class="pre">notebooks/</span></code>. When referencing a notebook by path, use <code class="docutils literal notranslate"><span class="pre">notebooks/&lt;name&gt;.ipynb</span></code>.</p></li>
 <li><p><strong>Cross-linking</strong>: Standalone documentation files MUST be cross-linked in the Sphinx hub (<code class="docutils literal notranslate"><span class="pre">docs/source/index.md</span></code>) to ensure they appear in the hosted documentation site.</p></li>
 </ul>
 </section>
@@ -263,8 +265,6 @@ mypy<span class="w"> </span>--explicit-package-bases<span class="w"> </span>mode
 <li><p><code class="docutils literal notranslate"><span class="pre">SCRIPTS.md</span></code>: Catalog of entry-point scripts with usage descriptions.</p></li>
 <li><p><code class="docutils literal notranslate"><span class="pre">AGENTS.md</span></code>: This agent instruction guide.</p></li>
 <li><p><code class="docutils literal notranslate"><span class="pre">benchmark.py</span></code>: Throughput benchmark tool for profiling simulation kernels.</p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">Performance_Benchmarks.ipynb</span></code>: Benchmark summary results and analysis.</p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">Wolff_Efficiency.ipynb</span></code>: Wolff cluster algorithm efficiency analysis.</p></li>
 <li><p><code class="docutils literal notranslate"><span class="pre">pyproject.toml</span></code>: Project metadata, dependencies, and tool configuration (ruff, mypy, pytest).</p></li>
 </ul>
 <p><strong>Directories:</strong></p>
@@ -275,6 +275,7 @@ mypy<span class="w"> </span>--explicit-package-bases<span class="w"> </span>mode
 <li><p><code class="docutils literal notranslate"><span class="pre">scripts/</span></code>: Physics experiments and equilibrium/kinetics drivers.</p></li>
 <li><p><code class="docutils literal notranslate"><span class="pre">docs/</span></code>: Sphinx documentation source (<code class="docutils literal notranslate"><span class="pre">docs/source/</span></code>) and HTML build output (<code class="docutils literal notranslate"><span class="pre">docs/_build/html/</span></code>).</p></li>
 <li><p><code class="docutils literal notranslate"><span class="pre">results/</span></code>: Simulation output files organized by model (<code class="docutils literal notranslate"><span class="pre">ising/</span></code>, <code class="docutils literal notranslate"><span class="pre">xy/</span></code>, <code class="docutils literal notranslate"><span class="pre">clock/</span></code>, <code class="docutils literal notranslate"><span class="pre">benchmarks/</span></code>).</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">notebooks/</span></code>: Jupyter notebooks for analysis and exploration. Current notebooks: <code class="docutils literal notranslate"><span class="pre">Performance_Benchmarks.ipynb</span></code> (throughput benchmark results) and <code class="docutils literal notranslate"><span class="pre">Wolff_Efficiency.ipynb</span></code> (Wolff cluster algorithm efficiency analysis). Add new analysis notebooks here.</p></li>
 </ul>
 </section>
 <section id="common-operational-workflows">
