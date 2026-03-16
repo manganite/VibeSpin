@@ -54,7 +54,7 @@
 <li class="toctree-l2"><a class="reference internal" href="#ising-model-scripts-ising">1. Ising Model (<code class="docutils literal notranslate"><span class="pre">scripts/ising/</span></code>)</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#xy-model-scripts-xy">2. XY Model (<code class="docutils literal notranslate"><span class="pre">scripts/xy/</span></code>)</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#clock-model-scripts-clock">3. Clock Model (<code class="docutils literal notranslate"><span class="pre">scripts/clock/</span></code>)</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#project-level-benchmarking">4. Project-Level Benchmarking</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#cross-model-benchmarking-scripts-benchmarks">4. Cross-Model Benchmarking (<code class="docutils literal notranslate"><span class="pre">scripts/benchmarks/</span></code>)</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#usage-guidelines">Usage Guidelines</a><ul>
 <li class="toctree-l3"><a class="reference internal" href="#update-schemes">Update Schemes</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#results">Results</a></li>
@@ -132,10 +132,10 @@
 <li><p><strong><code class="docutils literal notranslate"><span class="pre">compare_discrete_vs_continuous.py</span></code></strong>: Provides a side-by-side performance and physical comparison between the continuous (XY + anisotropy) and discrete implementations.</p></li>
 </ul>
 </section>
-<section id="project-level-benchmarking">
-<h2>4. Project-Level Benchmarking<a class="headerlink" href="#project-level-benchmarking" title="Link to this heading"></a></h2>
+<section id="cross-model-benchmarking-scripts-benchmarks">
+<h2>4. Cross-Model Benchmarking (<code class="docutils literal notranslate"><span class="pre">scripts/benchmarks/</span></code>)<a class="headerlink" href="#cross-model-benchmarking-scripts-benchmarks" title="Link to this heading"></a></h2>
 <ul class="simple">
-<li><p><strong><code class="docutils literal notranslate"><span class="pre">benchmark.py</span></code></strong>: Top-level performance benchmark driver for cross-model throughput and scaling studies. Produces comparative metrics (sweeps/s, ns/site, pure-vs-analysis timing splits) and feeds the benchmark notebook summary.</p></li>
+<li><p><strong><code class="docutils literal notranslate"><span class="pre">throughput.py</span></code></strong>: Cross-model throughput and scaling benchmark. Measures sweeps/s, ns/site, and per-call analysis costs (thermodynamic, <span class="math notranslate nohighlight">\(G(r)\)</span>, vorticity, helicity) across all eight model variants and a range of lattice sizes. Saves a 6-panel summary figure to <code class="docutils literal notranslate"><span class="pre">results/benchmarks/scaling_benchmark.png</span></code> and all metrics to <code class="docutils literal notranslate"><span class="pre">results/benchmarks/scaling_benchmark.npz</span></code>. The NPZ file is loaded by <code class="docutils literal notranslate"><span class="pre">notebooks/Performance_Benchmarks.ipynb</span></code> to avoid re-running the benchmark on every notebook execution.</p></li>
 </ul>
 </section>
 <section id="usage-guidelines">

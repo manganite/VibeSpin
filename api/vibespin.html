@@ -65,12 +65,6 @@
 <li class="toctree-l4"><a class="reference internal" href="vibespin.utils.html">vibespin.utils package</a></li>
 </ul>
 </li>
-<li class="toctree-l3"><a class="reference internal" href="#submodules">Submodules</a></li>
-<li class="toctree-l3"><a class="reference internal" href="#module-benchmark">benchmark module</a><ul>
-<li class="toctree-l4"><a class="reference internal" href="#benchmark.measure_performance"><code class="docutils literal notranslate"><span class="pre">measure_performance()</span></code></a></li>
-<li class="toctree-l4"><a class="reference internal" href="#benchmark.run_scaling_benchmark"><code class="docutils literal notranslate"><span class="pre">run_scaling_benchmark()</span></code></a></li>
-</ul>
-</li>
 </ul>
 </li>
 </ul>
@@ -212,6 +206,12 @@
 </li>
 <li class="toctree-l1"><a class="reference internal" href="vibespin.utils.html">vibespin.utils package</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="vibespin.utils.html#submodules">Submodules</a></li>
+<li class="toctree-l2"><a class="reference internal" href="vibespin.utils.html#module-utils.exceptions">utils.exceptions module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="vibespin.utils.html#utils.exceptions.NumericalAnalysisError"><code class="docutils literal notranslate"><span class="pre">NumericalAnalysisError</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="vibespin.utils.html#utils.exceptions.VibeSpinError"><code class="docutils literal notranslate"><span class="pre">VibeSpinError</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="vibespin.utils.html#utils.exceptions.ZeroVarianceAutocorrelationError"><code class="docutils literal notranslate"><span class="pre">ZeroVarianceAutocorrelationError</span></code></a></li>
+</ul>
+</li>
 <li class="toctree-l2"><a class="reference internal" href="vibespin.utils.html#module-utils.physics_helpers">utils.physics_helpers module</a><ul>
 <li class="toctree-l3"><a class="reference internal" href="vibespin.utils.html#utils.physics_helpers.calculate_autocorr"><code class="docutils literal notranslate"><span class="pre">calculate_autocorr()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="vibespin.utils.html#utils.physics_helpers.calculate_entropy"><code class="docutils literal notranslate"><span class="pre">calculate_entropy()</span></code></a></li>
@@ -239,25 +239,6 @@
 </li>
 </ul>
 </div>
-</section>
-<section id="submodules">
-<h2>Submodules<a class="headerlink" href="#submodules" title="Link to this heading"></a></h2>
-</section>
-<section id="module-benchmark">
-<span id="benchmark-module"></span><h2>benchmark module<a class="headerlink" href="#module-benchmark" title="Link to this heading"></a></h2>
-<p>Comprehensive scaling benchmark for the VibeSpin Simulation Project.
-Measures performance of MC sweeps and analysis functions across different lattice sizes.</p>
-<dl class="py function">
-<dt class="sig sig-object py" id="benchmark.measure_performance">
-<span class="sig-prename descclassname"><span class="pre">benchmark.</span></span><span class="sig-name descname"><span class="pre">measure_performance</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">sim</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="vibespin.models.html#models.simulation_base.MonteCarloSimulation" title="models.simulation_base.MonteCarloSimulation"><span class="pre">MonteCarloSimulation</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">sweeps</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">100</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">analysis_iters</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">50</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">float</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="../_modules/benchmark.html#measure_performance"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#benchmark.measure_performance" title="Link to this definition"></a></dt>
-<dd><p>Measure sweeps/sec and analysis times for a simulation instance.</p>
-</dd></dl>
-
-<dl class="py function">
-<dt class="sig sig-object py" id="benchmark.run_scaling_benchmark">
-<span class="sig-prename descclassname"><span class="pre">benchmark.</span></span><span class="sig-name descname"><span class="pre">run_scaling_benchmark</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="../_modules/benchmark.html#run_scaling_benchmark"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#benchmark.run_scaling_benchmark" title="Link to this definition"></a></dt>
-<dd></dd></dl>
-
 </section>
 </section>
 

@@ -91,6 +91,7 @@
 <span class="kn">from</span><span class="w"> </span><span class="nn">scipy.integrate</span><span class="w"> </span><span class="kn">import</span> <span class="n">cumulative_trapezoid</span>
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">models.simulation_base</span><span class="w"> </span><span class="kn">import</span> <span class="n">MonteCarloSimulation</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">utils.exceptions</span><span class="w"> </span><span class="kn">import</span> <span class="n">ZeroVarianceAutocorrelationError</span>
 
 
 <div class="viewcode-block" id="calculate_thermodynamics">
@@ -236,7 +237,8 @@
 
 <span class="sd">    Raises</span>
 <span class="sd">    ------</span>
-<span class="sd">        ValueError: If ``time_series`` has fewer than 3 elements or zero variance.</span>
+<span class="sd">        ValueError: If ``time_series`` has fewer than 3 elements.</span>
+<span class="sd">        ZeroVarianceAutocorrelationError: If ``time_series`` has zero variance.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="n">x</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">time_series</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">)</span>
     <span class="n">N</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
@@ -244,7 +246,9 @@
         <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;time_series must have at least 3 elements, got </span><span class="si">{</span><span class="n">N</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
     <span class="n">variance</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">var</span><span class="p">(</span><span class="n">x</span><span class="p">))</span>
     <span class="k">if</span> <span class="n">variance</span> <span class="o">==</span> <span class="mf">0.0</span><span class="p">:</span>
-        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;time_series has zero variance; autocorrelation is undefined&#39;</span><span class="p">)</span>
+        <span class="k">raise</span> <span class="n">ZeroVarianceAutocorrelationError</span><span class="p">(</span>
+            <span class="s1">&#39;time_series has zero variance; autocorrelation is undefined&#39;</span>
+        <span class="p">)</span>
 
     <span class="k">if</span> <span class="n">max_lag</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
         <span class="n">max_lag</span> <span class="o">=</span> <span class="n">N</span> <span class="o">//</span> <span class="mi">2</span>

@@ -11,14 +11,3 @@ Subpackages
    vibespin.scripts
    vibespin.utils
 
-Submodules
-----------
-
-benchmark module
-----------------
-
-.. automodule:: benchmark
-   :members:
-   :show-inheritance:
-   :undoc-members:
-

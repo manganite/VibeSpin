@@ -67,8 +67,6 @@
 <li class="toctree-l4 current"><a class="current reference internal" href="#">vibespin.utils package</a></li>
 </ul>
 </li>
-<li class="toctree-l3"><a class="reference internal" href="vibespin.html#submodules">Submodules</a></li>
-<li class="toctree-l3"><a class="reference internal" href="vibespin.html#module-benchmark">benchmark module</a></li>
 </ul>
 </li>
 </ul>
@@ -106,6 +104,31 @@
 <section id="submodules">
 <h2>Submodules<a class="headerlink" href="#submodules" title="Link to this heading"></a></h2>
 </section>
+<section id="module-utils.exceptions">
+<span id="utils-exceptions-module"></span><h2>utils.exceptions module<a class="headerlink" href="#module-utils.exceptions" title="Link to this heading"></a></h2>
+<p>Project-specific exception types for analysis and runtime failures.</p>
+<dl class="py exception">
+<dt class="sig sig-object py" id="utils.exceptions.NumericalAnalysisError">
+<span class="property"><span class="k"><span class="pre">exception</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">utils.exceptions.</span></span><span class="sig-name descname"><span class="pre">NumericalAnalysisError</span></span><a class="reference internal" href="../_modules/utils/exceptions.html#NumericalAnalysisError"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#utils.exceptions.NumericalAnalysisError" title="Link to this definition"></a></dt>
+<dd><p>Bases: <a class="reference internal" href="#utils.exceptions.VibeSpinError" title="utils.exceptions.VibeSpinError"><code class="xref py py-class docutils literal notranslate"><span class="pre">VibeSpinError</span></code></a>, <code class="xref py py-class docutils literal notranslate"><span class="pre">RuntimeError</span></code></p>
+<p>Base class for mathematically undefined or failed analysis results.</p>
+</dd></dl>
+
+<dl class="py exception">
+<dt class="sig sig-object py" id="utils.exceptions.VibeSpinError">
+<span class="property"><span class="k"><span class="pre">exception</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">utils.exceptions.</span></span><span class="sig-name descname"><span class="pre">VibeSpinError</span></span><a class="reference internal" href="../_modules/utils/exceptions.html#VibeSpinError"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#utils.exceptions.VibeSpinError" title="Link to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">Exception</span></code></p>
+<p>Base class for project-specific exceptions.</p>
+</dd></dl>
+
+<dl class="py exception">
+<dt class="sig sig-object py" id="utils.exceptions.ZeroVarianceAutocorrelationError">
+<span class="property"><span class="k"><span class="pre">exception</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">utils.exceptions.</span></span><span class="sig-name descname"><span class="pre">ZeroVarianceAutocorrelationError</span></span><a class="reference internal" href="../_modules/utils/exceptions.html#ZeroVarianceAutocorrelationError"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#utils.exceptions.ZeroVarianceAutocorrelationError" title="Link to this definition"></a></dt>
+<dd><p>Bases: <a class="reference internal" href="#utils.exceptions.NumericalAnalysisError" title="utils.exceptions.NumericalAnalysisError"><code class="xref py py-class docutils literal notranslate"><span class="pre">NumericalAnalysisError</span></code></a></p>
+<p>Raised when autocorrelation is undefined because the series variance is zero.</p>
+</dd></dl>
+
+</section>
 <section id="module-utils.physics_helpers">
 <span id="utils-physics-helpers-module"></span><h2>utils.physics_helpers module<a class="headerlink" href="#module-utils.physics_helpers" title="Link to this heading"></a></h2>
 <p>Physics-related utility functions for calculating thermodynamic observables and correlations.</p>
@@ -135,7 +158,10 @@ from accumulating noise at large lags.</p>
 </p>
 </dd>
 <dt class="field-odd">Raises<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>ValueError</strong> – If <code class="docutils literal notranslate"><span class="pre">time_series</span></code> has fewer than 3 elements or zero variance.:</p>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>ValueError</strong> – If <code class="docutils literal notranslate"><span class="pre">time_series</span></code> has fewer than 3 elements.:</p></li>
+<li><p><a class="reference internal" href="#utils.exceptions.ZeroVarianceAutocorrelationError" title="utils.exceptions.ZeroVarianceAutocorrelationError"><strong>ZeroVarianceAutocorrelationError</strong></a> – If <code class="docutils literal notranslate"><span class="pre">time_series</span></code> has zero variance.:</p></li>
+</ul>
 </dd>
 </dl>
 </dd></dl>
@@ -323,6 +349,9 @@ equilibration and the function returns immediately.</p>
 </dd>
 <dt class="field-even">Return type<span class="colon">:</span></dt>
 <dd class="field-even"><p>Total number of MC steps run (burn-in + probes).</p>
+</dd>
+<dt class="field-odd">Raises<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>ValueError</strong> – If the adaptive-equilibration parameters are invalid.:</p>
 </dd>
 </dl>
 </dd></dl>
