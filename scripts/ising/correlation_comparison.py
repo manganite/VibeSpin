@@ -73,18 +73,25 @@ def main() -> None:
 
     # Ensure we only fit positive values to avoid log(0) errors
     valid_indices: np.ndarray = G_para_fit > 1e-10
-    if np.any(valid_indices):
+    if np.count_nonzero(valid_indices) >= 2:
         log_G_para_fit: np.ndarray = np.log(G_para_fit[valid_indices])
         r_fit_valid: np.ndarray = r_fit[valid_indices]
 
         try:
             slope, intercept = np.polyfit(r_fit_valid, log_G_para_fit, 1)
             if slope == 0.0:
-                raise ValueError('Fitted slope is zero; cannot compute correlation length.')
-            xi: float = -1.0 / slope
-            logger.info(f'Fitted correlation length for T={T_PARA} (paramagnetic): xi = {xi:.4f}')
-            fit_line: np.ndarray = np.exp(intercept + slope * r)
-        except (np.linalg.LinAlgError, ValueError) as exc:
+                logger.warning(
+                    f'Exponential fit failed for T={T_PARA}: fitted slope is zero; '
+                    'cannot compute correlation length.'
+                )
+            else:
+                xi: float = -1.0 / slope
+                logger.info(
+                    f'Fitted correlation length for T={T_PARA} '
+                    f'(paramagnetic): xi = {xi:.4f}'
+                )
+                fit_line: np.ndarray = np.exp(intercept + slope * r)
+        except np.linalg.LinAlgError as exc:
             logger.warning(f'Exponential fit failed for T={T_PARA}: {exc}')
 
     # Plotting

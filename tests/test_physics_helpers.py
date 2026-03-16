@@ -13,6 +13,7 @@ import pytest
 from models.clock_model import ClockSimulation, DiscreteClockSimulation
 from models.ising_model import IsingSimulation
 from models.xy_model import XYSimulation
+from utils.exceptions import ZeroVarianceAutocorrelationError
 from utils.physics_helpers import (
     calculate_autocorr,
     calculate_entropy,
@@ -256,8 +257,8 @@ def test_autocorr_invalid_too_few_points():
 
 
 def test_autocorr_invalid_zero_variance():
-    """Should raise ValueError for constant input."""
-    with pytest.raises(ValueError, match='zero variance'):
+    """Should raise the dedicated zero-variance analysis error for constant input."""
+    with pytest.raises(ZeroVarianceAutocorrelationError, match='zero variance'):
         calculate_autocorr(time_series=np.ones(100))
 
 

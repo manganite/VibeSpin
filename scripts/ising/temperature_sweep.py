@@ -10,6 +10,7 @@ import logging
 import numpy as np
 
 from models.ising_model import IsingSimulation
+from utils.exceptions import ZeroVarianceAutocorrelationError
 from utils.physics_helpers import calculate_autocorr, calculate_entropy, calculate_thermodynamics
 from utils.system_helpers import (
     adaptive_equilibrate,
@@ -39,7 +40,7 @@ def simulate_temperature(
     thermo = calculate_thermodynamics(mags=mags_arr, engs=np.array(engs), T=T, L=L)
     try:
         _, tau = calculate_autocorr(time_series=mags_arr)
-    except ValueError:
+    except ZeroVarianceAutocorrelationError:
         # Fully ordered windows can have zero variance; mark tau as undefined.
         tau = float('nan')
     return (*thermo, tau)

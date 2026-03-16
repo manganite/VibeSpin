@@ -20,6 +20,7 @@ matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 
 from models.ising_model import IsingSimulation
+from utils.exceptions import ZeroVarianceAutocorrelationError
 from utils.system_helpers import (
     adaptive_equilibrate,
     ensure_results_dir,
@@ -284,3 +285,31 @@ def test_adaptive_equilibrate_high_temp():
     sim = IsingSimulation(size=8, temp=10.0)
     total = adaptive_equilibrate(sim, min_steps=200, probe_steps=500, factor=5.0)
     assert total == 200 + 500
+
+
+def test_adaptive_equilibrate_invalid_probe_steps():
+    """Probe windows shorter than the autocorrelation precondition must fail fast."""
+    sim = _StubSim()
+    with pytest.raises(ValueError, match='probe_steps must be >= 3'):
+        adaptive_equilibrate(sim, min_steps=10, probe_steps=2)
+
+
+def test_adaptive_equilibrate_only_swallows_zero_variance():
+    """Invalid autocorrelation inputs must still surface to the caller."""
+
+    class _ShortRunSim:
+        def equilibrate(self, *, n_steps: int) -> None:
+            pass
+
+        def run(self, *, n_steps: int) -> tuple[np.ndarray, np.ndarray]:
+            return np.ones(2), np.zeros(2)
+
+    sim = _ShortRunSim()
+    with pytest.raises(ValueError, match='at least 3'):
+        adaptive_equilibrate(sim, min_steps=5, probe_steps=3)
+
+
+def test_zero_variance_error_is_runtime_error():
+    """Zero-variance analysis failures should not be treated as argument validation errors."""
+    error = ZeroVarianceAutocorrelationError('zero variance')
+    assert isinstance(error, RuntimeError)

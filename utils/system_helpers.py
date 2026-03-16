@@ -6,6 +6,7 @@ from __future__ import annotations
 import logging
 import os
 import sys
+import warnings
 from collections.abc import Callable, Iterable, Sequence, Sized
 from multiprocessing import Pool
 from typing import Protocol
@@ -13,6 +14,8 @@ from typing import Protocol
 import matplotlib.pyplot as plt
 import numpy as np
 from tqdm import tqdm
+
+from utils.exceptions import ZeroVarianceAutocorrelationError
 
 
 def setup_logging(*, level: int = logging.INFO, log_file: str | None = None) -> logging.Logger:
@@ -82,10 +85,9 @@ def save_plot(*, filename: str, directory: str = 'results', tight_layout: bool =
     logger = logging.getLogger('vibespin')
     ensure_results_dir(directory=directory)
     if tight_layout:
-        try:
+        with warnings.catch_warnings():
+            warnings.simplefilter('ignore', UserWarning)
             plt.tight_layout()
-        except UserWarning:
-            pass
     path = os.path.join(directory, filename)
     plt.savefig(path)
     logger.info(f'Plot saved to {path}')
@@ -160,8 +162,23 @@ def adaptive_equilibrate(
     Returns
     -------
         Total number of MC steps run (burn-in + probes).
+
+    Raises
+    ------
+        ValueError: If the adaptive-equilibration parameters are invalid.
     """
     from .physics_helpers import calculate_autocorr  # lazy import; avoids pickle issues
+
+    if min_steps < 0:
+        raise ValueError(f'min_steps must be non-negative, got {min_steps}')
+    if probe_steps < 3:
+        raise ValueError(f'probe_steps must be >= 3, got {probe_steps}')
+    if factor <= 0.0:
+        raise ValueError(f'factor must be positive, got {factor}')
+    if max_steps < min_steps:
+        raise ValueError(
+            f'max_steps must be >= min_steps, got max_steps={max_steps} and min_steps={min_steps}'
+        )
 
     logger = logging.getLogger('vibespin')
     sim.equilibrate(n_steps=min_steps)
@@ -172,7 +189,7 @@ def adaptive_equilibrate(
         total += probe_steps
         try:
             _, tau_int = calculate_autocorr(time_series=mags)
-        except ValueError:
+        except ZeroVarianceAutocorrelationError:
             # Zero variance: fully ordered phase, equilibration is trivially satisfied.
             return total
         if probe_steps >= factor * tau_int:

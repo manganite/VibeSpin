@@ -7,6 +7,7 @@ import numpy as np
 from scipy.integrate import cumulative_trapezoid
 
 from models.simulation_base import MonteCarloSimulation
+from utils.exceptions import ZeroVarianceAutocorrelationError
 
 
 def calculate_thermodynamics(
@@ -144,7 +145,8 @@ def calculate_autocorr(
 
     Raises
     ------
-        ValueError: If ``time_series`` has fewer than 3 elements or zero variance.
+        ValueError: If ``time_series`` has fewer than 3 elements.
+        ZeroVarianceAutocorrelationError: If ``time_series`` has zero variance.
     """
     x = np.asarray(time_series, dtype=np.float64)
     N = len(x)
@@ -152,7 +154,9 @@ def calculate_autocorr(
         raise ValueError(f'time_series must have at least 3 elements, got {N}')
     variance = float(np.var(x))
     if variance == 0.0:
-        raise ValueError('time_series has zero variance; autocorrelation is undefined')
+        raise ZeroVarianceAutocorrelationError(
+            'time_series has zero variance; autocorrelation is undefined'
+        )
 
     if max_lag is None:
         max_lag = N // 2

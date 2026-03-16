@@ -20,6 +20,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 from models.ising_model import IsingSimulation
+from utils.exceptions import ZeroVarianceAutocorrelationError
 from utils.physics_helpers import calculate_autocorr, calculate_thermodynamics
 from utils.system_helpers import adaptive_equilibrate, parallel_sweep, setup_logging
 
@@ -64,7 +65,7 @@ def _measure_efficiency_point(
     engs_m_arr = np.array(engs_m)
     try:
         _, tau_metro = calculate_autocorr(time_series=mags_m_arr)
-    except ValueError:
+    except ZeroVarianceAutocorrelationError:
         tau_metro = float('nan')
     _, _, chi_metro, _ = calculate_thermodynamics(
         mags=mags_m_arr, engs=engs_m_arr, T=T, L=L,
@@ -85,7 +86,7 @@ def _measure_efficiency_point(
     engs_w_arr = np.array(engs_w)
     try:
         _, tau_wolff = calculate_autocorr(time_series=mags_w_arr)
-    except ValueError:
+    except ZeroVarianceAutocorrelationError:
         tau_wolff = float('nan')
     _, _, chi_wolff, _ = calculate_thermodynamics(
         mags=mags_w_arr, engs=engs_w_arr, T=T, L=L,
@@ -103,11 +104,13 @@ def _measure_efficiency_point(
     cluster_sizes: list[int] = []
     for _ in range(cluster_steps):
         current = sim_c.spins
-        assert current is not None
+        if current is None:
+            raise RuntimeError('Wolff cluster measurement requires initialized spins before step()')
         spins_before = current.copy()
         sim_c.step()
         after = sim_c.spins
-        assert after is not None
+        if after is None:
+            raise RuntimeError('Wolff cluster measurement lost spin state after step()')
         cluster_sizes.append(int(np.sum(after != spins_before)))
     mean_cluster_frac = float(np.mean(cluster_sizes)) / (L * L)
 

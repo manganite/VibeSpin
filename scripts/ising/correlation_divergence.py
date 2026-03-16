@@ -48,8 +48,8 @@ def get_correlation_length(params: tuple[float, int, int, int, int]) -> tuple[fl
 
     try:
         slope, intercept = np.polyfit(r_fit, log_G, 1)
-        xi: float = -1.0 / slope
-    except (np.linalg.LinAlgError, ValueError, ZeroDivisionError):
+        xi = np.nan if slope == 0.0 else -1.0 / slope
+    except np.linalg.LinAlgError:
         xi = np.nan
 
     return T, xi
@@ -111,13 +111,17 @@ def run_divergence_analysis() -> None:
 
     # Fit power law (only possible when all reduced_T > 0 and xis > 0)
     nu: float | None = None
-    try:
-        log_t: np.ndarray = np.log(reduced_T)
-        log_xi: np.ndarray = np.log(xis)
-        slope, intercept = np.polyfit(log_t, log_xi, 1)
-        nu = -slope
-    except (np.linalg.LinAlgError, ValueError) as exc:
-        logger.warning(f'Power-law fit failed: {exc}')
+    fit_mask = (reduced_T > 0.0) & (xis > 0.0)
+    if np.count_nonzero(fit_mask) >= 2:
+        try:
+            log_t = np.log(reduced_T[fit_mask])
+            log_xi = np.log(xis[fit_mask])
+            slope, intercept = np.polyfit(log_t, log_xi, 1)
+            nu = -slope
+        except np.linalg.LinAlgError as exc:
+            logger.warning(f'Power-law fit failed: {exc}')
+    else:
+        logger.warning('Power-law fit skipped: need at least two positive xi(T - Tc) points.')
 
     ax2.loglog(reduced_T, xis, 'o', label='Simulation Data')
 

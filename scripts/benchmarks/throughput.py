@@ -113,7 +113,10 @@ def run_scaling_benchmark() -> None:
 
     sizes = sorted(args.sizes)
     model_configs = [
-        ('Ising (Checkerboard)', lambda L: IsingSimulation(size=L, temp=2.269, update='checkerboard')),
+        (
+            'Ising (Checkerboard)',
+            lambda L: IsingSimulation(size=L, temp=2.269, update='checkerboard'),
+        ),
         ('Ising (Random)', lambda L: IsingSimulation(size=L, temp=2.269, update='random')),
         ('XY (Checkerboard)', lambda L: XYSimulation(size=L, temp=0.89, update='checkerboard')),
         ('XY (Random)', lambda L: XYSimulation(size=L, temp=0.89, update='random')),

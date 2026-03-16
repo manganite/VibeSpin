@@ -61,6 +61,7 @@ Optimize for four outcomes: correct statistical-physics behavior, high simulatio
 - **API Safety**: Use `*` to force **keyword-only arguments** for all public simulation and analysis methods.
 - **CLI Patterns**: Simulation models MUST include a `main()` entry point refactoring the CLI logic to support unit testing via mocking.
 - **Import Strategy**: Use **relative imports** within the same package namespace. Use **absolute imports** for cross-package and script/test imports.
+- **Exception Strategy**: Maintain a three-tier exception hierarchy. (1) Raise `ValueError` for invalid public API inputs (bad sizes, temperatures, parameter combinations). (2) Raise project-specific `NumericalAnalysisError` subclasses (defined in `utils/exceptions.py`) for mathematically undefined analysis results (e.g., `ZeroVarianceAutocorrelationError`). (3) Raise `RuntimeError` for impossible internal state (broken invariants). Catch specific exceptions instead of broad handlers; never swallow exceptions unless the fallback behavior (e.g., NaN for a probe window) is explicitly documented. Do not use `assert` for runtime validation in scripts—raise explicit exceptions instead.
 
 ### 3. Physical Fidelity & Algorithm Integrity
 - **Metropolis Prerequisites**: All update algorithms MUST strictly fulfill the conditions for the Metropolis-Hastings algorithm: **Detailed Balance**, **Ergodicity**, and **Symmetric Proposals**.
