@@ -83,6 +83,10 @@ Optimize for four outcomes: correct statistical-physics behavior, high simulatio
 
 ### 5. Source Control & Delivery
 - **Pre-Commit Check**: Before proposing a commit, you MUST run all tests, linting, and type checking.
+- **Docs Consistency Gate**: Before pushing, you MUST run the repository pre-push hooks (or equivalent checks) so docs links, generated API pages, and Sphinx warnings are validated locally:
+  ```bash
+  pre-commit run --all-files --hook-stage pre-push
+  ```
 - **Commit Format**: Use **Conventional Commits** (`type(scope): description`). Example: `phys(xy): implement helicity modulus calculation`.
 - **GitHub Sync**: After a successful local commit, ask the user if they wish to push to the remote repository.
 
