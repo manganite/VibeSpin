@@ -4,6 +4,14 @@ vibespin.utils package
 Submodules
 ----------
 
+utils.exceptions module
+-----------------------
+
+.. automodule:: utils.exceptions
+   :members:
+   :show-inheritance:
+   :undoc-members:
+
 utils.physics\_helpers module
 -----------------------------
 
