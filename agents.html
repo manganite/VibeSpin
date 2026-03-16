@@ -238,8 +238,13 @@ mypy<span class="w"> </span>--explicit-package-bases<span class="w"> </span>mode
 </section>
 <section id="source-control-delivery">
 <h3>5. Source Control &amp; Delivery<a class="headerlink" href="#source-control-delivery" title="Link to this heading"></a></h3>
-<ul class="simple">
+<ul>
 <li><p><strong>Pre-Commit Check</strong>: Before proposing a commit, you MUST run all tests, linting, and type checking.</p></li>
+<li><p><strong>Docs Consistency Gate</strong>: Before pushing, you MUST run the repository pre-push hooks (or equivalent checks) so docs links, generated API pages, and Sphinx warnings are validated locally:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>pre-commit<span class="w"> </span>run<span class="w"> </span>--all-files<span class="w"> </span>--hook-stage<span class="w"> </span>pre-push
+</pre></div>
+</div>
+</li>
 <li><p><strong>Commit Format</strong>: Use <strong>Conventional Commits</strong> (<code class="docutils literal notranslate"><span class="pre">type(scope):</span> <span class="pre">description</span></code>). Example: <code class="docutils literal notranslate"><span class="pre">phys(xy):</span> <span class="pre">implement</span> <span class="pre">helicity</span> <span class="pre">modulus</span> <span class="pre">calculation</span></code>.</p></li>
 <li><p><strong>GitHub Sync</strong>: After a successful local commit, ask the user if they wish to push to the remote repository.</p></li>
 </ul>

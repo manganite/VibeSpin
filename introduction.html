@@ -137,9 +137,10 @@
 </div>
 <p>For full development capabilities (benchmarking, tests, and documentation):</p>
 <div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>pip<span class="w"> </span>install<span class="w"> </span>-e<span class="w"> </span><span class="s2">&quot;.[dev,notebook,docs]&quot;</span>
-pre-commit<span class="w"> </span>install
+pre-commit<span class="w"> </span>install<span class="w"> </span>--hook-type<span class="w"> </span>pre-commit<span class="w"> </span>--hook-type<span class="w"> </span>pre-push
 </pre></div>
 </div>
+<p>The repository enforces documentation consistency at both commit and push time. The pre-push hook runs link validation, API docs sync checks, and a Sphinx HTML build with warnings treated as errors.</p>
 <section id="devcontainer-jupyter-auto-start">
 <h3>Devcontainer Jupyter Auto-Start<a class="headerlink" href="#devcontainer-jupyter-auto-start" title="Link to this heading"></a></h3>
 <p>In this repository’s devcontainer, JupyterLab starts automatically and listens on port 8888. The startup path is defined in the repository’s <a class="reference external" href="https://github.com/manganite/VibeSpin/blob/master/.devcontainer/devcontainer.json">devcontainer.json on GitHub</a> and launches the companion <a class="reference external" href="https://github.com/manganite/VibeSpin/blob/master/.devcontainer/scripts/start-jupyter.sh">start-jupyter.sh helper on GitHub</a>, which waits for the project virtual environment to be ready and then starts JupyterLab in detached mode.</p>
@@ -206,6 +207,7 @@ python<span class="w"> </span>benchmark.py<span class="w"> </span>--sizes<span c
 <div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>pytest
 ruff<span class="w"> </span>check<span class="w"> </span>.
 mypy<span class="w"> </span>--explicit-package-bases<span class="w"> </span>models/<span class="w"> </span>utils/<span class="w"> </span>scripts/
+pre-commit<span class="w"> </span>run<span class="w"> </span>--all-files<span class="w"> </span>--hook-stage<span class="w"> </span>pre-push
 </pre></div>
 </div>
 </section>
