@@ -1,10 +1,19 @@
 """
 Comprehensive scaling benchmark for the VibeSpin Simulation Project.
-Measures performance of MC sweeps and analysis functions across different lattice sizes.
+
+Measures performance of MC sweeps and analysis functions across different
+lattice sizes and saves results to results/benchmarks/scaling_benchmark.npz
+for use by notebooks/Performance_Benchmarks.ipynb.
+
+Usage
+-----
+    python scripts/benchmarks/throughput.py
+    python scripts/benchmarks/throughput.py --sizes 64 128 256 512 --sweeps 200
 """
 from __future__ import annotations
 
 import argparse
+import os
 import time
 
 import matplotlib.pyplot as plt
@@ -104,24 +113,24 @@ def run_scaling_benchmark() -> None:
 
     sizes = sorted(args.sizes)
     model_configs = [
-        ('Ising (Checker)', lambda L: IsingSimulation(size=L, temp=2.269, update='checkerboard')),
+        ('Ising (Checkerboard)', lambda L: IsingSimulation(size=L, temp=2.269, update='checkerboard')),
         ('Ising (Random)', lambda L: IsingSimulation(size=L, temp=2.269, update='random')),
-        ('XY (Checker)', lambda L: XYSimulation(size=L, temp=0.89, update='checkerboard')),
+        ('XY (Checkerboard)', lambda L: XYSimulation(size=L, temp=0.89, update='checkerboard')),
         ('XY (Random)', lambda L: XYSimulation(size=L, temp=0.89, update='random')),
         (
-            'Clock Cont (Checker)',
+            'Clock Continuous (Checkerboard)',
             lambda L: ClockSimulation(size=L, temp=0.5, q=6, update='checkerboard'),
         ),
         (
-            'Clock Cont (Random)',
+            'Clock Continuous (Random)',
             lambda L: ClockSimulation(size=L, temp=0.5, q=6, update='random'),
         ),
         (
-            'Clock Disc (Checker)',
+            'Clock Discrete (Checkerboard)',
             lambda L: DiscreteClockSimulation(size=L, temp=0.5, q=6, update='checkerboard'),
         ),
         (
-            'Clock Disc (Random)',
+            'Clock Discrete (Random)',
             lambda L: DiscreteClockSimulation(size=L, temp=0.5, q=6, update='random'),
         ),
     ]
@@ -221,15 +230,44 @@ def run_scaling_benchmark() -> None:
     ensure_results_dir(directory=args.output_dir)
     save_plot(filename='scaling_benchmark.png', directory=args.output_dir)
 
+    # Save all metrics to NPZ for use by notebooks/Performance_Benchmarks.ipynb.
+    # Flat layout: sizes (1D int64), model_names (1D str), and one 2D float64
+    # array per metric with shape (n_models, n_sizes), rows ordered to match
+    # model_names. This mirrors the pattern used by wolff_efficiency.py.
+    model_names_list = list(all_results.keys())
+    metric_keys = ('sps', 'thermo_ms', 'corr_ms', 'vort_ms', 'vden_ms', 'heli_ms')
+    n_models = len(model_names_list)
+    n_sizes = len(sizes)
+    metric_arrays: dict[str, np.ndarray] = {
+        m: np.zeros((n_models, n_sizes), dtype=np.float64) for m in metric_keys
+    }
+    for i, name in enumerate(model_names_list):
+        for j, L in enumerate(sizes):
+            for key in metric_keys:
+                metric_arrays[key][i, j] = all_results[name][L][key]
+    npz_path = os.path.join(args.output_dir, 'scaling_benchmark.npz')
+    np.savez(
+        npz_path,
+        sizes=np.array(sizes, dtype=np.int64),
+        model_names=np.array(model_names_list),
+        sps=metric_arrays['sps'],
+        thermo_ms=metric_arrays['thermo_ms'],
+        corr_ms=metric_arrays['corr_ms'],
+        vort_ms=metric_arrays['vort_ms'],
+        vden_ms=metric_arrays['vden_ms'],
+        heli_ms=metric_arrays['heli_ms'],
+    )
+    print(f'Data saved to {npz_path}')
+
     # Print summary table for largest size
     L_max = sizes[-1]
     print(f'\nFinal Performance Table (L={L_max}):')
-    print('=' * 115)
-    row_fmt = '{:<20} | {:>10} | {:>10} | {:>10} | {:>10} | {:>10} | {:>10}'
+    print('=' * 125)
+    row_fmt = '{:<32} | {:>10} | {:>10} | {:>10} | {:>10} | {:>10} | {:>10}'
     print(row_fmt.format(
         'Model', 'Sweeps/s', 'ns/site', 'Thermo(ms)', 'Corr(ms)', 'Topo(ms)', 'Overhead'
     ))
-    print('-' * 115)
+    print('-' * 125)
     for name in all_results:
         m = all_results[name][L_max]
         sw_ms = (1.0 / m['sps']) * 1000
@@ -237,11 +275,11 @@ def run_scaling_benchmark() -> None:
         topo_total_ms: float = m['vort_ms'] + m['vden_ms'] + m['heli_ms']
         ratio = (m['thermo_ms'] + m['corr_ms'] + topo_total_ms) / sw_ms
         print(
-            f'{name:<20} | {m["sps"]:>10.1f} | {ns_site:>10.2f} | '
+            f'{name:<32} | {m["sps"]:>10.1f} | {ns_site:>10.2f} | '
             f'{m["thermo_ms"]:>10.3f} | {m["corr_ms"]:>10.3f} | '
             f'{topo_total_ms:>10.3f} | {ratio:>10.2f}x'
         )
-    print('=' * 115)
+    print('=' * 125)
 
 
 if __name__ == '__main__':

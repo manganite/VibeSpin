@@ -89,8 +89,10 @@ Optimize for four outcomes: correct statistical-physics behavior, high simulatio
 - **Docstring Compliance**: All new classes, methods, and kernels MUST include **NumPy-style docstrings**. This is mandatory for automated Sphinx API generation (`sphinx-apidoc`).
 - **Theory Updates**: When introducing new physical models or observables, you MUST update **`PHYSICS.md`** with the relevant Hamiltonian definitions, phase behavior, and mathematical formulations.
 - **Scripts Catalog**: Any new entry-point script added to `scripts/` MUST be registered in **`SCRIPTS.md`** with a brief description of its purpose and usage.
-- **Performance Re-profiling**: If a change significantly impacts simulation throughput or analysis overhead, you MUST re-run the benchmark tool (`benchmark.py`) and update the **`Performance_Benchmarks.ipynb`** summary results.
+- **Performance Re-profiling**: If a change significantly impacts simulation throughput or analysis overhead, you MUST re-run the benchmark tool (`scripts/benchmarks/throughput.py`) and update the **`Performance_Benchmarks.ipynb`** summary results.
 - **Notebook Location**: All Jupyter notebooks live in `notebooks/`. When referencing a notebook by path, use `notebooks/<name>.ipynb`.
+- **Notebook Data Paths**: All file paths that load data inside a notebook (e.g., NPZ results) MUST be relative to the `notebooks/` directory. Use `../results/<model>/file.npz`, not `results/<model>/file.npz`.
+- **Notebook Documentation Standards**: Every code cell MUST be preceded by a markdown cell that explains what the code does and why. A single markdown intro may cover two or more tightly coupled code cells (e.g., a setup cell followed immediately by its plot cell) provided it explicitly names both. Output-producing cells (plots, summary tables) SHOULD be followed by a brief markdown recap that interprets the result in physical or numerical terms. Overarching blocks of thematically related cells MUST open with a section-level heading (`##` or `###`) and a prose introduction, and MAY close with a short summary recap. Never leave a code cell without a preceding markdown in any notebook.
 - **Cross-linking**: Standalone documentation files MUST be cross-linked in the Sphinx hub (`docs/source/index.md`) to ensure they appear in the hosted documentation site.
 
 ## Directory Map for Agents
@@ -102,14 +104,13 @@ The workspace root contains the following key files and directories.
 - `PHYSICS.md`: Hamiltonian definitions, phase behavior, and mathematical formulations.
 - `SCRIPTS.md`: Catalog of entry-point scripts with usage descriptions.
 - `AGENTS.md`: This agent instruction guide.
-- `benchmark.py`: Throughput benchmark tool for profiling simulation kernels.
 - `pyproject.toml`: Project metadata, dependencies, and tool configuration (ruff, mypy, pytest).
 
 **Directories:**
 - `models/`: Refactored simulation classes with `main()` entry points.
 - `utils/`: Physics and system-level helper functions.
 - `tests/`: High-coverage test suite including integrity, CLI, and extreme case verification.
-- `scripts/`: Physics experiments and equilibrium/kinetics drivers.
+- `scripts/`: Physics experiments and equilibrium/kinetics drivers. Subdirectories: `ising/`, `xy/`, `clock/`, `benchmarks/` (cross-model throughput benchmark).
 - `docs/`: Sphinx documentation source (`docs/source/`) and HTML build output (`docs/_build/html/`).
 - `results/`: Simulation output files organized by model (`ising/`, `xy/`, `clock/`, `benchmarks/`).
 - `notebooks/`: Jupyter notebooks for analysis and exploration. Current notebooks: `Performance_Benchmarks.ipynb` (throughput benchmark results) and `Wolff_Efficiency.ipynb` (Wolff cluster algorithm efficiency analysis). Add new analysis notebooks here.
@@ -123,7 +124,7 @@ The workspace root contains the following key files and directories.
 4. Verify the physical limits (e.g., ground state) in `tests/test_model_extremes.py`.
 
 ### Task: Investigate Performance Regression
-1. Run the benchmark tool: `python benchmark.py --sizes 512 1024 --sweeps 100`.
+1. Run the benchmark tool: `python scripts/benchmarks/throughput.py --sizes 512 1024 --sweeps 100`.
 2. Check the **Pure Simulation Time** vs. overhead in the summary table.
 3. Profile the kernel for unexpected allocations or `object mode` fallbacks.
 

@@ -27,9 +27,9 @@ VibeSpin provides a suite of entry-point scripts for conducting physics experime
 - **`ordering_evolution.py`**: Visualizes the evolution of discrete phase domains.
 - **`compare_discrete_vs_continuous.py`**: Provides a side-by-side performance and physical comparison between the continuous (XY + anisotropy) and discrete implementations.
 
-## 4. Project-Level Benchmarking
+## 4. Cross-Model Benchmarking (`scripts/benchmarks/`)
 
-- **`benchmark.py`**: Top-level performance benchmark driver for cross-model throughput and scaling studies. Produces comparative metrics (sweeps/s, ns/site, pure-vs-analysis timing splits) and feeds the benchmark notebook summary.
+- **`throughput.py`**: Cross-model throughput and scaling benchmark. Measures sweeps/s, ns/site, and per-call analysis costs (thermodynamic, $G(r)$, vorticity, helicity) across all eight model variants and a range of lattice sizes. Saves a 6-panel summary figure to `results/benchmarks/scaling_benchmark.png` and all metrics to `results/benchmarks/scaling_benchmark.npz`. The NPZ file is loaded by `notebooks/Performance_Benchmarks.ipynb` to avoid re-running the benchmark on every notebook execution.
 
 ## Usage Guidelines
 
