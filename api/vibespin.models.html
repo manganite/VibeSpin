@@ -187,6 +187,22 @@ Uses a checkerboard update pattern for better Numba optimization.</p>
 <dt class="sig sig-object py" id="models.clock_model.clock_step_parallel_numba">
 <span class="sig-prename descclassname"><span class="pre">models.clock_model.</span></span><span class="sig-name descname"><span class="pre">clock_step_parallel_numba</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">spins</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">beta</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">J</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">A</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">q</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">idx_next</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">idx_prev</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">ndarray</span></span></span><a class="reference internal" href="../_modules/models/clock_model.html#clock_step_parallel_numba"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#models.clock_model.clock_step_parallel_numba" title="Link to this definition"></a></dt>
 <dd><p>Parallel version of clock_step_numba.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>spins</strong> (<em>(</em><em>N</em><em>, </em><em>N</em><em>, </em><em>2</em><em>) </em><em>array</em><em> of </em><em>unit vectors.</em>)</p></li>
+<li><p><strong>beta</strong> (<em>Inverse temperature 1/kT.</em>)</p></li>
+<li><p><strong>J</strong> (<em>Coupling constant.</em>)</p></li>
+<li><p><strong>A</strong> (<em>Anisotropy strength.</em>)</p></li>
+<li><p><strong>q</strong> (<em>Number</em><em> of </em><em>clock states.</em>)</p></li>
+<li><p><strong>idx_next</strong> (<em>Pre-calculated next-neighbor indices.</em>)</p></li>
+<li><p><strong>idx_prev</strong> (<em>Pre-calculated previous-neighbor indices.</em>)</p></li>
+</ul>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>Updated spins array.</p>
+</dd>
+</dl>
 </dd></dl>
 
 <dl class="py function">
@@ -291,6 +307,22 @@ ignored.</p>
 <dt class="sig sig-object py" id="models.clock_model.discrete_clock_step_parallel_numba">
 <span class="sig-prename descclassname"><span class="pre">models.clock_model.</span></span><span class="sig-name descname"><span class="pre">discrete_clock_step_parallel_numba</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">spins</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">beta</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">J</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">q</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cos_table</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">idx_next</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">idx_prev</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">ndarray</span></span></span><a class="reference internal" href="../_modules/models/clock_model.html#discrete_clock_step_parallel_numba"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#models.clock_model.discrete_clock_step_parallel_numba" title="Link to this definition"></a></dt>
 <dd><p>Parallel version of discrete_clock_step_numba.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>spins</strong> (<em>(</em><em>N</em><em>, </em><em>N</em><em>) </em><em>array</em><em> of </em><em>integer spin states in {0</em><em>, </em><em>...</em><em>, </em><em>q-1}.</em>)</p></li>
+<li><p><strong>beta</strong> (<em>Inverse temperature 1/kT.</em>)</p></li>
+<li><p><strong>J</strong> (<em>Coupling constant.</em>)</p></li>
+<li><p><strong>q</strong> (<em>Number</em><em> of </em><em>clock states.</em>)</p></li>
+<li><p><strong>cos_table</strong> (<em>Pre-computed cos</em><em>(</em><em>2*pi*d/q</em><em>) </em><em>for d in {0</em><em>, </em><em>...</em><em>, </em><em>q-1}.</em>)</p></li>
+<li><p><strong>idx_next</strong> (<em>Pre-calculated next-neighbor indices.</em>)</p></li>
+<li><p><strong>idx_prev</strong> (<em>Pre-calculated previous-neighbor indices.</em>)</p></li>
+</ul>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>Updated spins array.</p>
+</dd>
+</dl>
 </dd></dl>
 
 <dl class="py function">
@@ -386,6 +418,20 @@ Uses a checkerboard update pattern for better Numba optimization.</p>
 <dt class="sig sig-object py" id="models.ising_model.ising_step_parallel_numba">
 <span class="sig-prename descclassname"><span class="pre">models.ising_model.</span></span><span class="sig-name descname"><span class="pre">ising_step_parallel_numba</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">spins</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">beta</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">J</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">idx_next</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">idx_prev</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">ndarray</span></span></span><a class="reference internal" href="../_modules/models/ising_model.html#ising_step_parallel_numba"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#models.ising_model.ising_step_parallel_numba" title="Link to this definition"></a></dt>
 <dd><p>Parallel version of ising_step_numba using numba.prange.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>spins</strong> (<em>(</em><em>N</em><em>, </em><em>N</em><em>) </em><em>array</em><em> of </em><em>spins</em><em> (</em><em>+1</em><em> or </em><em>-1</em><em>)</em><em>.</em>)</p></li>
+<li><p><strong>beta</strong> (<em>Inverse temperature 1/kT.</em>)</p></li>
+<li><p><strong>J</strong> (<em>Coupling constant.</em>)</p></li>
+<li><p><strong>idx_next</strong> (<em>Pre-calculated next-neighbor indices.</em>)</p></li>
+<li><p><strong>idx_prev</strong> (<em>Pre-calculated previous-neighbor indices.</em>)</p></li>
+</ul>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>Updated spins array.</p>
+</dd>
+</dl>
 </dd></dl>
 
 <dl class="py function">
@@ -625,6 +671,20 @@ Uses a checkerboard update pattern for better Numba optimization.</p>
 <dt class="sig sig-object py" id="models.xy_model.xy_step_parallel_numba">
 <span class="sig-prename descclassname"><span class="pre">models.xy_model.</span></span><span class="sig-name descname"><span class="pre">xy_step_parallel_numba</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">spins</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">beta</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">J</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">idx_next</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">idx_prev</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">ndarray</span></span></span><a class="reference internal" href="../_modules/models/xy_model.html#xy_step_parallel_numba"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#models.xy_model.xy_step_parallel_numba" title="Link to this definition"></a></dt>
 <dd><p>Parallel version of xy_step_numba.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>spins</strong> (<em>(</em><em>N</em><em>, </em><em>N</em><em>, </em><em>2</em><em>) </em><em>array</em><em> of </em><em>unit vectors.</em>)</p></li>
+<li><p><strong>beta</strong> (<em>Inverse temperature 1/kT.</em>)</p></li>
+<li><p><strong>J</strong> (<em>Coupling constant.</em>)</p></li>
+<li><p><strong>idx_next</strong> (<em>Pre-calculated next-neighbor indices.</em>)</p></li>
+<li><p><strong>idx_prev</strong> (<em>Pre-calculated previous-neighbor indices.</em>)</p></li>
+</ul>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>Updated spins array.</p>
+</dd>
+</dl>
 </dd></dl>
 
 <dl class="py function">

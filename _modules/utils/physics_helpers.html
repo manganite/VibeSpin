@@ -462,7 +462,20 @@
 <span class="k">def</span><span class="w"> </span><span class="nf">power_fit</span><span class="p">(</span>
     <span class="o">*</span><span class="p">,</span> <span class="n">t_arr</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">y_arr</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">mask</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">float</span><span class="p">,</span> <span class="nb">float</span><span class="p">]</span> <span class="o">|</span> <span class="nb">tuple</span><span class="p">[</span><span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">]:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Return (exponent, prefactor) from a log-log linear fit, or (None, None).&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Fit a power law y = prefactor * t^exponent via log-log linear regression.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">        t_arr: Independent variable array (e.g., time or length scale).</span>
+<span class="sd">        y_arr: Dependent variable array; only positive values are used in the fit.</span>
+<span class="sd">        mask: Boolean mask selecting the subset of points to include.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">        exponent: Fitted power-law exponent, or None if fewer than 3 valid points.</span>
+<span class="sd">        prefactor: Fitted prefactor, or None if fewer than 3 valid points.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
     <span class="n">valid</span> <span class="o">=</span> <span class="n">mask</span> <span class="o">&amp;</span> <span class="p">(</span><span class="n">y_arr</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">)</span>
     <span class="k">if</span> <span class="n">valid</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span> <span class="o">&lt;</span> <span class="mi">3</span><span class="p">:</span>
         <span class="k">return</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span>

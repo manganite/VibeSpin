@@ -3,7 +3,7 @@
 [![Documentation](https://img.shields.io/badge/docs-GitHub%20Pages-blue)](https://manganite.github.io/VibeSpin/)
 [![Tests](https://github.com/manganite/VibeSpin/actions/workflows/tests.yml/badge.svg)](https://github.com/manganite/VibeSpin/actions/workflows/tests.yml)
 
-VibeSpin is a Python framework for high-performance simulation and analysis of two-dimensional lattice spin models. The codebase focuses on three foundational systems: the **Ising model**, the **XY model**, and the **q-state Clock model** (in both continuous and discrete representations). It combines Numba-accelerated Monte Carlo dynamics with a robust analysis suite for equilibrium observables, coarsening kinetics, and topological defect tracking.
+VibeSpin is a Python framework for high-performance simulation and analysis of two-dimensional lattice spin models. The codebase focuses on three foundational systems: the **Ising model**, the **XY model**, and the **q-state Clock model** — provided as `ClockSimulation` (continuous XY-plus-anisotropy form) and `DiscreteClockSimulation` (integer state indices with cosine lookup tables). It combines Numba-accelerated Monte Carlo dynamics with a robust analysis suite for equilibrium observables, coarsening kinetics, and topological defect tracking.
 
 The implementation is optimized for speed, scalability, and physical repeatability. Core kernels utilize **Numba JIT compilation** with optional **multi-core parallelization**, periodic boundaries are handled via precomputed index arrays, and all stochastic trajectories are fully deterministic when seeded.
 
@@ -72,6 +72,8 @@ Launch an equilibrium temperature sweep for the XY model:
 ```bash
 python scripts/xy/temperature_sweep.py --size 64 --t-min 0.2 --t-max 1.5 --t-points 20
 ```
+
+Temperature sweep scripts use **adaptive equilibration**: after the mandatory minimum burn-in (`--eq-steps`), the run extends automatically until the probe window covers `--eq-factor` integrated autocorrelation times. This guarantees statistical independence without manual tuning across temperatures where $\tau_{\text{int}}$ varies by orders of magnitude. The `--eq-probe-steps` and `--eq-max-steps` flags cap the probe length and the hard maximum respectively.
 
 Investigate phase-ordering kinetics in the Ising model using random-site updates:
 

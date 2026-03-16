@@ -196,6 +196,20 @@
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Parallel version of clock_step_numba.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">        spins: (N, N, 2) array of unit vectors.</span>
+<span class="sd">        beta: Inverse temperature 1/kT.</span>
+<span class="sd">        J: Coupling constant.</span>
+<span class="sd">        A: Anisotropy strength.</span>
+<span class="sd">        q: Number of clock states.</span>
+<span class="sd">        idx_next: Pre-calculated next-neighbor indices.</span>
+<span class="sd">        idx_prev: Pre-calculated previous-neighbor indices.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">        Updated spins array.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="n">N</span> <span class="o">=</span> <span class="n">spins</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
     <span class="n">deltas</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">uniform</span><span class="p">(</span><span class="o">-</span><span class="mf">0.5</span><span class="p">,</span> <span class="mf">0.5</span><span class="p">,</span> <span class="n">size</span><span class="o">=</span><span class="p">(</span><span class="n">N</span><span class="p">,</span> <span class="n">N</span><span class="p">))</span>
@@ -731,6 +745,20 @@
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Parallel version of discrete_clock_step_numba.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">        spins: (N, N) array of integer spin states in {0, ..., q-1}.</span>
+<span class="sd">        beta: Inverse temperature 1/kT.</span>
+<span class="sd">        J: Coupling constant.</span>
+<span class="sd">        q: Number of clock states.</span>
+<span class="sd">        cos_table: Pre-computed cos(2*pi*d/q) for d in {0, ..., q-1}.</span>
+<span class="sd">        idx_next: Pre-calculated next-neighbor indices.</span>
+<span class="sd">        idx_prev: Pre-calculated previous-neighbor indices.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">        Updated spins array.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="n">N</span> <span class="o">=</span> <span class="n">spins</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
     <span class="n">proposals</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">randint</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">q</span><span class="p">,</span> <span class="n">size</span><span class="o">=</span><span class="p">(</span><span class="n">N</span><span class="p">,</span> <span class="n">N</span><span class="p">))</span>

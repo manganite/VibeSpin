@@ -157,6 +157,18 @@
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Parallel version of ising_step_numba using numba.prange.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">        spins: (N, N) array of spins (+1 or -1).</span>
+<span class="sd">        beta: Inverse temperature 1/kT.</span>
+<span class="sd">        J: Coupling constant.</span>
+<span class="sd">        idx_next: Pre-calculated next-neighbor indices.</span>
+<span class="sd">        idx_prev: Pre-calculated previous-neighbor indices.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">        Updated spins array.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="n">N</span> <span class="o">=</span> <span class="n">spins</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
     <span class="n">prob4</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="o">-</span><span class="mf">4.0</span> <span class="o">*</span> <span class="n">J</span> <span class="o">*</span> <span class="n">beta</span><span class="p">)</span>

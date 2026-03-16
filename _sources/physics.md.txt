@@ -62,7 +62,7 @@ $$S(T) = S_{\mathrm{ref}} - \int_T^{T_{\mathrm{ref}}} \frac{C_v(T')}{T'}\,dT'.$$
 
 The highest simulated temperature serves as the reference point. For clock models the absolute high-temperature limit is $S_{\mathrm{ref}} = \ln q$ per site (in units of $k_B$), corresponding to equipartition over all $q$ orientations.
 
-Finally, the **integrated autocorrelation time** $\tau_{\mathrm{int}}$, extracted from the magnetization time series, quantifies how many sweeps separate statistically independent samples. Near a critical point $\tau_{\mathrm{int}}$ diverges — the hallmark of critical slowing down — and its magnitude directly governs the statistical efficiency of the Monte Carlo run.
+Finally, the **integrated autocorrelation time** $\tau_{\mathrm{int}}$, extracted from the magnetization time series, quantifies how many sweeps separate statistically independent samples. Near a critical point $\tau_{\mathrm{int}}$ diverges — the hallmark of critical slowing down — and its magnitude directly governs the statistical efficiency of the Monte Carlo run. VibeSpin uses $\tau_{\mathrm{int}}$ not only as a reported observable but as an active control signal: the adaptive equilibration routine in `utils/system_helpers.py` extends the burn-in until the probe window spans at least `factor` $\times$ $\tau_{\mathrm{int}}$ sweeps, ensuring that equilibrium measurements are taken from a decorrelated state regardless of how strongly $\tau_{\mathrm{int}}$ varies with temperature.
 
 ### Spatial Diagnostics
 

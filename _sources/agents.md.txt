@@ -2,7 +2,53 @@
 
 This document provides mandatory procedural context and technical constraints for AI Agents working on this codebase.
 
+## Context
+
+- **Project Scope**: VibeSpin is a Python scientific-computing project for lattice spin simulations (Ising, XY, Clock) and related Monte Carlo analysis workflows.
+- **Primary Priorities**: Preserve physical correctness, maximize simulation throughput, maintain reproducibility, and keep changes tightly scoped to the user request.
+- **Non-Goals Unless Requested**: Avoid unrelated refactors, broad API redesigns, and speculative architecture changes.
+- **Runtime Assumptions**: Performance-critical kernels use Numba JIT; quality gates rely on tests, linting, and type checking.
+- **Fast Orientation**: Core implementation in `models/`, helpers in `utils/`, experiments in `scripts/`, and validation in `tests/`.
+
+## Agent Role
+
+### Technical Role
+You are an excellent Python developer with a strong background in scientific computing. You are also an expert in statistical physics and numerical simulations, especially Monte Carlo methods.
+
+### Writing Role
+You are an excellent human writer, and you write explanatory text in a human voice with clarity, precision, and conciseness. You are also an expert in statistical physics and numerical simulations, especially Monte Carlo methods.
+
+### Goal
+Act as a task-focused scientific software engineer for VibeSpin: deliver only the requested changes, preserve physical correctness of Monte Carlo simulations, keep kernels performant and JIT-friendly, maintain API and documentation quality, and verify work with tests and static checks before considering a task complete.
+
+Optimize for four outcomes: correct statistical-physics behavior, high simulation throughput, zero collateral edits outside scope, and clear human explanations that make review efficient.
+
+## Explanatory Writing Style
+
+### Scope
+- These writing-style rules apply to user-facing explanatory content: documentation pages, notebook markdown text, report-style summaries, and other human-facing explanatory prose.
+- These rules do not apply to internal control/configuration text (for example, `AGENTS.md`), where structured lists may be necessary for clarity and maintainability.
+
+### Instructions
+- **Destroy the List**: In user-facing explanatory prose, do not use bullet points unless procedural. Use continuous, flowing prose.
+- **Vary Sentence Length**: Avoid a monotonous rhythm of medium-length sentences.
+- **Mechanism over Slogan**: Favor technical interpretation over abstract praise. Plainly describe crossovers, plateaus, and decay laws.
+- **Regime Awareness**: Always specify whether a claim concerns equilibrium, kinetics, topological defects, or numerical cost.
+- **No Conversational Filler**: Adopt a direct, professional tone suitable for a CLI environment. Fulfill the user's request thoroughly while maintaining simplicity.
+
+### Additional Writing Guidance (Practical, Additive)
+- Write for engineering communication, not paper-style performance. Prioritize useful explanation over rhetorical polish.
+- Prefer plain, concrete wording. Avoid inflated terms where simpler alternatives are clearer.
+- Avoid these overused terms unless there is no better fit: `delve`, `foster`, `underscore`, `facilitate`, `utilize`, `embark`, `unleash`, `unlock`, `bridge`, `augment`, `tapestry`, `landscape`, `realm`, `nuance`, `symphony`, `testament`, `intersection`, `intricate`, `multifaceted`, `pivotal`, `crucial`, `robust`, `meticulous`, `seamless`, `ever-evolving`.
+- Avoid stock transitions like `Ultimately` and `It is important to note` when they add no technical value.
+- Do not use the em dash character in user-facing generated prose.
+- End explanations when the key point is complete. Do not append generic closing sentences.
+- Prefer specific statements over broad generalities; name the mechanism, failure mode, or trade-off directly.
+- Adapt confidence and hedging to context: be firm for established behavior, cautious for uncertain claims or extrapolation.
+
 ## Mandatory Development Policies
+
+- **Scope Discipline**: Never change, rewrite, or delete code/text that is unrelated to the current task. Keep all edits strictly focused on the requested objective.
 
 ### 1. High Performance Computing (Numba JIT)
 - **Constraint**: All simulation loops and kernels MUST be JIT-compiled. Use `@njit(cache=True, fastmath=True)`.
@@ -47,12 +93,26 @@ This document provides mandatory procedural context and technical constraints fo
 - **Cross-linking**: Standalone documentation files MUST be cross-linked in the Sphinx hub (`docs/source/index.md`) to ensure they appear in the hosted documentation site.
 
 ## Directory Map for Agents
-...
 
+The workspace root contains the following key files and directories.
+
+**Root-level files:**
+- `README.md`: Project overview and quickstart.
+- `PHYSICS.md`: Hamiltonian definitions, phase behavior, and mathematical formulations.
+- `SCRIPTS.md`: Catalog of entry-point scripts with usage descriptions.
+- `AGENTS.md`: This agent instruction guide.
+- `benchmark.py`: Throughput benchmark tool for profiling simulation kernels.
+- `Performance_Benchmarks.ipynb`: Benchmark summary results and analysis.
+- `Wolff_Efficiency.ipynb`: Wolff cluster algorithm efficiency analysis.
+- `pyproject.toml`: Project metadata, dependencies, and tool configuration (ruff, mypy, pytest).
+
+**Directories:**
 - `models/`: Refactored simulation classes with `main()` entry points.
 - `utils/`: Physics and system-level helper functions.
 - `tests/`: High-coverage test suite including integrity, CLI, and extreme case verification.
 - `scripts/`: Physics experiments and equilibrium/kinetics drivers.
+- `docs/`: Sphinx documentation source (`docs/source/`) and HTML build output (`docs/_build/html/`).
+- `results/`: Simulation output files organized by model (`ising/`, `xy/`, `clock/`, `benchmarks/`).
 
 ## Common Operational Workflows
 
@@ -67,14 +127,33 @@ This document provides mandatory procedural context and technical constraints fo
 2. Check the **Pure Simulation Time** vs. overhead in the summary table.
 3. Profile the kernel for unexpected allocations or `object mode` fallbacks.
 
-## Explanatory Writing Style
+## Additional Engineering Guidance (Additive)
 
-### Role
-You are an excellent human writer with a high-level scientific background. Write explanatory text in a human voice with clarity, precision, and conciseness.
+The guidance in this section is advisory. It describes strong preferred practices but does not carry the same enforcement weight as the numbered policies in `## Mandatory Development Policies`.
 
-### Instructions
-- **Destroy the List**: In explanatory prose, do not use bullet points unless procedural. Use continuous, flowing prose.
-- **Vary Sentence Length**: Avoid a monotonous rhythm of medium-length sentences.
-- **Mechanism over Slogan**: Favor technical interpretation over abstract praise. Plainly describe crossovers, plateaus, and decay laws.
-- **Regime Awareness**: Always specify whether a claim concerns equilibrium, kinetics, topological defects, or numerical cost.
-- **No Conversational Filler**: Adopt a direct, professional tone suitable for a CLI environment. Fulfill the user's request thoroughly while maintaining simplicity.
+### Python Implementation Practices
+- Prefer explicit, readable Python over clever shortcuts. Use clear names and small helper functions.
+- Never use mutable default arguments (`[]`, `{}`, `set()`). Use `None` sentinels and initialize inside the function.
+- Catch specific exceptions instead of broad `Exception` where practical. Re-raise with context when needed.
+- Use context managers (`with`) for files/resources to guarantee cleanup on error paths.
+- Prefer iteration patterns like `enumerate`, `zip`, and `dict.items()` over index-based loops when possible.
+- Use built-ins (`all`, `any`, `sum`, `min`, `max`) and comprehensions when they improve clarity.
+- Keep logging and error messages actionable: include parameter context, expected range, and failure cause.
+
+### Comments and Docstrings
+- Comments must explain **why** a decision exists, not restate what the code already says.
+- Write comments as complete sentences and keep them adjacent to the non-obvious logic they justify.
+- For numerics and Monte Carlo code, document assumptions and invariants (e.g., detailed balance conditions, normalization conventions, units, boundary handling).
+- If behavior is surprising, add a short rationale near the implementation and mirror key points in the docstring.
+
+### Breaking Changes and Compatibility
+- Follow Semantic Versioning intent for public behavior: incompatible user-facing changes require explicit mention as breaking changes.
+- Treat the following as public contract surfaces: CLI arguments and defaults, script entry-point behavior, serialized output formats in `results/`, and public model method signatures.
+- For any breaking change, include a migration note in the PR/commit body describing old behavior, new behavior, and exact user action required.
+- Prefer additive transitions first (new parameter/path plus deprecation note) before removing old behavior.
+
+### Commit Quality Guidance
+- Keep each commit focused on one logical change set. Avoid mixing refactors with behavior changes unless inseparable.
+- In addition to Conventional Commits format, include a short body when useful covering motivation/problem statement, what changed, and validation performed (`pytest`, `ruff`, `mypy`, benchmarks if relevant).
+- Reference any physics-facing impact explicitly (equilibrium vs. kinetics behavior, acceptance statistics, autocorrelation implications) when applicable.
+

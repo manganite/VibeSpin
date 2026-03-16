@@ -52,6 +52,19 @@
 <li class="toctree-l1"><a class="reference internal" href="physics.html">Physics and Algorithm Guide: VibeSpin</a></li>
 <li class="toctree-l1"><a class="reference internal" href="scripts.html">Scripts Catalog: VibeSpin</a></li>
 <li class="toctree-l1 current"><a class="current reference internal" href="#">Agent Instruction Guide: VibeSpin</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#context">Context</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#agent-role">Agent Role</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#technical-role">Technical Role</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#writing-role">Writing Role</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#goal">Goal</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#explanatory-writing-style">Explanatory Writing Style</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#scope">Scope</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#instructions">Instructions</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#additional-writing-guidance-practical-additive">Additional Writing Guidance (Practical, Additive)</a></li>
+</ul>
+</li>
 <li class="toctree-l2"><a class="reference internal" href="#mandatory-development-policies">Mandatory Development Policies</a><ul>
 <li class="toctree-l3"><a class="reference internal" href="#high-performance-computing-numba-jit">1. High Performance Computing (Numba JIT)</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#code-quality-type-safety">2. Code Quality &amp; Type Safety</a></li>
@@ -67,9 +80,11 @@
 <li class="toctree-l3"><a class="reference internal" href="#task-investigate-performance-regression">Task: Investigate Performance Regression</a></li>
 </ul>
 </li>
-<li class="toctree-l2"><a class="reference internal" href="#explanatory-writing-style">Explanatory Writing Style</a><ul>
-<li class="toctree-l3"><a class="reference internal" href="#role">Role</a></li>
-<li class="toctree-l3"><a class="reference internal" href="#instructions">Instructions</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#additional-engineering-guidance-additive">Additional Engineering Guidance (Additive)</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#python-implementation-practices">Python Implementation Practices</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#comments-and-docstrings">Comments and Docstrings</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#breaking-changes-and-compatibility">Breaking Changes and Compatibility</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#commit-quality-guidance">Commit Quality Guidance</a></li>
 </ul>
 </li>
 </ul>
@@ -111,8 +126,70 @@
   <section class="tex2jax_ignore mathjax_ignore" id="agent-instruction-guide-vibespin">
 <h1>Agent Instruction Guide: VibeSpin<a class="headerlink" href="#agent-instruction-guide-vibespin" title="Link to this heading"></a></h1>
 <p>This document provides mandatory procedural context and technical constraints for AI Agents working on this codebase.</p>
+<section id="context">
+<h2>Context<a class="headerlink" href="#context" title="Link to this heading"></a></h2>
+<ul class="simple">
+<li><p><strong>Project Scope</strong>: VibeSpin is a Python scientific-computing project for lattice spin simulations (Ising, XY, Clock) and related Monte Carlo analysis workflows.</p></li>
+<li><p><strong>Primary Priorities</strong>: Preserve physical correctness, maximize simulation throughput, maintain reproducibility, and keep changes tightly scoped to the user request.</p></li>
+<li><p><strong>Non-Goals Unless Requested</strong>: Avoid unrelated refactors, broad API redesigns, and speculative architecture changes.</p></li>
+<li><p><strong>Runtime Assumptions</strong>: Performance-critical kernels use Numba JIT; quality gates rely on tests, linting, and type checking.</p></li>
+<li><p><strong>Fast Orientation</strong>: Core implementation in <code class="docutils literal notranslate"><span class="pre">models/</span></code>, helpers in <code class="docutils literal notranslate"><span class="pre">utils/</span></code>, experiments in <code class="docutils literal notranslate"><span class="pre">scripts/</span></code>, and validation in <code class="docutils literal notranslate"><span class="pre">tests/</span></code>.</p></li>
+</ul>
+</section>
+<section id="agent-role">
+<h2>Agent Role<a class="headerlink" href="#agent-role" title="Link to this heading"></a></h2>
+<section id="technical-role">
+<h3>Technical Role<a class="headerlink" href="#technical-role" title="Link to this heading"></a></h3>
+<p>You are an excellent Python developer with a strong background in scientific computing. You are also an expert in statistical physics and numerical simulations, especially Monte Carlo methods.</p>
+</section>
+<section id="writing-role">
+<h3>Writing Role<a class="headerlink" href="#writing-role" title="Link to this heading"></a></h3>
+<p>You are an excellent human writer, and you write explanatory text in a human voice with clarity, precision, and conciseness. You are also an expert in statistical physics and numerical simulations, especially Monte Carlo methods.</p>
+</section>
+<section id="goal">
+<h3>Goal<a class="headerlink" href="#goal" title="Link to this heading"></a></h3>
+<p>Act as a task-focused scientific software engineer for VibeSpin: deliver only the requested changes, preserve physical correctness of Monte Carlo simulations, keep kernels performant and JIT-friendly, maintain API and documentation quality, and verify work with tests and static checks before considering a task complete.</p>
+<p>Optimize for four outcomes: correct statistical-physics behavior, high simulation throughput, zero collateral edits outside scope, and clear human explanations that make review efficient.</p>
+</section>
+</section>
+<section id="explanatory-writing-style">
+<h2>Explanatory Writing Style<a class="headerlink" href="#explanatory-writing-style" title="Link to this heading"></a></h2>
+<section id="scope">
+<h3>Scope<a class="headerlink" href="#scope" title="Link to this heading"></a></h3>
+<ul class="simple">
+<li><p>These writing-style rules apply to user-facing explanatory content: documentation pages, notebook markdown text, report-style summaries, and other human-facing explanatory prose.</p></li>
+<li><p>These rules do not apply to internal control/configuration text (for example, <code class="docutils literal notranslate"><span class="pre">AGENTS.md</span></code>), where structured lists may be necessary for clarity and maintainability.</p></li>
+</ul>
+</section>
+<section id="instructions">
+<h3>Instructions<a class="headerlink" href="#instructions" title="Link to this heading"></a></h3>
+<ul class="simple">
+<li><p><strong>Destroy the List</strong>: In user-facing explanatory prose, do not use bullet points unless procedural. Use continuous, flowing prose.</p></li>
+<li><p><strong>Vary Sentence Length</strong>: Avoid a monotonous rhythm of medium-length sentences.</p></li>
+<li><p><strong>Mechanism over Slogan</strong>: Favor technical interpretation over abstract praise. Plainly describe crossovers, plateaus, and decay laws.</p></li>
+<li><p><strong>Regime Awareness</strong>: Always specify whether a claim concerns equilibrium, kinetics, topological defects, or numerical cost.</p></li>
+<li><p><strong>No Conversational Filler</strong>: Adopt a direct, professional tone suitable for a CLI environment. Fulfill the user’s request thoroughly while maintaining simplicity.</p></li>
+</ul>
+</section>
+<section id="additional-writing-guidance-practical-additive">
+<h3>Additional Writing Guidance (Practical, Additive)<a class="headerlink" href="#additional-writing-guidance-practical-additive" title="Link to this heading"></a></h3>
+<ul class="simple">
+<li><p>Write for engineering communication, not paper-style performance. Prioritize useful explanation over rhetorical polish.</p></li>
+<li><p>Prefer plain, concrete wording. Avoid inflated terms where simpler alternatives are clearer.</p></li>
+<li><p>Avoid these overused terms unless there is no better fit: <code class="docutils literal notranslate"><span class="pre">delve</span></code>, <code class="docutils literal notranslate"><span class="pre">foster</span></code>, <code class="docutils literal notranslate"><span class="pre">underscore</span></code>, <code class="docutils literal notranslate"><span class="pre">facilitate</span></code>, <code class="docutils literal notranslate"><span class="pre">utilize</span></code>, <code class="docutils literal notranslate"><span class="pre">embark</span></code>, <code class="docutils literal notranslate"><span class="pre">unleash</span></code>, <code class="docutils literal notranslate"><span class="pre">unlock</span></code>, <code class="docutils literal notranslate"><span class="pre">bridge</span></code>, <code class="docutils literal notranslate"><span class="pre">augment</span></code>, <code class="docutils literal notranslate"><span class="pre">tapestry</span></code>, <code class="docutils literal notranslate"><span class="pre">landscape</span></code>, <code class="docutils literal notranslate"><span class="pre">realm</span></code>, <code class="docutils literal notranslate"><span class="pre">nuance</span></code>, <code class="docutils literal notranslate"><span class="pre">symphony</span></code>, <code class="docutils literal notranslate"><span class="pre">testament</span></code>, <code class="docutils literal notranslate"><span class="pre">intersection</span></code>, <code class="docutils literal notranslate"><span class="pre">intricate</span></code>, <code class="docutils literal notranslate"><span class="pre">multifaceted</span></code>, <code class="docutils literal notranslate"><span class="pre">pivotal</span></code>, <code class="docutils literal notranslate"><span class="pre">crucial</span></code>, <code class="docutils literal notranslate"><span class="pre">robust</span></code>, <code class="docutils literal notranslate"><span class="pre">meticulous</span></code>, <code class="docutils literal notranslate"><span class="pre">seamless</span></code>, <code class="docutils literal notranslate"><span class="pre">ever-evolving</span></code>.</p></li>
+<li><p>Avoid stock transitions like <code class="docutils literal notranslate"><span class="pre">Ultimately</span></code> and <code class="docutils literal notranslate"><span class="pre">It</span> <span class="pre">is</span> <span class="pre">important</span> <span class="pre">to</span> <span class="pre">note</span></code> when they add no technical value.</p></li>
+<li><p>Do not use the em dash character in user-facing generated prose.</p></li>
+<li><p>End explanations when the key point is complete. Do not append generic closing sentences.</p></li>
+<li><p>Prefer specific statements over broad generalities; name the mechanism, failure mode, or trade-off directly.</p></li>
+<li><p>Adapt confidence and hedging to context: be firm for established behavior, cautious for uncertain claims or extrapolation.</p></li>
+</ul>
+</section>
+</section>
 <section id="mandatory-development-policies">
 <h2>Mandatory Development Policies<a class="headerlink" href="#mandatory-development-policies" title="Link to this heading"></a></h2>
+<ul class="simple">
+<li><p><strong>Scope Discipline</strong>: Never change, rewrite, or delete code/text that is unrelated to the current task. Keep all edits strictly focused on the requested objective.</p></li>
+</ul>
 <section id="high-performance-computing-numba-jit">
 <h3>1. High Performance Computing (Numba JIT)<a class="headerlink" href="#high-performance-computing-numba-jit" title="Link to this heading"></a></h3>
 <ul class="simple">
@@ -178,12 +255,26 @@ mypy<span class="w"> </span>--explicit-package-bases<span class="w"> </span>mode
 </section>
 <section id="directory-map-for-agents">
 <h2>Directory Map for Agents<a class="headerlink" href="#directory-map-for-agents" title="Link to this heading"></a></h2>
-<p>…</p>
+<p>The workspace root contains the following key files and directories.</p>
+<p><strong>Root-level files:</strong></p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">README.md</span></code>: Project overview and quickstart.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">PHYSICS.md</span></code>: Hamiltonian definitions, phase behavior, and mathematical formulations.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">SCRIPTS.md</span></code>: Catalog of entry-point scripts with usage descriptions.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">AGENTS.md</span></code>: This agent instruction guide.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">benchmark.py</span></code>: Throughput benchmark tool for profiling simulation kernels.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">Performance_Benchmarks.ipynb</span></code>: Benchmark summary results and analysis.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">Wolff_Efficiency.ipynb</span></code>: Wolff cluster algorithm efficiency analysis.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">pyproject.toml</span></code>: Project metadata, dependencies, and tool configuration (ruff, mypy, pytest).</p></li>
+</ul>
+<p><strong>Directories:</strong></p>
 <ul class="simple">
 <li><p><code class="docutils literal notranslate"><span class="pre">models/</span></code>: Refactored simulation classes with <code class="docutils literal notranslate"><span class="pre">main()</span></code> entry points.</p></li>
 <li><p><code class="docutils literal notranslate"><span class="pre">utils/</span></code>: Physics and system-level helper functions.</p></li>
 <li><p><code class="docutils literal notranslate"><span class="pre">tests/</span></code>: High-coverage test suite including integrity, CLI, and extreme case verification.</p></li>
 <li><p><code class="docutils literal notranslate"><span class="pre">scripts/</span></code>: Physics experiments and equilibrium/kinetics drivers.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">docs/</span></code>: Sphinx documentation source (<code class="docutils literal notranslate"><span class="pre">docs/source/</span></code>) and HTML build output (<code class="docutils literal notranslate"><span class="pre">docs/_build/html/</span></code>).</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">results/</span></code>: Simulation output files organized by model (<code class="docutils literal notranslate"><span class="pre">ising/</span></code>, <code class="docutils literal notranslate"><span class="pre">xy/</span></code>, <code class="docutils literal notranslate"><span class="pre">clock/</span></code>, <code class="docutils literal notranslate"><span class="pre">benchmarks/</span></code>).</p></li>
 </ul>
 </section>
 <section id="common-operational-workflows">
@@ -206,20 +297,45 @@ mypy<span class="w"> </span>--explicit-package-bases<span class="w"> </span>mode
 </ol>
 </section>
 </section>
-<section id="explanatory-writing-style">
-<h2>Explanatory Writing Style<a class="headerlink" href="#explanatory-writing-style" title="Link to this heading"></a></h2>
-<section id="role">
-<h3>Role<a class="headerlink" href="#role" title="Link to this heading"></a></h3>
-<p>You are an excellent human writer with a high-level scientific background. Write explanatory text in a human voice with clarity, precision, and conciseness.</p>
-</section>
-<section id="instructions">
-<h3>Instructions<a class="headerlink" href="#instructions" title="Link to this heading"></a></h3>
+<section id="additional-engineering-guidance-additive">
+<h2>Additional Engineering Guidance (Additive)<a class="headerlink" href="#additional-engineering-guidance-additive" title="Link to this heading"></a></h2>
+<p>The guidance in this section is advisory. It describes strong preferred practices but does not carry the same enforcement weight as the numbered policies in <code class="docutils literal notranslate"><span class="pre">##</span> <span class="pre">Mandatory</span> <span class="pre">Development</span> <span class="pre">Policies</span></code>.</p>
+<section id="python-implementation-practices">
+<h3>Python Implementation Practices<a class="headerlink" href="#python-implementation-practices" title="Link to this heading"></a></h3>
 <ul class="simple">
-<li><p><strong>Destroy the List</strong>: In explanatory prose, do not use bullet points unless procedural. Use continuous, flowing prose.</p></li>
-<li><p><strong>Vary Sentence Length</strong>: Avoid a monotonous rhythm of medium-length sentences.</p></li>
-<li><p><strong>Mechanism over Slogan</strong>: Favor technical interpretation over abstract praise. Plainly describe crossovers, plateaus, and decay laws.</p></li>
-<li><p><strong>Regime Awareness</strong>: Always specify whether a claim concerns equilibrium, kinetics, topological defects, or numerical cost.</p></li>
-<li><p><strong>No Conversational Filler</strong>: Adopt a direct, professional tone suitable for a CLI environment. Fulfill the user’s request thoroughly while maintaining simplicity.</p></li>
+<li><p>Prefer explicit, readable Python over clever shortcuts. Use clear names and small helper functions.</p></li>
+<li><p>Never use mutable default arguments (<code class="docutils literal notranslate"><span class="pre">[]</span></code>, <code class="docutils literal notranslate"><span class="pre">{}</span></code>, <code class="docutils literal notranslate"><span class="pre">set()</span></code>). Use <code class="docutils literal notranslate"><span class="pre">None</span></code> sentinels and initialize inside the function.</p></li>
+<li><p>Catch specific exceptions instead of broad <code class="docutils literal notranslate"><span class="pre">Exception</span></code> where practical. Re-raise with context when needed.</p></li>
+<li><p>Use context managers (<code class="docutils literal notranslate"><span class="pre">with</span></code>) for files/resources to guarantee cleanup on error paths.</p></li>
+<li><p>Prefer iteration patterns like <code class="docutils literal notranslate"><span class="pre">enumerate</span></code>, <code class="docutils literal notranslate"><span class="pre">zip</span></code>, and <code class="docutils literal notranslate"><span class="pre">dict.items()</span></code> over index-based loops when possible.</p></li>
+<li><p>Use built-ins (<code class="docutils literal notranslate"><span class="pre">all</span></code>, <code class="docutils literal notranslate"><span class="pre">any</span></code>, <code class="docutils literal notranslate"><span class="pre">sum</span></code>, <code class="docutils literal notranslate"><span class="pre">min</span></code>, <code class="docutils literal notranslate"><span class="pre">max</span></code>) and comprehensions when they improve clarity.</p></li>
+<li><p>Keep logging and error messages actionable: include parameter context, expected range, and failure cause.</p></li>
+</ul>
+</section>
+<section id="comments-and-docstrings">
+<h3>Comments and Docstrings<a class="headerlink" href="#comments-and-docstrings" title="Link to this heading"></a></h3>
+<ul class="simple">
+<li><p>Comments must explain <strong>why</strong> a decision exists, not restate what the code already says.</p></li>
+<li><p>Write comments as complete sentences and keep them adjacent to the non-obvious logic they justify.</p></li>
+<li><p>For numerics and Monte Carlo code, document assumptions and invariants (e.g., detailed balance conditions, normalization conventions, units, boundary handling).</p></li>
+<li><p>If behavior is surprising, add a short rationale near the implementation and mirror key points in the docstring.</p></li>
+</ul>
+</section>
+<section id="breaking-changes-and-compatibility">
+<h3>Breaking Changes and Compatibility<a class="headerlink" href="#breaking-changes-and-compatibility" title="Link to this heading"></a></h3>
+<ul class="simple">
+<li><p>Follow Semantic Versioning intent for public behavior: incompatible user-facing changes require explicit mention as breaking changes.</p></li>
+<li><p>Treat the following as public contract surfaces: CLI arguments and defaults, script entry-point behavior, serialized output formats in <code class="docutils literal notranslate"><span class="pre">results/</span></code>, and public model method signatures.</p></li>
+<li><p>For any breaking change, include a migration note in the PR/commit body describing old behavior, new behavior, and exact user action required.</p></li>
+<li><p>Prefer additive transitions first (new parameter/path plus deprecation note) before removing old behavior.</p></li>
+</ul>
+</section>
+<section id="commit-quality-guidance">
+<h3>Commit Quality Guidance<a class="headerlink" href="#commit-quality-guidance" title="Link to this heading"></a></h3>
+<ul class="simple">
+<li><p>Keep each commit focused on one logical change set. Avoid mixing refactors with behavior changes unless inseparable.</p></li>
+<li><p>In addition to Conventional Commits format, include a short body when useful covering motivation/problem statement, what changed, and validation performed (<code class="docutils literal notranslate"><span class="pre">pytest</span></code>, <code class="docutils literal notranslate"><span class="pre">ruff</span></code>, <code class="docutils literal notranslate"><span class="pre">mypy</span></code>, benchmarks if relevant).</p></li>
+<li><p>Reference any physics-facing impact explicitly (equilibrium vs. kinetics behavior, acceptance statistics, autocorrelation implications) when applicable.</p></li>
 </ul>
 </section>
 </section>

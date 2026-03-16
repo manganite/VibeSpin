@@ -254,7 +254,23 @@ rows (y positions) and normalised so G(0) = 1.</p>
 <dl class="py function">
 <dt class="sig sig-object py" id="utils.physics_helpers.power_fit">
 <span class="sig-prename descclassname"><span class="pre">utils.physics_helpers.</span></span><span class="sig-name descname"><span class="pre">power_fit</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">t_arr</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">y_arr</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mask</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">float</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">float</span><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">None</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">None</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="../_modules/utils/physics_helpers.html#power_fit"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#utils.physics_helpers.power_fit" title="Link to this definition"></a></dt>
-<dd><p>Return (exponent, prefactor) from a log-log linear fit, or (None, None).</p>
+<dd><p>Fit a power law y = prefactor * t^exponent via log-log linear regression.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>t_arr</strong> (<em>Independent variable array</em><em> (</em><em>e.g.</em><em>, </em><em>time</em><em> or </em><em>length scale</em><em>)</em><em>.</em>)</p></li>
+<li><p><strong>y_arr</strong> (<em>Dependent variable array; only positive values are used in the fit.</em>)</p></li>
+<li><p><strong>mask</strong> (<em>Boolean mask selecting the subset</em><em> of </em><em>points to include.</em>)</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><ul class="simple">
+<li><p><strong>exponent</strong> (<em>Fitted power-law exponent, or None if fewer than 3 valid points.</em>)</p></li>
+<li><p><strong>prefactor</strong> (<em>Fitted prefactor, or None if fewer than 3 valid points.</em>)</p></li>
+</ul>
+</p>
+</dd>
+</dl>
 </dd></dl>
 
 <dl class="py function">
