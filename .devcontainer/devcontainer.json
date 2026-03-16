@@ -15,11 +15,17 @@
 	},
 
 	// Use 'forwardPorts' to make a list of ports inside the container available locally.
-	// "forwardPorts": [],
+	"forwardPorts": [8888],
+	"portsAttributes": {
+		"8888": {
+			"label": "JupyterLab",
+			"onAutoForward": "openBrowser"
+		}
+	},
 
 	// Use 'postCreateCommand' to run commands after the container is created.
-	"postCreateCommand": "bash -lc 'set -euo pipefail; python -m venv --clear --copies .venv; ./.venv/bin/python -m pip install --upgrade pip; ./.venv/bin/python -m pip install -e \".[dev,notebook,docs]\"; mkdir -p \"$HOME/.gemini\"; npm install -g @google/gemini-cli@latest'",
-	"postStartCommand": "bash .devcontainer/scripts/check-ssh-agent.sh",
+	"postCreateCommand": "bash -lc 'set -euo pipefail; cd /workspaces/vibespin; python -m venv --clear --copies .venv; ./.venv/bin/python -m pip install --upgrade pip; ./.venv/bin/python -m pip install -e \".[dev,notebook,docs]\"; mkdir -p \"$HOME/.gemini\"; npm install -g @google/gemini-cli@latest; bash /workspaces/vibespin/.devcontainer/scripts/start-jupyter.sh'",
+	"postStartCommand": "bash -lc 'set -euo pipefail; cd /workspaces/vibespin; { echo \"[$(date -Iseconds)] postStart begin\"; bash /workspaces/vibespin/.devcontainer/scripts/check-ssh-agent.sh; bash /workspaces/vibespin/.devcontainer/scripts/start-jupyter.sh; echo \"[$(date -Iseconds)] postStart end\"; } >> /tmp/devcontainer-poststart.log 2>&1'",
 	"customizations": {
 		"vscode": {
 			"settings": {

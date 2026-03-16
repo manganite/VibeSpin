@@ -32,6 +32,25 @@ pip install -e ".[dev,notebook,docs]"
 pre-commit install
 ```
 
+### Devcontainer Jupyter Auto-Start
+
+In this repository's devcontainer, JupyterLab starts automatically and listens on port 8888. The startup path is configured in [.devcontainer/devcontainer.json](.devcontainer/devcontainer.json) and launches [start-jupyter.sh](.devcontainer/scripts/start-jupyter.sh), which waits for the project virtual environment to be ready and then starts JupyterLab in detached mode.
+
+After rebuilding the container, verify the server with the venv binary directly:
+
+```bash
+/workspaces/vibespin/.venv/bin/jupyter notebook list
+```
+
+The startup log is written to `/tmp/jupyter.log`, and lifecycle-hook output is written to `/tmp/devcontainer-poststart.log`.
+
+If no server is listed, inspect both logs first:
+
+```bash
+tail -n 200 /tmp/devcontainer-poststart.log
+tail -n 200 /tmp/jupyter.log
+```
+
 ## Benchmarking & Performance
 
 VibeSpin includes a comprehensive performance analysis suite. The benchmark tool measures throughput (sweeps/s), identifies hardware-bound scaling regimes (ns/site), and quantifies the overhead of thermodynamic vs. topological measurements.
