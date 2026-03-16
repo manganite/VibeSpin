@@ -70,8 +70,6 @@ def _render_root_package() -> str:
     for child in TOCTREE_CHILDREN['vibespin']:
         content += f'   {child}\n'
     content += '\n'
-    content += _section('Submodules')
-    content += _module_section('benchmark')
     return content
 
 
