@@ -24,14 +24,21 @@ repos:
         entry: .venv/bin/python docs/check_markdown_links.py
         language: system
         pass_filenames: false
-        stages: [pre-commit]
+        stages: [pre-commit, pre-push]
 
       - id: sphinx-api-docs-sync
         name: sphinx api docs sync
         entry: bash -lc '.venv/bin/python docs/generate_api_docs.py && git diff --exit-code -- docs/source/api'
         language: system
         pass_filenames: false
-        stages: [pre-commit]
+        stages: [pre-commit, pre-push]
+
+      - id: sphinx-html-warnings
+        name: sphinx html warnings guard
+        entry: bash -lc 'cd docs && make html SPHINXOPTS="-W --keep-going"'
+        language: system
+        pass_filenames: false
+        stages: [pre-push]
 
       - id: pytest-docstring-style
         name: pytest docstring style guard

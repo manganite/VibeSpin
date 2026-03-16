@@ -29,8 +29,10 @@ For full development capabilities (benchmarking, tests, and documentation):
 
 ```bash
 pip install -e ".[dev,notebook,docs]"
-pre-commit install
+pre-commit install --hook-type pre-commit --hook-type pre-push
 ```
+
+The repository enforces documentation consistency at both commit and push time. The pre-push hook runs link validation, API docs sync checks, and a Sphinx HTML build with warnings treated as errors.
 
 ### Devcontainer Jupyter Auto-Start
 
@@ -109,6 +111,7 @@ Before proposing changes, ensure all verification checks pass:
 pytest
 ruff check .
 mypy --explicit-package-bases models/ utils/ scripts/
+pre-commit run --all-files --hook-stage pre-push
 ```
 
 ## Documentation
