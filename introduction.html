@@ -53,7 +53,10 @@
 <li class="toctree-l3"><a class="reference internal" href="#physical-analysis">Physical Analysis</a></li>
 </ul>
 </li>
-<li class="toctree-l2"><a class="reference internal" href="#installation">Installation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#installation">Installation</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#devcontainer-jupyter-auto-start">Devcontainer Jupyter Auto-Start</a></li>
+</ul>
+</li>
 <li class="toctree-l2"><a class="reference internal" href="#benchmarking-performance">Benchmarking &amp; Performance</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#typical-usage">Typical usage</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#development-guidance">Development guidance</a><ul>
@@ -136,6 +139,20 @@
 pre-commit<span class="w"> </span>install
 </pre></div>
 </div>
+<section id="devcontainer-jupyter-auto-start">
+<h3>Devcontainer Jupyter Auto-Start<a class="headerlink" href="#devcontainer-jupyter-auto-start" title="Link to this heading"></a></h3>
+<p>In this repository’s devcontainer, JupyterLab starts automatically and listens on port 8888. The startup path is defined in the repository’s <a class="reference external" href="https://github.com/manganite/VibeSpin/blob/master/.devcontainer/devcontainer.json">devcontainer.json on GitHub</a> and launches the companion <a class="reference external" href="https://github.com/manganite/VibeSpin/blob/master/.devcontainer/scripts/start-jupyter.sh">start-jupyter.sh helper on GitHub</a>, which waits for the project virtual environment to be ready and then starts JupyterLab in detached mode.</p>
+<p>After rebuilding the container, verify the server with the venv binary directly:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>/workspaces/vibespin/.venv/bin/jupyter<span class="w"> </span>notebook<span class="w"> </span>list
+</pre></div>
+</div>
+<p>The startup log is written to <code class="docutils literal notranslate"><span class="pre">/tmp/jupyter.log</span></code>, and lifecycle-hook output is written to <code class="docutils literal notranslate"><span class="pre">/tmp/devcontainer-poststart.log</span></code>.</p>
+<p>If no server is listed, inspect both logs first:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>tail<span class="w"> </span>-n<span class="w"> </span><span class="m">200</span><span class="w"> </span>/tmp/devcontainer-poststart.log
+tail<span class="w"> </span>-n<span class="w"> </span><span class="m">200</span><span class="w"> </span>/tmp/jupyter.log
+</pre></div>
+</div>
+</section>
 </section>
 <section id="benchmarking-performance">
 <h2>Benchmarking &amp; Performance<a class="headerlink" href="#benchmarking-performance" title="Link to this heading"></a></h2>
