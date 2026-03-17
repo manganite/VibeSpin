@@ -17,9 +17,6 @@
       <script src="_static/doctools.js?v=fd6eb6e6"></script>
       <script src="_static/sphinx_highlight.js?v=6ffebe34"></script>
       <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
-      <script>window.MathJax = {"options": {"processHtmlClass": "tex2jax_process|mathjax_process|math|output_area"}}</script>
-      <script>window.MathJax = {"tex": {"inlineMath": [["$", "$"], ["\\(", "\\)"]], "processEscapes": true}, "options": {"ignoreHtmlClass": "tex2jax_ignore|mathjax_ignore|document", "processHtmlClass": "tex2jax_process|mathjax_process|math|output_area"}}</script>
-      <script defer="defer" src="https://cdn.jsdelivr.net/npm/mathjax@4/tex-mml-chtml.js"></script>
     <script src="_static/js/theme.js"></script>
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
@@ -50,34 +47,7 @@
 <ul class="current">
 <li class="toctree-l1 current"><a class="current reference internal" href="#">VibeSpin</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="#project-policies-scope-discipline">Project Policies &amp; Scope Discipline</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#bibliography">Bibliography</a><ul>
-<li class="toctree-l3"><a class="reference internal" href="#scientific-background-and-references">Scientific Background and References</a></li>
-</ul>
-</li>
-<li class="toctree-l2"><a class="reference internal" href="#scope-and-methods">Scope and methods</a><ul>
-<li class="toctree-l3"><a class="reference internal" href="#physical-analysis">Physical Analysis</a></li>
-</ul>
-</li>
-<li class="toctree-l2"><a class="reference internal" href="#installation">Installation</a><ul>
-<li class="toctree-l3"><a class="reference internal" href="#devcontainer-jupyter-auto-start">Devcontainer Jupyter Auto-Start</a></li>
-</ul>
-</li>
-<li class="toctree-l2"><a class="reference internal" href="#benchmarking-performance">Benchmarking &amp; Performance</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#typical-usage">Typical usage</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#development-guidance">Development guidance</a><ul>
-<li class="toctree-l3"><a class="reference internal" href="#kernel-constraints">Kernel Constraints</a></li>
-<li class="toctree-l3"><a class="reference internal" href="#verification-suite">Verification Suite</a></li>
-</ul>
-</li>
-<li class="toctree-l2"><a class="reference internal" href="#documentation">Documentation</a><ul>
-<li class="toctree-l3"><a class="reference internal" href="#sphinx-setup-notes">Sphinx Setup Notes</a></li>
-<li class="toctree-l3"><a class="reference internal" href="#docs-troubleshooting">Docs Troubleshooting</a></li>
-</ul>
-</li>
-<li class="toctree-l2"><a class="reference internal" href="#project-context">Project context</a><ul>
-<li class="toctree-l3"><a class="reference internal" href="#references">References</a></li>
-</ul>
-</li>
+<li class="toctree-l2"><a class="reference internal" href="#bibliography">Bibliography</a></li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="physics.html">Physics and Algorithm Guide: VibeSpin</a></li>
@@ -132,157 +102,11 @@
 </section>
 <section id="bibliography">
 <h2>Bibliography<a class="headerlink" href="#bibliography" title="Link to this heading"></a></h2>
-<p>All scientific references used in VibeSpin are listed in <span class="xref myst">BIBLIOGRAPHY.md</span>. Reference policy and link validation are enforced as described in AGENTS.md.</p>
-<section id="scientific-background-and-references">
-<h3>Scientific Background and References<a class="headerlink" href="#scientific-background-and-references" title="Link to this heading"></a></h3>
-<p>The Ising model [1], XY model [2], and q-state Clock model [3] are canonical systems in statistical physics for studying phase transitions, critical phenomena, and topological defects. Monte Carlo methods, especially the Metropolis-Hastings algorithm [4], are standard for simulating these models. The Wolff cluster algorithm [5] is highly effective near criticality, reducing autocorrelation times by exploiting collective spin updates. For a comprehensive introduction to these models and algorithms, see the references below.</p>
-</section>
-</section>
-<section id="scope-and-methods">
-<h2>Scope and methods<a class="headerlink" href="#scope-and-methods" title="Link to this heading"></a></h2>
-<p>VibeSpin supports three update schemes: <strong>Checkerboard Updates</strong> (optimized for equilibrium throughput and SIMD vectorization), <strong>Random Site Selection</strong> (mandatory for non-equilibrium kinetics and aging studies), and the <strong>Wolff Cluster Algorithm</strong> (highly efficient near critical temperatures due to vanishing critical slowing down).</p>
-<p>For further details on the physical and algorithmic background, see the Physics and Algorithm Guide and the references below.</p>
-<section id="physical-analysis">
-<h3>Physical Analysis<a class="headerlink" href="#physical-analysis" title="Link to this heading"></a></h3>
-<ul class="simple">
-<li><p><strong>Thermodynamics</strong>: Magnetization magnitude <span class="math notranslate nohighlight">\(|M|\)</span>, total energy <span class="math notranslate nohighlight">\(E\)</span>, susceptibility <span class="math notranslate nohighlight">\(\chi\)</span>, and specific heat <span class="math notranslate nohighlight">\(C_v\)</span>.</p></li>
-<li><p><strong>Spatial Diagnostics</strong>: Radially averaged spin-spin correlation functions <span class="math notranslate nohighlight">\(G(r)\)</span> and 2D structure factor <span class="math notranslate nohighlight">\(S(k)\)</span> mapping.</p></li>
-<li><p><strong>Topological Analysis</strong>: Directed phase-wrapping for vorticity maps, vortex density tracking, and helicity modulus calculations.</p></li>
-<li><p><strong>Kinetics</strong>: Integrated autocorrelation time <span class="math notranslate nohighlight">\(\tau_{\text{int}}\)</span> and phase-ordering growth law extraction.</p></li>
-</ul>
-</section>
-</section>
-<section id="installation">
-<h2>Installation<a class="headerlink" href="#installation" title="Link to this heading"></a></h2>
-<p>For standard simulation use:</p>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>pip<span class="w"> </span>install<span class="w"> </span>-e<span class="w"> </span>.
-</pre></div>
-</div>
-<p>For full development capabilities (benchmarking, tests, and documentation):</p>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>pip<span class="w"> </span>install<span class="w"> </span>-e<span class="w"> </span><span class="s2">&quot;.[dev,notebook,docs]&quot;</span>
-pre-commit<span class="w"> </span>install<span class="w"> </span>--hook-type<span class="w"> </span>pre-commit<span class="w"> </span>--hook-type<span class="w"> </span>pre-push
-</pre></div>
-</div>
-<p>The repository enforces documentation consistency at both commit and push time. The pre-push hook runs link validation, API docs sync checks, and a Sphinx HTML build with warnings treated as errors.</p>
-<section id="devcontainer-jupyter-auto-start">
-<h3>Devcontainer Jupyter Auto-Start<a class="headerlink" href="#devcontainer-jupyter-auto-start" title="Link to this heading"></a></h3>
-<p>In this repository’s devcontainer, JupyterLab starts automatically and listens on port 8888. The startup path is defined in the repository’s <a class="reference external" href="https://github.com/manganite/VibeSpin/blob/master/.devcontainer/devcontainer.json">devcontainer.json on GitHub</a> and launches the companion <a class="reference external" href="https://github.com/manganite/VibeSpin/blob/master/.devcontainer/scripts/start-jupyter.sh">start-jupyter.sh helper on GitHub</a>, which waits for the project virtual environment to be ready and then starts JupyterLab in detached mode.</p>
-<p>After rebuilding the container, verify the server with the venv binary directly:</p>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>/workspaces/vibespin/.venv/bin/jupyter<span class="w"> </span>notebook<span class="w"> </span>list
-</pre></div>
-</div>
-<p>The startup log is written to <code class="docutils literal notranslate"><span class="pre">/tmp/jupyter.log</span></code>, and lifecycle-hook output is written to <code class="docutils literal notranslate"><span class="pre">/tmp/devcontainer-poststart.log</span></code>.</p>
-<p>If no server is listed, inspect both logs first:</p>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>tail<span class="w"> </span>-n<span class="w"> </span><span class="m">200</span><span class="w"> </span>/tmp/devcontainer-poststart.log
-tail<span class="w"> </span>-n<span class="w"> </span><span class="m">200</span><span class="w"> </span>/tmp/jupyter.log
-</pre></div>
-</div>
-</section>
-</section>
-<section id="benchmarking-performance">
-<h2>Benchmarking &amp; Performance<a class="headerlink" href="#benchmarking-performance" title="Link to this heading"></a></h2>
-<p>VibeSpin includes a comprehensive performance analysis suite. The benchmark tool measures throughput (sweeps/s), identifies hardware-bound scaling regimes (ns/site), and quantifies the overhead of thermodynamic vs. topological measurements.</p>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># Run a scaling benchmark across multiple lattice sizes</span>
-python<span class="w"> </span>benchmark.py<span class="w"> </span>--sizes<span class="w"> </span><span class="m">128</span><span class="w"> </span><span class="m">256</span><span class="w"> </span><span class="m">512</span><span class="w"> </span><span class="m">1024</span><span class="w"> </span>--sweeps<span class="w"> </span><span class="m">100</span>
-</pre></div>
-</div>
-<p>Key performance features include:</p>
-<ul class="simple">
-<li><p><strong>Parallel Numba</strong>: Checkerboard updates can be distributed across multiple CPU cores using <code class="docutils literal notranslate"><span class="pre">parallel=True</span></code>.</p></li>
-<li><p><strong>Discrete Representation</strong>: The discrete Clock model replaces trigonometric evaluations with integer lookups, providing up to a ~2.5x speedup over continuous variants.</p></li>
-<li><p><strong>Pure Metrics</strong>: Benchmarking isolates <strong>Pure Simulation Time</strong> from measurement overhead, allowing for deep algorithmic profiling.</p></li>
-</ul>
-</section>
-<section id="typical-usage">
-<h2>Typical usage<a class="headerlink" href="#typical-usage" title="Link to this heading"></a></h2>
-<p>Launch an equilibrium temperature sweep for the XY model:</p>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>python<span class="w"> </span>scripts/xy/temperature_sweep.py<span class="w"> </span>--size<span class="w"> </span><span class="m">64</span><span class="w"> </span>--t-min<span class="w"> </span><span class="m">0</span>.2<span class="w"> </span>--t-max<span class="w"> </span><span class="m">1</span>.5<span class="w"> </span>--t-points<span class="w"> </span><span class="m">20</span>
-</pre></div>
-</div>
-<p>Temperature sweep scripts use <strong>adaptive equilibration</strong>: after the mandatory minimum burn-in (<code class="docutils literal notranslate"><span class="pre">--eq-steps</span></code>), the run extends automatically until the probe window covers <code class="docutils literal notranslate"><span class="pre">--eq-factor</span></code> integrated autocorrelation times. This guarantees statistical independence without manual tuning across temperatures where <span class="math notranslate nohighlight">\(\tau_{\text{int}}\)</span> varies by orders of magnitude. The <code class="docutils literal notranslate"><span class="pre">--eq-probe-steps</span></code> and <code class="docutils literal notranslate"><span class="pre">--eq-max-steps</span></code> flags cap the probe length and the hard maximum respectively.</p>
-<p>Investigate phase-ordering kinetics in the Ising model using random-site updates:</p>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>python<span class="w"> </span>scripts/ising/ordering_kinetics.py<span class="w"> </span>--size<span class="w"> </span><span class="m">512</span><span class="w"> </span>--max-steps<span class="w"> </span><span class="m">5000</span>
-</pre></div>
-</div>
-<p>Generate a visual ordering evolution for the XY model:</p>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>python<span class="w"> </span>scripts/xy/ordering_evolution.py<span class="w"> </span>--size<span class="w"> </span><span class="m">256</span><span class="w"> </span>--targets<span class="w"> </span><span class="m">1</span><span class="w"> </span><span class="m">10</span><span class="w"> </span><span class="m">100</span><span class="w"> </span><span class="m">1000</span><span class="w"> </span><span class="m">5000</span>
-</pre></div>
-</div>
-<p>Compare Wolff cluster and Metropolis efficiency near the Ising critical point:</p>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>python<span class="w"> </span>scripts/ising/wolff_efficiency.py<span class="w"> </span>--size<span class="w"> </span><span class="m">64</span><span class="w"> </span>--t-min<span class="w"> </span><span class="m">1</span>.8<span class="w"> </span>--t-max<span class="w"> </span><span class="m">3</span>.2<span class="w"> </span>--t-points<span class="w"> </span><span class="m">20</span>
-</pre></div>
-</div>
-</section>
-<section id="development-guidance">
-<h2>Development guidance<a class="headerlink" href="#development-guidance" title="Link to this heading"></a></h2>
-<p>VibeSpin maintains rigorous engineering and physical standards. All update algorithms must strictly satisfy <strong>detailed balance</strong> and <strong>ergodicity</strong> — whether via the Metropolis-Hastings acceptance rule (for single-spin updates) or the Fortuin-Kasteleyn bond construction (for Wolff cluster updates).</p>
-<section id="kernel-constraints">
-<h3>Kernel Constraints<a class="headerlink" href="#kernel-constraints" title="Link to this heading"></a></h3>
-<ul class="simple">
-<li><p>Simulation kernels must use <code class="docutils literal notranslate"><span class="pre">&#64;njit(cache=True,</span> <span class="pre">fastmath=True)</span></code> and minimize memory allocation.</p></li>
-<li><p>Periodic boundaries must use <code class="docutils literal notranslate"><span class="pre">idx_next</span></code> and <code class="docutils literal notranslate"><span class="pre">idx_prev</span></code> arrays (no <code class="docutils literal notranslate"><span class="pre">%</span></code> or <code class="docutils literal notranslate"><span class="pre">np.mod</span></code> in inner loops).</p></li>
-<li><p>Models must sync Numba’s internal RNG using <code class="docutils literal notranslate"><span class="pre">_seed_numba(seed)</span></code>.</p></li>
-</ul>
-</section>
-<section id="verification-suite">
-<h3>Verification Suite<a class="headerlink" href="#verification-suite" title="Link to this heading"></a></h3>
-<p>Before proposing changes, ensure all verification checks pass:</p>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>pytest
-ruff<span class="w"> </span>check<span class="w"> </span>.
-mypy<span class="w"> </span>--explicit-package-bases<span class="w"> </span>models/<span class="w"> </span>utils/<span class="w"> </span>scripts/
-pre-commit<span class="w"> </span>run<span class="w"> </span>--all-files<span class="w"> </span>--hook-stage<span class="w"> </span>pre-push
-</pre></div>
-</div>
-</section>
-</section>
-<section id="documentation">
-<h2>Documentation<a class="headerlink" href="#documentation" title="Link to this heading"></a></h2>
-<p>Full documentation is available at <strong><a class="reference external" href="https://manganite.github.io/VibeSpin/">https://manganite.github.io/VibeSpin/</a></strong>.</p>
-<p>To build the documentation locally:</p>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="nb">cd</span><span class="w"> </span>docs
-make<span class="w"> </span>html
-</pre></div>
-</div>
-<section id="sphinx-setup-notes">
-<h3>Sphinx Setup Notes<a class="headerlink" href="#sphinx-setup-notes" title="Link to this heading"></a></h3>
-<p>The documentation stack uses Sphinx with MyST Markdown and nbsphinx for notebook pages. A standard development install for documentation is:</p>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>pip<span class="w"> </span>install<span class="w"> </span>-e<span class="w"> </span><span class="s2">&quot;.[docs]&quot;</span>
-</pre></div>
-</div>
-<p>In this repository’s devcontainer, documentation dependencies are installed automatically during container creation via the <code class="docutils literal notranslate"><span class="pre">.[dev,notebook,docs]</span></code> extras group.</p>
-<p>Notebook rendering requires Pandoc. The docs configuration includes a fallback that uses the bundled binary from <code class="docutils literal notranslate"><span class="pre">pypandoc-binary</span></code> when a system <code class="docutils literal notranslate"><span class="pre">pandoc</span></code> executable is not available, so normal builds should work without manual Pandoc installation.</p>
-</section>
-<section id="docs-troubleshooting">
-<h3>Docs Troubleshooting<a class="headerlink" href="#docs-troubleshooting" title="Link to this heading"></a></h3>
-<p>If <code class="docutils literal notranslate"><span class="pre">make</span> <span class="pre">html</span></code> fails after opening or rebuilding the container, verify the project environment was created successfully and reinstall extras:</p>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>pip<span class="w"> </span>install<span class="w"> </span>-e<span class="w"> </span><span class="s2">&quot;.[dev,notebook,docs]&quot;</span>
-<span class="nb">cd</span><span class="w"> </span>docs
-make<span class="w"> </span>html
-</pre></div>
-</div>
-<p>If this still fails, check that the selected interpreter is the project virtual environment at <code class="docutils literal notranslate"><span class="pre">.venv/bin/python</span></code>.</p>
-<p>For deeper insights, refer to the source guides:</p>
-<ul class="simple">
-<li><p><a class="reference internal" href="physics.html"><span class="doc">Physics and Algorithm Guide</span></a>: Detailed explanation of physical models, observables, and algorithm prerequisites.</p></li>
-<li><p><a class="reference internal" href="scripts.html"><span class="doc">Scripts Catalog</span></a>: Comprehensive catalog of entry-point scripts.</p></li>
-<li><p><a class="reference internal" href="agents.html"><span class="doc">Agent Instruction Guide</span></a>: Mandatory technical constraints for AI Agents.</p></li>
-<li><p><a class="reference internal" href="benchmarks.html"><span class="doc">Performance Benchmarks</span></a>: Detailed scaling analysis.</p></li>
-</ul>
-</section>
-</section>
-<section id="project-context">
-<h2>Project context<a class="headerlink" href="#project-context" title="Link to this heading"></a></h2>
-<p>VibeSpin was developed using AI-assisted scientific coding workflows. The framework demonstrates how high-level physical design and validation can be accelerated through iterative modeling, benchmarking, and automated testing.</p>
-<p>For detailed procedural instructions, see <a class="reference internal" href="agents.html"><span class="doc">Agent Instruction Guide</span></a>.</p>
-<hr class="docutils" />
-<section id="references">
-<h3>References<a class="headerlink" href="#references" title="Link to this heading"></a></h3>
-<p>[1] Ising model: https://en.wikipedia.org/wiki/Ising_model (open-access overview)</p>
-<p>[2] XY model: https://en.wikipedia.org/wiki/XY_model (open-access overview)</p>
-<p>[3] Clock model: J. Villain, “Theory of one- and two-dimensional magnets with an easy magnetization plane. II. The planar, classical, two-dimensional magnet,” J. Phys. France 36, 581-590 (1975). https://doi.org/10.1051/jphys:01975003606058100 (open access)</p>
-<p>[4] Metropolis-Hastings algorithm: https://en.wikipedia.org/wiki/Metropolis%E2%80%93Hastings_algorithm (open-access overview)</p>
-<p>[5] Wolff cluster algorithm: U. Wolff, “Collective Monte Carlo Updating for Spin Systems,” Phys. Rev. Lett. 62, 361 (1989). https://journals.aps.org/prl/abstract/10.1103/PhysRevLett.62.361 (open access)</p>
-</section>
+<p>[1] L. Onsager, “Crystal Statistics. I. A Two-Dimensional Model with an Order-Disorder Transition,” <em>Physical Review</em>, vol. 65, no. 3-4, pp. 117–149, 1944. <a class="reference external" href="https://journals.aps.org/pr/abstract/10.1103/PhysRev.65.117">APS Open Access</a></p>
+<p>[2] J. M. Kosterlitz and D. J. Thouless, “Ordering, metastability and phase transitions in two-dimensional systems,” <em>Journal of Physics C: Solid State Physics</em>, vol. 6, no. 7, pp. 1181–1203, 1973. <a class="reference external" href="https://iopscience.iop.org/article/10.1088/0022-3719/6/7/010">IOP Open Access</a></p>
+<p>[3] J. Villain, “Theory of one- and two-dimensional magnets with an easy magnetization plane. II. The planar, classical, two-dimensional magnet,” <em>J. Phys. France</em> 36, 581-590 (1975). <a class="reference external" href="https://doi.org/10.1051/jphys:01975003606058100">Open Access</a></p>
+<p>[4] W. K. Hastings, “Monte Carlo sampling methods using Markov chains and their applications,” <em>Biometrika</em>, vol. 57, no. 1, pp. 97–109, 1970. <a class="reference external" href="https://academic.oup.com/biomet/article/57/1/97/252073">Oxford Academic</a></p>
+<p>[5] U. Wolff, “Collective Monte Carlo Updating for Spin Systems,” <em>Physical Review Letters</em>, vol. 62, no. 4, pp. 361–364, 1989. <a class="reference external" href="https://journals.aps.org/prl/abstract/10.1103/PhysRevLett.62.361">APS Open Access</a></p>
 </section>
 </section>
 
