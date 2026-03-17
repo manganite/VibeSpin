@@ -6,7 +6,7 @@
    "source": [
     "# Dynamical Critical Exponents in the 2D Ising Model\n",
     "\n",
-    "As a system approaches a continuous phase transition, the correlation length $\\xi$ diverges and the time required to generate statistically independent configurations, characterized by the integrated autocorrelation time $\\tau_{\\text{int}}$, grows rapidly. This phenomenon, known as critical slowing down, is a fundamental challenge for Monte Carlo simulations. The scaling of $\\tau_{\\text{int}}$ with $\\xi$ is governed by the dynamical critical exponent $z$, with $\\tau_{\\text{int}} \\propto \\xi^z$. For a finite lattice of size $L$ at the critical temperature $T_c$, this becomes $\\tau_{\\text{int}} \\propto L^z$. The value of $z$ quantifies how simulation time increases with system size and is a key metric for algorithmic efficiency at criticality [[1,2]](#Bibliography).\n",
+    "As a system approaches a continuous phase transition, the correlation length $\\xi$ diverges and the time required to generate statistically independent configurations, characterized by the integrated autocorrelation time $\\tau_{\\text{int}}$, grows rapidly. This phenomenon, known as critical slowing down, is a fundamental challenge for Monte Carlo simulations. The scaling of $\\tau_{\\text{int}}$ with $\\xi$ is governed by the dynamical critical exponent $z$, with $\\tau_{\\text{int}} \\propto \\xi^z$. For a finite lattice of size $L$ at the critical temperature $T_c$, this becomes $\\tau_{\\text{int}} \\propto L^z$. The value of $z$ quantifies how simulation time increases with system size and is a key metric for algorithmic efficiency at criticality [1,2](#Bibliography).\n",
     "\n",
     "This notebook measures and compares $z$ for the local Metropolis algorithm and the non-local Wolff cluster algorithm in the 2D Ising model, using both precomputed and fallback simulation data.\n",
     "\n",
@@ -38,7 +38,7 @@
    "source": [
     "### Environment Setup\n",
     "\n",
-    "We begin by importing the necessary analysis tools and loading the pre-calculated simulation data. The simulations were performed at the exact Onsager critical temperature $T_c = 2/\\ln(1+\\sqrt{2})$ for a range of lattice sizes. For each configuration, the integrated autocorrelation time was estimated using the Madras-Sokal automatic windowing rule, which prevents noise at large lags from biasing the $\\tau_{\\text{int}}$ estimate [[3]](#Bibliography).\n",
+    "We begin by importing the necessary analysis tools and loading the pre-calculated simulation data. The simulations were performed at the exact Onsager critical temperature $T_c = 2/\\ln(1+\\sqrt{2})$ for a range of lattice sizes. For each configuration, the integrated autocorrelation time was estimated using the Madras-Sokal automatic windowing rule, which prevents noise at large lags from biasing the $\\tau_{\\text{int}}$ estimate [3](#Bibliography).\n",
     "\n",
     "If the precomputed NPZ file is unavailable, the notebook runs a lightweight fallback calculation for demonstration using small lattice sizes. This fallback is intended for quick testing and does not provide publication-quality results. For full-scale analysis, please generate the NPZ file using the measurement script.\n",
     "\n",
@@ -204,19 +204,19 @@
    "source": [
     "## Bibliography\n",
     "\n",
-    "[[1]](#Bibliography) L. Onsager, \"Crystal Statistics. I. A Two-Dimensional Model with an Order-Disorder Transition,\" *Physical Review*, vol. 65, no. 3-4, pp. 117\u2013149, 1944. [APS Open Access](https://journals.aps.org/pr/abstract/10.1103/PhysRev.65.117)\n",
+    "[1](#Bibliography) L. Onsager, \"Crystal Statistics. I. A Two-Dimensional Model with an Order-Disorder Transition,\" *Physical Review*, vol. 65, no. 3-4, pp. 117\u2013149, 1944. [APS Open Access](https://journals.aps.org/pr/abstract/10.1103/PhysRev.65.117)\n",
     "\n",
-    "[[2]](#Bibliography) U. Wolff, \"Collective Monte Carlo Updating for Spin Systems,\" *Physical Review Letters*, vol. 62, no. 4, pp. 361\u2013364, 1989. [APS Open Access](https://journals.aps.org/prl/abstract/10.1103/PhysRevLett.62.361)\n",
+    "[2](#Bibliography) U. Wolff, \"Collective Monte Carlo Updating for Spin Systems,\" *Physical Review Letters*, vol. 62, no. 4, pp. 361\u2013364, 1989. [APS Open Access](https://journals.aps.org/prl/abstract/10.1103/PhysRevLett.62.361)\n",
     "\n",
-    "[[3]](#Bibliography) G. S. Madras and A. D. Sokal, \"The pivot algorithm: A highly efficient Monte Carlo method for the self-avoiding walk,\" *Journal of Statistical Physics*, vol. 50, no. 1-2, pp. 109\u2013186, 1988. [Springer Open Access](https://link.springer.com/article/10.1007/BF01022990)\n",
+    "[3](#Bibliography) G. S. Madras and A. D. Sokal, \"The pivot algorithm: A highly efficient Monte Carlo method for the self-avoiding walk,\" *Journal of Statistical Physics*, vol. 50, no. 1-2, pp. 109\u2013186, 1988. [Springer Open Access](https://link.springer.com/article/10.1007/BF01022990)\n",
     "\n",
-    "[[4]](#Bibliography) [Ising model on Wikipedia](https://en.wikipedia.org/wiki/Ising_model)\n",
+    "[4](#Bibliography) [Ising model on Wikipedia](https://en.wikipedia.org/wiki/Ising_model)\n",
     "\n",
-    "[[5]](#Bibliography) [Wolff algorithm on Wikipedia](https://en.wikipedia.org/wiki/Wolff_algorithm)\n",
+    "[5](#Bibliography) [Wolff algorithm on Wikipedia](https://en.wikipedia.org/wiki/Wolff_algorithm)\n",
     "\n",
-    "[[6]](#Bibliography) [Critical slowing down on Wikipedia](https://en.wikipedia.org/wiki/Critical_slowing_down)\n",
+    "[6](#Bibliography) [Critical slowing down on Wikipedia](https://en.wikipedia.org/wiki/Critical_slowing_down)\n",
     "\n",
-    "[[7]](#Bibliography) [Autocorrelation time on Wikipedia](https://en.wikipedia.org/wiki/Autocorrelation#Time_series)\n"
+    "[7](#Bibliography) [Autocorrelation time on Wikipedia](https://en.wikipedia.org/wiki/Autocorrelation#Time_series)\n"
    ]
   }
  ],
