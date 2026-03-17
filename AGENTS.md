@@ -122,18 +122,20 @@ The workspace root contains the following key files and directories.
 **Root-level files:**
 - `README.md`: Project overview and quickstart.
 - `PHYSICS.md`: Hamiltonian definitions, phase behavior, and mathematical formulations.
+- `BIBLIOGRAPHY.md`: Central repository for all scientific references used in the project.
 - `SCRIPTS.md`: Catalog of entry-point scripts with usage descriptions.
 - `AGENTS.md`: This agent instruction guide.
 - `pyproject.toml`: Project metadata, dependencies, and tool configuration (ruff, mypy, pytest).
+- `requirements.txt`: Frozen dependencies for the project environment.
 
 **Directories:**
 - `models/`: Refactored simulation classes with `main()` entry points.
 - `utils/`: Physics and system-level helper functions.
 - `tests/`: High-coverage test suite including integrity, CLI, and extreme case verification.
-- `scripts/`: Physics experiments and equilibrium/kinetics drivers. Subdirectories: `ising/`, `xy/`, `clock/`, `benchmarks/` (cross-model throughput benchmark).
+- `scripts/`: Physics experiments and equilibrium/kinetics drivers. Subdirectories: `ising/`, `xy/`, `clock/`, `benchmarks/`.
 - `docs/`: Sphinx documentation source (`docs/source/`) and HTML build output (`docs/_build/html/`).
 - `results/`: Simulation output files organized by model (`ising/`, `xy/`, `clock/`, `benchmarks/`).
-- `notebooks/`: Jupyter notebooks for analysis and exploration. Current notebooks: `Performance_Benchmarks.ipynb` (throughput benchmark results) and `Wolff_Efficiency.ipynb` (Wolff cluster algorithm efficiency analysis). Add new analysis notebooks here.
+- `notebooks/`: Jupyter notebooks for analysis and exploration. Add new analysis notebooks here.
 
 ## Common Operational Workflows
 
