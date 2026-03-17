@@ -210,6 +210,10 @@ python<span class="w"> </span>benchmark.py<span class="w"> </span>--sizes<span c
 <div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>python<span class="w"> </span>scripts/ising/wolff_efficiency.py<span class="w"> </span>--size<span class="w"> </span><span class="m">64</span><span class="w"> </span>--t-min<span class="w"> </span><span class="m">1</span>.8<span class="w"> </span>--t-max<span class="w"> </span><span class="m">3</span>.2<span class="w"> </span>--t-points<span class="w"> </span><span class="m">20</span>
 </pre></div>
 </div>
+<p>Measure the dynamical critical exponent <span class="math notranslate nohighlight">\(z\)</span> at <span class="math notranslate nohighlight">\(T_c\)</span>:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>python<span class="w"> </span>scripts/ising/measure_z.py<span class="w"> </span>--sizes<span class="w"> </span><span class="m">16</span><span class="w"> </span><span class="m">32</span><span class="w"> </span><span class="m">64</span><span class="w"> </span><span class="m">128</span><span class="w"> </span>--eq-steps<span class="w"> </span><span class="m">5000</span>
+</pre></div>
+</div>
 </section>
 <section id="development-guidance">
 <h2>Development guidance<a class="headerlink" href="#development-guidance" title="Link to this heading"></a></h2>
@@ -265,6 +269,7 @@ make<span class="w"> </span>html
 <li><p><a class="reference internal" href="scripts.html"><span class="doc">Scripts Catalog</span></a>: Comprehensive catalog of entry-point scripts.</p></li>
 <li><p><a class="reference internal" href="agents.html"><span class="doc">Agent Instruction Guide</span></a>: Mandatory technical constraints for AI Agents.</p></li>
 <li><p><a class="reference internal" href="benchmarks.html"><span class="doc">Performance Benchmarks</span></a>: Detailed scaling analysis.</p></li>
+<li><p><a class="reference internal" href="dynamic_critical_exponents.html"><span class="doc">Dynamic Critical Exponents</span></a>: Scaling analysis of autocorrelation times at criticality.</p></li>
 </ul>
 </section>
 </section>
