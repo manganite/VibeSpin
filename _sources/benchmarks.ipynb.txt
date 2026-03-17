@@ -6,7 +6,7 @@
    "source": [
     "# Performance Benchmarking for VibeSpin\n",
     "\n",
-    "This notebook measures the runtime behaviour of six simulation models across two update schemes and five lattice sizes. The models are: Ising <a href=\"#bibliography-section\">[1]</a> (discrete $\\pm 1$ spins), XY <a href=\"#bibliography-section\">[2]</a> (continuous 2D unit vectors), Clock Continuous ($q=6$, XY dynamics plus $q$-fold anisotropy), and Clock Discrete ($q=6$, integer state indices). Each runs with both checkerboard and random-sequential Metropolis <a href=\"#bibliography-section\">[5]</a> updates, for eight curves in total.\n",
+    "This notebook measures the runtime behaviour of six simulation models across two update schemes and five lattice sizes. The models are: Ising [[1]](#Bibliography) (discrete $\\pm 1$ spins), XY [[2]](#Bibliography) (continuous 2D unit vectors), Clock Continuous ($q=6$, XY dynamics plus $q$-fold anisotropy), and Clock Discrete ($q=6$, integer state indices). Each runs with both checkerboard and random-sequential Metropolis [[5]](#Bibliography) updates, for eight curves in total.\n",
     "\n",
     "Analysis costs divide into two tiers by when in a measurement run the cost is paid. **Per-step observables** \u2014 magnetization $M$ and energy $E$ \u2014 are evaluated at every MC sweep inside the measurement window, so their per-call cost multiplies with the window length. **Post-hoc observables** \u2014 susceptibility $\\chi = N\\,\\mathrm{Var}(M)/T$, specific heat $C_v = N\\,\\mathrm{Var}(E)/T^2$, the spatial correlation function $G(r)$, and the autocorrelation time $\\tau_\\mathrm{int}$ \u2014 are computed once after the window closes from the stored M and E series or from a spin-field snapshot. They carry no per-step cost. Sections below treat each tier separately: the thermodynamic cost section covers per-step M and E collection; G(r) and $\\tau_\\mathrm{int}$ have dedicated sections since their scaling and use differ from per-step collection.\n",
     "\n",
@@ -1185,18 +1185,17 @@
    "cell_type": "markdown",
    "metadata": {},
    "source": [
-    "<a id=\"bibliography-section\"></a>\n",
     "## Bibliography\n",
     "\n",
-    "[1] L. Onsager, \"Crystal Statistics. I. A Two-Dimensional Model with an Order-Disorder Transition,\" *Physical Review*, vol. 65, no. 3-4, pp. 117\u2013149, 1944. [APS Open Access](https://journals.aps.org/pr/abstract/10.1103/PhysRev.65.117)\n",
+    "[[1]](#Bibliography) L. Onsager, \"Crystal Statistics. I. A Two-Dimensional Model with an Order-Disorder Transition,\" *Physical Review*, vol. 65, no. 3-4, pp. 117\u2013149, 1944. [APS Open Access](https://journals.aps.org/pr/abstract/10.1103/PhysRev.65.117)\n",
     "\n",
-    "[2] J. M. Kosterlitz and D. J. Thouless, \"Ordering, metastability and phase transitions in two-dimensional systems,\" *Journal of Physics C: Solid State Physics*, vol. 6, no. 7, pp. 1181\u20131203, 1973. [IOP Open Access](https://iopscience.iop.org/article/10.1088/0022-3719/6/7/010)\n",
+    "[[2]](#Bibliography) J. M. Kosterlitz and D. J. Thouless, \"Ordering, metastability and phase transitions in two-dimensional systems,\" *Journal of Physics C: Solid State Physics*, vol. 6, no. 7, pp. 1181\u20131203, 1973. [IOP Open Access](https://iopscience.iop.org/article/10.1088/0022-3719/6/7/010)\n",
     "\n",
-    "[3] J. Villain, \"Theory of one- and two-dimensional magnets with an easy magnetization plane. II. The planar, classical, two-dimensional magnet,\" *J. Phys. France* 36, 581-590 (1975). [Open Access](https://doi.org/10.1051/jphys:01975003606058100)\n",
+    "[[3]](#Bibliography) J. Villain, \"Theory of one- and two-dimensional magnets with an easy magnetization plane. II. The planar, classical, two-dimensional magnet,\" *J. Phys. France* 36, 581-590 (1975). [Open Access](https://doi.org/10.1051/jphys:01975003606058100)\n",
     "\n",
-    "[4] J. Lapilli, P. Pfeifer, and C. Wexler, \"Universality away from critical points in two-dimensional phase transitions,\" *Physical Review Letters*, vol. 96, no. 14, 140603, 2006. [APS Open Access](https://journals.aps.org/prl/abstract/10.1103/PhysRevLett.96.140603)\n",
+    "[[4]](#Bibliography) J. Lapilli, P. Pfeifer, and C. Wexler, \"Universality away from critical points in two-dimensional phase transitions,\" *Physical Review Letters*, vol. 96, no. 14, 140603, 2006. [APS Open Access](https://journals.aps.org/prl/abstract/10.1103/PhysRevLett.96.140603)\n",
     "\n",
-    "[5] W. K. Hastings, \"Monte Carlo sampling methods using Markov chains and their applications,\" *Biometrika*, vol. 57, no. 1, pp. 97\u2013109, 1970. [Oxford Academic Open Access](https://academic.oup.com/biomet/article/57/1/97/252073)\n",
+    "[[5]](#Bibliography) W. K. Hastings, \"Monte Carlo sampling methods using Markov chains and their applications,\" *Biometrika*, vol. 57, no. 1, pp. 97\u2013109, 1970. [Oxford Academic Open Access](https://academic.oup.com/biomet/article/57/1/97/252073)\n",
     "\n"
    ],
    "id": "bibliography-section"
