@@ -15,7 +15,7 @@ VibeSpin enforces strict development policies for physical correctness, code qua
 All scientific references used in VibeSpin are listed in [BIBLIOGRAPHY.md](./bibliography.md). Reference policy and link validation are enforced as described in AGENTS.md.
 
 ### Scientific Background and References
-The Ising model [1], XY model [2], and q-state Clock model [3] are canonical systems in statistical physics for studying phase transitions, critical phenomena, and topological defects. Monte Carlo methods, especially the Metropolis-Hastings algorithm [4], are standard for simulating these models. The Wolff cluster algorithm [5] is highly effective near criticality, reducing autocorrelation times by exploiting collective spin updates. For a comprehensive introduction to these models and algorithms, see the references below.
+The Ising model [[1]](#Bibliography), XY model [[2]](#Bibliography), and q-state Clock model [[3]](#Bibliography) are canonical systems in statistical physics for studying phase transitions, critical phenomena, and topological defects. Monte Carlo methods, especially the Metropolis-Hastings algorithm [[4]](#Bibliography), are standard for simulating these models. The Wolff cluster algorithm [[5]](#Bibliography) is highly effective near criticality, reducing autocorrelation times by exploiting collective spin updates. For a comprehensive introduction to these models and algorithms, see the references below.
 
 ## Scope and methods
 
@@ -173,15 +173,14 @@ VibeSpin was developed using AI-assisted scientific coding workflows. The framew
 
 For detailed procedural instructions, see {doc}`Agent Instruction Guide <agents>`.
 
----
-### References
+## Bibliography
 
-[1] Ising model: https://en.wikipedia.org/wiki/Ising_model (open-access overview)
+[[1]](#Bibliography) L. Onsager, "Crystal Statistics. I. A Two-Dimensional Model with an Order-Disorder Transition," *Physical Review*, vol. 65, no. 3-4, pp. 117–149, 1944. [APS Open Access](https://journals.aps.org/pr/abstract/10.1103/PhysRev.65.117)
 
-[2] XY model: https://en.wikipedia.org/wiki/XY_model (open-access overview)
+[[2]](#Bibliography) J. M. Kosterlitz and D. J. Thouless, "Ordering, metastability and phase transitions in two-dimensional systems," *Journal of Physics C: Solid State Physics*, vol. 6, no. 7, pp. 1181–1203, 1973. [IOP Open Access](https://iopscience.iop.org/article/10.1088/0022-3719/6/7/010)
 
-[3] Clock model: J. Villain, "Theory of one- and two-dimensional magnets with an easy magnetization plane. II. The planar, classical, two-dimensional magnet," J. Phys. France 36, 581-590 (1975). https://doi.org/10.1051/jphys:01975003606058100 (open access)
+[[3]](#Bibliography) J. Villain, "Theory of one- and two-dimensional magnets with an easy magnetization plane. II. The planar, classical, two-dimensional magnet," *J. Phys. France* 36, 581-590 (1975). [Open Access](https://doi.org/10.1051/jphys:01975003606058100)
 
-[4] Metropolis-Hastings algorithm: https://en.wikipedia.org/wiki/Metropolis%E2%80%93Hastings_algorithm (open-access overview)
+[[4]](#Bibliography) W. K. Hastings, "Monte Carlo sampling methods using Markov chains and their applications," *Biometrika*, vol. 57, no. 1, pp. 97–109, 1970. [Oxford Academic Open Access](https://academic.oup.com/biomet/article/57/1/97/252073)
 
-[5] Wolff cluster algorithm: U. Wolff, "Collective Monte Carlo Updating for Spin Systems," Phys. Rev. Lett. 62, 361 (1989). https://journals.aps.org/prl/abstract/10.1103/PhysRevLett.62.361 (open access)
+[[5]](#Bibliography) U. Wolff, "Collective Monte Carlo Updating for Spin Systems," *Physical Review Letters*, vol. 62, no. 4, pp. 361–364, 1989. [APS Open Access](https://journals.aps.org/prl/abstract/10.1103/PhysRevLett.62.361)
