@@ -193,6 +193,11 @@
 <section id="mandatory-development-policies">
 <h2>Mandatory Development Policies<a class="headerlink" href="#mandatory-development-policies" title="Link to this heading"></a></h2>
 <p><strong>Scope Discipline</strong>: Never change, rewrite, or delete code/text that is unrelated to the current task. Keep all edits strictly focused on the requested objective.</p>
+<ul class="simple">
+<li><p><strong>Surgical Edits</strong>: Prefer the <code class="docutils literal notranslate"><span class="pre">replace</span></code> tool with specific, high-context strings over broad scripts or complete file rewrites.</p></li>
+<li><p><strong>Verification Requirement</strong>: After any automated or programmatic change, you MUST run <code class="docutils literal notranslate"><span class="pre">git</span> <span class="pre">diff</span></code> to verify that only the intended lines were modified. Never commit changes that include accidental deletions or unrelated modifications.</p></li>
+<li><p><strong>Principle of Preservation</strong>: Never repair or “standardize” what is not broken unless explicitly requested. If a broad change is necessary, implement it in targeted, incremental steps with verification after each.</p></li>
+</ul>
 <section id="high-performance-computing-numba-jit">
 <h3>1. High Performance Computing (Numba JIT)<a class="headerlink" href="#high-performance-computing-numba-jit" title="Link to this heading"></a></h3>
 <ul class="simple">

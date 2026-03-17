@@ -49,6 +49,9 @@ Optimize for four outcomes: correct statistical-physics behavior, high simulatio
 ## Mandatory Development Policies
 
 **Scope Discipline**: Never change, rewrite, or delete code/text that is unrelated to the current task. Keep all edits strictly focused on the requested objective.
+- **Surgical Edits**: Prefer the `replace` tool with specific, high-context strings over broad scripts or complete file rewrites.
+- **Verification Requirement**: After any automated or programmatic change, you MUST run `git diff` to verify that only the intended lines were modified. Never commit changes that include accidental deletions or unrelated modifications.
+- **Principle of Preservation**: Never repair or "standardize" what is not broken unless explicitly requested. If a broad change is necessary, implement it in targeted, incremental steps with verification after each.
 
 ### 1. High Performance Computing (Numba JIT)
 - **Constraint**: All simulation loops and kernels MUST be JIT-compiled. Use `@njit(cache=True, fastmath=True)`.
