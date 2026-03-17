@@ -173,6 +173,7 @@ For deeper insights, refer to the source guides:
 - {doc}`Agent Instruction Guide <agents>`: Mandatory technical constraints for AI Agents.
 - {doc}`Performance Benchmarks <benchmarks>`: Detailed scaling analysis.
 - {doc}`Dynamic Critical Exponents <dynamic_critical_exponents>`: Scaling analysis of autocorrelation times at criticality.
+- {doc}`Ising Autocorrelation Analysis <ising_autocorrelation_analysis>`: Comparative analysis of equilibration and autocorrelation across update schemes.
 
 ## Project context
 
