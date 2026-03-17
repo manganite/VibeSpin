@@ -48,7 +48,7 @@ Optimize for four outcomes: correct statistical-physics behavior, high simulatio
 
 ## Mandatory Development Policies
 
-- **Scope Discipline**: Never change, rewrite, or delete code/text that is unrelated to the current task. Keep all edits strictly focused on the requested objective.
+**Scope Discipline**: Never change, rewrite, or delete code/text that is unrelated to the current task. Keep all edits strictly focused on the requested objective.
 
 ### 1. High Performance Computing (Numba JIT)
 - **Constraint**: All simulation loops and kernels MUST be JIT-compiled. Use `@njit(cache=True, fastmath=True)`.
@@ -100,6 +100,13 @@ Optimize for four outcomes: correct statistical-physics behavior, high simulatio
 - **Notebook Documentation Standards**: Every code cell MUST be preceded by a markdown cell that explains what the code does and why. A single markdown intro may cover two or more tightly coupled code cells (e.g., a setup cell followed immediately by its plot cell) provided it explicitly names both. Output-producing cells (plots, summary tables) SHOULD be followed by a brief markdown recap that interprets the result in physical or numerical terms. Overarching blocks of thematically related cells MUST open with a section-level heading (`##` or `###`) and a prose introduction, and MAY close with a short summary recap. Never leave a code cell without a preceding markdown in any notebook.
 - **Cross-linking**: Standalone documentation files MUST be cross-linked in the Sphinx hub (`docs/source/index.md`) to ensure they appear in the hosted documentation site.
 
+### 7. Scientific Referencing
+**Reference Quality**: All user-facing documentation, notebook markdown, and explanatory prose that introduce or interpret physical models, algorithms, or key results MUST include scientific references where appropriate. Acceptable sources are open-access journal articles, reputable university lecture notes, publications from scientific institutes, or well-maintained Wikipedia pages. Avoid paywalled or non-peer-reviewed sources unless no open alternative exists and the reference is essential. References should be cited in context, either inline or as a short bibliography at the end of the relevant section.
+
+**Bibliography Inclusion**: Whenever a reference is added anywhere in the project (documentation, notebooks, code comments, markdown), it MUST also be added to BIBLIOGRAPHY.md, sorted under the relevant topic.
+
+**Accessibility Check**: Every reference link MUST be checked for accessibility and validity. Broken or paywalled links should be replaced with open-access alternatives whenever possible. Regular link validation is required.
+
 ## Directory Map for Agents
 
 The workspace root contains the following key files and directories.
@@ -134,6 +141,16 @@ The workspace root contains the following key files and directories.
 3. Profile the kernel for unexpected allocations or `object mode` fallbacks.
 
 ## Additional Engineering Guidance (Additive)
+
+
+### Notebook Data and Calculation Strategy
+The recommended approach for scientific notebooks is to import precomputed simulation or analysis results from NPZ files or similar formats whenever available. This ensures responsiveness, reproducibility, and efficient workflow for large or computationally expensive tasks. If the precomputed data file is unavailable, notebooks should offer a lightweight fallback calculation for demonstration, testing, or small-scale analysis, with clear documentation of its limitations.
+
+To avoid code duplication, all substantial simulation routines, data processing, and analysis functions must be implemented in dedicated modules (such as `models/` or `utils/`). Both scripts and notebooks should import these functions, ensuring consistency and reducing maintenance overhead. Notebooks should focus on workflow, interpretation, and visualization, not on re-implementing core logic.
+
+Minimal or demo-only duplicated code is acceptable, but substantial or frequently updated logic must be refactored into shared modules. Updates to calculation routines should be made in the shared module, not separately in scripts or notebooks. Document the source and limitations of both precomputed and fallback data paths in notebook markdown cells, and encourage users to generate full data for publication-quality results.
+
+This strategy aligns with VibeSpin's engineering guidance for modularity, code reuse, and clarity, supporting both performance and accessibility for teaching, research, and automated documentation.
 
 The guidance in this section is advisory. It describes strong preferred practices but does not carry the same enforcement weight as the numbered policies in `## Mandatory Development Policies`.
 

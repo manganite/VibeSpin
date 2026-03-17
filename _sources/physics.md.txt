@@ -6,7 +6,11 @@ This document details the theoretical foundations, physical models, and algorith
 
 VibeSpin implements three foundational 2D lattice spin models, each defined by its Hamiltonian and state space. They span the full spectrum from discrete to continuous on-site symmetry, and together they cover the major universality classes accessible in two dimensions.
 
+
+
 ### Ising Model
+
+For a comprehensive introduction to the Ising model and its exact solution in two dimensions, see L. Onsager, "Crystal Statistics. I. A Two-Dimensional Model with an Order-Disorder Transition," Physical Review, vol. 65, no. 3-4, pp. 117–149, 1944. ([APS Open Access](https://journals.aps.org/pr/abstract/10.1103/PhysRev.65.117)). See also the [Ising model article on Wikipedia](https://en.wikipedia.org/wiki/Ising_model) for a modern summary.
 
 The Ising model assigns a scalar spin $s_i \in \{+1, -1\}$ to every site of a square lattice. Nearest-neighbor pairs interact through the Hamiltonian
 
@@ -16,15 +20,28 @@ where $\langle i,j \rangle$ runs over all distinct neighbor bonds. The competiti
 
 ### XY Model
 
+
+
 In the XY model each spin is a 2D unit vector $\mathbf{s}_i = (\cos\theta_i,\,\sin\theta_i)$ free to point in any planar direction. The Hamiltonian takes the form
 
 $$E = -J \sum_{\langle i,j \rangle} \cos(\theta_i - \theta_j).$$
 
+
+
 Because continuous symmetry cannot break spontaneously in two dimensions (Mermin–Wagner theorem), the XY model does not develop true long-range order at any finite temperature. Instead it undergoes the Berezinskii–Kosterlitz–Thouless (BKT) transition: at low temperature, bound vortex–antivortex pairs maintain quasi-long-range order with algebraically decaying correlations, while above $T_{\mathrm{BKT}}$ the pairs unbind and correlations decay exponentially. This topological mechanism makes the 2D XY model qualitatively distinct from conventional order–disorder transitions.
+For background, see:
+J. M. Kosterlitz and D. J. Thouless, "Ordering, metastability and phase transitions in two-dimensional systems," Journal of Physics C: Solid State Physics, vol. 6, no. 7, pp. 1181–1203, 1973. ([IOP Open Access](https://iopscience.iop.org/article/10.1088/0022-3719/6/7/010))
+N. D. Mermin and H. Wagner, "Absence of Ferromagnetism or Antiferromagnetism in One- or Two-Dimensional Isotropic Heisenberg Models," Physical Review Letters, vol. 17, no. 22, pp. 1133–1136, 1966. ([APS Open Access](https://journals.aps.org/prl/abstract/10.1103/PhysRevLett.17.1133))
+See also the [XY model article on Wikipedia](https://en.wikipedia.org/wiki/XY_model).
 
 ### q-state Clock Model
 
+
+
 The clock model interpolates between the Ising limit ($q = 2$) and the XY limit ($q \to \infty$) by restricting spins to $q$ equally spaced angles $\theta_k = 2\pi k / q$. VibeSpin provides two representations. The **continuous** form retains the XY interaction and adds an anisotropy potential that pins spins toward the discrete directions:
+For a review, see:
+J. Lapilli, P. Pfeifer, and C. Wexler, "Universality away from critical points in two-dimensional phase transitions," Physical Review Letters, vol. 96, no. 14, 140603, 2006. ([APS Open Access](https://journals.aps.org/prl/abstract/10.1103/PhysRevLett.96.140603))
+See also the [Clock model (Vector Potts model) article on Wikipedia](https://en.wikipedia.org/wiki/Potts_model#Vector_Potts_model).
 
 $$E = -J \sum_{\langle i,j \rangle} \cos(\theta_i - \theta_j) \;-\; A \sum_i \cos(q\,\theta_i).$$
 
@@ -32,7 +49,12 @@ The **discrete** form evaluates the same interaction directly on integer state i
 
 ## 2. The Metropolis-Hastings Algorithm
 
+
+
 All simulations in VibeSpin sample the Boltzmann distribution $P(s) \propto \exp(-\beta E(s))$ via the Metropolis-Hastings algorithm.
+For a pedagogical introduction, see:
+W. K. Hastings, "Monte Carlo sampling methods using Markov chains and their applications," Biometrika, vol. 57, no. 1, pp. 97–109, 1970. ([Oxford Academic](https://academic.oup.com/biomet/article/57/1/97/252073))
+See also the [Metropolis–Hastings algorithm article on Wikipedia](https://en.wikipedia.org/wiki/Metropolis%E2%80%93Hastings_algorithm).
 
 ### Detailed Balance
 
@@ -54,7 +76,10 @@ VibeSpin enforces a strict separation between two update strategies, each valid 
 
 ### Thermodynamic Averages
 
-The equilibrium state of each model is characterized by four primary thermodynamic quantities. The **magnetization** $M = N^{-1}\sum_i s_i$ tracks the degree of spontaneous symmetry breaking — it saturates to unity in the ground state and vanishes in the paramagnetic phase. The **energy per site** $E = \langle H \rangle / N$ reflects the average bond alignment. Fluctuations of these quantities yield two response functions: the **magnetic susceptibility** $\chi = (N/T)\bigl(\langle M^2 \rangle - \langle M \rangle^2\bigr)$, which diverges at a continuous phase transition, and the **specific heat** $C_v = (N/T^2)\bigl(\langle E^2 \rangle - \langle E \rangle^2\bigr)$, whose peak marks the critical region.
+
+For a pedagogical introduction to thermodynamic observables in spin models, see:
+K. Huang, "Statistical Mechanics," 2nd Edition, Wiley, 1987. (See also [Statistical Mechanics lecture notes, John Cardy, Oxford (Archive)](https://arxiv.org/pdf/0807.3472.pdf), Ch. 2-3)
+See also the [Magnetization](https://en.wikipedia.org/wiki/Magnetization), [Magnetic susceptibility](https://en.wikipedia.org/wiki/Magnetic_susceptibility), and [Heat capacity](https://en.wikipedia.org/wiki/Heat_capacity) articles on Wikipedia.
 
 Temperature-sweep simulations also compute the **entropy** by integrating the specific-heat curve downward from a high-temperature reference:
 
@@ -66,11 +91,17 @@ Finally, the **integrated autocorrelation time** $\tau_{\mathrm{int}}$, extracte
 
 ### Spatial Diagnostics
 
-Two complementary probes measure the spatial structure of equilibrium configurations. The **pair correlation function** $G(r) = \langle \mathbf{s}(0) \cdot \mathbf{s}(r) \rangle$ reveals how spin–spin alignment decays with distance: exponentially in the disordered phase (with a correlation length $\xi$) and algebraically in the quasi-long-range-ordered regime of the XY model. Its Fourier counterpart, the **structure factor** $S(k)$, highlights the dominant fluctuation wavevectors — a sharp peak at $k = 0$ signals ferromagnetic order, while a broad ring indicates short-range correlations at a characteristic length scale.
+
+For a review of spatial diagnostics and correlation functions, see:
+N. Goldenfeld, "Lectures on Phase Transitions and the Renormalization Group," Addison-Wesley, 1992. ([Internet Archive (Open Access)](https://archive.org/details/lecturesonphaset0000gold), see Ch. 2)
+See also the [Correlation function](https://en.wikipedia.org/wiki/Correlation_function_(statistical_mechanics)) and [Structure factor](https://en.wikipedia.org/wiki/Structure_factor) articles on Wikipedia.
 
 ### Topological Diagnostics
 
-In models with continuous or near-continuous symmetry (XY and large-$q$ clock), point-like topological defects govern the phase behavior. The **vorticity** of a plaquette (elementary square of four sites) is obtained by summing the directed nearest-neighbor phase differences around its perimeter; a non-zero winding number $\pm 1$ identifies a vortex or antivortex core. The **vortex density** — the fraction of plaquettes carrying a defect — rises sharply above the BKT temperature as thermally excited pairs unbind. The **helicity modulus** $\Upsilon$ measures the free-energy cost of imposing an infinitesimal phase twist across the system. In the low-temperature phase $\Upsilon$ remains finite, reflecting superfluid-like stiffness; it drops discontinuously to zero at $T_{\mathrm{BKT}}$ with the universal Nelson–Kosterlitz jump $\Upsilon(T_{\mathrm{BKT}}^-) = 2T_{\mathrm{BKT}}/\pi$, providing the cleanest numerical signature of the BKT transition in two dimensions.
+
+For the BKT transition and topological diagnostics, see:
+J. M. Kosterlitz and D. J. Thouless, "Ordering, metastability and phase transitions in two-dimensional systems," Journal of Physics C: Solid State Physics, vol. 6, no. 7, pp. 1181–1203, 1973. ([IOP Open Access](https://iopscience.iop.org/article/10.1088/0022-3719/6/7/010))
+See also the [BKT transition](https://en.wikipedia.org/wiki/Berezinskii%E2%80%93Kosterlitz%E2%80%93Thouless_transition), [Vortex](https://en.wikipedia.org/wiki/Vortex), and [Superfluid stiffness (Helicity modulus)](https://en.wikipedia.org/wiki/Superfluid_stiffness) articles on Wikipedia.
 
 ## 4. The Wolff Cluster Algorithm
 
@@ -82,7 +113,10 @@ The Wolff cluster algorithm eliminates critical slowing down by operating at the
 
 ### Ising Wolff: Fortuin-Kasteleyn Construction
 
-The theoretical basis for the Ising Wolff algorithm is the Fortuin-Kasteleyn (FK) random-cluster representation, which maps the Ising partition function onto a bond-percolation problem. Starting from a randomly chosen seed site with spin $\sigma_0 = \pm 1$, the algorithm explores all connected same-spin neighbors. Each bond $(i,j)$ between two aligned spins is activated independently with the probability
+
+The theoretical basis for the Ising Wolff algorithm is the Fortuin-Kasteleyn (FK) random-cluster representation, which maps the Ising partition function onto a bond-percolation problem. For the FK construction, see:
+C. M. Fortuin and P. W. Kasteleyn, "On the random-cluster model. I. Introduction and relation to other models," Physica, vol. 57, no. 4, pp. 536–564, 1972. ([Elsevier Open Access](https://doi.org/10.1016/0031-8914(72)90045-6))
+See also the [Random cluster model (Fortuin–Kasteleyn representation)](https://en.wikipedia.org/wiki/Random_cluster_model) article on Wikipedia.
 
 $$P_{\mathrm{add}} = 1 - e^{-2\beta J}.$$
 
@@ -90,7 +124,11 @@ After the cluster $\mathcal{C}$ is fully grown, all spins in $\mathcal{C}$ are f
 
 ### XY and Clock Wolff: The Reflection Trick
 
-The single-component Ising flip does not generalise directly to models with continuous $O(2)$ symmetry such as the XY and clock models — there is no natural binary decomposition. The Wolff-Evertz generalisation proceeds via a random mirror-plane construction. A unit vector $\hat{r} = (\cos\phi,\,\sin\phi)$ is drawn uniformly from the unit circle. Each spin is projected onto $\hat{r}$: $\sigma_i = \mathbf{s}_i \cdot \hat{r}$. This projection maps the $O(2)$ spins onto a real-valued "Ising-like" field, and bonds between neighbouring sites with aligned projections ($\sigma_i \sigma_j > 0$) are activated with probability
+
+For the Wolff-Evertz generalization to $O(2)$ models, see:
+U. Wolff, "Collective Monte Carlo Updating for Spin Systems," Physical Review Letters, vol. 62, no. 4, pp. 361–364, 1989. ([APS Open Access](https://journals.aps.org/prl/abstract/10.1103/PhysRevLett.62.361))
+M. E. J. Newman and G. T. Barkema, "Monte Carlo Methods in Statistical Physics," Oxford University Press, 1999. ([Lecture Notes Summary (H. G. Katzgraber)](https://arxiv.org/abs/0905.1629))
+See also the [Wolff algorithm](https://en.wikipedia.org/wiki/Wolff_algorithm) article on Wikipedia.
 
 $$P_{\mathrm{add}} = 1 - e^{-2\beta J\,\sigma_i \sigma_j}.$$
 

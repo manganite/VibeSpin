@@ -24,7 +24,7 @@
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
     <link rel="next" title="Physics and Algorithm Guide: VibeSpin" href="physics.html" />
-    <link rel="prev" title="VibeSpin Documentation" href="index.html" /> 
+    <link rel="prev" title="VibeSpin Documentation Hub" href="index.html" /> 
 </head>
 
 <body class="wy-body-for-nav"> 
@@ -49,6 +49,11 @@
               <p class="caption" role="heading"><span class="caption-text">User Guides:</span></p>
 <ul class="current">
 <li class="toctree-l1 current"><a class="current reference internal" href="#">VibeSpin</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#project-policies-scope-discipline">Project Policies &amp; Scope Discipline</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#bibliography">Bibliography</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#scientific-background-and-references">Scientific Background and References</a></li>
+</ul>
+</li>
 <li class="toctree-l2"><a class="reference internal" href="#scope-and-methods">Scope and methods</a><ul>
 <li class="toctree-l3"><a class="reference internal" href="#physical-analysis">Physical Analysis</a></li>
 </ul>
@@ -69,17 +74,22 @@
 <li class="toctree-l3"><a class="reference internal" href="#docs-troubleshooting">Docs Troubleshooting</a></li>
 </ul>
 </li>
-<li class="toctree-l2"><a class="reference internal" href="#project-context">Project context</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#project-context">Project context</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#references">References</a></li>
+</ul>
+</li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="physics.html">Physics and Algorithm Guide: VibeSpin</a></li>
 <li class="toctree-l1"><a class="reference internal" href="scripts.html">Scripts Catalog: VibeSpin</a></li>
 <li class="toctree-l1"><a class="reference internal" href="agents.html">Agent Instruction Guide: VibeSpin</a></li>
+<li class="toctree-l1"><a class="reference internal" href="bibliography.html">Project Bibliography: VibeSpin</a></li>
 </ul>
-<p class="caption" role="heading"><span class="caption-text">Performance:</span></p>
+<p class="caption" role="heading"><span class="caption-text">Research &amp; Analysis:</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="benchmarks.html">Performance Benchmarking for VibeSpin</a></li>
 <li class="toctree-l1"><a class="reference internal" href="wolff_efficiency.html">Wolff vs. Metropolis: Algorithmic Efficiency in the Critical Regime</a></li>
+<li class="toctree-l1"><a class="reference internal" href="dynamic_critical_exponents.html">Dynamical Critical Exponents in the 2D Ising Model</a></li>
 </ul>
 <p class="caption" role="heading"><span class="caption-text">API Reference:</span></p>
 <ul>
@@ -116,9 +126,22 @@
 <a class="reference external" href="https://github.com/manganite/VibeSpin/actions/workflows/tests.yml"><img alt="Tests" src="https://github.com/manganite/VibeSpin/actions/workflows/tests.yml/badge.svg" /></a></p>
 <p>VibeSpin is a Python framework for high-performance simulation and analysis of two-dimensional lattice spin models. The codebase focuses on three foundational systems: the <strong>Ising model</strong>, the <strong>XY model</strong>, and the <strong>q-state Clock model</strong> — provided as <code class="docutils literal notranslate"><span class="pre">ClockSimulation</span></code> (continuous XY-plus-anisotropy form) and <code class="docutils literal notranslate"><span class="pre">DiscreteClockSimulation</span></code> (integer state indices with cosine lookup tables). It combines Numba-accelerated Monte Carlo dynamics with a robust analysis suite for equilibrium observables, coarsening kinetics, and topological defect tracking.</p>
 <p>The implementation is optimized for speed, scalability, and physical repeatability. Core kernels utilize <strong>Numba JIT compilation</strong> with optional <strong>multi-core parallelization</strong>, periodic boundaries are handled via precomputed index arrays, and all stochastic trajectories are fully deterministic when seeded.</p>
+<section id="project-policies-scope-discipline">
+<h2>Project Policies &amp; Scope Discipline<a class="headerlink" href="#project-policies-scope-discipline" title="Link to this heading"></a></h2>
+<p>VibeSpin enforces strict development policies for physical correctness, code quality, reproducibility, and documentation. All edits must follow the <strong>Scope Discipline</strong>: never change, rewrite, or delete code/text unrelated to the current task. See <span class="xref myst">AGENTS.md</span> for the full list of mandatory development policies.</p>
+</section>
+<section id="bibliography">
+<h2>Bibliography<a class="headerlink" href="#bibliography" title="Link to this heading"></a></h2>
+<p>All scientific references used in VibeSpin are listed in <span class="xref myst">BIBLIOGRAPHY.md</span>. Reference policy and link validation are enforced as described in AGENTS.md.</p>
+<section id="scientific-background-and-references">
+<h3>Scientific Background and References<a class="headerlink" href="#scientific-background-and-references" title="Link to this heading"></a></h3>
+<p>The Ising model [1], XY model [2], and q-state Clock model [3] are canonical systems in statistical physics for studying phase transitions, critical phenomena, and topological defects. Monte Carlo methods, especially the Metropolis-Hastings algorithm [4], are standard for simulating these models. The Wolff cluster algorithm [5] is highly effective near criticality, reducing autocorrelation times by exploiting collective spin updates. For a comprehensive introduction to these models and algorithms, see the references below.</p>
+</section>
+</section>
 <section id="scope-and-methods">
 <h2>Scope and methods<a class="headerlink" href="#scope-and-methods" title="Link to this heading"></a></h2>
 <p>VibeSpin supports three update schemes: <strong>Checkerboard Updates</strong> (optimized for equilibrium throughput and SIMD vectorization), <strong>Random Site Selection</strong> (mandatory for non-equilibrium kinetics and aging studies), and the <strong>Wolff Cluster Algorithm</strong> (highly efficient near critical temperatures due to vanishing critical slowing down).</p>
+<p>For further details on the physical and algorithmic background, see the Physics and Algorithm Guide and the references below.</p>
 <section id="physical-analysis">
 <h3>Physical Analysis<a class="headerlink" href="#physical-analysis" title="Link to this heading"></a></h3>
 <ul class="simple">
@@ -251,6 +274,15 @@ make<span class="w"> </span>html
 <h2>Project context<a class="headerlink" href="#project-context" title="Link to this heading"></a></h2>
 <p>VibeSpin was developed using AI-assisted scientific coding workflows. The framework demonstrates how high-level physical design and validation can be accelerated through iterative modeling, benchmarking, and automated testing.</p>
 <p>For detailed procedural instructions, see <a class="reference internal" href="agents.html"><span class="doc">Agent Instruction Guide</span></a>.</p>
+<hr class="docutils" />
+<section id="references">
+<h3>References<a class="headerlink" href="#references" title="Link to this heading"></a></h3>
+<p>[1] Ising model: https://en.wikipedia.org/wiki/Ising_model (open-access overview)</p>
+<p>[2] XY model: https://en.wikipedia.org/wiki/XY_model (open-access overview)</p>
+<p>[3] Clock model: J. Villain, “Theory of one- and two-dimensional magnets with an easy magnetization plane. II. The planar, classical, two-dimensional magnet,” J. Phys. France 36, 581-590 (1975). https://doi.org/10.1051/jphys:01975003606058100 (open access)</p>
+<p>[4] Metropolis-Hastings algorithm: https://en.wikipedia.org/wiki/Metropolis%E2%80%93Hastings_algorithm (open-access overview)</p>
+<p>[5] Wolff cluster algorithm: U. Wolff, “Collective Monte Carlo Updating for Spin Systems,” Phys. Rev. Lett. 62, 361 (1989). https://journals.aps.org/prl/abstract/10.1103/PhysRevLett.62.361 (open access)</p>
+</section>
 </section>
 </section>
 
@@ -258,7 +290,7 @@ make<span class="w"> </span>html
            </div>
           </div>
           <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
-        <a href="index.html" class="btn btn-neutral float-left" title="VibeSpin Documentation" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="index.html" class="btn btn-neutral float-left" title="VibeSpin Documentation Hub" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
         <a href="physics.html" class="btn btn-neutral float-right" title="Physics and Algorithm Guide: VibeSpin" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
     </div>
 

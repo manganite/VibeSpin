@@ -20,6 +20,14 @@ scripts.ising.correlation\_divergence module
    :show-inheritance:
    :undoc-members:
 
+scripts.ising.measure\_z module
+-------------------------------
+
+.. automodule:: scripts.ising.measure_z
+   :members:
+   :show-inheritance:
+   :undoc-members:
+
 scripts.ising.ordering\_evolution module
 ----------------------------------------
 
