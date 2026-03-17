@@ -289,19 +289,21 @@ mypy<span class="w"> </span>--explicit-package-bases<span class="w"> </span>mode
 <ul class="simple">
 <li><p><code class="docutils literal notranslate"><span class="pre">README.md</span></code>: Project overview and quickstart.</p></li>
 <li><p><code class="docutils literal notranslate"><span class="pre">PHYSICS.md</span></code>: Hamiltonian definitions, phase behavior, and mathematical formulations.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">BIBLIOGRAPHY.md</span></code>: Central repository for all scientific references used in the project.</p></li>
 <li><p><code class="docutils literal notranslate"><span class="pre">SCRIPTS.md</span></code>: Catalog of entry-point scripts with usage descriptions.</p></li>
 <li><p><code class="docutils literal notranslate"><span class="pre">AGENTS.md</span></code>: This agent instruction guide.</p></li>
 <li><p><code class="docutils literal notranslate"><span class="pre">pyproject.toml</span></code>: Project metadata, dependencies, and tool configuration (ruff, mypy, pytest).</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">requirements.txt</span></code>: Frozen dependencies for the project environment.</p></li>
 </ul>
 <p><strong>Directories:</strong></p>
 <ul class="simple">
 <li><p><code class="docutils literal notranslate"><span class="pre">models/</span></code>: Refactored simulation classes with <code class="docutils literal notranslate"><span class="pre">main()</span></code> entry points.</p></li>
 <li><p><code class="docutils literal notranslate"><span class="pre">utils/</span></code>: Physics and system-level helper functions.</p></li>
 <li><p><code class="docutils literal notranslate"><span class="pre">tests/</span></code>: High-coverage test suite including integrity, CLI, and extreme case verification.</p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">scripts/</span></code>: Physics experiments and equilibrium/kinetics drivers. Subdirectories: <code class="docutils literal notranslate"><span class="pre">ising/</span></code>, <code class="docutils literal notranslate"><span class="pre">xy/</span></code>, <code class="docutils literal notranslate"><span class="pre">clock/</span></code>, <code class="docutils literal notranslate"><span class="pre">benchmarks/</span></code> (cross-model throughput benchmark).</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">scripts/</span></code>: Physics experiments and equilibrium/kinetics drivers. Subdirectories: <code class="docutils literal notranslate"><span class="pre">ising/</span></code>, <code class="docutils literal notranslate"><span class="pre">xy/</span></code>, <code class="docutils literal notranslate"><span class="pre">clock/</span></code>, <code class="docutils literal notranslate"><span class="pre">benchmarks/</span></code>.</p></li>
 <li><p><code class="docutils literal notranslate"><span class="pre">docs/</span></code>: Sphinx documentation source (<code class="docutils literal notranslate"><span class="pre">docs/source/</span></code>) and HTML build output (<code class="docutils literal notranslate"><span class="pre">docs/_build/html/</span></code>).</p></li>
 <li><p><code class="docutils literal notranslate"><span class="pre">results/</span></code>: Simulation output files organized by model (<code class="docutils literal notranslate"><span class="pre">ising/</span></code>, <code class="docutils literal notranslate"><span class="pre">xy/</span></code>, <code class="docutils literal notranslate"><span class="pre">clock/</span></code>, <code class="docutils literal notranslate"><span class="pre">benchmarks/</span></code>).</p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">notebooks/</span></code>: Jupyter notebooks for analysis and exploration. Current notebooks: <code class="docutils literal notranslate"><span class="pre">Performance_Benchmarks.ipynb</span></code> (throughput benchmark results) and <code class="docutils literal notranslate"><span class="pre">Wolff_Efficiency.ipynb</span></code> (Wolff cluster algorithm efficiency analysis). Add new analysis notebooks here.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">notebooks/</span></code>: Jupyter notebooks for analysis and exploration. Add new analysis notebooks here.</p></li>
 </ul>
 </section>
 <section id="common-operational-workflows">
