@@ -107,6 +107,11 @@ Optimize for four outcomes: correct statistical-physics behavior, high simulatio
 
 **Accessibility Check**: Every reference link MUST be checked for accessibility and validity. Broken or paywalled links should be replaced with open-access alternatives whenever possible. Regular link validation is required.
 
+**Clickable Citation Policy**: To ensure clarity and navigation in Jupyter notebooks, all inline scientific citations MUST be clickable and link directly to the notebook's "Bibliography" section.
+- Use an HTML anchor at the start of the Bibliography section: `<a id='bibliography-section'></a>`.
+- Use HTML links for inline citations: `<a href='#bibliography-section'>[N]</a>`.
+- This ensures that citations are navigable in both local Jupyter environments and rendered Sphinx/nbsphinx documentation. Standard Markdown anchors (e.g., `[N](#bibliography-section)`) should be avoided in notebooks as they may not resolve correctly in all rendering contexts.
+
 ## Directory Map for Agents
 
 The workspace root contains the following key files and directories.
