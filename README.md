@@ -7,9 +7,21 @@ VibeSpin is a Python framework for high-performance simulation and analysis of t
 
 The implementation is optimized for speed, scalability, and physical repeatability. Core kernels utilize **Numba JIT compilation** with optional **multi-core parallelization**, periodic boundaries are handled via precomputed index arrays, and all stochastic trajectories are fully deterministic when seeded.
 
+## Project Policies & Scope Discipline
+
+VibeSpin enforces strict development policies for physical correctness, code quality, reproducibility, and documentation. All edits must follow the **Scope Discipline**: never change, rewrite, or delete code/text unrelated to the current task. See [AGENTS.md](agents) for the full list of mandatory development policies.
+
+## Bibliography
+All scientific references used in VibeSpin are listed in [BIBLIOGRAPHY.md](bibliography). Reference policy and link validation are enforced as described in AGENTS.md.
+
+### Scientific Background and References
+The Ising model [1], XY model [2], and q-state Clock model [3] are canonical systems in statistical physics for studying phase transitions, critical phenomena, and topological defects. Monte Carlo methods, especially the Metropolis-Hastings algorithm [4], are standard for simulating these models. The Wolff cluster algorithm [5] is highly effective near criticality, reducing autocorrelation times by exploiting collective spin updates. For a comprehensive introduction to these models and algorithms, see the references below.
+
 ## Scope and methods
 
 VibeSpin supports three update schemes: **Checkerboard Updates** (optimized for equilibrium throughput and SIMD vectorization), **Random Site Selection** (mandatory for non-equilibrium kinetics and aging studies), and the **Wolff Cluster Algorithm** (highly efficient near critical temperatures due to vanishing critical slowing down). 
+
+For further details on the physical and algorithmic background, see the Physics and Algorithm Guide and the references below.
 
 ### Physical Analysis
 - **Thermodynamics**: Magnetization magnitude $|M|$, total energy $E$, susceptibility $\chi$, and specific heat $C_v$.
@@ -160,3 +172,16 @@ For deeper insights, refer to the source guides:
 VibeSpin was developed using AI-assisted scientific coding workflows. The framework demonstrates how high-level physical design and validation can be accelerated through iterative modeling, benchmarking, and automated testing.
 
 For detailed procedural instructions, see {doc}`Agent Instruction Guide <agents>`.
+
+---
+### References
+
+[1] Ising model: https://en.wikipedia.org/wiki/Ising_model (open-access overview)
+
+[2] XY model: https://en.wikipedia.org/wiki/XY_model (open-access overview)
+
+[3] Clock model: J. Villain, "Theory of one- and two-dimensional magnets with an easy magnetization plane. II. The planar, classical, two-dimensional magnet," J. Phys. France 36, 581-590 (1975). https://doi.org/10.1051/jphys:01975003606058100 (open access)
+
+[4] Metropolis-Hastings algorithm: https://en.wikipedia.org/wiki/Metropolis%E2%80%93Hastings_algorithm (open-access overview)
+
+[5] Wolff cluster algorithm: U. Wolff, "Collective Monte Carlo Updating for Spin Systems," Phys. Rev. Lett. 62, 361 (1989). https://journals.aps.org/prl/abstract/10.1103/PhysRevLett.62.361 (open access)
