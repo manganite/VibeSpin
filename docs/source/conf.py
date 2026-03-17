@@ -60,6 +60,9 @@ myst_enable_extensions = [
     "dollarmath",
     "amsmath",
 ]
+myst_heading_anchors = 3
+suppress_warnings = ["myst.xref_missing"]
 
 # -- nbsphinx settings -------------------------------------------------------
+
 nbsphinx_execute = 'never'  # Don't run notebooks during build

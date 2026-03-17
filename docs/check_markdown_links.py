@@ -38,13 +38,16 @@ def _validate_link(source_file: Path, raw_target: str) -> str | None:
     resolved = (source_file.parent / target).absolute()
 
     # Allow missing extension for markdown/notebook targets (Sphinx/MyST style)
+    # OR correctly handle existing .md/.ipynb extensions
     if not resolved.exists():
         for ext in ('.md', '.ipynb'):
-            if (resolved.with_suffix(ext)).exists():
-                resolved = resolved.with_suffix(ext)
-                break
+            if not target.endswith(ext):
+                if (resolved.with_suffix(ext)).exists():
+                    resolved = resolved.with_suffix(ext)
+                    break
 
     try:
+
         resolved.relative_to(DOCS_SOURCE.absolute())
     except ValueError:
         return (
