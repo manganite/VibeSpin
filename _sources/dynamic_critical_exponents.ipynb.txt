@@ -197,6 +197,28 @@
     "- U. Wolff, \"Collective Monte Carlo Updating for Spin Systems,\" Physical Review Letters, vol. 62, no. 4, pp. 361–364, 1989. ([APS Open Access](https://journals.aps.org/prl/abstract/10.1103/PhysRevLett.62.361))\n",
     "- [Wolff algorithm on Wikipedia](https://en.wikipedia.org/wiki/Wolff_algorithm)"
    ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "bibliography-section",
+   "metadata": {},
+   "source": [
+    "## Bibliography\n",
+    "\n",
+    "[1] L. Onsager, \"Crystal Statistics. I. A Two-Dimensional Model with an Order-Disorder Transition,\" *Physical Review*, vol. 65, no. 3-4, pp. 117–149, 1944. [APS Open Access](https://journals.aps.org/pr/abstract/10.1103/PhysRev.65.117)\n",
+    "\n",
+    "[2] U. Wolff, \"Collective Monte Carlo Updating for Spin Systems,\" *Physical Review Letters*, vol. 62, no. 4, pp. 361–364, 1989. [APS Open Access](https://journals.aps.org/prl/abstract/10.1103/PhysRevLett.62.361)\n",
+    "\n",
+    "[3] G. S. Madras and A. D. Sokal, \"The pivot algorithm: A highly efficient Monte Carlo method for the self-avoiding walk,\" *Journal of Statistical Physics*, vol. 50, no. 1-2, pp. 109–186, 1988. [Springer Open Access](https://link.springer.com/article/10.1007/BF01022990)\n",
+    "\n",
+    "[4] [Ising model on Wikipedia](https://en.wikipedia.org/wiki/Ising_model)\n",
+    "\n",
+    "[5] [Wolff algorithm on Wikipedia](https://en.wikipedia.org/wiki/Wolff_algorithm)\n",
+    "\n",
+    "[6] [Critical slowing down on Wikipedia](https://en.wikipedia.org/wiki/Critical_slowing_down)\n",
+    "\n",
+    "[7] [Autocorrelation time on Wikipedia](https://en.wikipedia.org/wiki/Autocorrelation#Time_series)"
+   ]
   }
  ],
  "metadata": {

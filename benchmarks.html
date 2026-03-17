@@ -58,29 +58,25 @@
 <p class="caption" role="heading"><span class="caption-text">Research &amp; Analysis:</span></p>
 <ul class="current">
 <li class="toctree-l1 current"><a class="current reference internal" href="#">Performance Benchmarking for VibeSpin</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="#Scientific-References">Scientific References</a><ul>
-<li class="toctree-l3"><a class="reference internal" href="#Setup">Setup</a></li>
-<li class="toctree-l3"><a class="reference internal" href="#Throughput-Benchmark">Throughput Benchmark</a></li>
-<li class="toctree-l3"><a class="reference internal" href="#Throughput:-Log-Log-Plot">Throughput: Log-Log Plot</a></li>
-<li class="toctree-l3"><a class="reference internal" href="#Thermodynamic-Analysis-Cost:-Per-Step-Collection">Thermodynamic Analysis Cost: Per-Step Collection</a></li>
-<li class="toctree-l3"><a class="reference internal" href="#Thermodynamic-Overhead-Ratio">Thermodynamic Overhead Ratio</a></li>
-<li class="toctree-l3"><a class="reference internal" href="#Scaling-Exponents">Scaling Exponents</a></li>
-<li class="toctree-l3"><a class="reference internal" href="#Cost-per-Spin-Update">Cost per Spin Update</a></li>
-<li class="toctree-l3"><a class="reference internal" href="#Summary-Table-and-Speedup-Analysis">Summary Table and Speedup Analysis</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#Setup">Setup</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#Throughput-Benchmark">Throughput Benchmark</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#Throughput:-Log-Log-Plot">Throughput: Log-Log Plot</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#Thermodynamic-Analysis-Cost:-Per-Step-Collection">Thermodynamic Analysis Cost: Per-Step Collection</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#Thermodynamic-Overhead-Ratio">Thermodynamic Overhead Ratio</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#Scaling-Exponents">Scaling Exponents</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#Cost-per-Spin-Update">Cost per Spin Update</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#Summary-Table-and-Speedup-Analysis">Summary Table and Speedup Analysis</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#Spatial-Correlation-G(r):-Cost-per-Call">Spatial Correlation <span class="math notranslate nohighlight">\(G(r)\)</span>: Cost per Call</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#Autocorrelation-Time-and-Sampling-Efficiency">Autocorrelation Time and Sampling Efficiency</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#Hardware-Scaling-&amp;-Multi-core-Performance">Hardware Scaling &amp; Multi-core Performance</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#Efficiency:-Nanoseconds-per-site-update">Efficiency: Nanoseconds per site update</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#Topological-and-Vector-Analysis-Cost">Topological and Vector Analysis Cost</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#Parallel-Scaling-Benchmark">Parallel Scaling Benchmark</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#id1">Parallel Scaling Benchmark</a></li>
 </ul>
 </li>
-<li class="toctree-l2"><a class="reference internal" href="#Bibliography">Bibliography</a><ul>
-<li class="toctree-l3"><a class="reference internal" href="#Autocorrelation-Time-and-Sampling-Efficiency">Autocorrelation Time and Sampling Efficiency</a></li>
-<li class="toctree-l3"><a class="reference internal" href="#Hardware-Scaling-&amp;-Multi-core-Performance">Hardware Scaling &amp; Multi-core Performance</a></li>
-</ul>
-</li>
-<li class="toctree-l2"><a class="reference internal" href="#Efficiency:-Nanoseconds-per-site-update">Efficiency: Nanoseconds per site update</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#Topological-and-Vector-Analysis-Cost">Topological and Vector Analysis Cost</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#Parallel-Scaling-Benchmark">Parallel Scaling Benchmark</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#id1">Parallel Scaling Benchmark</a><ul>
-<li class="toctree-l3"><a class="reference internal" href="#Comprehensive-Performance-Dashboard">Comprehensive Performance Dashboard</a></li>
-</ul>
-</li>
+<li class="toctree-l2"><a class="reference internal" href="#Comprehensive-Performance-Dashboard">Comprehensive Performance Dashboard</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#Bibliography">Bibliography</a></li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="wolff_efficiency.html">Wolff vs. Metropolis: Algorithmic Efficiency in the Critical Regime</a></li>
@@ -121,39 +117,6 @@
 <p>Analysis costs divide into two tiers by when in a measurement run the cost is paid. <strong>Per-step observables</strong> — magnetization <span class="math notranslate nohighlight">\(M\)</span> and energy <span class="math notranslate nohighlight">\(E\)</span> — are evaluated at every MC sweep inside the measurement window, so their per-call cost multiplies with the window length. <strong>Post-hoc observables</strong> — susceptibility <span class="math notranslate nohighlight">\(\chi = N\,\mathrm{Var}(M)/T\)</span>, specific heat <span class="math notranslate nohighlight">\(C_v = N\,\mathrm{Var}(E)/T^2\)</span>, the spatial correlation function <span class="math notranslate nohighlight">\(G(r)\)</span>, and the autocorrelation time
 <span class="math notranslate nohighlight">\(\tau_\mathrm{int}\)</span> — are computed once after the window closes from the stored M and E series or from a spin-field snapshot. They carry no per-step cost. Sections below treat each tier separately: the thermodynamic cost section covers per-step M and E collection; G(r) and <span class="math notranslate nohighlight">\(\tau_\mathrm{int}\)</span> have dedicated sections since their scaling and use differ from per-step collection.</p>
 <p>Because Numba JIT compiles each kernel on first call, reported times are only stable after warm-up. The <code class="docutils literal notranslate"><span class="pre">measure_performance</span></code> helper runs three warm-up steps before starting any clock. For reproducible numbers, execute all cells once to compile, then re-run the benchmark cell.</p>
-<hr class="docutils" />
-<section id="Scientific-References">
-<h2>Scientific References<a class="headerlink" href="#Scientific-References" title="Link to this heading"></a></h2>
-<p>For physical models and algorithms:</p>
-<ul class="simple">
-<li><ol class="upperalpha simple" start="12">
-<li><p>Onsager, “Crystal Statistics. I. A Two-Dimensional Model with an Order-Disorder Transition,” Physical Review, vol. 65, no. 3-4, pp. 117–149, 1944. (<a class="reference external" href="https://journals.aps.org/pr/abstract/10.1103/PhysRev.65.117">APS Open Access</a>)</p></li>
-</ol>
-</li>
-<li><ol class="upperalpha simple" start="10">
-<li><ol class="upperalpha simple" start="13">
-<li><p>Kosterlitz and D. J. Thouless, “Ordering, metastability and phase transitions in two-dimensional systems,” Journal of Physics C: Solid State Physics, vol. 6, no. 7, pp. 1181–1203, 1973. (<a class="reference external" href="https://iopscience.iop.org/article/10.1088/0022-3719/6/7/010">IOP Open Access</a>)</p></li>
-</ol>
-</li>
-</ol>
-</li>
-<li><ol class="upperalpha simple" start="10">
-<li><p>Lapilli, P. Pfeifer, and C. Wexler, “Universality away from critical points in two-dimensional phase transitions,” Physical Review Letters, vol. 96, no. 14, 140603, 2006. (<a class="reference external" href="https://journals.aps.org/prl/abstract/10.1103/PhysRevLett.96.140603">APS Open Access</a>)</p></li>
-</ol>
-</li>
-<li><ol class="upperalpha simple" start="23">
-<li><ol class="upperalpha simple" start="11">
-<li><p>Hastings, “Monte Carlo sampling methods using Markov chains and their applications,” Biometrika, vol. 57, no. 1, pp. 97–109, 1970. (<a class="reference external" href="https://academic.oup.com/biomet/article/57/1/97/252073">Oxford Academic Open Access</a>)</p></li>
-</ol>
-</li>
-</ol>
-</li>
-<li><p>Numba JIT and parallelization: <a class="reference external" href="https://numba.readthedocs.io/en/stable/user/parallel.html">https://numba.readthedocs.io/en/stable/user/parallel.html</a></p></li>
-<li><p><a class="reference external" href="https://en.wikipedia.org/wiki/Ising_model">Ising model on Wikipedia</a></p></li>
-<li><p><a class="reference external" href="https://en.wikipedia.org/wiki/XY_model">XY model on Wikipedia</a></p></li>
-<li><p><a class="reference external" href="https://en.wikipedia.org/wiki/Potts_model#Vector_Potts_model">Clock model on Wikipedia</a></p></li>
-<li><p><a class="reference external" href="https://en.wikipedia.org/wiki/Metropolis%E2%80%93Hastings_algorithm">Metropolis–Hastings algorithm on Wikipedia</a></p></li>
-</ul>
 <div class="nbinput nblast docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[18]:
 </pre></div>
@@ -178,7 +141,7 @@
 </div>
 </div>
 <section id="Setup">
-<h3>Setup<a class="headerlink" href="#Setup" title="Link to this heading"></a></h3>
+<h2>Setup<a class="headerlink" href="#Setup" title="Link to this heading"></a></h2>
 <p>The first code cell below defines global constants: a fixed seed (<code class="docutils literal notranslate"><span class="pre">SEED</span> <span class="pre">=</span> <span class="pre">42</span></code>), the number of iterations for analysis timing (<code class="docutils literal notranslate"><span class="pre">ANALYSIS_ITERS</span> <span class="pre">=</span> <span class="pre">50</span></code>), and a sweep count per lattice size (<code class="docutils literal notranslate"><span class="pre">N_SWEEPS_MAP</span></code>). Larger lattices get fewer timed sweeps to keep total runtime under a few minutes while preserving the scaling trend across five decades of <span class="math notranslate nohighlight">\(N\)</span>. It also sets consistent plot colours, markers, and line styles for all eight model variants.</p>
 <p>The second code cell defines <code class="docutils literal notranslate"><span class="pre">measure_performance</span></code>. It accepts a live simulation instance and runs three silent warm-up steps to trigger JIT compilation for sweep, thermodynamic, and <span class="math notranslate nohighlight">\(G(r)\)</span> kernels before any timing begins. (Compiling the <span class="math notranslate nohighlight">\(G(r)\)</span> kernel at this stage means the dedicated <span class="math notranslate nohighlight">\(G(r)\)</span> section later gets stable timings without its own warm-up pass.) Sweep throughput is then measured over the full <code class="docutils literal notranslate"><span class="pre">sweeps</span></code> count. Thermodynamic collection cost is averaged over
 <code class="docutils literal notranslate"><span class="pre">analysis_iters</span></code> independent calls to <code class="docutils literal notranslate"><span class="pre">_get_energy()</span></code> and <code class="docutils literal notranslate"><span class="pre">_get_magnetization()</span></code>, which represent the per-step overhead incurred inside a measurement window.</p>
@@ -267,7 +230,7 @@
 </div>
 </section>
 <section id="Throughput-Benchmark">
-<h3>Throughput Benchmark<a class="headerlink" href="#Throughput-Benchmark" title="Link to this heading"></a></h3>
+<h2>Throughput Benchmark<a class="headerlink" href="#Throughput-Benchmark" title="Link to this heading"></a></h2>
 <p>The benchmark runs all eight model variants at lattice sizes <span class="math notranslate nohighlight">\(L \in \{32, 64, 128, 256, 512\}\)</span>. Temperatures are fixed at physically relevant points: <span class="math notranslate nohighlight">\(T = 2.269\)</span> for Ising (within 0.1% of the known 2D critical temperature <span class="math notranslate nohighlight">\(T_c \approx 2.2692\)</span>), <span class="math notranslate nohighlight">\(T = 0.89\)</span> for XY (near the Berezinskii:nbsphinx-math:<cite>u2`013Kosterlitz:nbsphinx-math:</cite>u2`013Thouless transition at <span class="math notranslate nohighlight">\(T_{\text{BKT}} \approx 0.89\)</span>), and <span class="math notranslate nohighlight">\(T = 0.5\)</span> for both <span class="math notranslate nohighlight">\(q = 6\)</span> clock variants (well inside the
 ordered phase). Choosing these points ensures realistic acceptance rates rather than trivial cases where nearly every or nearly no proposal is accepted.</p>
 <p>Results are stored in <code class="docutils literal notranslate"><span class="pre">results[model_name][L]</span></code> as a dict with keys <code class="docutils literal notranslate"><span class="pre">sps</span></code> (sweeps per second) and <code class="docutils literal notranslate"><span class="pre">thermo_ms</span></code> (per-step thermodynamic collection cost in milliseconds). All subsequent plots up to the <span class="math notranslate nohighlight">\(G(r)\)</span> section read from this structure.</p>
@@ -353,7 +316,7 @@ Benchmark complete. Run scripts/benchmarks/throughput.py to cache results for re
 </div>
 </section>
 <section id="Throughput:-Log-Log-Plot">
-<h3>Throughput: Log-Log Plot<a class="headerlink" href="#Throughput:-Log-Log-Plot" title="Link to this heading"></a></h3>
+<h2>Throughput: Log-Log Plot<a class="headerlink" href="#Throughput:-Log-Log-Plot" title="Link to this heading"></a></h2>
 <p>The plot below shows sweeps per second on a log-log scale against system size <span class="math notranslate nohighlight">\(N = L^2\)</span>. One sweep corresponds to a full lattice pass: <span class="math notranslate nohighlight">\(N\)</span> randomly chosen flip attempts for random-sequential updates, or two sublattice passes for checkerboard. On a log-log scale, a line with slope <span class="math notranslate nohighlight">\(-1\)</span> would indicate constant cost per spin (ideal <span class="math notranslate nohighlight">\(O(N)\)</span> scaling).</p>
 <p>The Ising model occupies the top of the chart. Its binary spin space limits each Metropolis evaluation to two pre-computed Boltzmann factors (<span class="math notranslate nohighlight">\(e^{-4J\beta}\)</span> and <span class="math notranslate nohighlight">\(e^{-8J\beta}\)</span>), with no per-site transcendental functions. XY and the continuous clock both compute <code class="docutils literal notranslate"><span class="pre">arctan2</span></code> and trigonometric evaluations per proposal, which is visible as a substantial throughput drop. The discrete clock reaches for the same Hamiltonian as the continuous clock but evaluates <span class="math notranslate nohighlight">\(\Delta E\)</span> via a
 length-<span class="math notranslate nohighlight">\(q\)</span> cosine table, recovering much of the Ising advantage.</p>
@@ -390,7 +353,7 @@ length-<span class="math notranslate nohighlight">\(q\)</span> cosine table, rec
 </div>
 </section>
 <section id="Thermodynamic-Analysis-Cost:-Per-Step-Collection">
-<h3>Thermodynamic Analysis Cost: Per-Step Collection<a class="headerlink" href="#Thermodynamic-Analysis-Cost:-Per-Step-Collection" title="Link to this heading"></a></h3>
+<h2>Thermodynamic Analysis Cost: Per-Step Collection<a class="headerlink" href="#Thermodynamic-Analysis-Cost:-Per-Step-Collection" title="Link to this heading"></a></h2>
 <p>A measurement run has two distinct cost phases. During the window, <code class="docutils literal notranslate"><span class="pre">_get_magnetization()</span></code> and <code class="docutils literal notranslate"><span class="pre">_get_energy()</span></code> are called at every sweep to build the time series <span class="math notranslate nohighlight">\(M(t)\)</span> and <span class="math notranslate nohighlight">\(E(t)\)</span>. This is the only thermodynamic cost paid per step, and it scales with window length: a <span class="math notranslate nohighlight">\(W = 10{,}000\)</span> sweep window means <span class="math notranslate nohighlight">\(10{,}000\)</span> calls to each. After the window closes, susceptibility and specific heat are derived from the accumulated arrays with a single variance pass:</p>
 <div class="math notranslate nohighlight">
 \[\chi = \frac{N}{T}\bigl(\langle M^2 \rangle - \langle M \rangle^2\bigr), \qquad C_v = \frac{N}{T^2}\bigl(\langle E^2 \rangle - \langle E \rangle^2\bigr)\]</div>
@@ -430,7 +393,7 @@ length-<span class="math notranslate nohighlight">\(q\)</span> cosine table, rec
 </div>
 </section>
 <section id="Thermodynamic-Overhead-Ratio">
-<h3>Thermodynamic Overhead Ratio<a class="headerlink" href="#Thermodynamic-Overhead-Ratio" title="Link to this heading"></a></h3>
+<h2>Thermodynamic Overhead Ratio<a class="headerlink" href="#Thermodynamic-Overhead-Ratio" title="Link to this heading"></a></h2>
 <p>This plot shows (per-step M+E collection time) / (sweep time) — the fraction of each sweep’s budget consumed by recording the two per-step observables. The ratio only covers the quantities that must be collected at every step; post-hoc observables (χ, C_v, G(r), τ_int) are paid once per window regardless of its length and do not contribute to this ratio.</p>
 <p>When the ratio exceeds 1.0 (dashed reference), calling <code class="docutils literal notranslate"><span class="pre">_get_energy()</span></code> and <code class="docutils literal notranslate"><span class="pre">_get_magnetization()</span></code> at every sweep adds more overhead than the sweep itself. Fast-sweeping models such as Ising approach or exceed that crossover at large <span class="math notranslate nohighlight">\(L\)</span> because their sweep time is suppressed by integer arithmetic while the observable evaluation still scans the full <span class="math notranslate nohighlight">\(N\)</span>-site array. Slow-sweeping models such as the continuous clock stay well below 1.0: each sweep is already expensive relative to
 the measurement pass. The discrete clock sits between the two, in line with its intermediate sweep cost.</p>
@@ -472,7 +435,7 @@ the measurement pass. The discrete clock sits between the two, in line with its 
 </div>
 </section>
 <section id="Scaling-Exponents">
-<h3>Scaling Exponents<a class="headerlink" href="#Scaling-Exponents" title="Link to this heading"></a></h3>
+<h2>Scaling Exponents<a class="headerlink" href="#Scaling-Exponents" title="Link to this heading"></a></h2>
 <p>The plot below fits a power law <span class="math notranslate nohighlight">\(t_{\text{sweep}} \propto N^\alpha\)</span> to the measured sweep times via log-log linear regression, then reports <span class="math notranslate nohighlight">\(\alpha\)</span> in the legend for each model. Ideal <span class="math notranslate nohighlight">\(O(N)\)</span> cost gives <span class="math notranslate nohighlight">\(\alpha = 1.0\)</span> exactly. Values above 1 indicate super-linear growth, which can arise from cache pressure at large <span class="math notranslate nohighlight">\(L\)</span> (a full <span class="math notranslate nohighlight">\(512 \times 512\)</span> float64 spin array occupies 2 MB for a scalar field and 4 MB for a two-component vector field, exceeding L2 cache on
 most CPUs). Values slightly below 1 are possible when Numba vectorizes inner loops aggressively and memory bandwidth is not yet saturated.</p>
 <p>Comparing <span class="math notranslate nohighlight">\(\alpha\)</span> across models separates models where cost per spin is genuinely constant from those where it drifts with size, independent of the absolute sweep rate shown in earlier plots.</p>
@@ -519,7 +482,7 @@ most CPUs). Values slightly below 1 are possible when Numba vectorizes inner loo
 </div>
 </section>
 <section id="Cost-per-Spin-Update">
-<h3>Cost per Spin Update<a class="headerlink" href="#Cost-per-Spin-Update" title="Link to this heading"></a></h3>
+<h2>Cost per Spin Update<a class="headerlink" href="#Cost-per-Spin-Update" title="Link to this heading"></a></h2>
 <p>Dividing sweep time by <span class="math notranslate nohighlight">\(N = L^2\)</span> gives a size-normalized cost in nanoseconds per attempted spin flip. This collapses the <span class="math notranslate nohighlight">\(O(N)\)</span> factor and reveals whether the per-spin cost is truly constant or carries a hidden size dependence — for instance, through rising cache-miss rates as the spin array grows beyond LLC capacity.</p>
 <p>The Ising model sits at the bottom of this chart because each Metropolis proposal requires only a comparison of two integers and one random number; there are only six distinct <span class="math notranslate nohighlight">\(\Delta E\)</span> values, so no per-site trig is needed. XY and the continuous clock pay a full <code class="docutils literal notranslate"><span class="pre">atan2</span></code> plus cosine evaluation per proposal. The discrete clock avoids that by looking up <span class="math notranslate nohighlight">\(\cos(2\pi\,\Delta k/q)\)</span> in a length-<span class="math notranslate nohighlight">\(q\)</span> table, closing roughly 60% of the gap between continuous clock and Ising.
 Random-sequential update variants show slightly higher cost than checkerboard at large <span class="math notranslate nohighlight">\(L\)</span> because random index generation adds a non-trivial per-site overhead relative to the deterministic sublattice stride.</p>
@@ -556,7 +519,7 @@ Random-sequential update variants show slightly higher cost than checkerboard at
 </div>
 </section>
 <section id="Summary-Table-and-Speedup-Analysis">
-<h3>Summary Table and Speedup Analysis<a class="headerlink" href="#Summary-Table-and-Speedup-Analysis" title="Link to this heading"></a></h3>
+<h2>Summary Table and Speedup Analysis<a class="headerlink" href="#Summary-Table-and-Speedup-Analysis" title="Link to this heading"></a></h2>
 <p>The table below records primary performance metrics at the largest lattice size (<span class="math notranslate nohighlight">\(L = 512\)</span>). We introduce the <strong>Pure Simulation Time</strong> metric to separate physics logic from measurement overhead.</p>
 <ul class="simple">
 <li><p><strong>Sweeps/s</strong>: Total throughput (lower is better for ISS, higher is better for raw speed).</p></li>
@@ -635,22 +598,11 @@ Clock Discrete (Random)             |       51.0 |      19.59 |      16.74 |    
 <p>The table above reports performance at the largest lattice size and separates total sweep time from measurement overhead. Pure simulation time isolates update-kernel cost, while thermodynamic time captures per-step collection of energy and magnetization during measurement windows.</p>
 <p>Use the checkerboard-versus-random speedup lines to assess update-order efficiency at fixed spin representation, and use the discrete-versus-continuous clock comparison to quantify the gain from lookup-table arithmetic over per-site trigonometric evaluation.</p>
 </section>
-</section>
-<hr class="docutils" />
-<section id="Bibliography">
-<h2>Bibliography<a class="headerlink" href="#Bibliography" title="Link to this heading"></a></h2>
-<p>All references cited above are open-access or from reputable sources:</p>
-<ol class="arabic simple">
-<li><p>Onsager, L. (1944). Crystal Statistics. I. A Two-Dimensional Model with an Order-Disorder Transition. Physical Review, 65(3-4), 117–149. <a class="reference external" href="https://journals.aps.org/pr/abstract/10.1103/PhysRev.65.117">https://journals.aps.org/pr/abstract/10.1103/PhysRev.65.117</a></p></li>
-<li><p>Kosterlitz, J. M., &amp; Thouless, D. J. (1973). Ordering, metastability and phase transitions in two-dimensional systems. Journal of Physics C: Solid State Physics, 6(7), 1181–1203. <a class="reference external" href="https://iopscience.iop.org/article/10.1088/0022-3719/6/7/010">https://iopscience.iop.org/article/10.1088/0022-3719/6/7/010</a></p></li>
-<li><p>Lapilli, J., Pfeifer, P., &amp; Wexler, C. (2006). Universality away from critical points in two-dimensional phase transitions. Physical Review Letters, 96(14), 140603. <a class="reference external" href="https://journals.aps.org/prl/abstract/10.1103/PhysRevLett.96.140603">https://journals.aps.org/prl/abstract/10.1103/PhysRevLett.96.140603</a></p></li>
-<li><p>Hastings, W. K. (1970). Monte Carlo sampling methods using Markov chains and their applications. Biometrika, 57(1), 97–109. <a class="reference external" href="https://academic.oup.com/biomet/article/57/1/97/252073">https://academic.oup.com/biomet/article/57/1/97/252073</a></p></li>
-<li><p>Numba JIT and parallelization: <a class="reference external" href="https://numba.readthedocs.io/en/stable/user/parallel.html">https://numba.readthedocs.io/en/stable/user/parallel.html</a></p></li>
-<li><p><a class="reference external" href="https://en.wikipedia.org/wiki/Ising_model">Ising model on Wikipedia</a></p></li>
-<li><p><a class="reference external" href="https://en.wikipedia.org/wiki/XY_model">XY model on Wikipedia</a></p></li>
-<li><p><a class="reference external" href="https://en.wikipedia.org/wiki/Potts_model#Vector_Potts_model">Clock model on Wikipedia</a></p></li>
-<li><p><a class="reference external" href="https://en.wikipedia.org/wiki/Metropolis%E2%80%93Hastings_algorithm">Metropolis–Hastings algorithm on Wikipedia</a></p></li>
-</ol>
+<section id="Spatial-Correlation-G(r):-Cost-per-Call">
+<h2>Spatial Correlation <span class="math notranslate nohighlight">\(G(r)\)</span>: Cost per Call<a class="headerlink" href="#Spatial-Correlation-G(r):-Cost-per-Call" title="Link to this heading"></a></h2>
+<p><span class="math notranslate nohighlight">\(G(r)\)</span> measures the equal-time spatial correlation between spins separated by lattice distance <span class="math notranslate nohighlight">\(r\)</span>. It is a post-hoc observable: evaluated once on a spin-field snapshot after the measurement window closes, carrying no per-step cost during the run. Its wall-clock cost matters when scanning many temperatures or lattice sizes, because each call involves a full FFT of the spin field.</p>
+<p>The implementation divides naturally into three cost tiers by spin representation. Ising spins form a scalar field, so a single forward and inverse transform suffices. XY and continuous clock spins are two-component vectors; each component is transformed independently, doubling the FFT count and increasing memory traffic. The discrete clock model first extracts floating-point components from integer state indices before following the same two-transform path. The plot below shows how these tiers
+separate as <span class="math notranslate nohighlight">\(N\)</span> grows, including an <span class="math notranslate nohighlight">\(O(N \log N)\)</span> reference line to verify that FFT scaling dominates at large system sizes.</p>
 <div class="nbinput docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[28]:
 </pre></div>
@@ -779,8 +731,9 @@ Tier means:
   Clock Discrete (convert + 2 FFTs)   14.20 ms  (1.02x XY tier,  1.68x Ising)
 </pre></div></div>
 </div>
+</section>
 <section id="Autocorrelation-Time-and-Sampling-Efficiency">
-<h3>Autocorrelation Time and Sampling Efficiency<a class="headerlink" href="#Autocorrelation-Time-and-Sampling-Efficiency" title="Link to this heading"></a></h3>
+<h2>Autocorrelation Time and Sampling Efficiency<a class="headerlink" href="#Autocorrelation-Time-and-Sampling-Efficiency" title="Link to this heading"></a></h2>
 <p>The spatial correlation function <span class="math notranslate nohighlight">\(G(r)\)</span> measures equal-time correlations between sites separated by distance <span class="math notranslate nohighlight">\(r\)</span>. Its MC-time counterpart is the integrated autocorrelation time <span class="math notranslate nohighlight">\(\tau_{\text{int}}\)</span>, measured in sweeps: two magnetization samples separated by fewer than <span class="math notranslate nohighlight">\(\tau_{\text{int}}\)</span> sweeps are statistically dependent and do not independently reduce the error on ensemble averages.</p>
 <p>Raw throughput in sweeps per second is therefore not the complete figure of merit for equilibrium sampling. The relevant rate is the independent samples per second, <span class="math notranslate nohighlight">\(\text{ISS} = \text{sweeps/s} \div \tau_{\text{int}}\)</span>. A model with twice the throughput but four times the autocorrelation time explores configuration space at half the effective rate.</p>
 <p><span class="math notranslate nohighlight">\(\tau_{\text{int}}\)</span> is estimated via an FFT-based autocorrelation estimator with the Madras:nbsphinx-math:<cite>u2`013Sokal automatic windowing rule, which cuts integration at lag :math:`W = 6,tau_{text{int}}</cite> to suppress noise accumulation at large lags. Each model is run for a <span class="math notranslate nohighlight">\(500\)</span>-sweep burn-in then a <span class="math notranslate nohighlight">\(2000\)</span>-sweep magnetization series at <span class="math notranslate nohighlight">\(L=64\)</span>; this is long enough for well-separated phases but may under-resolve <span class="math notranslate nohighlight">\(\tau_{\text{int}}\)</span> right at a critical point where
@@ -892,12 +845,10 @@ Clock Discrete (Random)                          75.2              63.4
 </div>
 </section>
 <section id="Hardware-Scaling-&amp;-Multi-core-Performance">
-<h3>Hardware Scaling &amp; Multi-core Performance<a class="headerlink" href="#Hardware-Scaling-&-Multi-core-Performance" title="Link to this heading"></a></h3>
+<h2>Hardware Scaling &amp; Multi-core Performance<a class="headerlink" href="#Hardware-Scaling-&-Multi-core-Performance" title="Link to this heading"></a></h2>
 <p>This section probes the limits of VibeSpin’s architecture on modern CPU hierarchies. We examine the <strong>nanoseconds per spin update</strong> to detect cache-tier transitions and benchmark <strong>Topological Observables</strong> which involve non-local plaquette traversals. Finally, we quantify the gain from <strong>Numba Multi-threading</strong> (<code class="docutils literal notranslate"><span class="pre">parallel=True</span></code>) which utilizes multiple cores for sublattice updates.</p>
-</section>
-</section>
 <section id="Efficiency:-Nanoseconds-per-site-update">
-<h2>Efficiency: Nanoseconds per site update<a class="headerlink" href="#Efficiency:-Nanoseconds-per-site-update" title="Link to this heading"></a></h2>
+<h3>Efficiency: Nanoseconds per site update<a class="headerlink" href="#Efficiency:-Nanoseconds-per-site-update" title="Link to this heading"></a></h3>
 <p>Throughput (sweeps/s) decreases as <span class="math notranslate nohighlight">\(N\)</span> increases, but the cost per spin update should ideally remain constant. The plot below shows this metric for all models. Upward drifts at large <span class="math notranslate nohighlight">\(L\)</span> indicate hardware bottlenecks (cache misses or memory bandwidth saturation), while downward drifts suggest Numba’s vectorization becoming more effective.</p>
 <div class="nbinput docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[31]:
@@ -932,7 +883,7 @@ Clock Discrete (Random)                          75.2              63.4
 </div>
 </section>
 <section id="Topological-and-Vector-Analysis-Cost">
-<h2>Topological and Vector Analysis Cost<a class="headerlink" href="#Topological-and-Vector-Analysis-Cost" title="Link to this heading"></a></h2>
+<h3>Topological and Vector Analysis Cost<a class="headerlink" href="#Topological-and-Vector-Analysis-Cost" title="Link to this heading"></a></h3>
 <p>Physical studies of the XY and Clock models often depend on detecting topological defects (vortices) or calculating the helicity modulus (phase-twist response). These operations involve multiple trigonometric sums and phase-wrapping operations per site, making them significantly costlier than standard thermodynamic measurements.</p>
 <div class="nbinput docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[32]:
@@ -996,7 +947,7 @@ Clock Discrete (Random)                          75.2              63.4
 <p>Compared with per-step thermodynamic collection, these routines are analysis-heavy and are typically evaluated intermittently rather than every sweep. The plot above should be read as an analysis budget curve versus lattice size, not as an update-kernel throughput metric.</p>
 </section>
 <section id="Parallel-Scaling-Benchmark">
-<h2>Parallel Scaling Benchmark<a class="headerlink" href="#Parallel-Scaling-Benchmark" title="Link to this heading"></a></h2>
+<h3>Parallel Scaling Benchmark<a class="headerlink" href="#Parallel-Scaling-Benchmark" title="Link to this heading"></a></h3>
 <p>Checkerboard updates partition the lattice into two independent sublattices, one updated per half-step. Because sites within each sublattice do not share nearest neighbours, all updates in a sublattice pass are independent and can execute concurrently without read-write conflicts. VibeSpin exposes this via <code class="docutils literal notranslate"><span class="pre">parallel=True</span></code>, which directs Numba to spawn threads across the sublattice using <code class="docutils literal notranslate"><span class="pre">prange</span></code>.</p>
 <p>The code below measures Ising checkerboard throughput at <span class="math notranslate nohighlight">\(L \in \{128, 256, 512, 1024\}\)</span> in both serial and parallel modes. The left panel shows absolute throughput; the right panel shows the speedup ratio, revealing the crossover from overhead-bound to compute-bound as <span class="math notranslate nohighlight">\(L\)</span> grows.</p>
 <div class="nbinput docutils container">
@@ -1056,10 +1007,12 @@ Clock Discrete (Random)                          75.2              63.4
 </div>
 </section>
 <section id="id1">
-<h2>Parallel Scaling Benchmark<a class="headerlink" href="#id1" title="Link to this heading"></a></h2>
+<h3>Parallel Scaling Benchmark<a class="headerlink" href="#id1" title="Link to this heading"></a></h3>
 <p>This section benchmarks checkerboard Metropolis throughput in serial and parallel modes for the Ising model across increasing lattice sizes. The code cell above computes sweeps per second and plots both absolute throughput and the parallel speedup ratio. Interpret the right panel as a hardware-plus-size dependent crossover: small lattices can be overhead bound, while larger lattices benefit more from multithreading.</p>
+</section>
+</section>
 <section id="Comprehensive-Performance-Dashboard">
-<h3>Comprehensive Performance Dashboard<a class="headerlink" href="#Comprehensive-Performance-Dashboard" title="Link to this heading"></a></h3>
+<h2>Comprehensive Performance Dashboard<a class="headerlink" href="#Comprehensive-Performance-Dashboard" title="Link to this heading"></a></h2>
 <p>The six-panel figure below assembles the main performance dimensions into a single view. From top-left to bottom-right: update throughput (sweeps/s), per-spin update cost (ns/site), <span class="math notranslate nohighlight">\(G(r)\)</span> analysis time, topological analysis time, thermodynamic collection cost, and the per-step overhead ratio. All panels share the same lattice sizes, model colours, and markers, so cross-panel comparisons are direct.</p>
 <div class="nbinput docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[34]:
@@ -1119,6 +1072,13 @@ Clock Discrete (Random)                          75.2              63.4
 </div>
 <p>The final panelized figure aggregates update throughput, per-spin update cost, observable overheads, and analysis-time scaling across models. Use this summary to compare asymptotic trends rather than single-point values, since warm-up costs and finite-size effects can distort small-system timings. In equilibrium workflows near criticality, combine these timing curves with autocorrelation behavior to estimate effective independent-sample throughput.</p>
 </section>
+<section id="Bibliography">
+<h2>Bibliography<a class="headerlink" href="#Bibliography" title="Link to this heading"></a></h2>
+<p>[1] L. Onsager, “Crystal Statistics. I. A Two-Dimensional Model with an Order-Disorder Transition,” <em>Physical Review</em>, vol. 65, no. 3-4, pp. 117–149, 1944. <a class="reference external" href="https://journals.aps.org/pr/abstract/10.1103/PhysRev.65.117">APS Open Access</a></p>
+<p>[2] J. M. Kosterlitz and D. J. Thouless, “Ordering, metastability and phase transitions in two-dimensional systems,” <em>Journal of Physics C: Solid State Physics</em>, vol. 6, no. 7, pp. 1181–1203, 1973. <a class="reference external" href="https://iopscience.iop.org/article/10.1088/0022-3719/6/7/010">IOP Open Access</a></p>
+<p>[3] J. Villain, “Theory of one- and two-dimensional magnets with an easy magnetization plane. II. The planar, classical, two-dimensional magnet,” <em>J. Phys. France</em> 36, 581-590 (1975). <a class="reference external" href="https://doi.org/10.1051/jphys:01975003606058100">Open Access</a></p>
+<p>[4] J. Lapilli, P. Pfeifer, and C. Wexler, “Universality away from critical points in two-dimensional phase transitions,” <em>Physical Review Letters</em>, vol. 96, no. 14, 140603, 2006. <a class="reference external" href="https://journals.aps.org/prl/abstract/10.1103/PhysRevLett.96.140603">APS Open Access</a></p>
+<p>[5] W. K. Hastings, “Monte Carlo sampling methods using Markov chains and their applications,” <em>Biometrika</em>, vol. 57, no. 1, pp. 97–109, 1970. <a class="reference external" href="https://academic.oup.com/biomet/article/57/1/97/252073">Oxford Academic Open Access</a></p>
 </section>
 </section>
 
