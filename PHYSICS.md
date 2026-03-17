@@ -10,7 +10,7 @@ VibeSpin implements three foundational 2D lattice spin models, each defined by i
 
 ### Ising Model
 
-For a comprehensive introduction to the Ising model and its exact solution in two dimensions, see L. Onsager, "Crystal Statistics. I. A Two-Dimensional Model with an Order-Disorder Transition," Physical Review, vol. 65, no. 3-4, pp. 117–149, 1944. ([APS Open Access](https://journals.aps.org/pr/abstract/10.1103/PhysRev.65.117)). See also the [Ising model article on Wikipedia](https://en.wikipedia.org/wiki/Ising_model) for a modern summary.
+For a comprehensive introduction to the Ising model and its exact solution in two dimensions, see Onsager [[1]](#Bibliography), "Crystal Statistics. I. A Two-Dimensional Model with an Order-Disorder Transition," Physical Review, vol. 65, no. 3-4, pp. 1944 [[1]](#Bibliography). See also the [Ising model article on Wikipedia](https://en.wikipedia.org/wiki/Ising_model) for a modern summary.
 
 The Ising model assigns a scalar spin $s_i \in \{+1, -1\}$ to every site of a square lattice. Nearest-neighbor pairs interact through the Hamiltonian
 
@@ -30,8 +30,8 @@ $$E = -J \sum_{\langle i,j \rangle} \cos(\theta_i - \theta_j).$$
 
 Because continuous symmetry cannot break spontaneously in two dimensions (Mermin–Wagner theorem), the XY model does not develop true long-range order at any finite temperature. Instead it undergoes the Berezinskii–Kosterlitz–Thouless (BKT) transition: at low temperature, bound vortex–antivortex pairs maintain quasi-long-range order with algebraically decaying correlations, while above $T_{\mathrm{BKT}}$ the pairs unbind and correlations decay exponentially. This topological mechanism makes the 2D XY model qualitatively distinct from conventional order–disorder transitions.
 For background, see:
-J. M. Kosterlitz and D. J. Thouless, "Ordering, metastability and phase transitions in two-dimensional systems," Journal of Physics C: Solid State Physics, vol. 6, no. 7, pp. 1181–1203, 1973. ([IOP Open Access](https://iopscience.iop.org/article/10.1088/0022-3719/6/7/010))
-N. D. Mermin and H. Wagner, "Absence of Ferromagnetism or Antiferromagnetism in One- or Two-Dimensional Isotropic Heisenberg Models," Physical Review Letters, vol. 17, no. 22, pp. 1133–1136, 1966. ([APS Open Access](https://journals.aps.org/prl/abstract/10.1103/PhysRevLett.17.1133))
+Kosterlitz and Thouless [[2]](#Bibliography)
+Mermin and Wagner [[3]](#Bibliography)
 See also the [XY model article on Wikipedia](https://en.wikipedia.org/wiki/XY_model).
 
 ### q-state Clock Model
@@ -40,7 +40,7 @@ See also the [XY model article on Wikipedia](https://en.wikipedia.org/wiki/XY_mo
 
 The clock model interpolates between the Ising limit ($q = 2$) and the XY limit ($q \to \infty$) by restricting spins to $q$ equally spaced angles $\theta_k = 2\pi k / q$. VibeSpin provides two representations. The **continuous** form retains the XY interaction and adds an anisotropy potential that pins spins toward the discrete directions:
 For a review, see:
-J. Lapilli, P. Pfeifer, and C. Wexler, "Universality away from critical points in two-dimensional phase transitions," Physical Review Letters, vol. 96, no. 14, 140603, 2006. ([APS Open Access](https://journals.aps.org/prl/abstract/10.1103/PhysRevLett.96.140603))
+Lapilli et al. [[4]](#Bibliography)
 See also the [Clock model (Vector Potts model) article on Wikipedia](https://en.wikipedia.org/wiki/Potts_model#Vector_Potts_model).
 
 $$E = -J \sum_{\langle i,j \rangle} \cos(\theta_i - \theta_j) \;-\; A \sum_i \cos(q\,\theta_i).$$
@@ -53,7 +53,7 @@ The **discrete** form evaluates the same interaction directly on integer state i
 
 All simulations in VibeSpin sample the Boltzmann distribution $P(s) \propto \exp(-\beta E(s))$ via the Metropolis-Hastings algorithm.
 For a pedagogical introduction, see:
-W. K. Hastings, "Monte Carlo sampling methods using Markov chains and their applications," Biometrika, vol. 57, no. 1, pp. 97–109, 1970. ([Oxford Academic](https://academic.oup.com/biomet/article/57/1/97/252073))
+Hastings [[5]](#Bibliography)
 See also the [Metropolis–Hastings algorithm article on Wikipedia](https://en.wikipedia.org/wiki/Metropolis%E2%80%93Hastings_algorithm).
 
 ### Detailed Balance
@@ -78,7 +78,7 @@ VibeSpin enforces a strict separation between two update strategies, each valid 
 
 
 For a pedagogical introduction to thermodynamic observables in spin models, see:
-K. Huang, "Statistical Mechanics," 2nd Edition, Wiley, 1987. (See also [Statistical Mechanics lecture notes, John Cardy, Oxford (Archive)](https://arxiv.org/pdf/0807.3472.pdf), Ch. 2-3)
+Huang [[6]](#Bibliography)
 See also the [Magnetization](https://en.wikipedia.org/wiki/Magnetization), [Magnetic susceptibility](https://en.wikipedia.org/wiki/Magnetic_susceptibility), and [Heat capacity](https://en.wikipedia.org/wiki/Heat_capacity) articles on Wikipedia.
 
 Temperature-sweep simulations also compute the **entropy** by integrating the specific-heat curve downward from a high-temperature reference:
@@ -100,7 +100,7 @@ See also the [Correlation function](https://en.wikipedia.org/wiki/Correlation_fu
 
 
 For the BKT transition and topological diagnostics, see:
-J. M. Kosterlitz and D. J. Thouless, "Ordering, metastability and phase transitions in two-dimensional systems," Journal of Physics C: Solid State Physics, vol. 6, no. 7, pp. 1181–1203, 1973. ([IOP Open Access](https://iopscience.iop.org/article/10.1088/0022-3719/6/7/010))
+Kosterlitz and Thouless [[2]](#Bibliography)
 See also the [BKT transition](https://en.wikipedia.org/wiki/Berezinskii%E2%80%93Kosterlitz%E2%80%93Thouless_transition), [Vortex](https://en.wikipedia.org/wiki/Vortex), and [Superfluid stiffness (Helicity modulus)](https://en.wikipedia.org/wiki/Superfluid_stiffness) articles on Wikipedia.
 
 ## 4. The Wolff Cluster Algorithm
@@ -115,7 +115,7 @@ The Wolff cluster algorithm eliminates critical slowing down by operating at the
 
 
 The theoretical basis for the Ising Wolff algorithm is the Fortuin-Kasteleyn (FK) random-cluster representation, which maps the Ising partition function onto a bond-percolation problem. For the FK construction, see:
-C. M. Fortuin and P. W. Kasteleyn, "On the random-cluster model. I. Introduction and relation to other models," Physica, vol. 57, no. 4, pp. 536–564, 1972. ([Elsevier Open Access](https://doi.org/10.1016/0031-8914(72)90045-6))
+Fortuin and Kasteleyn [[8]](#Bibliography)
 See also the [Random cluster model (Fortuin–Kasteleyn representation)](https://en.wikipedia.org/wiki/Random_cluster_model) article on Wikipedia.
 
 $$P_{\mathrm{add}} = 1 - e^{-2\beta J}.$$
@@ -126,8 +126,8 @@ After the cluster $\mathcal{C}$ is fully grown, all spins in $\mathcal{C}$ are f
 
 
 For the Wolff-Evertz generalization to $O(2)$ models, see:
-U. Wolff, "Collective Monte Carlo Updating for Spin Systems," Physical Review Letters, vol. 62, no. 4, pp. 361–364, 1989. ([APS Open Access](https://journals.aps.org/prl/abstract/10.1103/PhysRevLett.62.361))
-M. E. J. Newman and G. T. Barkema, "Monte Carlo Methods in Statistical Physics," Oxford University Press, 1999. ([Lecture Notes Summary (H. G. Katzgraber)](https://arxiv.org/abs/0905.1629))
+Wolff [[9]](#Bibliography)
+Newman and Barkema [[10]](#Bibliography)
 See also the [Wolff algorithm](https://en.wikipedia.org/wiki/Wolff_algorithm) article on Wikipedia.
 
 $$P_{\mathrm{add}} = 1 - e^{-2\beta J\,\sigma_i \sigma_j}.$$
@@ -143,3 +143,26 @@ This reflection preserves the Euclidean norm $|\mathbf{s}_i| = 1$ exactly, requi
 One call to a Wolff `step()` constitutes one cluster sweep, meaning a single cluster is grown and flipped. This differs from the Metropolis convention, where one `step()` comprises $N^2$ single-spin-flip attempts. The two schemes are therefore not directly comparable on a per-step basis near $T_c$; the relevant comparison is per unit of computational time or per independent sample. Because the mean cluster size scales with the correlation length, the cost per cluster sweep also scales with $\xi$, but the autocorrelation time in units of sweeps falls far faster than it rises in cost, resulting in a substantial net gain precisely where it is most needed.
 
 The `parallel=True` flag is silently ignored when `update='wolff'`. Cluster growth is a sequential depth-first search whose frontier depends on each newly added site; it cannot be decomposed into independent sublattices and is therefore incompatible with the checkerboard parallelisation strategy. The Wolff algorithm is inherently a single-threaded traversal, and its performance advantage over Metropolis is algorithmic rather than hardware-parallel.
+
+## Bibliography
+
+[1] L. Onsager, "Crystal Statistics. I. A Two-Dimensional Model with an Order-Disorder Transition," *Physical Review*, vol. 65, no. 3-4, pp. 117–149, 1944. [APS Open Access](https://journals.aps.org/pr/abstract/10.1103/PhysRev.65.117)
+
+[2] J. M. Kosterlitz and D. J. Thouless, "Ordering, metastability and phase transitions in two-dimensional systems," *Journal of Physics C: Solid State Physics*, vol. 6, no. 7, pp. 1181–1203, 1973. [IOP Open Access](https://iopscience.iop.org/article/10.1088/0022-3719/6/7/010)
+
+[3] N. D. Mermin and H. Wagner, "Absence of Ferromagnetism or Antiferromagnetism in One- or Two-Dimensional Isotropic Heisenberg Models," *Physical Review Letters*, vol. 17, no. 22, pp. 1133–1136, 1966. [APS Open Access](https://journals.aps.org/prl/abstract/10.1103/PhysRevLett.17.1133)
+
+[4] J. Lapilli, P. Pfeifer, and C. Wexler, "Universality away from critical points in two-dimensional phase transitions," *Physical Review Letters*, vol. 96, no. 14, 140603, 2006. [APS Open Access](https://journals.aps.org/prl/abstract/10.1103/PhysRevLett.96.140603)
+
+[5] W. K. Hastings, "Monte Carlo sampling methods using Markov chains and their applications," *Biometrika*, vol. 57, no. 1, pp. 97–109, 1970. [Oxford Academic](https://academic.oup.com/biomet/article/57/1/97/252073)
+
+[6] K. Huang, "Statistical Mechanics," 2nd Edition, Wiley, 1987. [Statistical Mechanics lecture notes, John Cardy, Oxford (Archive)](https://arxiv.org/pdf/0807.3472.pdf)
+
+[7] N. Goldenfeld, "Lectures on Phase Transitions and the Renormalization Group," Addison-Wesley, 1992. [Internet Archive (Open Access)](https://archive.details/lecturesonphaset0000gold)
+
+[8] C. M. Fortuin and P. W. Kasteleyn, "On the random-cluster model. I. Introduction and relation to other models," *Physica*, vol. 57, no. 4, pp. 536–564, 1972. [Elsevier Open Access](https://doi.org/10.1016/0031-8914(72)90045-6)
+
+[9] U. Wolff, "Collective Monte Carlo Updating for Spin Systems," *Physical Review Letters*, vol. 62, no. 4, pp. 361–364, 1989. [APS Open Access](https://journals.aps.org/prl/abstract/10.1103/PhysRevLett.62.361)
+
+[10] M. E. J. Newman and G. T. Barkema, "Monte Carlo Methods in Statistical Physics," Oxford University Press, 1999. [Lecture Notes Summary (H. G. Katzgraber)](https://arxiv.org/abs/0905.1629)
+
