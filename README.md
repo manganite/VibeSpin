@@ -107,6 +107,12 @@ Compare Wolff cluster and Metropolis efficiency near the Ising critical point:
 python scripts/ising/wolff_efficiency.py --size 64 --t-min 1.8 --t-max 3.2 --t-points 20
 ```
 
+Measure the dynamical critical exponent $z$ at $T_c$:
+
+```bash
+python scripts/ising/measure_z.py --sizes 16 32 64 128 --eq-steps 5000
+```
+
 ## Development guidance
 
 VibeSpin maintains rigorous engineering and physical standards. All update algorithms must strictly satisfy **detailed balance** and **ergodicity** — whether via the Metropolis-Hastings acceptance rule (for single-spin updates) or the Fortuin-Kasteleyn bond construction (for Wolff cluster updates).
@@ -166,6 +172,7 @@ For deeper insights, refer to the source guides:
 - {doc}`Scripts Catalog <scripts>`: Comprehensive catalog of entry-point scripts.
 - {doc}`Agent Instruction Guide <agents>`: Mandatory technical constraints for AI Agents.
 - {doc}`Performance Benchmarks <benchmarks>`: Detailed scaling analysis.
+- {doc}`Dynamic Critical Exponents <dynamic_critical_exponents>`: Scaling analysis of autocorrelation times at criticality.
 
 ## Project context
 
