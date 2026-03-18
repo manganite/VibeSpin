@@ -58,7 +58,7 @@
 <li class="toctree-l1"><a class="reference internal" href="../benchmarks.html">Performance Benchmarking for VibeSpin</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../wolff_efficiency.html">Wolff vs. Metropolis: Algorithmic Efficiency in the Critical Regime</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../dynamic_critical_exponents.html">Dynamical Critical Exponents in the 2D Ising Model</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../ising_autocorrelation_analysis.html">Ising Model: Autocorrelation and Equilibration Analysis</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../ising_autocorrelation_analysis.html">Ising Model: Relaxation to Equilibrium</a></li>
 </ul>
 <p class="caption" role="heading"><span class="caption-text">API Reference:</span></p>
 <ul class="current">
@@ -231,6 +231,34 @@ k_B) for absolute entropy of a q-state model.</p></li>
 </dd>
 <dt class="field-even">Return type<span class="colon">:</span></dt>
 <dd class="field-even"><p>Dictionary containing ‘R_sk’ and ‘xi’.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="utils.physics_helpers.estimate_relaxation_time_two_start">
+<span class="sig-prename descclassname"><span class="pre">utils.physics_helpers.</span></span><span class="sig-name descname"><span class="pre">estimate_relaxation_time_two_start</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">trace_random</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">trace_ordered</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span></span></em>, <em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">k</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">1.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">smooth_window</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">30</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dwell_window</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">30</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">min_fraction_inside</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.85</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">int</span></span></span><a class="reference internal" href="../_modules/utils/physics_helpers.html#estimate_relaxation_time_two_start"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#utils.physics_helpers.estimate_relaxation_time_two_start" title="Link to this definition"></a></dt>
+<dd><p>Estimate thermalization time from convergence of random- and ordered-start traces.</p>
+<p>Compares a trajectory started from a random spin configuration against one
+started from a fully ordered configuration.  Returns the first step at which
+both smoothed traces enter and sustain a common equilibrium band.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>trace_random</strong> (<em>1-D magnetization trace from a random initial state.</em>)</p></li>
+<li><p><strong>trace_ordered</strong> (<em>1-D magnetization trace from an ordered initial state.</em>)</p></li>
+<li><p><strong>k</strong> (<em>Half-width</em><em> of </em><em>the convergence band in units</em><em> of </em><em>the tail standard</em>) – deviation.  Larger values are more permissive.</p></li>
+<li><p><strong>smooth_window</strong> (<em>Window length</em><em> (</em><em>steps</em><em>) </em><em>for the moving-average smoother.</em>)</p></li>
+<li><p><strong>dwell_window</strong> (<em>Window length</em><em> (</em><em>steps</em><em>) </em><em>for the sustained-convergence test.</em>)</p></li>
+<li><p><strong>min_fraction_inside</strong> (Fraction of steps within <code class="docutils literal notranslate"><span class="pre">dwell_window</span></code> that must) – lie inside the band to declare convergence.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><ul class="simple">
+<li><p><em>Estimated relaxation time in MC steps.  Returns the full trace length</em></p></li>
+<li><p><em>if no convergence is detected, or 0 for very short traces.</em></p></li>
+</ul>
+</p>
 </dd>
 </dl>
 </dd></dl>

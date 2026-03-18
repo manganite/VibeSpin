@@ -24,7 +24,7 @@
     <script src="_static/js/theme.js"></script>
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
-    <link rel="next" title="Ising Model: Autocorrelation and Equilibration Analysis" href="ising_autocorrelation_analysis.html" />
+    <link rel="next" title="Ising Model: Relaxation to Equilibrium" href="ising_autocorrelation_analysis.html" />
     <link rel="prev" title="Wolff vs. Metropolis: Algorithmic Efficiency in the Critical Regime" href="wolff_efficiency.html" /> 
 </head>
 
@@ -60,19 +60,15 @@
 <li class="toctree-l1"><a class="reference internal" href="benchmarks.html">Performance Benchmarking for VibeSpin</a></li>
 <li class="toctree-l1"><a class="reference internal" href="wolff_efficiency.html">Wolff vs. Metropolis: Algorithmic Efficiency in the Critical Regime</a></li>
 <li class="toctree-l1 current"><a class="current reference internal" href="#">Dynamical Critical Exponents in the 2D Ising Model</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="#Algorithmic-Efficiency-and-Critical-Slowing-Down">Algorithmic Efficiency and Critical Slowing Down</a><ul>
-<li class="toctree-l3"><a class="reference internal" href="#Environment-Setup">Environment Setup</a></li>
-</ul>
-</li>
-<li class="toctree-l2"><a class="reference internal" href="#Visualizing-Autocorrelation-Scaling">Visualizing Autocorrelation Scaling</a><ul>
-<li class="toctree-l3"><a class="reference internal" href="#Numerical-Results-and-Interpretation">Numerical Results and Interpretation</a></li>
-<li class="toctree-l3"><a class="reference internal" href="#Scientific-Implications">Scientific Implications</a></li>
-</ul>
-</li>
+<li class="toctree-l2"><a class="reference internal" href="#Why-the-slopes-differ">Why the slopes differ</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#Load-or-compute-data">Load or compute data</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#Scaling-plot">Scaling plot</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#Reading-the-result">Reading the result</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#Scientific-implication">Scientific implication</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#Bibliography">Bibliography</a></li>
 </ul>
 </li>
-<li class="toctree-l1"><a class="reference internal" href="ising_autocorrelation_analysis.html">Ising Model: Autocorrelation and Equilibration Analysis</a></li>
+<li class="toctree-l1"><a class="reference internal" href="ising_autocorrelation_analysis.html">Ising Model: Relaxation to Equilibrium</a></li>
 </ul>
 <p class="caption" role="heading"><span class="caption-text">API Reference:</span></p>
 <ul>
@@ -105,75 +101,84 @@
              
   <section id="Dynamical-Critical-Exponents-in-the-2D-Ising-Model">
 <h1>Dynamical Critical Exponents in the 2D Ising Model<a class="headerlink" href="#Dynamical-Critical-Exponents-in-the-2D-Ising-Model" title="Link to this heading"></a></h1>
-<p>As a system approaches a continuous phase transition, the correlation length <span class="math notranslate nohighlight">\(\xi\)</span> diverges and the time required to generate statistically independent configurations, characterized by the integrated autocorrelation time <span class="math notranslate nohighlight">\(\tau_{\text{int}}\)</span>, grows rapidly. This phenomenon, known as critical slowing down, is a fundamental challenge for Monte Carlo simulations. The scaling of <span class="math notranslate nohighlight">\(\tau_{\text{int}}\)</span> with <span class="math notranslate nohighlight">\(\xi\)</span> is governed by the dynamical critical exponent <span class="math notranslate nohighlight">\(z\)</span>, with
-<span class="math notranslate nohighlight">\(\tau_{\text{int}} \propto \xi^z\)</span>. For a finite lattice of size <span class="math notranslate nohighlight">\(L\)</span> at the critical temperature <span class="math notranslate nohighlight">\(T_c\)</span>, this becomes <span class="math notranslate nohighlight">\(\tau_{\text{int}} \propto L^z\)</span>. The value of <span class="math notranslate nohighlight">\(z\)</span> quantifies how simulation time increases with system size and is a key metric for algorithmic efficiency at criticality <a class="reference internal" href="#Bibliography"><span class="std std-ref">[1,2]</span></a>.</p>
-<p>This notebook measures and compares <span class="math notranslate nohighlight">\(z\)</span> for the local Metropolis algorithm and the non-local Wolff cluster algorithm in the 2D Ising model, using both precomputed and fallback simulation data.</p>
-<p>, “Crystal Statistics. I. A Two-Dimensional Model with an Order-Disorder Transition,” Physical Review, vol. 65, no. 3-4, pp. 117–149, 1944. (<a class="reference external" href="https://journals.aps.org/pr/abstract/10.1103/PhysRev.65.117">APS Open Access</a>) , “Collective Monte Carlo Updating for Spin Systems,” Physical Review Letters, vol. 62, no. 4, pp. 361–364, 1989. (<a class="reference external" href="https://journals.aps.org/prl/abstract/10.1103/PhysRevLett.62.361">APS Open Access</a>) (<a class="reference external" href="https://en.wikipedia.org/wiki/Ising_model">https://en.wikipedia.org/wiki/Ising_model</a>)
-(<a class="reference external" href="https://en.wikipedia.org/wiki/Wolff_algorithm">https://en.wikipedia.org/wiki/Wolff_algorithm</a>)</p>
-<section id="Algorithmic-Efficiency-and-Critical-Slowing-Down">
-<h2>Algorithmic Efficiency and Critical Slowing Down<a class="headerlink" href="#Algorithmic-Efficiency-and-Critical-Slowing-Down" title="Link to this heading"></a></h2>
-<p>The Metropolis algorithm updates spins locally, so information propagates diffusively. Near criticality, this leads to a large <span class="math notranslate nohighlight">\(z\)</span> (typically <span class="math notranslate nohighlight">\(z \approx 2.17\)</span> for the 2D Ising model), meaning the autocorrelation time grows faster than the number of spins. The Wolff cluster algorithm, by contrast, flips entire correlated domains in a single move, bypassing the diffusive bottleneck and dramatically reducing <span class="math notranslate nohighlight">\(z\)</span>.</p>
-<p>For the Wolff algorithm, two exponents are discussed in the literature. The first, <span class="math notranslate nohighlight">\(z_\mathrm{steps}\)</span>, measures the scaling of <span class="math notranslate nohighlight">\(\tau_{\text{int}}\)</span> in units of cluster updates (steps). The second, <span class="math notranslate nohighlight">\(z\)</span>, converts this to the scaling in units of full lattice sweeps, making it directly comparable to Metropolis. The relation is <span class="math notranslate nohighlight">\(z = z_\mathrm{steps} + \gamma/\nu - d\)</span>, where <span class="math notranslate nohighlight">\(\gamma\)</span> and <span class="math notranslate nohighlight">\(\nu\)</span> are equilibrium critical exponents and <span class="math notranslate nohighlight">\(d\)</span> is the spatial dimension.
-For the 2D Ising model, <span class="math notranslate nohighlight">\(\gamma/\nu = 7/4\)</span> and <span class="math notranslate nohighlight">\(d=2\)</span>, so <span class="math notranslate nohighlight">\(z\)</span> is expected to be about <span class="math notranslate nohighlight">\(0.25\)</span> if <span class="math notranslate nohighlight">\(z_\mathrm{steps} \approx 0.5\)</span>.</p>
-<p><strong>References:</strong> , “Collective Monte Carlo Updating for Spin Systems,” Physical Review Letters, vol. 62, no. 4, pp. 361–364, 1989. (<a class="reference external" href="https://journals.aps.org/prl/abstract/10.1103/PhysRevLett.62.361">APS Open Access</a>) (<a class="reference external" href="https://en.wikipedia.org/wiki/Wolff_algorithm">https://en.wikipedia.org/wiki/Wolff_algorithm</a>) (<a class="reference external" href="https://en.wikipedia.org/wiki/Critical_slowing_down">https://en.wikipedia.org/wiki/Critical_slowing_down</a>)</p>
-<section id="Environment-Setup">
-<h3>Environment Setup<a class="headerlink" href="#Environment-Setup" title="Link to this heading"></a></h3>
-<p>We begin by importing the necessary analysis tools and loading the pre-calculated simulation data. The simulations were performed at the exact Onsager critical temperature <span class="math notranslate nohighlight">\(T_c = 2/\ln(1+\sqrt{2})\)</span> for a range of lattice sizes. For each configuration, the integrated autocorrelation time was estimated using the Madras-Sokal automatic windowing rule, which prevents noise at large lags from biasing the <span class="math notranslate nohighlight">\(\tau_{\text{int}}\)</span> estimate <a class="reference internal" href="#Bibliography"><span class="std std-ref">[3]</span></a>.</p>
-<p>If the precomputed NPZ file is unavailable, the notebook runs a lightweight fallback calculation for demonstration using small lattice sizes. This fallback is intended for quick testing and does not provide publication-quality results. For full-scale analysis, please generate the NPZ file using the measurement script.</p>
-<p><strong>References:</strong> , “The pivot algorithm: A highly efficient Monte Carlo method for the self-avoiding walk,” Journal of Statistical Physics, vol. 50, no. 1-2, pp. 109–186, 1988. (<a class="reference external" href="https://link.springer.com/article/10.1007/BF01022990">Springer Open Access</a>) (<a class="reference external" href="https://en.wikipedia.org/wiki/Autocorrelation#Time_series">https://en.wikipedia.org/wiki/Autocorrelation#Time_series</a>)</p>
+<p>Critical slowing down makes equilibrium sampling progressively harder as a continuous transition is approached. At the Onsager point, the integrated autocorrelation time scales as <span class="math notranslate nohighlight">\(\tau_{\mathrm{int}} \propto L^z\)</span>, so the dynamical critical exponent <span class="math notranslate nohighlight">\(z\)</span> measures how quickly the cost of generating statistically independent configurations grows with lattice size <a class="reference internal" href="#Bibliography"><span class="std std-ref">[1]</span></a>.</p>
+<p>This notebook compares random-site Metropolis dynamics with the Wolff cluster update using the same measurement target as <code class="docutils literal notranslate"><span class="pre">scripts/ising/measure_z.py</span></code>. The central comparison is the slope of <span class="math notranslate nohighlight">\(\tau_{\mathrm{int}}(L)\)</span> on log-log axes: Metropolis remains diffusion-limited, while Wolff removes most of the critical slowdown <a class="reference internal" href="#Bibliography"><span class="std std-ref">[2]</span></a>.</p>
+<section id="Why-the-slopes-differ">
+<h2>Why the slopes differ<a class="headerlink" href="#Why-the-slopes-differ" title="Link to this heading"></a></h2>
+<p>Local Metropolis updates move domain walls one spin at a time, so correlations relax diffusively near <span class="math notranslate nohighlight">\(T_c\)</span> and the autocorrelation time grows steeply with <span class="math notranslate nohighlight">\(L\)</span>. Wolff instead flips correlated domains as a single accepted move, matching the scale of the critical fluctuations and flattening the growth of <span class="math notranslate nohighlight">\(\tau_{\mathrm{int}}\)</span>.</p>
+<p>For Wolff it is useful to distinguish cluster-step time from sweep-equivalent time. The plot below reports the measured exponent in cluster-step units; when one rescales by the typical number of spins flipped per cluster, the effective sweep-based exponent is smaller still <a class="reference internal" href="#Bibliography"><span class="std std-ref">[2]</span></a>.</p>
+</section>
+<section id="Load-or-compute-data">
+<h2>Load or compute data<a class="headerlink" href="#Load-or-compute-data" title="Link to this heading"></a></h2>
+<p>If the script output <code class="docutils literal notranslate"><span class="pre">../results/ising/dynamic_exponent_z.npz</span></code> is present, the notebook loads it directly. Otherwise it runs a deliberately small inline fallback so the workflow stays self-contained. The fallback is useful for checking the analysis path, but only the script-backed dataset should be treated as a serious estimate of <span class="math notranslate nohighlight">\(z\)</span> because the published-quality measurement needs much longer trajectories and careful equilibration <a class="reference internal" href="#Bibliography"><span class="std std-ref">[3]</span></a>.</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>python<span class="w"> </span>scripts/ising/measure_z.py<span class="w"> </span>--sizes<span class="w"> </span><span class="m">16</span><span class="w"> </span><span class="m">32</span><span class="w"> </span><span class="m">48</span><span class="w"> </span><span class="m">64</span><span class="w"> </span><span class="m">96</span><span class="w"> </span><span class="m">128</span>
+</pre></div>
+</div>
 <div class="nbinput docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[1]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">os</span>
-<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">__future__</span><span class="w"> </span><span class="kn">import</span> <span class="n">annotations</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">os</span>
+
 <span class="kn">import</span><span class="w"> </span><span class="nn">matplotlib.pyplot</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">plt</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">scipy.stats</span><span class="w"> </span><span class="kn">import</span> <span class="n">linregress</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
 
-<span class="c1"># Load pre-generated data from the measurement script, or run fallback calculation</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">utils.exceptions</span><span class="w"> </span><span class="kn">import</span> <span class="n">ZeroVarianceAutocorrelationError</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">utils.physics_helpers</span><span class="w"> </span><span class="kn">import</span> <span class="n">calculate_autocorr</span>
 
-<span class="n">data_path</span> <span class="o">=</span> <span class="s1">&#39;../results/ising/dynamic_exponent_z.npz&#39;</span>
-<span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">data_path</span><span class="p">):</span>
-    <span class="n">data</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">data_path</span><span class="p">)</span>
-    <span class="n">L_metro</span><span class="p">,</span> <span class="n">tau_metro</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="s1">&#39;L_metro&#39;</span><span class="p">],</span> <span class="n">data</span><span class="p">[</span><span class="s1">&#39;tau_metro&#39;</span><span class="p">]</span>
-    <span class="n">L_wolff</span><span class="p">,</span> <span class="n">tau_wolff</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="s1">&#39;L_wolff&#39;</span><span class="p">],</span> <span class="n">data</span><span class="p">[</span><span class="s1">&#39;tau_wolff&#39;</span><span class="p">]</span>
-    <span class="n">Tc</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="s1">&#39;Tc&#39;</span><span class="p">]</span>
-    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Loaded results for Tc = </span><span class="si">{</span><span class="n">Tc</span><span class="si">:</span><span class="s2">.6f</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
-    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Lattice sizes L: </span><span class="si">{</span><span class="n">L_metro</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
-<span class="k">else</span><span class="p">:</span>
-    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Data not found at </span><span class="si">{</span><span class="n">data_path</span><span class="si">}</span><span class="s2">. Running fallback calculation for demonstration.&quot;</span><span class="p">)</span>
-    <span class="c1"># Fallback: small demo calculation using models and utils</span>
+<span class="n">TC_ISING</span> <span class="o">=</span> <span class="mf">2.0</span> <span class="o">/</span> <span class="n">np</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="mf">1.0</span> <span class="o">+</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="mf">2.0</span><span class="p">))</span>
+<span class="n">NPZ_PATH</span> <span class="o">=</span> <span class="s1">&#39;../results/ising/dynamic_exponent_z.npz&#39;</span>
+<span class="n">PALETTE</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;metro&#39;</span><span class="p">:</span> <span class="s1">&#39;#4878CF&#39;</span><span class="p">,</span> <span class="s1">&#39;wolff&#39;</span><span class="p">:</span> <span class="s1">&#39;#D65F5F&#39;</span><span class="p">}</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">estimate_tau</span><span class="p">(</span><span class="n">update</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">size</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">meas_steps</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">seed</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
     <span class="kn">from</span><span class="w"> </span><span class="nn">models.ising_model</span><span class="w"> </span><span class="kn">import</span> <span class="n">IsingSimulation</span>
-    <span class="kn">from</span><span class="w"> </span><span class="nn">utils.physics_helpers</span><span class="w"> </span><span class="kn">import</span> <span class="n">calculate_autocorr</span>
-    <span class="n">sizes</span> <span class="o">=</span> <span class="p">[</span><span class="mi">16</span><span class="p">,</span> <span class="mi">32</span><span class="p">,</span> <span class="mi">64</span><span class="p">]</span>
-    <span class="n">Tc</span> <span class="o">=</span> <span class="mf">2.0</span> <span class="o">/</span> <span class="n">np</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="mf">1.0</span> <span class="o">+</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="mf">2.0</span><span class="p">))</span>
-    <span class="n">tau_metro</span><span class="p">,</span> <span class="n">tau_wolff</span> <span class="o">=</span> <span class="p">[],</span> <span class="p">[]</span>
-    <span class="n">L_metro</span><span class="p">,</span> <span class="n">L_wolff</span> <span class="o">=</span> <span class="p">[],</span> <span class="p">[]</span>
-    <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">L</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">sizes</span><span class="p">):</span>
-        <span class="c1"># Metropolis</span>
-        <span class="n">sim_m</span> <span class="o">=</span> <span class="n">IsingSimulation</span><span class="p">(</span><span class="n">size</span><span class="o">=</span><span class="n">L</span><span class="p">,</span> <span class="n">temp</span><span class="o">=</span><span class="n">Tc</span><span class="p">,</span> <span class="n">update</span><span class="o">=</span><span class="s1">&#39;random&#39;</span><span class="p">,</span> <span class="n">seed</span><span class="o">=</span><span class="n">i</span><span class="o">*</span><span class="mi">100</span><span class="p">)</span>
-        <span class="n">mags_m</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">sim_m</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="n">n_steps</span><span class="o">=</span><span class="mi">500</span><span class="p">)</span>
-        <span class="n">mags_m_a</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">mags_m</span><span class="p">)</span>
-        <span class="k">try</span><span class="p">:</span>
-            <span class="n">_</span><span class="p">,</span> <span class="n">tau_m</span> <span class="o">=</span> <span class="n">calculate_autocorr</span><span class="p">(</span><span class="n">time_series</span><span class="o">=</span><span class="n">mags_m_a</span><span class="p">)</span>
-        <span class="k">except</span> <span class="ne">ValueError</span><span class="p">:</span>
-            <span class="n">tau_m</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="s1">&#39;nan&#39;</span><span class="p">)</span>
-        <span class="n">tau_metro</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">tau_m</span><span class="p">)</span>
-        <span class="n">L_metro</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">L</span><span class="p">)</span>
-        <span class="c1"># Wolff</span>
-        <span class="n">sim_w</span> <span class="o">=</span> <span class="n">IsingSimulation</span><span class="p">(</span><span class="n">size</span><span class="o">=</span><span class="n">L</span><span class="p">,</span> <span class="n">temp</span><span class="o">=</span><span class="n">Tc</span><span class="p">,</span> <span class="n">update</span><span class="o">=</span><span class="s1">&#39;wolff&#39;</span><span class="p">,</span> <span class="n">seed</span><span class="o">=</span><span class="n">i</span><span class="o">*</span><span class="mi">100</span><span class="o">+</span><span class="mi">1</span><span class="p">)</span>
-        <span class="n">mags_w</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">sim_w</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="n">n_steps</span><span class="o">=</span><span class="mi">500</span><span class="p">)</span>
-        <span class="n">mags_w_a</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">mags_w</span><span class="p">)</span>
-        <span class="k">try</span><span class="p">:</span>
-            <span class="n">_</span><span class="p">,</span> <span class="n">tau_w</span> <span class="o">=</span> <span class="n">calculate_autocorr</span><span class="p">(</span><span class="n">time_series</span><span class="o">=</span><span class="n">mags_w_a</span><span class="p">)</span>
-        <span class="k">except</span> <span class="ne">ValueError</span><span class="p">:</span>
-            <span class="n">tau_w</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="s1">&#39;nan&#39;</span><span class="p">)</span>
-        <span class="n">tau_wolff</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">tau_w</span><span class="p">)</span>
-        <span class="n">L_wolff</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">L</span><span class="p">)</span>
-    <span class="n">L_metro</span><span class="p">,</span> <span class="n">tau_metro</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">L_metro</span><span class="p">),</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">tau_metro</span><span class="p">)</span>
-    <span class="n">L_wolff</span><span class="p">,</span> <span class="n">tau_wolff</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">L_wolff</span><span class="p">),</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">tau_wolff</span><span class="p">)</span>
-    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Fallback results for Tc = </span><span class="si">{</span><span class="n">Tc</span><span class="si">:</span><span class="s2">.6f</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
-    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Lattice sizes L: </span><span class="si">{</span><span class="n">L_metro</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="kn">from</span><span class="w"> </span><span class="nn">utils.system_helpers</span><span class="w"> </span><span class="kn">import</span> <span class="n">adaptive_equilibrate</span>
+
+    <span class="n">sim</span> <span class="o">=</span> <span class="n">IsingSimulation</span><span class="p">(</span><span class="n">size</span><span class="o">=</span><span class="n">size</span><span class="p">,</span> <span class="n">temp</span><span class="o">=</span><span class="n">TC_ISING</span><span class="p">,</span> <span class="n">update</span><span class="o">=</span><span class="n">update</span><span class="p">,</span> <span class="n">seed</span><span class="o">=</span><span class="n">seed</span><span class="p">)</span>
+    <span class="n">adaptive_equilibrate</span><span class="p">(</span><span class="n">sim</span><span class="p">,</span> <span class="n">min_steps</span><span class="o">=</span><span class="mi">250</span><span class="p">,</span> <span class="n">factor</span><span class="o">=</span><span class="mf">20.0</span><span class="p">)</span>
+    <span class="n">mags</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">sim</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="n">n_steps</span><span class="o">=</span><span class="n">meas_steps</span><span class="p">)</span>
+
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">_</span><span class="p">,</span> <span class="n">tau_int</span> <span class="o">=</span> <span class="n">calculate_autocorr</span><span class="p">(</span><span class="n">time_series</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">mags</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">float</span><span class="p">))</span>
+    <span class="k">except</span> <span class="n">ZeroVarianceAutocorrelationError</span><span class="p">:</span>
+        <span class="n">tau_int</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="s1">&#39;nan&#39;</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="nb">float</span><span class="p">(</span><span class="n">tau_int</span><span class="p">)</span>
+
+
+<span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">NPZ_PATH</span><span class="p">):</span>
+    <span class="n">data</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">NPZ_PATH</span><span class="p">)</span>
+    <span class="n">L_metro</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="s1">&#39;L_metro&#39;</span><span class="p">]</span>
+    <span class="n">tau_metro</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="s1">&#39;tau_metro&#39;</span><span class="p">]</span>
+    <span class="n">L_wolff</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="s1">&#39;L_wolff&#39;</span><span class="p">]</span>
+    <span class="n">tau_wolff</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="s1">&#39;tau_wolff&#39;</span><span class="p">]</span>
+    <span class="n">Tc</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">data</span><span class="p">[</span><span class="s1">&#39;Tc&#39;</span><span class="p">])</span>
+    <span class="nb">print</span><span class="p">(</span>
+        <span class="sa">f</span><span class="s1">&#39;Loaded pre-computed data from </span><span class="si">{</span><span class="n">NPZ_PATH</span><span class="si">}</span><span class="s1">: &#39;</span>
+        <span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">L_metro</span><span class="p">)</span><span class="si">}</span><span class="s1"> Metropolis points, </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">L_wolff</span><span class="p">)</span><span class="si">}</span><span class="s1"> Wolff points.&#39;</span>
+    <span class="p">)</span>
+
+<span class="k">else</span><span class="p">:</span>
+    <span class="nb">print</span><span class="p">(</span>
+        <span class="s1">&#39;Pre-computed data not found. Running inline demo &#39;</span>
+        <span class="s1">&#39;(sizes 16, 24, 32; non-publication-quality).&#39;</span>
+<span class="p">)</span>
+    <span class="n">sizes</span> <span class="o">=</span> <span class="p">[</span><span class="mi">16</span><span class="p">,</span> <span class="mi">24</span><span class="p">,</span> <span class="mi">32</span><span class="p">]</span>
+    <span class="n">L_metro</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">sizes</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">float</span><span class="p">)</span>
+    <span class="n">L_wolff</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">sizes</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">float</span><span class="p">)</span>
+    <span class="n">tau_metro</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span>
+        <span class="p">[</span><span class="n">estimate_tau</span><span class="p">(</span><span class="n">update</span><span class="o">=</span><span class="s1">&#39;random&#39;</span><span class="p">,</span> <span class="n">size</span><span class="o">=</span><span class="n">size</span><span class="p">,</span> <span class="n">meas_steps</span><span class="o">=</span><span class="mi">2500</span><span class="p">,</span> <span class="n">seed</span><span class="o">=</span><span class="n">idx</span> <span class="o">*</span> <span class="mi">100</span><span class="p">)</span> <span class="k">for</span> <span class="n">idx</span><span class="p">,</span> <span class="n">size</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">sizes</span><span class="p">)],</span>
+        <span class="n">dtype</span><span class="o">=</span><span class="nb">float</span><span class="p">,</span>
+    <span class="p">)</span>
+    <span class="n">tau_wolff</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span>
+        <span class="p">[</span><span class="n">estimate_tau</span><span class="p">(</span><span class="n">update</span><span class="o">=</span><span class="s1">&#39;wolff&#39;</span><span class="p">,</span> <span class="n">size</span><span class="o">=</span><span class="n">size</span><span class="p">,</span> <span class="n">meas_steps</span><span class="o">=</span><span class="mi">800</span><span class="p">,</span> <span class="n">seed</span><span class="o">=</span><span class="n">idx</span> <span class="o">*</span> <span class="mi">100</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span> <span class="k">for</span> <span class="n">idx</span><span class="p">,</span> <span class="n">size</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">sizes</span><span class="p">)],</span>
+        <span class="n">dtype</span><span class="o">=</span><span class="nb">float</span><span class="p">,</span>
+    <span class="p">)</span>
+    <span class="n">Tc</span> <span class="o">=</span> <span class="n">TC_ISING</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Computed fallback data at T_c = </span><span class="si">{</span><span class="n">Tc</span><span class="si">:</span><span class="s1">.6f</span><span class="si">}</span><span class="s1"> for sizes </span><span class="si">{</span><span class="n">sizes</span><span class="si">}</span><span class="s1">.&#39;</span><span class="p">)</span>
 </pre></div>
 </div>
 </div>
@@ -182,48 +187,55 @@ For the 2D Ising model, <span class="math notranslate nohighlight">\(\gamma/\nu 
 </div>
 <div class="output_area docutils container">
 <div class="highlight"><pre>
-Loaded results for Tc = 2.269185
-Lattice sizes L: [ 16  32  48  64  96 128]
+Loaded pre-computed data from ../results/ising/dynamic_exponent_z.npz: 6 Metropolis points, 6 Wolff points.
 </pre></div></div>
 </div>
 </section>
-</section>
-<section id="Visualizing-Autocorrelation-Scaling">
-<h2>Visualizing Autocorrelation Scaling<a class="headerlink" href="#Visualizing-Autocorrelation-Scaling" title="Link to this heading"></a></h2>
-<p>This section compares the scaling of integrated autocorrelation time <span class="math notranslate nohighlight">\(\tau_{\text{int}}\)</span> with lattice size <span class="math notranslate nohighlight">\(L\)</span> for both the Metropolis and Wolff cluster algorithms. The plot below is generated directly from the simulation or precomputed data, and the fitted power-law exponents <span class="math notranslate nohighlight">\(z\)</span> are calculated on-the-fly. Random site selection is used for Metropolis to ensure physically accurate dynamics. All results and exponents are dynamically computed and displayed, avoiding hardcoded
-values.</p>
-<p>The slope of the log-log plot corresponds to the dynamical critical exponent <span class="math notranslate nohighlight">\(z\)</span>, which quantifies how autocorrelation time grows with system size. The notebook automatically extracts and displays these exponents for both algorithms, ensuring reproducibility and clarity.</p>
+<section id="Scaling-plot">
+<h2>Scaling plot<a class="headerlink" href="#Scaling-plot" title="Link to this heading"></a></h2>
+<p>The fit uses the shared <code class="docutils literal notranslate"><span class="pre">power_fit</span></code> helper on the finite points only, then overlays the inferred power law on top of the raw data. The exact numbers depend on whether the notebook loaded the full script output or the smaller fallback dataset, but the qualitative separation between the two algorithms should be stable.</p>
 <div class="nbinput docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[2]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Filter out any NaNs and ensure we have at least 3 points</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">utils.physics_helpers</span><span class="w"> </span><span class="kn">import</span> <span class="n">power_fit</span>
+
 <span class="n">mask_m</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">isfinite</span><span class="p">(</span><span class="n">tau_metro</span><span class="p">)</span>
 <span class="n">mask_w</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">isfinite</span><span class="p">(</span><span class="n">tau_wolff</span><span class="p">)</span>
 
-<span class="kn">from</span><span class="w"> </span><span class="nn">utils.physics_helpers</span><span class="w"> </span><span class="kn">import</span> <span class="n">power_fit</span>
-
-<span class="c1"># Perform log-log power-law fit using shared helper</span>
 <span class="n">exponent_m</span><span class="p">,</span> <span class="n">prefactor_m</span> <span class="o">=</span> <span class="n">power_fit</span><span class="p">(</span><span class="n">t_arr</span><span class="o">=</span><span class="n">L_metro</span><span class="p">,</span> <span class="n">y_arr</span><span class="o">=</span><span class="n">tau_metro</span><span class="p">,</span> <span class="n">mask</span><span class="o">=</span><span class="n">mask_m</span><span class="p">)</span>
 <span class="n">exponent_w</span><span class="p">,</span> <span class="n">prefactor_w</span> <span class="o">=</span> <span class="n">power_fit</span><span class="p">(</span><span class="n">t_arr</span><span class="o">=</span><span class="n">L_wolff</span><span class="p">,</span> <span class="n">y_arr</span><span class="o">=</span><span class="n">tau_wolff</span><span class="p">,</span> <span class="n">mask</span><span class="o">=</span><span class="n">mask_w</span><span class="p">)</span>
 
-<span class="c1"># Create regression lines for plotting</span>
-<span class="n">L_fit</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="nb">min</span><span class="p">(</span><span class="n">L_metro</span><span class="p">),</span> <span class="nb">max</span><span class="p">(</span><span class="n">L_metro</span><span class="p">),</span> <span class="mi">100</span><span class="p">)</span>
+<span class="n">L_fit</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="nb">min</span><span class="p">(</span><span class="n">L_metro</span><span class="o">.</span><span class="n">min</span><span class="p">(),</span> <span class="n">L_wolff</span><span class="o">.</span><span class="n">min</span><span class="p">()),</span> <span class="nb">max</span><span class="p">(</span><span class="n">L_metro</span><span class="o">.</span><span class="n">max</span><span class="p">(),</span> <span class="n">L_wolff</span><span class="o">.</span><span class="n">max</span><span class="p">()),</span> <span class="mi">200</span><span class="p">)</span>
 <span class="n">tau_fit_m</span> <span class="o">=</span> <span class="n">prefactor_m</span> <span class="o">*</span> <span class="n">L_fit</span><span class="o">**</span><span class="n">exponent_m</span>
 <span class="n">tau_fit_w</span> <span class="o">=</span> <span class="n">prefactor_w</span> <span class="o">*</span> <span class="n">L_fit</span><span class="o">**</span><span class="n">exponent_w</span>
 
-<span class="n">plt</span><span class="o">.</span><span class="n">figure</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">10</span><span class="p">,</span> <span class="mi">7</span><span class="p">))</span>
-<span class="n">plt</span><span class="o">.</span><span class="n">loglog</span><span class="p">(</span><span class="n">L_metro</span><span class="p">,</span> <span class="n">tau_metro</span><span class="p">,</span> <span class="s1">&#39;o&#39;</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="sa">f</span><span class="s1">&#39;Metropolis (z ≈ </span><span class="si">{</span><span class="n">exponent_m</span><span class="si">:</span><span class="s1">.2f</span><span class="si">}</span><span class="s1">)&#39;</span><span class="p">,</span> <span class="n">markersize</span><span class="o">=</span><span class="mi">8</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s1">&#39;#4878CF&#39;</span><span class="p">)</span>
-<span class="n">plt</span><span class="o">.</span><span class="n">loglog</span><span class="p">(</span><span class="n">L_fit</span><span class="p">,</span> <span class="n">tau_fit_m</span><span class="p">,</span> <span class="s1">&#39;--&#39;</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s1">&#39;#4878CF&#39;</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.7</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">figure</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">9</span><span class="p">,</span> <span class="mi">6</span><span class="p">))</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">loglog</span><span class="p">(</span>
+    <span class="n">L_metro</span><span class="p">,</span>
+    <span class="n">tau_metro</span><span class="p">,</span>
+    <span class="s1">&#39;o&#39;</span><span class="p">,</span>
+    <span class="n">color</span><span class="o">=</span><span class="n">PALETTE</span><span class="p">[</span><span class="s1">&#39;metro&#39;</span><span class="p">],</span>
+    <span class="n">markersize</span><span class="o">=</span><span class="mi">7</span><span class="p">,</span>
+    <span class="n">label</span><span class="o">=</span><span class="sa">f</span><span class="s1">&#39;Metropolis (z ≈ </span><span class="si">{</span><span class="n">exponent_m</span><span class="si">:</span><span class="s1">.2f</span><span class="si">}</span><span class="s1">)&#39;</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">loglog</span><span class="p">(</span><span class="n">L_fit</span><span class="p">,</span> <span class="n">tau_fit_m</span><span class="p">,</span> <span class="s1">&#39;--&#39;</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="n">PALETTE</span><span class="p">[</span><span class="s1">&#39;metro&#39;</span><span class="p">],</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.8</span><span class="p">)</span>
 
-<span class="n">plt</span><span class="o">.</span><span class="n">loglog</span><span class="p">(</span><span class="n">L_wolff</span><span class="p">,</span> <span class="n">tau_wolff</span><span class="p">,</span> <span class="s1">&#39;s&#39;</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="sa">f</span><span class="s1">&#39;Wolff (z ≈ </span><span class="si">{</span><span class="n">exponent_w</span><span class="si">:</span><span class="s1">.2f</span><span class="si">}</span><span class="s1">)&#39;</span><span class="p">,</span> <span class="n">markersize</span><span class="o">=</span><span class="mi">8</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s1">&#39;#D65F5F&#39;</span><span class="p">)</span>
-<span class="n">plt</span><span class="o">.</span><span class="n">loglog</span><span class="p">(</span><span class="n">L_fit</span><span class="p">,</span> <span class="n">tau_fit_w</span><span class="p">,</span> <span class="s1">&#39;--&#39;</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s1">&#39;#D65F5F&#39;</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.7</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">loglog</span><span class="p">(</span>
+    <span class="n">L_wolff</span><span class="p">,</span>
+    <span class="n">tau_wolff</span><span class="p">,</span>
+    <span class="s1">&#39;s&#39;</span><span class="p">,</span>
+    <span class="n">color</span><span class="o">=</span><span class="n">PALETTE</span><span class="p">[</span><span class="s1">&#39;wolff&#39;</span><span class="p">],</span>
+    <span class="n">markersize</span><span class="o">=</span><span class="mi">7</span><span class="p">,</span>
+    <span class="n">label</span><span class="o">=</span><span class="sa">f</span><span class="s1">&#39;Wolff (cluster-step z ≈ </span><span class="si">{</span><span class="n">exponent_w</span><span class="si">:</span><span class="s1">.2f</span><span class="si">}</span><span class="s1">)&#39;</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">loglog</span><span class="p">(</span><span class="n">L_fit</span><span class="p">,</span> <span class="n">tau_fit_w</span><span class="p">,</span> <span class="s1">&#39;--&#39;</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="n">PALETTE</span><span class="p">[</span><span class="s1">&#39;wolff&#39;</span><span class="p">],</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.8</span><span class="p">)</span>
 
-<span class="n">plt</span><span class="o">.</span><span class="n">xlabel</span><span class="p">(</span><span class="s1">&#39;Lattice Size L&#39;</span><span class="p">,</span> <span class="n">fontsize</span><span class="o">=</span><span class="mi">12</span><span class="p">)</span>
-<span class="n">plt</span><span class="o">.</span><span class="n">ylabel</span><span class="p">(</span><span class="sa">r</span><span class="s1">&#39;Autocorrelation Time $\tau_</span><span class="si">{int}</span><span class="s1">$ (sweeps)&#39;</span><span class="p">,</span> <span class="n">fontsize</span><span class="o">=</span><span class="mi">12</span><span class="p">)</span>
-<span class="n">plt</span><span class="o">.</span><span class="n">title</span><span class="p">(</span><span class="sa">fr</span><span class="s1">&#39;Scaling of Autocorrelation Time at $T_c \approx </span><span class="si">{</span><span class="n">Tc</span><span class="si">:</span><span class="s1">.4f</span><span class="si">}</span><span class="s1">$ ($z_M \approx </span><span class="si">{</span><span class="n">exponent_m</span><span class="si">:</span><span class="s1">.2f</span><span class="si">}</span><span class="s1">, z_W \approx </span><span class="si">{</span><span class="n">exponent_w</span><span class="si">:</span><span class="s1">.2f</span><span class="si">}</span><span class="s1">$)&#39;</span><span class="p">,</span> <span class="n">fontsize</span><span class="o">=</span><span class="mi">14</span><span class="p">)</span>
-<span class="n">plt</span><span class="o">.</span><span class="n">grid</span><span class="p">(</span><span class="kc">True</span><span class="p">,</span> <span class="n">which</span><span class="o">=</span><span class="s2">&quot;both&quot;</span><span class="p">,</span> <span class="n">ls</span><span class="o">=</span><span class="s2">&quot;-&quot;</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.2</span><span class="p">)</span>
-<span class="n">plt</span><span class="o">.</span><span class="n">legend</span><span class="p">(</span><span class="n">fontsize</span><span class="o">=</span><span class="mi">11</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">xlabel</span><span class="p">(</span><span class="s1">&#39;Lattice size $L$&#39;</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">ylabel</span><span class="p">(</span><span class="sa">r</span><span class="s1">&#39;Integrated autocorrelation time $\tau_{\mathrm</span><span class="si">{int}</span><span class="s1">}$&#39;</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">title</span><span class="p">(</span><span class="sa">fr</span><span class="s1">&#39;Critical slowing down at $T_c \approx </span><span class="si">{</span><span class="n">Tc</span><span class="si">:</span><span class="s1">.4f</span><span class="si">}</span><span class="s1">$&#39;</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">grid</span><span class="p">(</span><span class="kc">True</span><span class="p">,</span> <span class="n">which</span><span class="o">=</span><span class="s1">&#39;both&#39;</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.2</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">legend</span><span class="p">()</span>
 <span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
 </pre></div>
 </div>
@@ -235,28 +247,20 @@ values.</p>
 <img alt="_images/dynamic_critical_exponents_5_0.png" src="_images/dynamic_critical_exponents_5_0.png" />
 </div>
 </div>
-<section id="Numerical-Results-and-Interpretation">
-<h3>Numerical Results and Interpretation<a class="headerlink" href="#Numerical-Results-and-Interpretation" title="Link to this heading"></a></h3>
-<p>The measured exponents above quantify the efficiency of each algorithm. For Metropolis, the large <span class="math notranslate nohighlight">\(z\)</span> reflects the slow, diffusive decorrelation of local updates. For Wolff, the exponent <span class="math notranslate nohighlight">\(z_\mathrm{steps}\)</span> is measured in cluster steps and is expected to be around <span class="math notranslate nohighlight">\(0.5\)</span>. To compare with Metropolis, we convert to sweep units using <span class="math notranslate nohighlight">\(z = z_\mathrm{steps} + \gamma/\nu - d\)</span>. For the 2D Ising model (<span class="math notranslate nohighlight">\(\gamma/\nu = 1.75\)</span>, <span class="math notranslate nohighlight">\(d=2\)</span>), this yields <span class="math notranslate nohighlight">\(z \approx 0.25\)</span>,
-confirming the dramatic reduction in critical slowing down. The values quoted here are established in the literature; the notebook’s plot and fit allow you to compare your own simulation results to these theoretical expectations.</p>
-<p><strong>References:</strong> , “Collective Monte Carlo Updating for Spin Systems,” Physical Review Letters, vol. 62, no. 4, pp. 361–364, 1989. (<a class="reference external" href="https://journals.aps.org/prl/abstract/10.1103/PhysRevLett.62.361">APS Open Access</a>) (<a class="reference external" href="https://en.wikipedia.org/wiki/Critical_slowing_down">https://en.wikipedia.org/wiki/Critical_slowing_down</a>)</p>
 </section>
-<section id="Scientific-Implications">
-<h3>Scientific Implications<a class="headerlink" href="#Scientific-Implications" title="Link to this heading"></a></h3>
-<p>The near-elimination of critical slowing down by the Wolff algorithm is a classic example of how physical insight can inform algorithmic design. By matching the scale of the update move to the physical scale of the fluctuations, we resolve the topological frustration that local flips cannot easily overcome. However, it is important to remember that the Wolff algorithm does not preserve the stochastic trajectory of a physical system; it is a tool for sampling the equilibrium Boltzmann
-distribution. For studies of phase-ordering kinetics, aging, or non-equilibrium dynamics, the local Metropolis algorithm remains the mandatory choice, as it accurately reflects the physical time evolution of the system.</p>
-<p><strong>References:</strong> , “Collective Monte Carlo Updating for Spin Systems,” Physical Review Letters, vol. 62, no. 4, pp. 361–364, 1989. (<a class="reference external" href="https://journals.aps.org/prl/abstract/10.1103/PhysRevLett.62.361">APS Open Access</a>) (<a class="reference external" href="https://en.wikipedia.org/wiki/Wolff_algorithm">https://en.wikipedia.org/wiki/Wolff_algorithm</a>)</p>
+<section id="Reading-the-result">
+<h2>Reading the result<a class="headerlink" href="#Reading-the-result" title="Link to this heading"></a></h2>
+<p>The Metropolis fit should remain close to the textbook local-dynamics result <span class="math notranslate nohighlight">\(z \approx 2\)</span>, reflecting the diffusive cost of decorrelating large critical domains. The Wolff fit is much flatter because a single accepted cluster flip already reorganizes a macroscopic region near <span class="math notranslate nohighlight">\(T_c\)</span>. Even when the fallback dataset shifts the fitted values slightly, the gap in slope is the main physical result: cluster updates change the scaling law, not just the prefactor.</p>
 </section>
+<section id="Scientific-implication">
+<h2>Scientific implication<a class="headerlink" href="#Scientific-implication" title="Link to this heading"></a></h2>
+<p>The Wolff algorithm is the right tool for equilibrium sampling at criticality because it suppresses critical slowing down without changing the target Boltzmann distribution. That does not make it a faithful model of physical time evolution. When the goal is non-equilibrium kinetics or physically interpretable dynamics, local updates remain the correct choice even though they are slower.</p>
 </section>
 <section id="Bibliography">
 <h2>Bibliography<a class="headerlink" href="#Bibliography" title="Link to this heading"></a></h2>
 <p><a class="reference internal" href="#Bibliography"><span class="std std-ref">[1]</span></a> L. Onsager, “Crystal Statistics. I. A Two-Dimensional Model with an Order-Disorder Transition,” <em>Physical Review</em>, vol. 65, no. 3-4, pp. 117–149, 1944. <a class="reference external" href="https://journals.aps.org/pr/abstract/10.1103/PhysRev.65.117">APS Open Access</a></p>
 <p><a class="reference internal" href="#Bibliography"><span class="std std-ref">[2]</span></a> U. Wolff, “Collective Monte Carlo Updating for Spin Systems,” <em>Physical Review Letters</em>, vol. 62, no. 4, pp. 361–364, 1989. <a class="reference external" href="https://journals.aps.org/prl/abstract/10.1103/PhysRevLett.62.361">APS Open Access</a></p>
-<p><a class="reference internal" href="#Bibliography"><span class="std std-ref">[3]</span></a> G. S. Madras and A. D. Sokal, “The pivot algorithm: A highly efficient Monte Carlo method for the self-avoiding walk,” <em>Journal of Statistical Physics</em>, vol. 50, no. 1-2, pp. 109–186, 1988. <a class="reference external" href="https://link.springer.com/article/10.1007/BF01022990">Springer Open Access</a></p>
-<p><a class="reference internal" href="#Bibliography"><span class="std std-ref">[4]</span></a> <a class="reference external" href="https://en.wikipedia.org/wiki/Ising_model">Ising model on Wikipedia</a></p>
-<p><a class="reference internal" href="#Bibliography"><span class="std std-ref">[5]</span></a> <a class="reference external" href="https://en.wikipedia.org/wiki/Wolff_algorithm">Wolff algorithm on Wikipedia</a></p>
-<p><a class="reference internal" href="#Bibliography"><span class="std std-ref">[6]</span></a> <a class="reference external" href="https://en.wikipedia.org/wiki/Critical_slowing_down">Critical slowing down on Wikipedia</a></p>
-<p><a class="reference internal" href="#Bibliography"><span class="std std-ref">[7]</span></a> <a class="reference external" href="https://en.wikipedia.org/wiki/Autocorrelation#Time_series">Autocorrelation time on Wikipedia</a></p>
+<p><a class="reference internal" href="#Bibliography"><span class="std std-ref">[3]</span></a> G. Madras and A. D. Sokal, “The pivot algorithm: A highly efficient Monte Carlo method for the self-avoiding walk,” <em>Journal of Statistical Physics</em>, vol. 50, no. 1-2, pp. 109–186, 1988. <a class="reference external" href="https://link.springer.com/article/10.1007/BF01022990">Springer Link</a></p>
 </section>
 </section>
 
@@ -265,7 +269,7 @@ distribution. For studies of phase-ordering kinetics, aging, or non-equilibrium 
           </div>
           <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
         <a href="wolff_efficiency.html" class="btn btn-neutral float-left" title="Wolff vs. Metropolis: Algorithmic Efficiency in the Critical Regime" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
-        <a href="ising_autocorrelation_analysis.html" class="btn btn-neutral float-right" title="Ising Model: Autocorrelation and Equilibration Analysis" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+        <a href="ising_autocorrelation_analysis.html" class="btn btn-neutral float-right" title="Ising Model: Relaxation to Equilibrium" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
     </div>
 
   <hr/>

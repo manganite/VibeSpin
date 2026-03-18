@@ -6,7 +6,7 @@
   <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Ising Model: Autocorrelation and Equilibration Analysis &mdash; VibeSpin 0.1.0 documentation</title>
+  <title>Ising Model: Relaxation to Equilibrium &mdash; VibeSpin 0.1.0 documentation</title>
       <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=b86133f3" />
       <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=9edc463e" />
       <link rel="stylesheet" type="text/css" href="_static/nbsphinx-code-cells.css?v=2aa19091" />
@@ -60,9 +60,18 @@
 <li class="toctree-l1"><a class="reference internal" href="benchmarks.html">Performance Benchmarking for VibeSpin</a></li>
 <li class="toctree-l1"><a class="reference internal" href="wolff_efficiency.html">Wolff vs. Metropolis: Algorithmic Efficiency in the Critical Regime</a></li>
 <li class="toctree-l1"><a class="reference internal" href="dynamic_critical_exponents.html">Dynamical Critical Exponents in the 2D Ising Model</a></li>
-<li class="toctree-l1 current"><a class="current reference internal" href="#">Ising Model: Autocorrelation and Equilibration Analysis</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="#Raw-Magnetization-Time-Series">Raw Magnetization Time Series</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#Visualization-of-Equilibration">Visualization of Equilibration</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Ising Model: Relaxation to Equilibrium</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#Load-or-compute-trajectories">Load or compute trajectories</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#Magnetization-traces">Magnetization traces</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#Quantitative-relaxation-time-analysis-(multi-seed,-two-start)">Quantitative relaxation-time analysis (multi-seed, two-start)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#Work-normalised-relaxation-time">Work-normalised relaxation time</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#Integrated-autocorrelation-time">Integrated autocorrelation time</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#Interpretation">Interpretation</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#Raw-step-counts-(two-start-\hat{\tau}_\text{relax})">Raw step counts (two-start <span class="math notranslate nohighlight">\(\hat{\tau}_\text{relax}\)</span>)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#Work-normalised-view">Work-normalised view</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#Comparing-\hat{\tau}_\text{relax}-and-\tau_\text{int}">Comparing <span class="math notranslate nohighlight">\(\hat{\tau}_\text{relax}\)</span> and <span class="math notranslate nohighlight">\(\tau_\text{int}\)</span></a></li>
+</ul>
+</li>
 <li class="toctree-l2"><a class="reference internal" href="#Bibliography">Bibliography</a></li>
 </ul>
 </li>
@@ -86,7 +95,7 @@
           <div role="navigation" aria-label="Page navigation">
   <ul class="wy-breadcrumbs">
       <li><a href="index.html" class="icon icon-home" aria-label="Home"></a></li>
-      <li class="breadcrumb-item active">Ising Model: Autocorrelation and Equilibration Analysis</li>
+      <li class="breadcrumb-item active">Ising Model: Relaxation to Equilibrium</li>
       <li class="wy-breadcrumbs-aside">
             <a href="_sources/ising_autocorrelation_analysis.ipynb.txt" rel="nofollow"> View page source</a>
       </li>
@@ -96,81 +105,740 @@
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
            <div itemprop="articleBody">
              
-  <section id="Ising-Model:-Autocorrelation-and-Equilibration-Analysis">
-<h1>Ising Model: Autocorrelation and Equilibration Analysis<a class="headerlink" href="#Ising-Model:-Autocorrelation-and-Equilibration-Analysis" title="Link to this heading"></a></h1>
-<p>This notebook investigates the equilibration behavior and autocorrelation of the 2D Ising model <a class="reference internal" href="#Bibliography"><span class="std std-ref">[1]</span></a> comparing three Monte Carlo update schemes: Random-site Metropolis <a class="reference internal" href="#Bibliography"><span class="std std-ref">[2]</span></a>, Checkerboard Metropolis, and the Wolff cluster algorithm <a class="reference internal" href="#Bibliography"><span class="std std-ref">[3]</span></a>.</p>
-<p>The efficiency of these algorithms is highly temperature-dependent, particularly near the Onsager critical temperature <span class="math notranslate nohighlight">\(T_c = 2/\ln(1+\sqrt{2}) \approx 2.269\)</span>. Near <span class="math notranslate nohighlight">\(T_c\)</span>, local update schemes suffer from <em>critical slowing down</em> <a class="reference internal" href="#Bibliography"><span class="std std-ref">[4]</span></a>, where the time required to generate independent samples scales poorly with system size. The Wolff algorithm is designed to mitigate this by performing collective updates.</p>
-<div class="nbinput nblast docutils container">
+  <section id="Ising-Model:-Relaxation-to-Equilibrium">
+<h1>Ising Model: Relaxation to Equilibrium<a class="headerlink" href="#Ising-Model:-Relaxation-to-Equilibrium" title="Link to this heading"></a></h1>
+<p>When a Monte Carlo simulation starts from an arbitrary (e.g. random) configuration, the system is far from its thermal equilibrium state. During the initial <strong>relaxation</strong> (or <em>thermalization</em>) transient, observables drift systematically as the Markov chain moves toward the stationary distribution. Only after the chain has forgotten its starting point — after the <strong>relaxation time</strong> <span class="math notranslate nohighlight">\(\tau_\text{relax}\)</span> has elapsed — do the samples represent genuine thermal fluctuations that can be used for
+measurement.</p>
+<p>This notebook quantifies relaxation to equilibrium for the 2D Ising model by comparing three update schemes:</p>
+<ul class="simple">
+<li><p><strong>Random-site Metropolis</strong> — one randomly chosen spin is proposed per step.</p></li>
+<li><p><strong>Checkerboard Metropolis</strong> — sites are swept in a fixed checkerboard pattern, eliminating the random-site overhead.</p></li>
+<li><p><strong>Wolff cluster</strong> — a whole correlated cluster is flipped in one move, dramatically reducing autocorrelation near <span class="math notranslate nohighlight">\(T_c\)</span>.</p></li>
+</ul>
+<p>All three algorithms start from the same deliberately unfavorable initial condition: a fully random spin configuration with no warm-up. The analysis is repeated below, at, and above the Onsager critical temperature <span class="math notranslate nohighlight">\(T_c = 2/\ln(1 + \sqrt{2}) \approx 2.269\)</span> <a class="reference internal" href="#Bibliography"><span class="std std-ref">[1]</span></a>, where critical slowing down makes relaxation slowest and the contrast between algorithms largest.</p>
+<p>The notebook has four parts:</p>
+<ol class="arabic simple">
+<li><p><strong>Visual demonstration</strong> — <span class="math notranslate nohighlight">\(|M|\)</span> trajectories make the transient and its temperature-dependence immediately visible.</p></li>
+<li><p><strong>Two-start relaxation time</strong> — a threshold-crossing estimator on two-start convergence extracts <span class="math notranslate nohighlight">\(\hat{\tau}_\text{relax}\)</span>, the time for the chain to forget its initial condition.</p></li>
+<li><p><strong>Integrated autocorrelation time</strong> — <span class="math notranslate nohighlight">\(\tau_\text{int}\)</span> measures equilibrium memory and controls the effective sample size once in equilibrium.</p></li>
+<li><p><strong>Interpretation</strong> — both metrics are connected to critical slowing down, algorithm work normalisation, and the distinction between thermalization and statistical independence.</p></li>
+</ol>
+<div class="nbinput docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">__future__</span><span class="w"> </span><span class="kn">import</span> <span class="n">annotations</span>
 
+<span class="kn">import</span><span class="w"> </span><span class="nn">os</span>
+
 <span class="kn">import</span><span class="w"> </span><span class="nn">matplotlib.pyplot</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">plt</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">models.ising_model</span><span class="w"> </span><span class="kn">import</span> <span class="n">IsingSimulation</span>
 
-<span class="c1"># Constants</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">models.ising_model</span><span class="w"> </span><span class="kn">import</span> <span class="n">IsingSimulation</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">utils.exceptions</span><span class="w"> </span><span class="kn">import</span> <span class="n">ZeroVarianceAutocorrelationError</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">utils.physics_helpers</span><span class="w"> </span><span class="kn">import</span> <span class="n">calculate_autocorr</span><span class="p">,</span> <span class="n">estimate_relaxation_time_two_start</span>
+
 <span class="n">TC_ISING</span> <span class="o">=</span> <span class="mf">2.0</span> <span class="o">/</span> <span class="n">np</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="mf">1.0</span> <span class="o">+</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="mf">2.0</span><span class="p">))</span>
 <span class="n">L</span> <span class="o">=</span> <span class="mi">64</span>
 <span class="n">N_STEPS</span> <span class="o">=</span> <span class="mi">1000</span>
 <span class="n">TEMPS</span> <span class="o">=</span> <span class="p">[</span><span class="mf">0.8</span> <span class="o">*</span> <span class="n">TC_ISING</span><span class="p">,</span> <span class="n">TC_ISING</span><span class="p">,</span> <span class="mf">1.2</span> <span class="o">*</span> <span class="n">TC_ISING</span><span class="p">]</span>
-<span class="n">TEMP_LABELS</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;Below Tc&quot;</span><span class="p">,</span> <span class="s2">&quot;At Tc&quot;</span><span class="p">,</span> <span class="s2">&quot;Above Tc&quot;</span><span class="p">]</span>
-<span class="n">UPDATES</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;random&quot;</span><span class="p">,</span> <span class="s2">&quot;checkerboard&quot;</span><span class="p">,</span> <span class="s2">&quot;wolff&quot;</span><span class="p">]</span>
+<span class="n">TEMP_LABELS</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;Below $T_c$&#39;</span><span class="p">,</span> <span class="s1">&#39;At $T_c$&#39;</span><span class="p">,</span> <span class="s1">&#39;Above $T_c$&#39;</span><span class="p">]</span>
+<span class="n">UPDATES</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;random&#39;</span><span class="p">,</span> <span class="s1">&#39;checkerboard&#39;</span><span class="p">,</span> <span class="s1">&#39;wolff&#39;</span><span class="p">]</span>
+<span class="n">UPDATE_LABELS</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="s1">&#39;random&#39;</span><span class="p">:</span> <span class="s1">&#39;Random-site Metropolis&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;checkerboard&#39;</span><span class="p">:</span> <span class="s1">&#39;Checkerboard Metropolis&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;wolff&#39;</span><span class="p">:</span> <span class="s1">&#39;Wolff cluster&#39;</span><span class="p">,</span>
+<span class="p">}</span>
+<span class="n">PALETTE</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;random&#39;</span><span class="p">:</span> <span class="s1">&#39;#4878CF&#39;</span><span class="p">,</span> <span class="s1">&#39;checkerboard&#39;</span><span class="p">:</span> <span class="s1">&#39;#6ACC65&#39;</span><span class="p">,</span> <span class="s1">&#39;wolff&#39;</span><span class="p">:</span> <span class="s1">&#39;#D65F5F&#39;</span><span class="p">}</span>
 
-<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Critical Temperature Tc: </span><span class="si">{</span><span class="n">TC_ISING</span><span class="si">:</span><span class="s2">.6f</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+<span class="c1"># Robust relaxation analysis settings (used at/near criticality)</span>
+<span class="n">SEEDS</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mi">11</span><span class="p">,</span> <span class="mi">22</span><span class="p">,</span> <span class="mi">33</span><span class="p">,</span> <span class="mi">44</span><span class="p">,</span> <span class="mi">55</span><span class="p">,</span> <span class="mi">66</span><span class="p">,</span> <span class="mi">77</span><span class="p">,</span> <span class="mi">88</span><span class="p">,</span> <span class="mi">99</span><span class="p">,</span> <span class="mi">111</span><span class="p">],</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">int</span><span class="p">)</span>
+<span class="n">INIT_STATES</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;random&#39;</span><span class="p">,</span> <span class="s1">&#39;ordered&#39;</span><span class="p">]</span>
+<span class="n">MAX_STEPS_FACTOR</span> <span class="o">=</span> <span class="mi">4</span>
+
+<span class="n">CACHE_PATH</span> <span class="o">=</span> <span class="s1">&#39;../results/ising/ising_autocorrelation_multiseed_analysis.npz&#39;</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Exact Onsager T_c = </span><span class="si">{</span><span class="n">TC_ISING</span><span class="si">:</span><span class="s1">.6f</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Notebook cache path: </span><span class="si">{</span><span class="n">CACHE_PATH</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;L = </span><span class="si">{</span><span class="n">L</span><span class="si">}</span><span class="s1">, base N_STEPS = </span><span class="si">{</span><span class="n">N_STEPS</span><span class="si">}</span><span class="s1">, seeds = </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">SEEDS</span><span class="p">)</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
+<br/></pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+Exact Onsager T_c = 2.269185
+Notebook cache path: ../results/ising/ising_autocorrelation_multiseed_analysis.npz
+L = 64, base N_STEPS = 1000, seeds = 10
+</pre></div></div>
+</div>
+<section id="Load-or-compute-trajectories">
+<h2>Load or compute trajectories<a class="headerlink" href="#Load-or-compute-trajectories" title="Link to this heading"></a></h2>
+<p>If a cached trajectory file exists in <code class="docutils literal notranslate"><span class="pre">../results/ising/ising_autocorrelation_analysis.npz</span></code>, the notebook reuses it directly. Otherwise it runs the three temperature slices inline and saves the resulting <span class="math notranslate nohighlight">\(|M|\)</span> time series for later reads. This keeps the notebook self-contained even though there is no separate batch script for this specific figure yet.</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[29]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">max_steps</span> <span class="o">=</span> <span class="n">N_STEPS</span> <span class="o">*</span> <span class="n">MAX_STEPS_FACTOR</span>
+<span class="n">n_temp</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">TEMPS</span><span class="p">)</span>
+<span class="n">n_upd</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">UPDATES</span><span class="p">)</span>
+<span class="n">n_seed</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">SEEDS</span><span class="p">)</span>
+<span class="n">n_init</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">INIT_STATES</span><span class="p">)</span>
+<span class="n">wolff_idx</span> <span class="o">=</span> <span class="n">UPDATES</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="s1">&#39;wolff&#39;</span><span class="p">)</span>
+
+<span class="n">needs_recompute</span> <span class="o">=</span> <span class="kc">True</span>
+<span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">CACHE_PATH</span><span class="p">):</span>
+    <span class="n">data</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">CACHE_PATH</span><span class="p">,</span> <span class="n">allow_pickle</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+    <span class="n">required</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="s1">&#39;temperatures&#39;</span><span class="p">,</span>
+        <span class="s1">&#39;updates&#39;</span><span class="p">,</span>
+        <span class="s1">&#39;seeds&#39;</span><span class="p">,</span>
+        <span class="s1">&#39;init_states&#39;</span><span class="p">,</span>
+        <span class="s1">&#39;magnetization_traces_full&#39;</span><span class="p">,</span>
+        <span class="s1">&#39;steps_used&#39;</span><span class="p">,</span>
+        <span class="s1">&#39;wolff_cluster_sizes&#39;</span><span class="p">,</span>   <span class="c1"># new field — forces rebuild of old caches</span>
+    <span class="p">}</span>
+    <span class="k">if</span> <span class="n">required</span><span class="o">.</span><span class="n">issubset</span><span class="p">(</span><span class="nb">set</span><span class="p">(</span><span class="n">data</span><span class="o">.</span><span class="n">files</span><span class="p">)):</span>
+        <span class="n">magnetization_traces_full</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="s1">&#39;magnetization_traces_full&#39;</span><span class="p">]</span>
+        <span class="n">steps_used</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="s1">&#39;steps_used&#39;</span><span class="p">]</span>
+        <span class="n">wolff_cluster_sizes</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="s1">&#39;wolff_cluster_sizes&#39;</span><span class="p">]</span>
+        <span class="n">needs_recompute</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="nb">print</span><span class="p">(</span>
+            <span class="sa">f</span><span class="s1">&#39;Loaded cached trajectories from </span><span class="si">{</span><span class="n">CACHE_PATH</span><span class="si">}</span><span class="s1">: &#39;</span>
+            <span class="sa">f</span><span class="s1">&#39;shape=</span><span class="si">{</span><span class="n">magnetization_traces_full</span><span class="o">.</span><span class="n">shape</span><span class="si">}</span><span class="s1">.&#39;</span>
+        <span class="p">)</span>
+
+<span class="k">if</span> <span class="n">needs_recompute</span><span class="p">:</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Compatible cache not found. Running multi-seed simulations and saving the result...&#39;</span><span class="p">)</span>
+    <span class="n">magnetization_traces_full</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">full</span><span class="p">((</span><span class="n">n_temp</span><span class="p">,</span> <span class="n">n_upd</span><span class="p">,</span> <span class="n">n_seed</span><span class="p">,</span> <span class="n">n_init</span><span class="p">,</span> <span class="n">max_steps</span><span class="p">),</span> <span class="n">np</span><span class="o">.</span><span class="n">nan</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">float</span><span class="p">)</span>
+    <span class="n">steps_used</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="n">n_temp</span><span class="p">,</span> <span class="n">n_upd</span><span class="p">,</span> <span class="n">n_seed</span><span class="p">,</span> <span class="n">n_init</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">int</span><span class="p">)</span>
+    <span class="c1"># Wolff cluster sizes are only meaningful for the Wolff update; shape mirrors the full array.</span>
+    <span class="n">wolff_cluster_sizes</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="n">n_temp</span><span class="p">,</span> <span class="n">n_seed</span><span class="p">,</span> <span class="n">n_init</span><span class="p">,</span> <span class="n">max_steps</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">int</span><span class="p">)</span>
+
+    <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">temperature</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">TEMPS</span><span class="p">):</span>
+        <span class="k">for</span> <span class="n">j</span><span class="p">,</span> <span class="n">update</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">UPDATES</span><span class="p">):</span>
+            <span class="k">for</span> <span class="n">s_idx</span><span class="p">,</span> <span class="n">seed</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">SEEDS</span><span class="p">):</span>
+                <span class="k">for</span> <span class="n">init_idx</span><span class="p">,</span> <span class="n">init_state</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">INIT_STATES</span><span class="p">):</span>
+                    <span class="n">is_critical_local</span> <span class="o">=</span> <span class="n">i</span> <span class="o">==</span> <span class="mi">1</span> <span class="ow">and</span> <span class="n">update</span> <span class="ow">in</span> <span class="p">{</span><span class="s1">&#39;random&#39;</span><span class="p">,</span> <span class="s1">&#39;checkerboard&#39;</span><span class="p">}</span>
+                    <span class="n">n_run</span> <span class="o">=</span> <span class="n">max_steps</span> <span class="k">if</span> <span class="n">is_critical_local</span> <span class="k">else</span> <span class="n">N_STEPS</span>
+
+                    <span class="n">sim</span> <span class="o">=</span> <span class="n">IsingSimulation</span><span class="p">(</span><span class="n">size</span><span class="o">=</span><span class="n">L</span><span class="p">,</span> <span class="n">temp</span><span class="o">=</span><span class="n">temperature</span><span class="p">,</span> <span class="n">update</span><span class="o">=</span><span class="n">update</span><span class="p">,</span> <span class="n">seed</span><span class="o">=</span><span class="nb">int</span><span class="p">(</span><span class="n">seed</span><span class="p">))</span>
+                    <span class="k">if</span> <span class="n">init_state</span> <span class="o">==</span> <span class="s1">&#39;ordered&#39;</span><span class="p">:</span>
+                        <span class="n">sim</span><span class="o">.</span><span class="n">spins</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">((</span><span class="n">L</span><span class="p">,</span> <span class="n">L</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">int8</span><span class="p">)</span>
+
+                    <span class="k">if</span> <span class="n">update</span> <span class="o">==</span> <span class="s1">&#39;wolff&#39;</span><span class="p">:</span>
+                        <span class="n">mags</span><span class="p">,</span> <span class="n">_</span><span class="p">,</span> <span class="n">csizes</span> <span class="o">=</span> <span class="n">sim</span><span class="o">.</span><span class="n">run_with_cluster_sizes</span><span class="p">(</span><span class="n">n_steps</span><span class="o">=</span><span class="n">n_run</span><span class="p">)</span>
+                        <span class="n">wolff_cluster_sizes</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="n">s_idx</span><span class="p">,</span> <span class="n">init_idx</span><span class="p">,</span> <span class="p">:</span><span class="n">n_run</span><span class="p">]</span> <span class="o">=</span> <span class="n">csizes</span>
+                    <span class="k">else</span><span class="p">:</span>
+                        <span class="n">mags</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">sim</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="n">n_steps</span><span class="o">=</span><span class="n">n_run</span><span class="p">)</span>
+
+                    <span class="n">magnetization_traces_full</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="n">j</span><span class="p">,</span> <span class="n">s_idx</span><span class="p">,</span> <span class="n">init_idx</span><span class="p">,</span> <span class="p">:</span><span class="n">n_run</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">mags</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">float</span><span class="p">)</span>
+                    <span class="n">steps_used</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="n">j</span><span class="p">,</span> <span class="n">s_idx</span><span class="p">,</span> <span class="n">init_idx</span><span class="p">]</span> <span class="o">=</span> <span class="n">n_run</span>
+
+        <span class="nb">print</span><span class="p">(</span>
+            <span class="sa">f</span><span class="s1">&#39;  T=</span><span class="si">{</span><span class="n">temperature</span><span class="si">:</span><span class="s1">.3f</span><span class="si">}</span><span class="s1">: all updates, </span><span class="si">{</span><span class="n">n_seed</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">n_init</span><span class="si">}</span><span class="s1"> trajectories each complete&#39;</span><span class="p">,</span>
+            <span class="n">flush</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+        <span class="p">)</span>
+
+    <span class="n">os</span><span class="o">.</span><span class="n">makedirs</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">dirname</span><span class="p">(</span><span class="n">CACHE_PATH</span><span class="p">),</span> <span class="n">exist_ok</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="n">np</span><span class="o">.</span><span class="n">savez</span><span class="p">(</span>
+        <span class="n">CACHE_PATH</span><span class="p">,</span>
+        <span class="n">temperatures</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">TEMPS</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">float</span><span class="p">),</span>
+        <span class="n">temp_labels</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">TEMP_LABELS</span><span class="p">),</span>
+        <span class="n">updates</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">UPDATES</span><span class="p">),</span>
+        <span class="n">seeds</span><span class="o">=</span><span class="n">SEEDS</span><span class="p">,</span>
+        <span class="n">init_states</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">INIT_STATES</span><span class="p">),</span>
+        <span class="n">magnetization_traces_full</span><span class="o">=</span><span class="n">magnetization_traces_full</span><span class="p">,</span>
+        <span class="n">steps_used</span><span class="o">=</span><span class="n">steps_used</span><span class="p">,</span>
+        <span class="n">max_steps</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">max_steps</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">int</span><span class="p">),</span>
+        <span class="n">wolff_cluster_sizes</span><span class="o">=</span><span class="n">wolff_cluster_sizes</span><span class="p">,</span>
+    <span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Saved cached trajectories to </span><span class="si">{</span><span class="n">CACHE_PATH</span><span class="si">}</span><span class="s1">.&#39;</span><span class="p">)</span>
+
+<span class="c1"># One representative random-start trace per (temp, update) for the visual panel.</span>
+<span class="n">magnetization_traces</span> <span class="o">=</span> <span class="n">magnetization_traces_full</span><span class="p">[:,</span> <span class="p">:,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="p">:</span><span class="n">N_STEPS</span><span class="p">]</span>
 </pre></div>
 </div>
 </div>
-<section id="Raw-Magnetization-Time-Series">
-<h2>Raw Magnetization Time Series<a class="headerlink" href="#Raw-Magnetization-Time-Series" title="Link to this heading"></a></h2>
-<p>We run simulations starting from a random configuration (high-energy state) without any equilibration steps. This allows us to visualize how quickly each algorithm approaches the equilibrium regime at different temperatures.</p>
-<div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
-</pre></div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">results</span> <span class="o">=</span> <span class="p">{}</span>
-
-<span class="k">for</span> <span class="n">T</span> <span class="ow">in</span> <span class="n">TEMPS</span><span class="p">:</span>
-    <span class="n">results</span><span class="p">[</span><span class="n">T</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
-    <span class="k">for</span> <span class="n">update</span> <span class="ow">in</span> <span class="n">UPDATES</span><span class="p">:</span>
-        <span class="n">sim</span> <span class="o">=</span> <span class="n">IsingSimulation</span><span class="p">(</span><span class="n">size</span><span class="o">=</span><span class="n">L</span><span class="p">,</span> <span class="n">temp</span><span class="o">=</span><span class="n">T</span><span class="p">,</span> <span class="n">update</span><span class="o">=</span><span class="n">update</span><span class="p">,</span> <span class="n">seed</span><span class="o">=</span><span class="mi">42</span><span class="p">)</span>
-        <span class="c1"># Capture raw time series from step 0</span>
-        <span class="n">mags</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">sim</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="n">n_steps</span><span class="o">=</span><span class="n">N_STEPS</span><span class="p">)</span>
-        <span class="n">results</span><span class="p">[</span><span class="n">T</span><span class="p">][</span><span class="n">update</span><span class="p">]</span> <span class="o">=</span> <span class="n">mags</span>
-
-<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Simulations complete.&quot;</span><span class="p">)</span>
-</pre></div>
-</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+Loaded cached trajectories from ../results/ising/ising_autocorrelation_multiseed_analysis.npz: shape=(3, 3, 10, 2, 4000).
+</pre></div></div>
 </div>
 </section>
-<section id="Visualization-of-Equilibration">
-<h2>Visualization of Equilibration<a class="headerlink" href="#Visualization-of-Equilibration" title="Link to this heading"></a></h2>
-<p>The following plots show the evolution of the absolute magnetization <span class="math notranslate nohighlight">\(|M|\)</span> over 000$ steps. Note the differences in relaxation speed and fluctuation scales between the algorithms and temperature regimes.</p>
-<div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+<section id="Magnetization-traces">
+<h2>Magnetization traces<a class="headerlink" href="#Magnetization-traces" title="Link to this heading"></a></h2>
+<p>Each panel shows the absolute magnetization <span class="math notranslate nohighlight">\(|M|\)</span> over the first 1,000 updates after a random start. The comparison is deliberately qualitative: below <span class="math notranslate nohighlight">\(T_c\)</span> the system should lock into an ordered state, near <span class="math notranslate nohighlight">\(T_c\)</span> the trajectories should remain noisy for much longer, and above <span class="math notranslate nohighlight">\(T_c\)</span> they should fluctuate around a small mean.</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[24]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">fig</span><span class="p">,</span> <span class="n">axes</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">15</span><span class="p">,</span> <span class="mi">10</span><span class="p">),</span> <span class="n">sharex</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">sharey</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">fig</span><span class="p">,</span> <span class="n">axes</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">13</span><span class="p">,</span> <span class="mi">9</span><span class="p">),</span> <span class="n">sharex</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">sharey</span><span class="o">=</span><span class="s1">&#39;row&#39;</span><span class="p">)</span>
+<span class="n">fig</span><span class="o">.</span><span class="n">suptitle</span><span class="p">(</span>
+    <span class="sa">f</span><span class="s1">&#39;Absolute magnetization from random starts over </span><span class="si">{</span><span class="n">N_STEPS</span><span class="si">:</span><span class="s1">,</span><span class="si">}</span><span class="s1"> steps (L = </span><span class="si">{</span><span class="n">L</span><span class="si">}</span><span class="s1">)&#39;</span><span class="p">,</span>
+    <span class="n">fontsize</span><span class="o">=</span><span class="mi">14</span><span class="p">,</span>
+    <span class="n">y</span><span class="o">=</span><span class="mf">1.02</span><span class="p">,</span>
+ <span class="p">)</span>
 
-<span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">T</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">TEMPS</span><span class="p">):</span>
+<span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">temp_label</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">TEMP_LABELS</span><span class="p">):</span>
     <span class="k">for</span> <span class="n">j</span><span class="p">,</span> <span class="n">update</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">UPDATES</span><span class="p">):</span>
         <span class="n">ax</span> <span class="o">=</span> <span class="n">axes</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="n">j</span><span class="p">]</span>
-        <span class="n">mags</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">results</span><span class="p">[</span><span class="n">T</span><span class="p">][</span><span class="n">update</span><span class="p">])</span>
-        <span class="n">ax</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">mags</span><span class="p">,</span> <span class="n">lw</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+        <span class="n">ax</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span>
+            <span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">magnetization_traces</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="n">j</span><span class="p">]),</span>
+            <span class="n">lw</span><span class="o">=</span><span class="mf">1.0</span><span class="p">,</span>
+            <span class="n">color</span><span class="o">=</span><span class="n">PALETTE</span><span class="p">[</span><span class="n">update</span><span class="p">],</span>
+        <span class="p">)</span>
         <span class="k">if</span> <span class="n">i</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
-            <span class="n">ax</span><span class="o">.</span><span class="n">set_title</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Update: </span><span class="si">{</span><span class="n">update</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="n">ax</span><span class="o">.</span><span class="n">set_title</span><span class="p">(</span><span class="n">UPDATE_LABELS</span><span class="p">[</span><span class="n">update</span><span class="p">],</span> <span class="n">fontsize</span><span class="o">=</span><span class="mi">11</span><span class="p">)</span>
         <span class="k">if</span> <span class="n">j</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
-            <span class="n">ax</span><span class="o">.</span><span class="n">set_ylabel</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">TEMP_LABELS</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="si">}</span><span class="s2"> |M|&quot;</span><span class="p">)</span>
-        <span class="k">if</span> <span class="n">i</span> <span class="o">==</span> <span class="mi">2</span><span class="p">:</span>
-            <span class="n">ax</span><span class="o">.</span><span class="n">set_xlabel</span><span class="p">(</span><span class="s2">&quot;Step&quot;</span><span class="p">)</span>
-        <span class="n">ax</span><span class="o">.</span><span class="n">grid</span><span class="p">(</span><span class="n">alpha</span><span class="o">=</span><span class="mf">0.3</span><span class="p">)</span>
+            <span class="n">ax</span><span class="o">.</span><span class="n">set_ylabel</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">temp_label</span><span class="si">}</span><span class="se">\n</span><span class="s1">$|M|$&#39;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">i</span> <span class="o">==</span> <span class="nb">len</span><span class="p">(</span><span class="n">TEMPS</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="n">ax</span><span class="o">.</span><span class="n">set_xlabel</span><span class="p">(</span><span class="s1">&#39;Monte Carlo step&#39;</span><span class="p">)</span>
+        <span class="n">ax</span><span class="o">.</span><span class="n">grid</span><span class="p">(</span><span class="n">alpha</span><span class="o">=</span><span class="mf">0.25</span><span class="p">)</span>
 
-<span class="n">plt</span><span class="o">.</span><span class="n">tight_layout</span><span class="p">()</span>
+<span class="n">fig</span><span class="o">.</span><span class="n">tight_layout</span><span class="p">()</span>
 <span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
 </pre></div>
 </div>
 </div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="_images/ising_autocorrelation_analysis_5_0.png" src="_images/ising_autocorrelation_analysis_5_0.png" />
+</div>
+</div>
+</section>
+<section id="Quantitative-relaxation-time-analysis-(multi-seed,-two-start)">
+<h2>Quantitative relaxation-time analysis (multi-seed, two-start)<a class="headerlink" href="#Quantitative-relaxation-time-analysis-(multi-seed,-two-start)" title="Link to this heading"></a></h2>
+<p>Near <span class="math notranslate nohighlight">\(T_c\)</span>, one-trajectory criteria are noisy and can misclassify equilibration. We therefore estimate relaxation with a <strong>two-start convergence test</strong> for every seed:</p>
+<ol class="arabic simple">
+<li><p>Run the same (temperature, update, seed) from two initial states: a random state and a fully ordered state.</p></li>
+<li><p>Smooth both <span class="math notranslate nohighlight">\(|M|\)</span> traces with a short moving average.</p></li>
+<li><p>Estimate an equilibrium scale from the second half of both traces combined.</p></li>
+<li><p>Define <span class="math notranslate nohighlight">\(\hat{\tau}_\text{relax}\)</span> as the first time where both smoothed traces are simultaneously inside the same equilibrium band and remain so for a sustained dwell window.</p></li>
+</ol>
+<p>This measures when the dynamics has effectively forgotten the initial condition, which is the operational definition we want for thermalization.</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[30]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">TOLERANCE_K</span> <span class="o">=</span> <span class="mf">1.0</span>
+<span class="n">SMOOTH_WINDOW</span> <span class="o">=</span> <span class="mi">30</span>
+<span class="n">DWELL_WINDOW</span> <span class="o">=</span> <span class="mi">30</span>
+<span class="n">MIN_FRACTION_INSIDE</span> <span class="o">=</span> <span class="mf">0.85</span>
+
+<span class="n">tau_samples</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">empty</span><span class="p">((</span><span class="nb">len</span><span class="p">(</span><span class="n">TEMPS</span><span class="p">),</span> <span class="nb">len</span><span class="p">(</span><span class="n">UPDATES</span><span class="p">),</span> <span class="nb">len</span><span class="p">(</span><span class="n">SEEDS</span><span class="p">)),</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">float</span><span class="p">)</span>
+
+<span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">TEMPS</span><span class="p">)):</span>
+    <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">UPDATES</span><span class="p">)):</span>
+        <span class="k">for</span> <span class="n">s_idx</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">SEEDS</span><span class="p">)):</span>
+            <span class="n">trace_r</span> <span class="o">=</span> <span class="n">magnetization_traces_full</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="n">j</span><span class="p">,</span> <span class="n">s_idx</span><span class="p">,</span> <span class="mi">0</span><span class="p">]</span>
+            <span class="n">trace_o</span> <span class="o">=</span> <span class="n">magnetization_traces_full</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="n">j</span><span class="p">,</span> <span class="n">s_idx</span><span class="p">,</span> <span class="mi">1</span><span class="p">]</span>
+            <span class="n">tau_samples</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="n">j</span><span class="p">,</span> <span class="n">s_idx</span><span class="p">]</span> <span class="o">=</span> <span class="n">estimate_relaxation_time_two_start</span><span class="p">(</span>
+                <span class="n">trace_r</span><span class="p">,</span>
+                <span class="n">trace_o</span><span class="p">,</span>
+                <span class="n">k</span><span class="o">=</span><span class="n">TOLERANCE_K</span><span class="p">,</span>
+                <span class="n">smooth_window</span><span class="o">=</span><span class="n">SMOOTH_WINDOW</span><span class="p">,</span>
+                <span class="n">dwell_window</span><span class="o">=</span><span class="n">DWELL_WINDOW</span><span class="p">,</span>
+                <span class="n">min_fraction_inside</span><span class="o">=</span><span class="n">MIN_FRACTION_INSIDE</span><span class="p">,</span>
+            <span class="p">)</span>
+
+<span class="c1"># Robust central tendency and uncertainty across seeds</span>
+<span class="n">median_tau</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">median</span><span class="p">(</span><span class="n">tau_samples</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
+<span class="n">p16_tau</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">percentile</span><span class="p">(</span><span class="n">tau_samples</span><span class="p">,</span> <span class="mi">16</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
+<span class="n">p84_tau</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">percentile</span><span class="p">(</span><span class="n">tau_samples</span><span class="p">,</span> <span class="mi">84</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
+
+<span class="c1"># --- Table printout ---</span>
+<span class="n">col_w</span> <span class="o">=</span> <span class="mi">34</span>
+<span class="n">header</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="s1">&#39;Temperature&#39;</span><span class="si">:</span><span class="s2">&lt;18</span><span class="si">}</span><span class="s2">&quot;</span> <span class="o">+</span> <span class="s2">&quot;&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">UPDATE_LABELS</span><span class="p">[</span><span class="n">u</span><span class="p">]</span><span class="si">:</span><span class="s2">&gt;</span><span class="si">{</span><span class="n">col_w</span><span class="si">}}</span><span class="s2">&quot;</span> <span class="k">for</span> <span class="n">u</span> <span class="ow">in</span> <span class="n">UPDATES</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">header</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="s1">&#39;-&#39;</span> <span class="o">*</span> <span class="nb">len</span><span class="p">(</span><span class="n">header</span><span class="p">))</span>
+<span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">label</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">TEMP_LABELS</span><span class="p">):</span>
+    <span class="n">entries</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">UPDATES</span><span class="p">)):</span>
+        <span class="n">med</span> <span class="o">=</span> <span class="n">median_tau</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="n">j</span><span class="p">]</span>
+        <span class="n">lo</span> <span class="o">=</span> <span class="n">p16_tau</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="n">j</span><span class="p">]</span>
+        <span class="n">hi</span> <span class="o">=</span> <span class="n">p84_tau</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="n">j</span><span class="p">]</span>
+        <span class="n">entries</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">med</span><span class="si">:</span><span class="s2">5.0f</span><span class="si">}</span><span class="s2"> [</span><span class="si">{</span><span class="n">lo</span><span class="si">:</span><span class="s2">4.0f</span><span class="si">}</span><span class="s2">, </span><span class="si">{</span><span class="n">hi</span><span class="si">:</span><span class="s2">4.0f</span><span class="si">}</span><span class="s2">]&quot;</span><span class="p">)</span>
+    <span class="n">row</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">label</span><span class="si">:</span><span class="s2">&lt;18</span><span class="si">}</span><span class="s2">&quot;</span> <span class="o">+</span> <span class="s1">&#39;&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">e</span><span class="si">:</span><span class="s2">&gt;</span><span class="si">{</span><span class="n">col_w</span><span class="si">}}</span><span class="s2">&quot;</span> <span class="k">for</span> <span class="n">e</span> <span class="ow">in</span> <span class="n">entries</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="n">row</span><span class="p">)</span>
+
+<span class="nb">print</span><span class="p">(</span>
+    <span class="sa">f</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">(seeds = </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">SEEDS</span><span class="p">)</span><span class="si">}</span><span class="s2">, k = </span><span class="si">{</span><span class="n">TOLERANCE_K</span><span class="si">}</span><span class="s2">, smooth = </span><span class="si">{</span><span class="n">SMOOTH_WINDOW</span><span class="si">}</span><span class="s2">, &quot;</span>
+    <span class="sa">f</span><span class="s2">&quot;dwell = </span><span class="si">{</span><span class="n">DWELL_WINDOW</span><span class="si">}</span><span class="s2">, min_fraction_inside = </span><span class="si">{</span><span class="n">MIN_FRACTION_INSIDE</span><span class="si">:</span><span class="s2">.2f</span><span class="si">}</span><span class="s2">, L = </span><span class="si">{</span><span class="n">L</span><span class="si">}</span><span class="s2">)&quot;</span>
+<span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Each entry is median [16th, 84th percentile] over seeds.&#39;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span>
+    <span class="sa">f</span><span class="s2">&quot;Note: at T_c, local updates run for </span><span class="si">{</span><span class="n">max_steps</span><span class="si">}</span><span class="s2"> steps &quot;</span>
+    <span class="sa">f</span><span class="s2">&quot;(N_STEPS </span><span class="se">\u00d7</span><span class="s2"> MAX_STEPS_FACTOR = </span><span class="si">{</span><span class="n">N_STEPS</span><span class="si">}</span><span class="s2"> </span><span class="se">\u00d7</span><span class="s2"> </span><span class="si">{</span><span class="n">MAX_STEPS_FACTOR</span><span class="si">}</span><span class="s2">); &quot;</span>
+    <span class="s2">&quot;Wolff and off-critical runs use N_STEPS.&quot;</span>
+<span class="p">)</span>
+
+<span class="c1"># --- Bar chart with error bars ---</span>
+<span class="n">x</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">TEMPS</span><span class="p">))</span>
+<span class="n">width</span> <span class="o">=</span> <span class="mf">0.25</span>
+<span class="n">fig</span><span class="p">,</span> <span class="n">ax</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">10</span><span class="p">,</span> <span class="mi">5</span><span class="p">))</span>
+
+<span class="k">for</span> <span class="n">j</span><span class="p">,</span> <span class="n">update</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">UPDATES</span><span class="p">):</span>
+    <span class="n">y</span> <span class="o">=</span> <span class="n">median_tau</span><span class="p">[:,</span> <span class="n">j</span><span class="p">]</span>
+    <span class="n">yerr</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">vstack</span><span class="p">([</span><span class="n">y</span> <span class="o">-</span> <span class="n">p16_tau</span><span class="p">[:,</span> <span class="n">j</span><span class="p">],</span> <span class="n">p84_tau</span><span class="p">[:,</span> <span class="n">j</span><span class="p">]</span> <span class="o">-</span> <span class="n">y</span><span class="p">])</span>
+    <span class="n">bars</span> <span class="o">=</span> <span class="n">ax</span><span class="o">.</span><span class="n">bar</span><span class="p">(</span>
+        <span class="n">x</span> <span class="o">+</span> <span class="p">(</span><span class="n">j</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span> <span class="o">*</span> <span class="n">width</span><span class="p">,</span>
+        <span class="n">y</span><span class="p">,</span>
+        <span class="n">width</span><span class="o">=</span><span class="n">width</span><span class="p">,</span>
+        <span class="n">yerr</span><span class="o">=</span><span class="n">yerr</span><span class="p">,</span>
+        <span class="n">capsize</span><span class="o">=</span><span class="mi">4</span><span class="p">,</span>
+        <span class="n">label</span><span class="o">=</span><span class="n">UPDATE_LABELS</span><span class="p">[</span><span class="n">update</span><span class="p">],</span>
+        <span class="n">color</span><span class="o">=</span><span class="n">PALETTE</span><span class="p">[</span><span class="n">update</span><span class="p">],</span>
+        <span class="n">alpha</span><span class="o">=</span><span class="mf">0.85</span><span class="p">,</span>
+    <span class="p">)</span>
+    <span class="n">ax</span><span class="o">.</span><span class="n">bar_label</span><span class="p">(</span><span class="n">bars</span><span class="p">,</span> <span class="n">fmt</span><span class="o">=</span><span class="s1">&#39;</span><span class="si">%.0f</span><span class="s1">&#39;</span><span class="p">,</span> <span class="n">fontsize</span><span class="o">=</span><span class="mi">8</span><span class="p">,</span> <span class="n">padding</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
+
+<span class="n">ax</span><span class="o">.</span><span class="n">set_xticks</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+<span class="n">ax</span><span class="o">.</span><span class="n">set_xticklabels</span><span class="p">(</span><span class="n">TEMP_LABELS</span><span class="p">,</span> <span class="n">fontsize</span><span class="o">=</span><span class="mi">11</span><span class="p">)</span>
+<span class="n">ax</span><span class="o">.</span><span class="n">set_ylabel</span><span class="p">(</span><span class="sa">r</span><span class="s1">&#39;$\hat{\tau}_\mathrm</span><span class="si">{relax}</span><span class="s1">$ (MC steps)&#39;</span><span class="p">,</span> <span class="n">fontsize</span><span class="o">=</span><span class="mi">11</span><span class="p">)</span>
+<span class="n">ax</span><span class="o">.</span><span class="n">set_title</span><span class="p">(</span><span class="s1">&#39;Relaxation time from two-start convergence (median with 16-84% bands)&#39;</span><span class="p">,</span> <span class="n">fontsize</span><span class="o">=</span><span class="mi">12</span><span class="p">)</span>
+<span class="n">ax</span><span class="o">.</span><span class="n">legend</span><span class="p">(</span><span class="n">fontsize</span><span class="o">=</span><span class="mi">10</span><span class="p">)</span>
+<span class="n">ax</span><span class="o">.</span><span class="n">grid</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="s1">&#39;y&#39;</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.3</span><span class="p">)</span>
+<span class="n">fig</span><span class="o">.</span><span class="n">tight_layout</span><span class="p">()</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+<br/></pre></div>
+</div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+Temperature                   Random-site Metropolis           Checkerboard Metropolis                     Wolff cluster
+------------------------------------------------------------------------------------------------------------------------
+Below $T_c$                         596 [ 510, 1000]                  344 [ 147,  593]                  150 [ 111,  503]
+At $T_c$                            568 [ 450, 1341]                  341 [  91,  675]                  504 [ 375,  742]
+Above $T_c$                         152 [  75,  257]                  211 [  76,  504]                  163 [ 106,  513]
+
+(seeds = 10, k = 1.0, smooth = 30, dwell = 30, min_fraction_inside = 0.85, L = 64)
+Each entry is median [16th, 84th percentile] over seeds.
+Note: at T_c, local updates run for 4000 steps (N_STEPS × MAX_STEPS_FACTOR = 1000 × 4); Wolff and off-critical runs use N_STEPS.
+</pre></div></div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="_images/ising_autocorrelation_analysis_7_1.png" src="_images/ising_autocorrelation_analysis_7_1.png" />
+</div>
+</div>
+</section>
+<section id="Work-normalised-relaxation-time">
+<h2>Work-normalised relaxation time<a class="headerlink" href="#Work-normalised-relaxation-time" title="Link to this heading"></a></h2>
+<p>The raw step counts above are not directly comparable because <strong>one Monte Carlo step means very different things</strong> for each algorithm:</p>
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>Algorithm</p></th>
+<th class="head"><p>Work per step</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>Local Metropolis (random or checkerboard)</p></td>
+<td><p><span class="math notranslate nohighlight">\(L^2\)</span> single-spin flip <em>attempts</em></p></td>
+</tr>
+<tr class="row-odd"><td><p>Wolff cluster</p></td>
+<td><p>1 cluster flip of <span class="math notranslate nohighlight">\(\langle C \rangle\)</span> spins — acceptance rate 100%</p></td>
+</tr>
+</tbody>
+</table>
+<p>A common convention is to express time in units of “one <span class="math notranslate nohighlight">\(L^2\)</span> flip-attempt sweep”. Under this convention:</p>
+<div class="math notranslate nohighlight">
+\[\hat{\tau}^\text{norm}_\text{local} = \hat{\tau}_\text{steps} \qquad \hat{\tau}^\text{norm}_\text{Wolff} = \hat{\tau}_\text{steps} \times \frac{\langle C \rangle}{L^2}\]</div>
+<p><span class="math notranslate nohighlight">\(\langle C \rangle\)</span> is now taken directly from the <strong>per-step cluster sizes</strong> recorded by <code class="docutils literal notranslate"><span class="pre">run_with_cluster_sizes()</span></code> and stored in the cache — no proxy estimator needed, so the below-<span class="math notranslate nohighlight">\(T_c\)</span> values are reliable for the first time.</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[31]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># --------------------------------------------------------------------</span>
+<span class="c1"># 1. Compute exact mean Wolff cluster size &lt;C&gt; per temperature.</span>
+<span class="c1"># wolff_cluster_sizes shape: (n_temp, n_seed, n_init, max_steps)</span>
+<span class="c1"># We use only the equilibrated second half of the random-start trajectories.</span>
+<span class="c1"># --------------------------------------------------------------------</span>
+<span class="n">mean_C</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">empty</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">TEMPS</span><span class="p">))</span>
+
+<span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">TEMPS</span><span class="p">)):</span>
+    <span class="n">all_sizes</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">s_idx</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n_seed</span><span class="p">):</span>
+        <span class="n">n_valid</span> <span class="o">=</span> <span class="n">steps_used</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="n">wolff_idx</span><span class="p">,</span> <span class="n">s_idx</span><span class="p">,</span> <span class="mi">0</span><span class="p">]</span>   <span class="c1"># random-start run length</span>
+        <span class="n">csizes</span> <span class="o">=</span> <span class="n">wolff_cluster_sizes</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="n">s_idx</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="p">:</span><span class="n">n_valid</span><span class="p">]</span>
+        <span class="n">half</span> <span class="o">=</span> <span class="n">n_valid</span> <span class="o">//</span> <span class="mi">2</span>
+        <span class="n">all_sizes</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">csizes</span><span class="p">[</span><span class="n">half</span><span class="p">:])</span>                 <span class="c1"># equilibrated half only</span>
+    <span class="n">mean_C</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">concatenate</span><span class="p">(</span><span class="n">all_sizes</span><span class="p">)</span><span class="o">.</span><span class="n">mean</span><span class="p">()</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Exact mean Wolff cluster size &lt;C&gt; per temperature (from recorded step data):&#39;</span><span class="p">)</span>
+<span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="p">(</span><span class="n">label</span><span class="p">,</span> <span class="n">c</span><span class="p">)</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="nb">zip</span><span class="p">(</span><span class="n">TEMP_LABELS</span><span class="p">,</span> <span class="n">mean_C</span><span class="p">)):</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;  </span><span class="si">{</span><span class="n">label</span><span class="si">}</span><span class="s1">: &lt;C&gt; = </span><span class="si">{</span><span class="n">c</span><span class="si">:</span><span class="s1">.1f</span><span class="si">}</span><span class="s1"> spins  (&lt;C&gt;/L² = </span><span class="si">{</span><span class="n">c</span><span class="w"> </span><span class="o">/</span><span class="w"> </span><span class="n">L</span><span class="o">**</span><span class="mi">2</span><span class="si">:</span><span class="s1">.4f</span><span class="si">}</span><span class="s1">)&#39;</span><span class="p">)</span>
+
+<span class="c1"># --------------------------------------------------------------------</span>
+<span class="c1"># 2. Work-normalisation factor per (temperature, update).</span>
+<span class="c1"># Local: 1 step = L² flip-attempts → factor = 1.</span>
+<span class="c1"># Wolff: 1 step = &lt;C&gt; flips        → factor = &lt;C&gt; / L².</span>
+<span class="c1"># --------------------------------------------------------------------</span>
+<span class="n">L2</span> <span class="o">=</span> <span class="n">L</span> <span class="o">*</span> <span class="n">L</span>
+<span class="n">work_factor</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">((</span><span class="nb">len</span><span class="p">(</span><span class="n">TEMPS</span><span class="p">),</span> <span class="nb">len</span><span class="p">(</span><span class="n">UPDATES</span><span class="p">)))</span>
+<span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">TEMPS</span><span class="p">)):</span>
+    <span class="n">work_factor</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="n">wolff_idx</span><span class="p">]</span> <span class="o">=</span> <span class="n">mean_C</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">/</span> <span class="n">L2</span>
+
+<span class="c1"># --------------------------------------------------------------------</span>
+<span class="c1"># 3. Apply normalisation to per-seed tau samples.</span>
+<span class="c1"># --------------------------------------------------------------------</span>
+<span class="n">tau_norm_samples</span> <span class="o">=</span> <span class="n">tau_samples</span> <span class="o">*</span> <span class="n">work_factor</span><span class="p">[:,</span> <span class="p">:,</span> <span class="n">np</span><span class="o">.</span><span class="n">newaxis</span><span class="p">]</span>
+
+<span class="n">median_tau_norm</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">median</span><span class="p">(</span><span class="n">tau_norm_samples</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
+<span class="n">p16_tau_norm</span>    <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">percentile</span><span class="p">(</span><span class="n">tau_norm_samples</span><span class="p">,</span> <span class="mi">16</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
+<span class="n">p84_tau_norm</span>    <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">percentile</span><span class="p">(</span><span class="n">tau_norm_samples</span><span class="p">,</span> <span class="mi">84</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
+
+<span class="c1"># --- Table ---</span>
+<span class="n">col_w</span> <span class="o">=</span> <span class="mi">34</span>
+<span class="n">header</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="s1">&#39;Temperature&#39;</span><span class="si">:</span><span class="s2">&lt;18</span><span class="si">}</span><span class="s2">&quot;</span> <span class="o">+</span> <span class="s1">&#39;&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">UPDATE_LABELS</span><span class="p">[</span><span class="n">u</span><span class="p">]</span><span class="si">:</span><span class="s1">&gt;</span><span class="si">{</span><span class="n">col_w</span><span class="si">}}</span><span class="s1">&#39;</span> <span class="k">for</span> <span class="n">u</span> <span class="ow">in</span> <span class="n">UPDATES</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="s1">&#39;</span><span class="se">\n</span><span class="s1">Work-normalised relaxation time (in L² sweep equivalents):&#39;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">header</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="s1">&#39;-&#39;</span> <span class="o">*</span> <span class="nb">len</span><span class="p">(</span><span class="n">header</span><span class="p">))</span>
+<span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">label</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">TEMP_LABELS</span><span class="p">):</span>
+    <span class="n">entries</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">UPDATES</span><span class="p">)):</span>
+        <span class="n">med</span> <span class="o">=</span> <span class="n">median_tau_norm</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="n">j</span><span class="p">]</span>
+        <span class="n">lo</span>  <span class="o">=</span> <span class="n">p16_tau_norm</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="n">j</span><span class="p">]</span>
+        <span class="n">hi</span>  <span class="o">=</span> <span class="n">p84_tau_norm</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="n">j</span><span class="p">]</span>
+        <span class="n">entries</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">med</span><span class="si">:</span><span class="s1">5.0f</span><span class="si">}</span><span class="s1"> [</span><span class="si">{</span><span class="n">lo</span><span class="si">:</span><span class="s1">4.0f</span><span class="si">}</span><span class="s1">, </span><span class="si">{</span><span class="n">hi</span><span class="si">:</span><span class="s1">4.0f</span><span class="si">}</span><span class="s1">]&#39;</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">label</span><span class="si">:</span><span class="s1">&lt;18</span><span class="si">}</span><span class="s1">&#39;</span> <span class="o">+</span> <span class="s1">&#39;&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">e</span><span class="si">:</span><span class="s1">&gt;</span><span class="si">{</span><span class="n">col_w</span><span class="si">}}</span><span class="s1">&#39;</span> <span class="k">for</span> <span class="n">e</span> <span class="ow">in</span> <span class="n">entries</span><span class="p">))</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;</span><span class="se">\n</span><span class="s1">(units: equivalent L²=</span><span class="si">{</span><span class="n">L2</span><span class="si">}</span><span class="s1"> flip-attempt sweeps  |  L = </span><span class="si">{</span><span class="n">L</span><span class="si">}</span><span class="s1">  |  seeds = </span><span class="si">{</span><span class="n">n_seed</span><span class="si">}</span><span class="s1">)&#39;</span><span class="p">)</span>
+
+<span class="c1"># --- Side-by-side bar charts ---</span>
+<span class="n">x</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">TEMPS</span><span class="p">))</span>
+<span class="n">width</span> <span class="o">=</span> <span class="mf">0.25</span>
+<span class="n">fig</span><span class="p">,</span> <span class="n">axes</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">14</span><span class="p">,</span> <span class="mi">5</span><span class="p">))</span>
+
+<span class="k">for</span> <span class="n">ax_idx</span><span class="p">,</span> <span class="p">(</span><span class="n">ax</span><span class="p">,</span> <span class="n">ydata</span><span class="p">,</span> <span class="n">yp16</span><span class="p">,</span> <span class="n">yp84</span><span class="p">,</span> <span class="n">title</span><span class="p">)</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="nb">zip</span><span class="p">(</span>
+    <span class="n">axes</span><span class="p">,</span>
+    <span class="p">[</span><span class="n">median_tau</span><span class="p">,</span> <span class="n">median_tau_norm</span><span class="p">],</span>
+    <span class="p">[</span><span class="n">p16_tau</span><span class="p">,</span>    <span class="n">p16_tau_norm</span><span class="p">],</span>
+    <span class="p">[</span><span class="n">p84_tau</span><span class="p">,</span>    <span class="n">p84_tau_norm</span><span class="p">],</span>
+    <span class="p">[</span><span class="s1">&#39;Raw MC steps&#39;</span><span class="p">,</span> <span class="sa">r</span><span class="s1">&#39;Work-normalised ($L^2$ sweep equivalents)&#39;</span><span class="p">],</span>
+<span class="p">)):</span>
+    <span class="n">bar_containers</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">j</span><span class="p">,</span> <span class="n">update</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">UPDATES</span><span class="p">):</span>
+        <span class="n">y</span> <span class="o">=</span> <span class="n">ydata</span><span class="p">[:,</span> <span class="n">j</span><span class="p">]</span>
+        <span class="n">yerr</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">vstack</span><span class="p">([</span><span class="n">y</span> <span class="o">-</span> <span class="n">yp16</span><span class="p">[:,</span> <span class="n">j</span><span class="p">],</span> <span class="n">yp84</span><span class="p">[:,</span> <span class="n">j</span><span class="p">]</span> <span class="o">-</span> <span class="n">y</span><span class="p">])</span>
+        <span class="n">bars</span> <span class="o">=</span> <span class="n">ax</span><span class="o">.</span><span class="n">bar</span><span class="p">(</span>
+            <span class="n">x</span> <span class="o">+</span> <span class="p">(</span><span class="n">j</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span> <span class="o">*</span> <span class="n">width</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">width</span><span class="o">=</span><span class="n">width</span><span class="p">,</span> <span class="n">yerr</span><span class="o">=</span><span class="n">yerr</span><span class="p">,</span> <span class="n">capsize</span><span class="o">=</span><span class="mi">4</span><span class="p">,</span>
+            <span class="n">label</span><span class="o">=</span><span class="n">UPDATE_LABELS</span><span class="p">[</span><span class="n">update</span><span class="p">],</span> <span class="n">color</span><span class="o">=</span><span class="n">PALETTE</span><span class="p">[</span><span class="n">update</span><span class="p">],</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.85</span><span class="p">,</span>
+        <span class="p">)</span>
+        <span class="n">ax</span><span class="o">.</span><span class="n">bar_label</span><span class="p">(</span><span class="n">bars</span><span class="p">,</span> <span class="n">fmt</span><span class="o">=</span><span class="s1">&#39;</span><span class="si">%.0f</span><span class="s1">&#39;</span><span class="p">,</span> <span class="n">fontsize</span><span class="o">=</span><span class="mi">7</span><span class="p">,</span> <span class="n">padding</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
+        <span class="n">bar_containers</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">bars</span><span class="p">)</span>
+
+    <span class="n">ax</span><span class="o">.</span><span class="n">set_xticks</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+    <span class="n">ax</span><span class="o">.</span><span class="n">set_xticklabels</span><span class="p">(</span><span class="n">TEMP_LABELS</span><span class="p">,</span> <span class="n">fontsize</span><span class="o">=</span><span class="mi">10</span><span class="p">)</span>
+    <span class="n">ax</span><span class="o">.</span><span class="n">set_title</span><span class="p">(</span><span class="n">title</span><span class="p">,</span> <span class="n">fontsize</span><span class="o">=</span><span class="mi">11</span><span class="p">)</span>
+    <span class="n">ax</span><span class="o">.</span><span class="n">legend</span><span class="p">(</span><span class="n">fontsize</span><span class="o">=</span><span class="mi">9</span><span class="p">)</span>
+    <span class="n">ax</span><span class="o">.</span><span class="n">grid</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="s1">&#39;y&#39;</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.3</span><span class="p">)</span>
+
+<span class="n">axes</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">set_ylabel</span><span class="p">(</span><span class="sa">r</span><span class="s1">&#39;$\hat{\tau}_\mathrm</span><span class="si">{relax}</span><span class="s1">$ (steps)&#39;</span><span class="p">,</span> <span class="n">fontsize</span><span class="o">=</span><span class="mi">11</span><span class="p">)</span>
+<span class="n">axes</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">set_ylabel</span><span class="p">(</span><span class="sa">r</span><span class="s1">&#39;$\hat{\tau}_\mathrm</span><span class="si">{relax}</span><span class="s1">^\mathrm</span><span class="si">{norm}</span><span class="s1">$ (equivalents)&#39;</span><span class="p">,</span> <span class="n">fontsize</span><span class="o">=</span><span class="mi">11</span><span class="p">)</span>
+<span class="n">fig</span><span class="o">.</span><span class="n">suptitle</span><span class="p">(</span><span class="s1">&#39;Relaxation time (median + 16–84% bands, two-start criterion)&#39;</span><span class="p">,</span> <span class="n">fontsize</span><span class="o">=</span><span class="mi">12</span><span class="p">,</span> <span class="n">y</span><span class="o">=</span><span class="mf">1.02</span><span class="p">)</span>
+<span class="n">fig</span><span class="o">.</span><span class="n">tight_layout</span><span class="p">()</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+Exact mean Wolff cluster size &lt;C&gt; per temperature (from recorded step data):
+  Below $T_c$: &lt;C&gt; = 3713.7 spins  (&lt;C&gt;/L² = 0.9067)
+  At $T_c$: &lt;C&gt; = 1593.3 spins  (&lt;C&gt;/L² = 0.3890)
+  Above $T_c$: &lt;C&gt; = 20.3 spins  (&lt;C&gt;/L² = 0.0050)
+
+Work-normalised relaxation time (in L² sweep equivalents):
+Temperature                   Random-site Metropolis           Checkerboard Metropolis                     Wolff cluster
+------------------------------------------------------------------------------------------------------------------------
+Below $T_c$                         596 [ 510, 1000]                  344 [ 147,  593]                  136 [ 101,  456]
+At $T_c$                            568 [ 450, 1341]                  341 [  91,  675]                  196 [ 146,  289]
+Above $T_c$                         152 [  75,  257]                  211 [  76,  504]                    1 [   1,    3]
+
+(units: equivalent L²=4096 flip-attempt sweeps  |  L = 64  |  seeds = 10)
+</pre></div></div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="_images/ising_autocorrelation_analysis_9_1.png" src="_images/ising_autocorrelation_analysis_9_1.png" />
+</div>
+</div>
+</section>
+<section id="Integrated-autocorrelation-time">
+<h2>Integrated autocorrelation time<a class="headerlink" href="#Integrated-autocorrelation-time" title="Link to this heading"></a></h2>
+<p>The two-start convergence test is a <em>non-equilibrium</em> diagnostic: it asks when the chain has forgotten its starting configuration. Once in equilibrium, the complementary question is <em>“how statistically independent are consecutive samples?”</em> — answered by the <strong>integrated autocorrelation time</strong> <span class="math notranslate nohighlight">\(\tau_\text{int}\)</span>.</p>
+<p>Given post-burn-in samples of observable <span class="math notranslate nohighlight">\(A_t\)</span>, define the normalised autocorrelation function:</p>
+<div class="math notranslate nohighlight">
+\[\rho_A(\tau) = \frac{\langle \delta A_t\,\delta A_{t+\tau}\rangle}{\langle \delta A_t^2 \rangle}, \qquad \delta A_t = A_t - \langle A\rangle.\]</div>
+<p>The integrated autocorrelation time is then:</p>
+<div class="math notranslate nohighlight">
+\[\tau_\text{int} = \frac{1}{2} + \sum_{\tau=1}^{W} \rho_A(\tau).\]</div>
+<p>Its practical significance is direct: if you collect <span class="math notranslate nohighlight">\(N\)</span> post-burn-in steps and estimate the mean <span class="math notranslate nohighlight">\(\bar{A}\)</span>, the statistical error is</p>
+<div class="math notranslate nohighlight">
+\[\sigma_{\bar{A}}^2 \approx \frac{2\,\tau_\text{int}\,\text{Var}(A)}{N}.\]</div>
+<p>In other words, <span class="math notranslate nohighlight">\(N / (2\tau_\text{int})\)</span> is the <strong>effective number of independent samples</strong> — so <span class="math notranslate nohighlight">\(\tau_\text{int}\)</span> directly controls the cost of any equilibrium measurement.</p>
+<p>The upper limit <span class="math notranslate nohighlight">\(W\)</span> uses the <strong>Madras–Sokal automatic window</strong> <a class="reference internal" href="#Bibliography"><span class="std std-ref">[4]</span></a> <a class="reference internal" href="#Bibliography"><span class="std std-ref">[5]</span></a>: increase <span class="math notranslate nohighlight">\(W\)</span> one step at a time and stop as soon as <span class="math notranslate nohighlight">\(W \geq c\,\tau_\text{int}(W)\)</span>, with <span class="math notranslate nohighlight">\(c = 5\)</span>. This cuts off the noisy tail of <span class="math notranslate nohighlight">\(\rho\)</span> before it inflates the estimate.</p>
+<p>The burn-in discarded here equals <span class="math notranslate nohighlight">\(\hat{\tau}_\text{relax}\)</span> from the two-start analysis — each of the 10 seeds uses its own per-seed estimate. Note that the existing trajectories were designed for the thermalization study (1 000–4 000 steps); below <span class="math notranslate nohighlight">\(T_c\)</span> for local updates the post-burn-in window is short (~400 steps), so those <span class="math notranslate nohighlight">\(\tau_\text{int}\)</span> estimates carry larger uncertainty than the others.</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[32]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><br/><span></span><span class="c1"># =====================================================================</span>
+<span class="c1"># Integrated autocorrelation time  τ_int</span>
+<span class="c1"># Observable: |M|.  Burn-in per seed taken from per-seed τ_relax above.</span>
+<span class="c1"># =====================================================================</span>
+<span class="n">ACORR_C</span>       <span class="o">=</span> <span class="mi">5</span>    <span class="c1"># Madras–Sokal window constant</span>
+<span class="n">ACORR_MAX_LAG</span> <span class="o">=</span> <span class="mi">400</span>  <span class="c1"># hard cap on lag search</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_notebook_autocorr</span><span class="p">(</span>
+    <span class="n">trace</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
+    <span class="n">burn_in</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+    <span class="n">c</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="n">ACORR_C</span><span class="p">,</span>
+    <span class="n">max_lag</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="n">ACORR_MAX_LAG</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">float</span><span class="p">,</span> <span class="nb">int</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">]:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Thin wrapper around utils.physics_helpers.calculate_autocorr.</span>
+
+<span class="sd">    Applies burn-in, strips non-finite values, and returns NaN instead of</span>
+<span class="sd">    raising for degenerate traces.  Returns (tau_int, window_W, rho[0..W]).</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">x</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">trace</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">float</span><span class="p">))</span>
+    <span class="n">finite_idx</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">isfinite</span><span class="p">(</span><span class="n">x</span><span class="p">))[</span><span class="mi">0</span><span class="p">]</span>
+    <span class="k">if</span> <span class="n">finite_idx</span><span class="o">.</span><span class="n">size</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">nan</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mf">1.0</span><span class="p">])</span>
+    <span class="n">x</span> <span class="o">=</span> <span class="n">x</span><span class="p">[</span><span class="n">finite_idx</span><span class="p">[</span><span class="mi">0</span><span class="p">]:</span> <span class="n">finite_idx</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">+</span> <span class="mi">1</span><span class="p">]</span>
+    <span class="n">bi</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="nb">int</span><span class="p">(</span><span class="n">burn_in</span><span class="p">))</span>
+    <span class="k">if</span> <span class="n">bi</span> <span class="o">&gt;=</span> <span class="nb">len</span><span class="p">(</span><span class="n">x</span><span class="p">)</span> <span class="o">-</span> <span class="mi">4</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">nan</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mf">1.0</span><span class="p">])</span>
+    <span class="n">x</span> <span class="o">=</span> <span class="n">x</span><span class="p">[</span><span class="n">bi</span><span class="p">:]</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">C_t</span><span class="p">,</span> <span class="n">tau_int</span> <span class="o">=</span> <span class="n">calculate_autocorr</span><span class="p">(</span>
+            <span class="n">time_series</span><span class="o">=</span><span class="n">x</span><span class="p">,</span>
+            <span class="n">max_lag</span><span class="o">=</span><span class="nb">min</span><span class="p">(</span><span class="n">max_lag</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">x</span><span class="p">)</span> <span class="o">//</span> <span class="mi">4</span><span class="p">),</span>
+            <span class="n">window_constant</span><span class="o">=</span><span class="nb">float</span><span class="p">(</span><span class="n">c</span><span class="p">),</span>
+        <span class="p">)</span>
+    <span class="k">except</span> <span class="n">ZeroVarianceAutocorrelationError</span><span class="p">:</span>
+        <span class="k">return</span> <span class="mf">0.5</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mf">1.0</span><span class="p">])</span>
+    <span class="k">return</span> <span class="nb">float</span><span class="p">(</span><span class="n">tau_int</span><span class="p">),</span> <span class="nb">len</span><span class="p">(</span><span class="n">C_t</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span><span class="p">,</span> <span class="n">C_t</span>
+
+
+<span class="c1"># --- Compute τ_int per (temperature, update, seed) ---</span>
+<span class="n">tau_int_samples</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">full</span><span class="p">((</span><span class="n">n_temp</span><span class="p">,</span> <span class="n">n_upd</span><span class="p">,</span> <span class="n">n_seed</span><span class="p">),</span> <span class="n">np</span><span class="o">.</span><span class="n">nan</span><span class="p">)</span>
+<span class="n">acorr_rho_rep</span>   <span class="o">=</span> <span class="p">{}</span>   <span class="c1"># representative ρ curve per (i, j) for plotting (seed 0)</span>
+
+<span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n_temp</span><span class="p">):</span>
+    <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n_upd</span><span class="p">):</span>
+        <span class="k">for</span> <span class="n">s_idx</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n_seed</span><span class="p">):</span>
+            <span class="n">burn_in</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">tau_samples</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="n">j</span><span class="p">,</span> <span class="n">s_idx</span><span class="p">])</span>
+            <span class="n">trace</span>   <span class="o">=</span> <span class="n">magnetization_traces_full</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="n">j</span><span class="p">,</span> <span class="n">s_idx</span><span class="p">,</span> <span class="mi">0</span><span class="p">]</span>
+            <span class="n">ti</span><span class="p">,</span> <span class="n">_w</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">_notebook_autocorr</span><span class="p">(</span><span class="n">trace</span><span class="p">,</span> <span class="n">burn_in</span><span class="p">)</span>
+            <span class="n">tau_int_samples</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="n">j</span><span class="p">,</span> <span class="n">s_idx</span><span class="p">]</span> <span class="o">=</span> <span class="n">ti</span>
+        <span class="c1"># representative curve: seed 0</span>
+        <span class="n">burn0</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">tau_samples</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="n">j</span><span class="p">,</span> <span class="mi">0</span><span class="p">])</span>
+        <span class="n">_</span><span class="p">,</span> <span class="n">_</span><span class="p">,</span> <span class="n">rho0</span> <span class="o">=</span> <span class="n">_notebook_autocorr</span><span class="p">(</span><span class="n">magnetization_traces_full</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="n">j</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">],</span> <span class="n">burn0</span><span class="p">)</span>
+        <span class="n">acorr_rho_rep</span><span class="p">[(</span><span class="n">i</span><span class="p">,</span> <span class="n">j</span><span class="p">)]</span> <span class="o">=</span> <span class="n">rho0</span>
+
+<span class="c1"># --- Summary statistics ---</span>
+<span class="n">median_tau_int</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">nanmedian</span><span class="p">(</span><span class="n">tau_int_samples</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
+<span class="n">p16_tau_int</span>    <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">nanpercentile</span><span class="p">(</span><span class="n">tau_int_samples</span><span class="p">,</span> <span class="mi">16</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
+<span class="n">p84_tau_int</span>    <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">nanpercentile</span><span class="p">(</span><span class="n">tau_int_samples</span><span class="p">,</span> <span class="mi">84</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
+
+<span class="n">tau_int_norm_samples</span> <span class="o">=</span> <span class="n">tau_int_samples</span> <span class="o">*</span> <span class="n">work_factor</span><span class="p">[:,</span> <span class="p">:,</span> <span class="n">np</span><span class="o">.</span><span class="n">newaxis</span><span class="p">]</span>
+<span class="n">median_tau_int_norm</span>  <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">nanmedian</span><span class="p">(</span><span class="n">tau_int_norm_samples</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
+<span class="n">p16_tau_int_norm</span>     <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">nanpercentile</span><span class="p">(</span><span class="n">tau_int_norm_samples</span><span class="p">,</span> <span class="mi">16</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
+<span class="n">p84_tau_int_norm</span>     <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">nanpercentile</span><span class="p">(</span><span class="n">tau_int_norm_samples</span><span class="p">,</span> <span class="mi">84</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
+
+<span class="c1"># --- Table ---</span>
+<span class="n">col_w</span> <span class="o">=</span> <span class="mi">34</span>
+<span class="n">header</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="s1">&#39;Temperature&#39;</span><span class="si">:</span><span class="s2">&lt;18</span><span class="si">}</span><span class="s2">&quot;</span> <span class="o">+</span> <span class="s1">&#39;&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">UPDATE_LABELS</span><span class="p">[</span><span class="n">u</span><span class="p">]</span><span class="si">:</span><span class="s1">&gt;</span><span class="si">{</span><span class="n">col_w</span><span class="si">}}</span><span class="s1">&#39;</span> <span class="k">for</span> <span class="n">u</span> <span class="ow">in</span> <span class="n">UPDATES</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Integrated autocorrelation time τ_int  (raw steps, observable = |M|, c = </span><span class="si">{</span><span class="n">ACORR_C</span><span class="si">}</span><span class="s1">):&#39;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">header</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="s1">&#39;-&#39;</span> <span class="o">*</span> <span class="nb">len</span><span class="p">(</span><span class="n">header</span><span class="p">))</span>
+<span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">label</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">TEMP_LABELS</span><span class="p">):</span>
+    <span class="n">entries</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n_upd</span><span class="p">):</span>
+        <span class="n">med</span> <span class="o">=</span> <span class="n">median_tau_int</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="n">j</span><span class="p">]</span>
+        <span class="n">lo</span>  <span class="o">=</span> <span class="n">p16_tau_int</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="n">j</span><span class="p">]</span>
+        <span class="n">hi</span>  <span class="o">=</span> <span class="n">p84_tau_int</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="n">j</span><span class="p">]</span>
+        <span class="n">entries</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">med</span><span class="si">:</span><span class="s1">5.1f</span><span class="si">}</span><span class="s1"> [</span><span class="si">{</span><span class="n">lo</span><span class="si">:</span><span class="s1">4.1f</span><span class="si">}</span><span class="s1">, </span><span class="si">{</span><span class="n">hi</span><span class="si">:</span><span class="s1">4.1f</span><span class="si">}</span><span class="s1">]&#39;</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">label</span><span class="si">:</span><span class="s1">&lt;18</span><span class="si">}</span><span class="s1">&#39;</span> <span class="o">+</span> <span class="s1">&#39;&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">e</span><span class="si">:</span><span class="s1">&gt;</span><span class="si">{</span><span class="n">col_w</span><span class="si">}}</span><span class="s1">&#39;</span> <span class="k">for</span> <span class="n">e</span> <span class="ow">in</span> <span class="n">entries</span><span class="p">))</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;</span><span class="se">\n</span><span class="s1">(Madras–Sokal window c = </span><span class="si">{</span><span class="n">ACORR_C</span><span class="si">}</span><span class="s1">, max-lag cap = </span><span class="si">{</span><span class="n">ACORR_MAX_LAG</span><span class="si">}</span><span class="s1">, seeds = </span><span class="si">{</span><span class="n">n_seed</span><span class="si">}</span><span class="s1">)&#39;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Burn-in per seed = per-seed τ_relax from the two-start test.&#39;</span><span class="p">)</span>
+<span class="n">n_nan</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">isnan</span><span class="p">(</span><span class="n">tau_int_samples</span><span class="p">)</span><span class="o">.</span><span class="n">sum</span><span class="p">())</span>
+<span class="k">if</span> <span class="n">n_nan</span><span class="p">:</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Note: </span><span class="si">{</span><span class="n">n_nan</span><span class="si">}</span><span class="s1"> seed(s) returned NaN (post-burn-in trace too short); excluded from median.&#39;</span><span class="p">)</span>
+
+<span class="c1"># --- Plot 1: ρ(τ) for each temperature (one panel per T, all algorithms) ---</span>
+<span class="n">PLOT_LAGS</span> <span class="o">=</span> <span class="mi">100</span>
+<span class="n">fig</span><span class="p">,</span> <span class="n">axes</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">n_temp</span><span class="p">,</span> <span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">14</span><span class="p">,</span> <span class="mi">4</span><span class="p">),</span> <span class="n">sharey</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="p">(</span><span class="n">ax</span><span class="p">,</span> <span class="n">label</span><span class="p">)</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="nb">zip</span><span class="p">(</span><span class="n">axes</span><span class="p">,</span> <span class="n">TEMP_LABELS</span><span class="p">)):</span>
+    <span class="k">for</span> <span class="n">j</span><span class="p">,</span> <span class="n">update</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">UPDATES</span><span class="p">):</span>
+        <span class="n">rho</span>  <span class="o">=</span> <span class="n">acorr_rho_rep</span><span class="p">[(</span><span class="n">i</span><span class="p">,</span> <span class="n">j</span><span class="p">)]</span>
+        <span class="n">lags</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="nb">min</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">rho</span><span class="p">),</span> <span class="n">PLOT_LAGS</span><span class="p">))</span>
+        <span class="n">ax</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">lags</span><span class="p">,</span> <span class="n">rho</span><span class="p">[:</span><span class="n">PLOT_LAGS</span><span class="p">],</span> <span class="n">color</span><span class="o">=</span><span class="n">PALETTE</span><span class="p">[</span><span class="n">update</span><span class="p">],</span>
+                <span class="n">label</span><span class="o">=</span><span class="n">UPDATE_LABELS</span><span class="p">[</span><span class="n">update</span><span class="p">],</span> <span class="n">lw</span><span class="o">=</span><span class="mf">1.5</span><span class="p">)</span>
+    <span class="n">ax</span><span class="o">.</span><span class="n">axhline</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s1">&#39;k&#39;</span><span class="p">,</span> <span class="n">lw</span><span class="o">=</span><span class="mf">0.6</span><span class="p">,</span> <span class="n">ls</span><span class="o">=</span><span class="s1">&#39;--&#39;</span><span class="p">)</span>
+    <span class="n">ax</span><span class="o">.</span><span class="n">set_xlabel</span><span class="p">(</span><span class="s1">&#39;Lag τ (MC steps)&#39;</span><span class="p">,</span> <span class="n">fontsize</span><span class="o">=</span><span class="mi">10</span><span class="p">)</span>
+    <span class="n">ax</span><span class="o">.</span><span class="n">set_title</span><span class="p">(</span><span class="n">label</span><span class="p">,</span> <span class="n">fontsize</span><span class="o">=</span><span class="mi">11</span><span class="p">)</span>
+    <span class="n">ax</span><span class="o">.</span><span class="n">legend</span><span class="p">(</span><span class="n">fontsize</span><span class="o">=</span><span class="mi">8</span><span class="p">)</span>
+    <span class="n">ax</span><span class="o">.</span><span class="n">grid</span><span class="p">(</span><span class="n">alpha</span><span class="o">=</span><span class="mf">0.25</span><span class="p">)</span>
+<span class="n">axes</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">set_ylabel</span><span class="p">(</span><span class="sa">r</span><span class="s1">&#39;$\rho_{|M|}(\tau)$&#39;</span><span class="p">,</span> <span class="n">fontsize</span><span class="o">=</span><span class="mi">11</span><span class="p">)</span>
+<span class="n">fig</span><span class="o">.</span><span class="n">suptitle</span><span class="p">(</span>
+    <span class="sa">r</span><span class="s1">&#39;Equilibrium normalised autocorrelation $\rho_{|M|}(\tau)$  (seed 0, post burn-in)&#39;</span><span class="p">,</span>
+    <span class="n">fontsize</span><span class="o">=</span><span class="mi">12</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="n">fig</span><span class="o">.</span><span class="n">tight_layout</span><span class="p">()</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+
+<span class="c1"># --- Plot 2: τ_int bar charts (raw + work-normalised) ---</span>
+<span class="n">x_pos</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="n">n_temp</span><span class="p">)</span>
+<span class="n">width</span> <span class="o">=</span> <span class="mf">0.25</span>
+<span class="n">fig</span><span class="p">,</span> <span class="n">axes</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">14</span><span class="p">,</span> <span class="mi">5</span><span class="p">))</span>
+<span class="k">for</span> <span class="n">ax_idx</span><span class="p">,</span> <span class="p">(</span><span class="n">ax</span><span class="p">,</span> <span class="n">ydata</span><span class="p">,</span> <span class="n">yp16</span><span class="p">,</span> <span class="n">yp84</span><span class="p">,</span> <span class="n">title</span><span class="p">)</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="nb">zip</span><span class="p">(</span>
+    <span class="n">axes</span><span class="p">,</span>
+    <span class="p">[</span><span class="n">median_tau_int</span><span class="p">,</span>      <span class="n">median_tau_int_norm</span><span class="p">],</span>
+    <span class="p">[</span><span class="n">p16_tau_int</span><span class="p">,</span>         <span class="n">p16_tau_int_norm</span><span class="p">],</span>
+    <span class="p">[</span><span class="n">p84_tau_int</span><span class="p">,</span>         <span class="n">p84_tau_int_norm</span><span class="p">],</span>
+    <span class="p">[</span><span class="s1">&#39;Raw MC steps&#39;</span><span class="p">,</span>      <span class="sa">r</span><span class="s1">&#39;Work-normalised ($L^2$ sweep equivalents)&#39;</span><span class="p">],</span>
+<span class="p">)):</span>
+    <span class="k">for</span> <span class="n">j</span><span class="p">,</span> <span class="n">update</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">UPDATES</span><span class="p">):</span>
+        <span class="n">y</span>    <span class="o">=</span> <span class="n">ydata</span><span class="p">[:,</span> <span class="n">j</span><span class="p">]</span>
+        <span class="n">yerr</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">vstack</span><span class="p">([</span><span class="n">np</span><span class="o">.</span><span class="n">clip</span><span class="p">(</span><span class="n">y</span> <span class="o">-</span> <span class="n">yp16</span><span class="p">[:,</span> <span class="n">j</span><span class="p">],</span> <span class="mi">0</span><span class="p">,</span> <span class="kc">None</span><span class="p">),</span>
+                          <span class="n">np</span><span class="o">.</span><span class="n">clip</span><span class="p">(</span><span class="n">yp84</span><span class="p">[:,</span> <span class="n">j</span><span class="p">]</span> <span class="o">-</span> <span class="n">y</span><span class="p">,</span>  <span class="mi">0</span><span class="p">,</span> <span class="kc">None</span><span class="p">)])</span>
+        <span class="n">bars</span> <span class="o">=</span> <span class="n">ax</span><span class="o">.</span><span class="n">bar</span><span class="p">(</span>
+            <span class="n">x_pos</span> <span class="o">+</span> <span class="p">(</span><span class="n">j</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span> <span class="o">*</span> <span class="n">width</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">width</span><span class="o">=</span><span class="n">width</span><span class="p">,</span> <span class="n">yerr</span><span class="o">=</span><span class="n">yerr</span><span class="p">,</span> <span class="n">capsize</span><span class="o">=</span><span class="mi">4</span><span class="p">,</span>
+            <span class="n">label</span><span class="o">=</span><span class="n">UPDATE_LABELS</span><span class="p">[</span><span class="n">update</span><span class="p">],</span> <span class="n">color</span><span class="o">=</span><span class="n">PALETTE</span><span class="p">[</span><span class="n">update</span><span class="p">],</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.85</span><span class="p">,</span>
+        <span class="p">)</span>
+        <span class="n">ax</span><span class="o">.</span><span class="n">bar_label</span><span class="p">(</span><span class="n">bars</span><span class="p">,</span> <span class="n">fmt</span><span class="o">=</span><span class="s1">&#39;</span><span class="si">%.1f</span><span class="s1">&#39;</span><span class="p">,</span> <span class="n">fontsize</span><span class="o">=</span><span class="mi">7</span><span class="p">,</span> <span class="n">padding</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
+    <span class="n">ax</span><span class="o">.</span><span class="n">set_xticks</span><span class="p">(</span><span class="n">x_pos</span><span class="p">)</span>
+    <span class="n">ax</span><span class="o">.</span><span class="n">set_xticklabels</span><span class="p">(</span><span class="n">TEMP_LABELS</span><span class="p">,</span> <span class="n">fontsize</span><span class="o">=</span><span class="mi">10</span><span class="p">)</span>
+    <span class="n">ax</span><span class="o">.</span><span class="n">set_title</span><span class="p">(</span><span class="n">title</span><span class="p">,</span> <span class="n">fontsize</span><span class="o">=</span><span class="mi">11</span><span class="p">)</span>
+    <span class="n">ax</span><span class="o">.</span><span class="n">legend</span><span class="p">(</span><span class="n">fontsize</span><span class="o">=</span><span class="mi">9</span><span class="p">)</span>
+    <span class="n">ax</span><span class="o">.</span><span class="n">grid</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="s1">&#39;y&#39;</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.3</span><span class="p">)</span>
+
+<span class="n">axes</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">set_ylabel</span><span class="p">(</span><span class="sa">r</span><span class="s1">&#39;$\tau_\mathrm</span><span class="si">{int}</span><span class="s1">$ (steps)&#39;</span><span class="p">,</span> <span class="n">fontsize</span><span class="o">=</span><span class="mi">11</span><span class="p">)</span>
+<span class="n">axes</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">set_ylabel</span><span class="p">(</span><span class="sa">r</span><span class="s1">&#39;$\tau_\mathrm</span><span class="si">{int}</span><span class="s1">^\mathrm</span><span class="si">{norm}</span><span class="s1">$ (equivalents)&#39;</span><span class="p">,</span> <span class="n">fontsize</span><span class="o">=</span><span class="mi">11</span><span class="p">)</span>
+<span class="n">fig</span><span class="o">.</span><span class="n">suptitle</span><span class="p">(</span>
+    <span class="sa">r</span><span class="s1">&#39;Integrated autocorrelation time $\tau_\mathrm</span><span class="si">{int}</span><span class="s1">$ (median + 16–84% bands)&#39;</span><span class="p">,</span>
+    <span class="n">fontsize</span><span class="o">=</span><span class="mi">12</span><span class="p">,</span> <span class="n">y</span><span class="o">=</span><span class="mf">1.02</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="n">fig</span><span class="o">.</span><span class="n">tight_layout</span><span class="p">()</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+<br/></pre></div>
+</div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+Integrated autocorrelation time τ_int  (raw steps, observable = |M|, c = 5):
+Temperature                   Random-site Metropolis           Checkerboard Metropolis                     Wolff cluster
+------------------------------------------------------------------------------------------------------------------------
+Below $T_c$                         4.2 [ 2.9,  8.2]                  1.2 [ 1.0,  1.3]                  0.8 [ 0.7,  0.9]
+At $T_c$                          92.4 [80.0, 190.2]                74.7 [48.4, 101.1]                  3.0 [ 1.8,  3.9]
+Above $T_c$                        11.4 [ 9.5, 16.4]                  2.6 [ 2.5,  3.6]                 11.9 [ 7.7, 24.6]
+
+(Madras–Sokal window c = 5, max-lag cap = 400, seeds = 10)
+Burn-in per seed = per-seed τ_relax from the two-start test.
+Note: 5 seed(s) returned NaN (post-burn-in trace too short); excluded from median.
+</pre></div></div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="_images/ising_autocorrelation_analysis_11_1.png" src="_images/ising_autocorrelation_analysis_11_1.png" />
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="_images/ising_autocorrelation_analysis_11_2.png" src="_images/ising_autocorrelation_analysis_11_2.png" />
+</div>
+</div>
+</section>
+<section id="Interpretation">
+<h2>Interpretation<a class="headerlink" href="#Interpretation" title="Link to this heading"></a></h2>
+<p>The plots tell a coherent physical story across two complementary metrics.</p>
+<section id="Raw-step-counts-(two-start-\hat{\tau}_\text{relax})">
+<h3>Raw step counts (two-start <span class="math notranslate nohighlight">\(\hat{\tau}_\text{relax}\)</span>)<a class="headerlink" href="#Raw-step-counts-(two-start-\hat{\tau}_\text{relax})" title="Link to this heading"></a></h3>
+<p>Local updates (random-site and checkerboard Metropolis) are <em>slow below :math:`T_c`</em> (~600 and ~344 steps) because individual spin flips must nucleate and grow an ordered domain against thermal noise — a diffusive process. At <span class="math notranslate nohighlight">\(T_c\)</span> they remain slow for the same reason: the correlation length diverges, so the same domain-growth bottleneck occurs on every length scale simultaneously (<strong>critical slowing down</strong>, <span class="math notranslate nohighlight">\(z \approx 2\)</span> for local dynamics). Above <span class="math notranslate nohighlight">\(T_c\)</span> they recover quickly
+(~150–200 steps) because the disordered phase has short-range correlations only.</p>
+<p>Wolff, measured in raw steps, looks faster below <span class="math notranslate nohighlight">\(T_c\)</span> (150 steps) and comparable above (163 steps), but this comparison is misleading — see below.</p>
+</section>
+<section id="Work-normalised-view">
+<h3>Work-normalised view<a class="headerlink" href="#Work-normalised-view" title="Link to this heading"></a></h3>
+<p>Converting to <span class="math notranslate nohighlight">\(L^2\)</span>-sweep equivalents (multiplying Wolff steps by <span class="math notranslate nohighlight">\(\langle C \rangle / L^2\)</span>) reveals the true picture:</p>
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>Temperature</p></th>
+<th class="head"><p><span class="math notranslate nohighlight">\(\langle C \rangle\)</span></p></th>
+<th class="head"><p><span class="math notranslate nohighlight">\(\langle C \rangle / L^2\)</span></p></th>
+<th class="head"><p>Wolff (norm.)</p></th>
+<th class="head"><p>Random (norm.)</p></th>
+<th class="head"><p>Speed-up</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>Below <span class="math notranslate nohighlight">\(T_c\)</span></p></td>
+<td><p>3 714 spins</p></td>
+<td><p>0.91</p></td>
+<td><p><strong>136</strong> sweeps</p></td>
+<td><p>597 sweeps</p></td>
+<td><p>~4 ×</p></td>
+</tr>
+<tr class="row-odd"><td><p>At <span class="math notranslate nohighlight">\(T_c\)</span></p></td>
+<td><p>1 593 spins</p></td>
+<td><p>0.39</p></td>
+<td><p><strong>196</strong> sweeps</p></td>
+<td><p>568 sweeps</p></td>
+<td><p>~3 ×</p></td>
+</tr>
+<tr class="row-even"><td><p>Above <span class="math notranslate nohighlight">\(T_c\)</span></p></td>
+<td><p>20 spins</p></td>
+<td><p>0.005</p></td>
+<td><p><strong>~1</strong> sweep</p></td>
+<td><p>153 sweeps</p></td>
+<td><p><strong>~190 ×</strong></p></td>
+</tr>
+</tbody>
+</table>
+<p><strong>Below :math:`T_c`</strong>: Wolff clusters are nearly system-spanning (<span class="math notranslate nohighlight">\(\langle C \rangle / L^2 \approx 0.91\)</span>). Each step flips almost the whole lattice, so only a handful of flips is needed to reach equilibrium. Even after normalisation it is ~4 × faster than random: it tunnels the free-energy barrier between the <span class="math notranslate nohighlight">\(+M\)</span> and <span class="math notranslate nohighlight">\(-M\)</span> wells in one step, whereas local updates must diffuse across it.</p>
+<p><strong>At :math:`T_c`</strong>: Clusters cover ~39% of the lattice. The normalised relaxation time (≈196) is noticeably smaller than local updates (≈340–570), confirming that Wolff retains a polynomial advantage. Dynamic scaling predicts <span class="math notranslate nohighlight">\(z_\text{Wolff} \approx 0.25\)</span> versus <span class="math notranslate nohighlight">\(z_\text{local} \approx 2.2\)</span>, consistent with a growing advantage at larger <span class="math notranslate nohighlight">\(L\)</span>.</p>
+<p><strong>Above :math:`T_c`</strong>: Clusters are tiny — only ~20 spins out of 4 096. The system decorrelates in ~1 normalised sweep because each step is a cheap, precisely targeted flip. Local algorithms also relax quickly above <span class="math notranslate nohighlight">\(T_c\)</span>, but Wolff’s targeted nature makes it ~190 × more efficient per spin touched.</p>
+</section>
+<section id="Comparing-\hat{\tau}_\text{relax}-and-\tau_\text{int}">
+<h3>Comparing <span class="math notranslate nohighlight">\(\hat{\tau}_\text{relax}\)</span> and <span class="math notranslate nohighlight">\(\tau_\text{int}\)</span><a class="headerlink" href="#Comparing-\hat{\tau}_\text{relax}-and-\tau_\text{int}" title="Link to this heading"></a></h3>
+<p>The two metrics probe different aspects of the same slow modes:</p>
+<ul class="simple">
+<li><p><strong>:math:`hat{tau}_text{relax}`</strong> asks <em>“how long until the chain forgets its initial condition?”</em> — a non-equilibrium, transient question.</p></li>
+<li><p><strong>:math:`tau_text{int}`</strong> asks <em>“how quickly does equilibrium memory fade?”</em> — a purely stationary-distribution property.</p></li>
+</ul>
+<p>Because both are controlled by the slowest eigenvalue of the Markov operator, they are of the same order of magnitude. However they are not identical: <span class="math notranslate nohighlight">\(\hat{\tau}_\text{relax}\)</span> depends on how far the initial state is from equilibrium and which modes are excited, while <span class="math notranslate nohighlight">\(\tau_\text{int}\)</span> reflects a weighted sum over all slow modes relative to fluctuation amplitude. In practice <span class="math notranslate nohighlight">\(\tau_\text{int}\)</span> is usually somewhat smaller because the dominant non-equilibrium mode (e.g. the global
+magnetisation drift below <span class="math notranslate nohighlight">\(T_c\)</span>) decays faster than the local fluctuation modes that dominate <span class="math notranslate nohighlight">\(\tau_\text{int}\)</span>. The two-start estimator is the right tool for deciding when to <em>start</em> collecting data; <span class="math notranslate nohighlight">\(\tau_\text{int}\)</span> is the right tool for deciding how much data you actually need to reach a target statistical precision.</p>
+<p>The key lesson across both panels: <strong>never compare algorithm step counts directly — normalise by actual work done</strong>.</p>
+</section>
 </section>
 <section id="Bibliography">
 <h2>Bibliography<a class="headerlink" href="#Bibliography" title="Link to this heading"></a></h2>
@@ -178,6 +846,7 @@
 <p><a class="reference internal" href="#Bibliography"><span class="std std-ref">[2]</span></a> W. K. Hastings, “Monte Carlo sampling methods using Markov chains and their applications,” <em>Biometrika</em>, vol. 57, no. 1, pp. 97–109, 1970. <a class="reference external" href="https://academic.oup.com/biomet/article/57/1/97/252073">Oxford Academic Open Access</a></p>
 <p><a class="reference internal" href="#Bibliography"><span class="std std-ref">[3]</span></a> U. Wolff, “Collective Monte Carlo Updating for Spin Systems,” <em>Physical Review Letters</em>, vol. 62, no. 4, pp. 361–364, 1989. <a class="reference external" href="https://journals.aps.org/prl/abstract/10.1103/PhysRevLett.62.361">APS Open Access</a></p>
 <p><a class="reference internal" href="#Bibliography"><span class="std std-ref">[4]</span></a> M. E. J. Newman and G. T. Barkema, “Monte Carlo Methods in Statistical Physics,” Oxford University Press, 1999. <a class="reference external" href="https://arxiv.org/abs/0905.1629">Lecture Notes Summary (H. G. Katzgraber)</a></p>
+<p><a class="reference internal" href="#Bibliography"><span class="std std-ref">[5]</span></a> A. D. Sokal, “Monte Carlo Methods in Statistical Mechanics: Foundations and New Algorithms,” lecture notes (1989), published in <em>Functional Integration: Basics and Applications</em> (C. DeWitt-Morette, P. Cartier, A. Folacci, eds.), Springer, 1997, pp. 131–192. Standard reference for the integrated autocorrelation time and the automatic windowing estimator.</p>
 </section>
 </section>
 

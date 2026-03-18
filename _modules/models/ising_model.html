@@ -53,7 +53,7 @@
 <li class="toctree-l1"><a class="reference internal" href="../../benchmarks.html">Performance Benchmarking for VibeSpin</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../wolff_efficiency.html">Wolff vs. Metropolis: Algorithmic Efficiency in the Critical Regime</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../dynamic_critical_exponents.html">Dynamical Critical Exponents in the 2D Ising Model</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../ising_autocorrelation_analysis.html">Ising Model: Autocorrelation and Equilibration Analysis</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../ising_autocorrelation_analysis.html">Ising Model: Relaxation to Equilibrium</a></li>
 </ul>
 <p class="caption" role="heading"><span class="caption-text">API Reference:</span></p>
 <ul>
@@ -292,7 +292,7 @@
 <span class="nd">@njit</span><span class="p">(</span><span class="n">cache</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">fastmath</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 <span class="k">def</span><span class="w"> </span><span class="nf">ising_wolff_step_numba</span><span class="p">(</span>
     <span class="o">*</span><span class="p">,</span> <span class="n">spins</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">beta</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">J</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">idx_next</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">idx_prev</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span>
-<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Perform one Wolff cluster flip on the Ising lattice.</span>
 
@@ -317,7 +317,8 @@
 
 <span class="sd">    Returns</span>
 <span class="sd">    -------</span>
-<span class="sd">        Updated spins array.</span>
+<span class="sd">        spins: Updated spins array.</span>
+<span class="sd">        cluster_size: Number of spins flipped in this step.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="n">N</span> <span class="o">=</span> <span class="n">spins</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
     <span class="n">p_add</span> <span class="o">=</span> <span class="mf">1.0</span> <span class="o">-</span> <span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="o">-</span><span class="mf">2.0</span> <span class="o">*</span> <span class="n">J</span> <span class="o">*</span> <span class="n">beta</span><span class="p">)</span>
@@ -333,6 +334,7 @@
     <span class="n">in_cluster</span><span class="p">[</span><span class="n">si</span><span class="p">,</span> <span class="n">sj</span><span class="p">]</span> <span class="o">=</span> <span class="kc">True</span>
     <span class="n">stack</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="n">si</span> <span class="o">*</span> <span class="n">N</span> <span class="o">+</span> <span class="n">sj</span>
     <span class="n">stack_top</span> <span class="o">=</span> <span class="mi">1</span>
+    <span class="n">cluster_size</span> <span class="o">=</span> <span class="mi">1</span>  <span class="c1"># seed site already in cluster</span>
 
     <span class="k">while</span> <span class="n">stack_top</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
         <span class="n">stack_top</span> <span class="o">-=</span> <span class="mi">1</span>
@@ -351,24 +353,28 @@
                 <span class="n">in_cluster</span><span class="p">[</span><span class="n">iprv</span><span class="p">,</span> <span class="n">cj</span><span class="p">]</span> <span class="o">=</span> <span class="kc">True</span>
                 <span class="n">stack</span><span class="p">[</span><span class="n">stack_top</span><span class="p">]</span> <span class="o">=</span> <span class="n">iprv</span> <span class="o">*</span> <span class="n">N</span> <span class="o">+</span> <span class="n">cj</span>
                 <span class="n">stack_top</span> <span class="o">+=</span> <span class="mi">1</span>
+                <span class="n">cluster_size</span> <span class="o">+=</span> <span class="mi">1</span>
         <span class="c1"># South</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="n">in_cluster</span><span class="p">[</span><span class="n">inxt</span><span class="p">,</span> <span class="n">cj</span><span class="p">]</span> <span class="ow">and</span> <span class="n">spins</span><span class="p">[</span><span class="n">inxt</span><span class="p">,</span> <span class="n">cj</span><span class="p">]</span> <span class="o">==</span> <span class="n">seed_spin</span><span class="p">:</span>
             <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">random</span><span class="p">()</span> <span class="o">&lt;</span> <span class="n">p_add</span><span class="p">:</span>
                 <span class="n">in_cluster</span><span class="p">[</span><span class="n">inxt</span><span class="p">,</span> <span class="n">cj</span><span class="p">]</span> <span class="o">=</span> <span class="kc">True</span>
                 <span class="n">stack</span><span class="p">[</span><span class="n">stack_top</span><span class="p">]</span> <span class="o">=</span> <span class="n">inxt</span> <span class="o">*</span> <span class="n">N</span> <span class="o">+</span> <span class="n">cj</span>
                 <span class="n">stack_top</span> <span class="o">+=</span> <span class="mi">1</span>
+                <span class="n">cluster_size</span> <span class="o">+=</span> <span class="mi">1</span>
         <span class="c1"># West</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="n">in_cluster</span><span class="p">[</span><span class="n">ci</span><span class="p">,</span> <span class="n">jprv</span><span class="p">]</span> <span class="ow">and</span> <span class="n">spins</span><span class="p">[</span><span class="n">ci</span><span class="p">,</span> <span class="n">jprv</span><span class="p">]</span> <span class="o">==</span> <span class="n">seed_spin</span><span class="p">:</span>
             <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">random</span><span class="p">()</span> <span class="o">&lt;</span> <span class="n">p_add</span><span class="p">:</span>
                 <span class="n">in_cluster</span><span class="p">[</span><span class="n">ci</span><span class="p">,</span> <span class="n">jprv</span><span class="p">]</span> <span class="o">=</span> <span class="kc">True</span>
                 <span class="n">stack</span><span class="p">[</span><span class="n">stack_top</span><span class="p">]</span> <span class="o">=</span> <span class="n">ci</span> <span class="o">*</span> <span class="n">N</span> <span class="o">+</span> <span class="n">jprv</span>
                 <span class="n">stack_top</span> <span class="o">+=</span> <span class="mi">1</span>
+                <span class="n">cluster_size</span> <span class="o">+=</span> <span class="mi">1</span>
         <span class="c1"># East</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="n">in_cluster</span><span class="p">[</span><span class="n">ci</span><span class="p">,</span> <span class="n">jnxt</span><span class="p">]</span> <span class="ow">and</span> <span class="n">spins</span><span class="p">[</span><span class="n">ci</span><span class="p">,</span> <span class="n">jnxt</span><span class="p">]</span> <span class="o">==</span> <span class="n">seed_spin</span><span class="p">:</span>
             <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">random</span><span class="p">()</span> <span class="o">&lt;</span> <span class="n">p_add</span><span class="p">:</span>
                 <span class="n">in_cluster</span><span class="p">[</span><span class="n">ci</span><span class="p">,</span> <span class="n">jnxt</span><span class="p">]</span> <span class="o">=</span> <span class="kc">True</span>
                 <span class="n">stack</span><span class="p">[</span><span class="n">stack_top</span><span class="p">]</span> <span class="o">=</span> <span class="n">ci</span> <span class="o">*</span> <span class="n">N</span> <span class="o">+</span> <span class="n">jnxt</span>
                 <span class="n">stack_top</span> <span class="o">+=</span> <span class="mi">1</span>
+                <span class="n">cluster_size</span> <span class="o">+=</span> <span class="mi">1</span>
 
     <span class="c1"># Flip all cluster spins in-place</span>
     <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">N</span><span class="p">):</span>
@@ -376,7 +382,7 @@
             <span class="k">if</span> <span class="n">in_cluster</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="n">j</span><span class="p">]:</span>
                 <span class="n">spins</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="n">j</span><span class="p">]</span> <span class="o">*=</span> <span class="o">-</span><span class="mi">1</span>
 
-    <span class="k">return</span> <span class="n">spins</span></div>
+    <span class="k">return</span> <span class="n">spins</span><span class="p">,</span> <span class="n">cluster_size</span></div>
 
 
 
@@ -428,6 +434,8 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">parallel</span> <span class="o">=</span> <span class="n">parallel</span>
         <span class="c1"># Initialize random spins +1 or -1</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">spins</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">rng</span><span class="o">.</span><span class="n">choice</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">],</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">int8</span><span class="p">),</span> <span class="n">size</span><span class="o">=</span><span class="p">(</span><span class="n">size</span><span class="p">,</span> <span class="n">size</span><span class="p">))</span>
+        <span class="c1"># Last Wolff cluster size (0 for non-Wolff updates or before any step)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">last_cluster_size</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">0</span>
 
 <div class="viewcode-block" id="IsingSimulation.step">
 <a class="viewcode-back" href="../../api/vibespin.models.html#models.ising_model.IsingSimulation.step">[docs]</a>
@@ -450,7 +458,7 @@
                     <span class="n">idx_prev</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">idx_prev</span><span class="p">,</span>
                 <span class="p">)</span>
             <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">update</span> <span class="o">==</span> <span class="s1">&#39;wolff&#39;</span><span class="p">:</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">spins</span> <span class="o">=</span> <span class="n">ising_wolff_step_numba</span><span class="p">(</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">spins</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">last_cluster_size</span> <span class="o">=</span> <span class="n">ising_wolff_step_numba</span><span class="p">(</span>
                     <span class="n">spins</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">spins</span><span class="p">,</span>
                     <span class="n">beta</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">beta</span><span class="p">,</span>
                     <span class="n">J</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">J</span><span class="p">,</span>
@@ -474,6 +482,41 @@
                     <span class="n">idx_prev</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">idx_prev</span><span class="p">,</span>
                 <span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">steps</span> <span class="o">+=</span> <span class="mi">1</span></div>
+
+
+<div class="viewcode-block" id="IsingSimulation.run_with_cluster_sizes">
+<a class="viewcode-back" href="../../api/vibespin.models.html#models.ising_model.IsingSimulation.run_with_cluster_sizes">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">run_with_cluster_sizes</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">n_steps</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Run the simulation and additionally record the Wolff cluster size at every step.</span>
+
+<span class="sd">        For non-Wolff update schemes the cluster-size array is filled with zeros because</span>
+<span class="sd">        local Metropolis flips exactly one spin at a time (cluster size = 1 by convention</span>
+<span class="sd">        would also be valid, but zero makes it easy to detect misuse).</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        n_steps:</span>
+<span class="sd">            Number of MC steps to perform and record.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        magnetization:</span>
+<span class="sd">            Array of `|M|` per spin at each step.</span>
+<span class="sd">        energies:</span>
+<span class="sd">            Array of energy per spin at each step.</span>
+<span class="sd">        cluster_sizes:</span>
+<span class="sd">            Array of cluster sizes (number of spins flipped) at each step.</span>
+<span class="sd">            Always zero for non-Wolff algorithms.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">magnetization</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">empty</span><span class="p">(</span><span class="n">n_steps</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">float</span><span class="p">)</span>
+        <span class="n">energies</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">empty</span><span class="p">(</span><span class="n">n_steps</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">float</span><span class="p">)</span>
+        <span class="n">cluster_sizes</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">n_steps</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">int</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n_steps</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">step</span><span class="p">()</span>
+            <span class="n">magnetization</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_magnetization</span><span class="p">()</span>
+            <span class="n">energies</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_energy</span><span class="p">()</span>
+            <span class="n">cluster_sizes</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">last_cluster_size</span>
+        <span class="k">return</span> <span class="n">magnetization</span><span class="p">,</span> <span class="n">energies</span><span class="p">,</span> <span class="n">cluster_sizes</span></div>
 
 
     <span class="k">def</span><span class="w"> </span><span class="nf">_get_magnetization</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>

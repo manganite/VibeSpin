@@ -56,7 +56,7 @@
 <li class="toctree-l1"><a class="reference internal" href="../benchmarks.html">Performance Benchmarking for VibeSpin</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../wolff_efficiency.html">Wolff vs. Metropolis: Algorithmic Efficiency in the Critical Regime</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../dynamic_critical_exponents.html">Dynamical Critical Exponents in the 2D Ising Model</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../ising_autocorrelation_analysis.html">Ising Model: Autocorrelation and Equilibration Analysis</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../ising_autocorrelation_analysis.html">Ising Model: Relaxation to Equilibrium</a></li>
 </ul>
 <p class="caption" role="heading"><span class="caption-text">API Reference:</span></p>
 <ul class="current">
@@ -367,6 +367,29 @@ stochastic dynamics suitable for kinetics studies.</p>
 <dd><p>Bases: <a class="reference internal" href="#models.simulation_base.MonteCarloSimulation" title="models.simulation_base.MonteCarloSimulation"><code class="xref py py-class docutils literal notranslate"><span class="pre">MonteCarloSimulation</span></code></a></p>
 <p>Simulation of the 2D Ising model on a square lattice.</p>
 <dl class="py method">
+<dt class="sig sig-object py" id="models.ising_model.IsingSimulation.run_with_cluster_sizes">
+<span class="sig-name descname"><span class="pre">run_with_cluster_sizes</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_steps</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">ndarray</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">ndarray</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">ndarray</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="../_modules/models/ising_model.html#IsingSimulation.run_with_cluster_sizes"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#models.ising_model.IsingSimulation.run_with_cluster_sizes" title="Link to this definition"></a></dt>
+<dd><p>Run the simulation and additionally record the Wolff cluster size at every step.</p>
+<p>For non-Wolff update schemes the cluster-size array is filled with zeros because
+local Metropolis flips exactly one spin at a time (cluster size = 1 by convention
+would also be valid, but zero makes it easy to detect misuse).</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>n_steps</strong> – Number of MC steps to perform and record.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><ul class="simple">
+<li><p><em>magnetization</em> – Array of <cite>|M|</cite> per spin at each step.</p></li>
+<li><p><em>energies</em> – Array of energy per spin at each step.</p></li>
+<li><p><em>cluster_sizes</em> – Array of cluster sizes (number of spins flipped) at each step.
+Always zero for non-Wolff algorithms.</p></li>
+</ul>
+</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
 <dt class="sig sig-object py" id="models.ising_model.IsingSimulation.step">
 <span class="sig-name descname"><span class="pre">step</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="../_modules/models/ising_model.html#IsingSimulation.step"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#models.ising_model.IsingSimulation.step" title="Link to this definition"></a></dt>
 <dd><p>Perform one Monte Carlo sweep using the configured update scheme.</p>
@@ -465,7 +488,7 @@ are pre-calculated outside the inner loop to avoid repeated calls to
 
 <dl class="py function">
 <dt class="sig sig-object py" id="models.ising_model.ising_wolff_step_numba">
-<span class="sig-prename descclassname"><span class="pre">models.ising_model.</span></span><span class="sig-name descname"><span class="pre">ising_wolff_step_numba</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">spins</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">beta</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">J</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">idx_next</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">idx_prev</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">ndarray</span></span></span><a class="reference internal" href="../_modules/models/ising_model.html#ising_wolff_step_numba"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#models.ising_model.ising_wolff_step_numba" title="Link to this definition"></a></dt>
+<span class="sig-prename descclassname"><span class="pre">models.ising_model.</span></span><span class="sig-name descname"><span class="pre">ising_wolff_step_numba</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">spins</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">beta</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">J</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">idx_next</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">idx_prev</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">tuple</span></span></span><a class="reference internal" href="../_modules/models/ising_model.html#ising_wolff_step_numba"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#models.ising_model.ising_wolff_step_numba" title="Link to this definition"></a></dt>
 <dd><p>Perform one Wolff cluster flip on the Ising lattice.</p>
 <p>A single cluster is grown by probabilistic DFS from a random seed site and
 then flipped in a single collective move.  The bond acceptance probability
@@ -486,8 +509,12 @@ inherently sequential.</p>
 <li><p><strong>idx_prev</strong> (<em>Pre-calculated previous-neighbor indices</em><em> (</em><em>PBC</em><em>)</em><em>.</em>)</p></li>
 </ul>
 </dd>
-<dt class="field-even">Return type<span class="colon">:</span></dt>
-<dd class="field-even"><p>Updated spins array.</p>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><ul class="simple">
+<li><p><strong>spins</strong> (<em>Updated spins array.</em>)</p></li>
+<li><p><strong>cluster_size</strong> (<em>Number of spins flipped in this step.</em>)</p></li>
+</ul>
+</p>
 </dd>
 </dl>
 </dd></dl>

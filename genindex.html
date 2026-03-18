@@ -53,7 +53,7 @@
 <li class="toctree-l1"><a class="reference internal" href="benchmarks.html">Performance Benchmarking for VibeSpin</a></li>
 <li class="toctree-l1"><a class="reference internal" href="wolff_efficiency.html">Wolff vs. Metropolis: Algorithmic Efficiency in the Critical Regime</a></li>
 <li class="toctree-l1"><a class="reference internal" href="dynamic_critical_exponents.html">Dynamical Critical Exponents in the 2D Ising Model</a></li>
-<li class="toctree-l1"><a class="reference internal" href="ising_autocorrelation_analysis.html">Ising Model: Autocorrelation and Equilibration Analysis</a></li>
+<li class="toctree-l1"><a class="reference internal" href="ising_autocorrelation_analysis.html">Ising Model: Relaxation to Equilibrium</a></li>
 </ul>
 <p class="caption" role="heading"><span class="caption-text">API Reference:</span></p>
 <ul>
@@ -173,6 +173,8 @@
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="api/vibespin.models.html#models.simulation_base.MonteCarloSimulation.equilibrate">equilibrate() (models.simulation_base.MonteCarloSimulation method)</a>
+</li>
+      <li><a href="api/vibespin.utils.html#utils.physics_helpers.estimate_relaxation_time_two_start">estimate_relaxation_time_two_start() (in module utils.physics_helpers)</a>
 </li>
   </ul></td>
 </tr></table>
@@ -400,6 +402,8 @@
         <li><a href="api/vibespin.scripts.xy.html#scripts.xy.temperature_sweep.run_sweep">(in module scripts.xy.temperature_sweep)</a>
 </li>
       </ul></li>
+      <li><a href="api/vibespin.models.html#models.ising_model.IsingSimulation.run_with_cluster_sizes">run_with_cluster_sizes() (models.ising_model.IsingSimulation method)</a>
+</li>
       <li><a href="api/vibespin.scripts.ising.html#scripts.ising.wolff_efficiency.run_wolff_efficiency_demo">run_wolff_efficiency_demo() (in module scripts.ising.wolff_efficiency)</a>
 </li>
   </ul></td>
