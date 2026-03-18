@@ -1,9 +1,6 @@
 # VibeSpin Documentation Hub
 
-## Bibliography
-For a complete list of scientific references used throughout the project, see the [BIBLIOGRAPHY.md](./bibliography.md) file. All references are maintained and validated according to the project policy in AGENTS.md.
-
-Welcome to the VibeSpin documentation. VibeSpin is a high-performance Python framework for simulating and analyzing 2D lattice spin models.
+Welcome to the VibeSpin documentation. VibeSpin is a high-performance Python framework for simulating and analyzing two-dimensional lattice spin models, including the foundational **Ising, XY, and Clock models**.
 
 ```{toctree}
 :maxdepth: 2
