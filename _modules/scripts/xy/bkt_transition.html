@@ -128,9 +128,9 @@
 
 
 
-<div class="viewcode-block" id="run_bkt_study">
-<a class="viewcode-back" href="../../../api/vibespin.scripts.xy.html#scripts.xy.bkt_transition.run_bkt_study">[docs]</a>
-<span class="k">def</span><span class="w"> </span><span class="nf">run_bkt_study</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<div class="viewcode-block" id="main">
+<a class="viewcode-back" href="../../../api/vibespin.scripts.xy.html#scripts.xy.bkt_transition.main">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">main</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Run temperature sweep to observe vortex-density growth near T_BKT.&quot;&quot;&quot;</span>
     <span class="n">parser</span> <span class="o">=</span> <span class="n">argparse</span><span class="o">.</span><span class="n">ArgumentParser</span><span class="p">(</span><span class="n">description</span><span class="o">=</span><span class="s1">&#39;2D XY Model BKT Transition Analysis&#39;</span><span class="p">)</span>
     <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;--size&#39;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">int</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="mi">40</span><span class="p">,</span> <span class="n">help</span><span class="o">=</span><span class="s1">&#39;Linear lattice size L&#39;</span><span class="p">)</span>
@@ -183,7 +183,7 @@
 
 
 <span class="k">if</span> <span class="vm">__name__</span> <span class="o">==</span> <span class="s1">&#39;__main__&#39;</span><span class="p">:</span>
-    <span class="n">run_bkt_study</span><span class="p">()</span>
+    <span class="n">main</span><span class="p">()</span>
 </pre></div>
 
            </div>
