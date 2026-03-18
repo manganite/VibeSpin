@@ -101,18 +101,8 @@ def _measure_efficiency_point(
     cluster_steps = min(meas_steps, 300)
     sim_c = IsingSimulation(size=L, temp=T, update='wolff', seed=seed + 2)
     sim_c.equilibrate(n_steps=eq_steps)
-    cluster_sizes: list[int] = []
-    for _ in range(cluster_steps):
-        current = sim_c.spins
-        if current is None:
-            raise RuntimeError('Wolff cluster measurement requires initialized spins before step()')
-        spins_before = current.copy()
-        sim_c.step()
-        after = sim_c.spins
-        if after is None:
-            raise RuntimeError('Wolff cluster measurement lost spin state after step()')
-        cluster_sizes.append(int(np.sum(after != spins_before)))
-    mean_cluster_frac = float(np.mean(cluster_sizes)) / (L * L)
+    _, _, cluster_sizes_arr = sim_c.run_with_cluster_sizes(n_steps=cluster_steps)
+    mean_cluster_frac = float(np.mean(cluster_sizes_arr)) / (L * L)
 
     return {
         'T': T,

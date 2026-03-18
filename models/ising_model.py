@@ -191,7 +191,7 @@ def ising_step_random_numba(
 @njit(cache=True, fastmath=True)
 def ising_wolff_step_numba(
     *, spins: np.ndarray, beta: float, J: float, idx_next: np.ndarray, idx_prev: np.ndarray
-) -> np.ndarray:
+) -> tuple:
     """
     Perform one Wolff cluster flip on the Ising lattice.
 
@@ -216,7 +216,8 @@ def ising_wolff_step_numba(
 
     Returns
     -------
-        Updated spins array.
+        spins: Updated spins array.
+        cluster_size: Number of spins flipped in this step.
     """
     N = spins.shape[0]
     p_add = 1.0 - np.exp(-2.0 * J * beta)
@@ -232,6 +233,7 @@ def ising_wolff_step_numba(
     in_cluster[si, sj] = True
     stack[0] = si * N + sj
     stack_top = 1
+    cluster_size = 1  # seed site already in cluster
 
     while stack_top > 0:
         stack_top -= 1
@@ -250,24 +252,28 @@ def ising_wolff_step_numba(
                 in_cluster[iprv, cj] = True
                 stack[stack_top] = iprv * N + cj
                 stack_top += 1
+                cluster_size += 1
         # South
         if not in_cluster[inxt, cj] and spins[inxt, cj] == seed_spin:
             if np.random.random() < p_add:
                 in_cluster[inxt, cj] = True
                 stack[stack_top] = inxt * N + cj
                 stack_top += 1
+                cluster_size += 1
         # West
         if not in_cluster[ci, jprv] and spins[ci, jprv] == seed_spin:
             if np.random.random() < p_add:
                 in_cluster[ci, jprv] = True
                 stack[stack_top] = ci * N + jprv
                 stack_top += 1
+                cluster_size += 1
         # East
         if not in_cluster[ci, jnxt] and spins[ci, jnxt] == seed_spin:
             if np.random.random() < p_add:
                 in_cluster[ci, jnxt] = True
                 stack[stack_top] = ci * N + jnxt
                 stack_top += 1
+                cluster_size += 1
 
     # Flip all cluster spins in-place
     for i in range(N):
@@ -275,7 +281,7 @@ def ising_wolff_step_numba(
             if in_cluster[i, j]:
                 spins[i, j] *= -1
 
-    return spins
+    return spins, cluster_size
 
 
 class IsingSimulation(MonteCarloSimulation):
@@ -324,6 +330,8 @@ class IsingSimulation(MonteCarloSimulation):
         self.parallel = parallel
         # Initialize random spins +1 or -1
         self.spins = self.rng.choice(np.array([-1, 1], dtype=np.int8), size=(size, size))
+        # Last Wolff cluster size (0 for non-Wolff updates or before any step)
+        self.last_cluster_size: int = 0
 
     def step(self) -> None:
         """Perform one Monte Carlo sweep using the configured update scheme."""
@@ -344,7 +352,7 @@ class IsingSimulation(MonteCarloSimulation):
                     idx_prev=self.idx_prev,
                 )
             elif self.update == 'wolff':
-                self.spins = ising_wolff_step_numba(
+                self.spins, self.last_cluster_size = ising_wolff_step_numba(
                     spins=self.spins,
                     beta=self.beta,
                     J=self.J,
@@ -368,6 +376,38 @@ class IsingSimulation(MonteCarloSimulation):
                     idx_prev=self.idx_prev,
                 )
         self.steps += 1
+
+    def run_with_cluster_sizes(self, *, n_steps: int) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
+        """Run the simulation and additionally record the Wolff cluster size at every step.
+
+        For non-Wolff update schemes the cluster-size array is filled with zeros because
+        local Metropolis flips exactly one spin at a time (cluster size = 1 by convention
+        would also be valid, but zero makes it easy to detect misuse).
+
+        Parameters
+        ----------
+        n_steps:
+            Number of MC steps to perform and record.
+
+        Returns
+        -------
+        magnetization:
+            Array of |M| per spin at each step.
+        energies:
+            Array of energy per spin at each step.
+        cluster_sizes:
+            Array of cluster sizes (number of spins flipped) at each step.
+            Always zero for non-Wolff algorithms.
+        """
+        magnetization = np.empty(n_steps, dtype=float)
+        energies = np.empty(n_steps, dtype=float)
+        cluster_sizes = np.zeros(n_steps, dtype=int)
+        for i in range(n_steps):
+            self.step()
+            magnetization[i] = self._get_magnetization()
+            energies[i] = self._get_energy()
+            cluster_sizes[i] = self.last_cluster_size
+        return magnetization, energies, cluster_sizes
 
     def _get_magnetization(self) -> float:
         """Calculate magnetization per spin."""

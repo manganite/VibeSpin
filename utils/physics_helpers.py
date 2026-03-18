@@ -379,3 +379,84 @@ def power_fit(
         return None, None
     coeffs = np.polyfit(np.log(t_arr[valid]), np.log(y_arr[valid]), 1)
     return float(coeffs[0]), float(np.exp(coeffs[1]))
+
+
+def _valid_prefix(x: np.ndarray) -> np.ndarray:
+    """Return the non-NaN prefix from a padded trajectory."""
+    valid = np.isfinite(x)
+    if not np.any(valid):
+        return np.empty(0, dtype=float)
+    end = int(np.where(valid)[0][-1]) + 1
+    return x[:end]
+
+
+def _moving_average(x: np.ndarray, window: int) -> np.ndarray:
+    window = max(3, min(window, len(x)))
+    return np.convolve(x, np.ones(window) / window, mode='valid')
+
+
+def estimate_relaxation_time_two_start(
+    trace_random: np.ndarray,
+    trace_ordered: np.ndarray,
+    *,
+    k: float = 1.0,
+    smooth_window: int = 30,
+    dwell_window: int = 30,
+    min_fraction_inside: float = 0.85,
+) -> int:
+    """Estimate thermalization time from convergence of random- and ordered-start traces.
+
+    Compares a trajectory started from a random spin configuration against one
+    started from a fully ordered configuration.  Returns the first step at which
+    both smoothed traces enter and sustain a common equilibrium band.
+
+    Parameters
+    ----------
+        trace_random: 1-D magnetization trace from a random initial state.
+        trace_ordered: 1-D magnetization trace from an ordered initial state.
+        k: Half-width of the convergence band in units of the tail standard
+            deviation.  Larger values are more permissive.
+        smooth_window: Window length (steps) for the moving-average smoother.
+        dwell_window: Window length (steps) for the sustained-convergence test.
+        min_fraction_inside: Fraction of steps within ``dwell_window`` that must
+            lie inside the band to declare convergence.
+
+    Returns
+    -------
+        Estimated relaxation time in MC steps.  Returns the full trace length
+        if no convergence is detected, or 0 for very short traces.
+    """
+    r = np.abs(_valid_prefix(np.asarray(trace_random, dtype=float)))
+    o = np.abs(_valid_prefix(np.asarray(trace_ordered, dtype=float)))
+
+    n = min(len(r), len(o))
+    if n < 8:
+        return 0
+    r = r[:n]
+    o = o[:n]
+
+    r_sm = _moving_average(r, smooth_window)
+    o_sm = _moving_average(o, smooth_window)
+    m = min(len(r_sm), len(o_sm))
+    r_sm = r_sm[:m]
+    o_sm = o_sm[:m]
+
+    half = m // 2
+    tail_combined = np.concatenate([r_sm[half:], o_sm[half:]])
+    mean_eq = tail_combined.mean()
+    sigma_eq = max(tail_combined.std(), 1e-12)
+    band = k * sigma_eq
+
+    both_inside = (
+        (np.abs(r_sm - mean_eq) <= band)
+        & (np.abs(o_sm - mean_eq) <= band)
+        & (np.abs(r_sm - o_sm) <= band)
+    ).astype(float)
+
+    dwell_window = max(3, min(dwell_window, len(both_inside)))
+    sustained_fraction = (
+        np.convolve(both_inside, np.ones(dwell_window), mode='valid') / dwell_window
+    )
+
+    hits = np.where(sustained_fraction >= min_fraction_inside)[0]
+    return int(hits[0]) if hits.size else n

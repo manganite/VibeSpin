@@ -45,6 +45,29 @@ def test_ising_run(standard_params):
         assert 0 <= m <= 1.0
 
 
+def test_ising_run_with_cluster_sizes(standard_params):
+    """Verify that run_with_cluster_sizes returns the expected number of measurements."""
+    size, temp = standard_params['size'], standard_params['temp']
+    n_steps = 10
+
+    # Wolff update
+    sim_wolff = IsingSimulation(size=size, temp=temp, update='wolff')
+    mags, engs, clusters = sim_wolff.run_with_cluster_sizes(n_steps=n_steps)
+    assert len(mags) == n_steps
+    assert len(engs) == n_steps
+    assert len(clusters) == n_steps
+    assert np.all(clusters >= 0)
+    # At temp=2.0 (near Tc=2.269), clusters should generally be > 0
+    assert np.any(clusters > 0)
+    assert np.all(clusters <= size * size)
+
+    # Random update (clusters should be 0)
+    sim_metrop = IsingSimulation(size=size, temp=temp, update='random')
+    mags_m, engs_m, clusters_m = sim_metrop.run_with_cluster_sizes(n_steps=n_steps)
+    assert len(clusters_m) == n_steps
+    assert np.all(clusters_m == 0)
+
+
 def test_ising_low_temp_magnetization():
     """Verify that Ising model maintains high magnetization at very low temperature."""
     # Start from an ordered state (ground state)

@@ -19,6 +19,7 @@ from utils.physics_helpers import (
     calculate_entropy,
     calculate_thermodynamics,
     compute_kinetics_metrics,
+    estimate_relaxation_time_two_start,
     get_averaged_correlation,
     pair_correlation_x,
     power_fit,
@@ -524,3 +525,46 @@ def test_power_fit_none_on_insufficient_data():
     exp, pre = power_fit(t_arr=t, y_arr=y, mask=mask)
     assert exp is None
     assert pre is None
+
+
+def test_estimate_relaxation_time_two_start_basic():
+    """Verify relaxation time estimation on a synthetic converging sequence."""
+    n = 200
+    # Ordered starts at 1, decays to 0.5
+    trace_ordered = 0.5 + 0.5 * np.exp(-np.arange(n) / 20.0)
+    # Random starts at 0, grows to 0.5
+    trace_random = 0.5 * (1.0 - np.exp(-np.arange(n) / 20.0))
+
+    # Add some noise
+    rng = np.random.default_rng(42)
+    trace_ordered += rng.normal(0, 0.01, n)
+    trace_random += rng.normal(0, 0.01, n)
+
+    tau = estimate_relaxation_time_two_start(
+        trace_random=trace_random,
+        trace_ordered=trace_ordered,
+        smooth_window=5,
+        dwell_window=5,
+    )
+
+    # Should converge well before the end
+    assert 0 < tau < n
+    # For these params, should be roughly a few decay constants
+    assert 30 < tau < 180
+
+
+def test_estimate_relaxation_time_two_start_short():
+    """Should return 0 for very short traces."""
+    r = np.array([0.1, 0.2])
+    o = np.array([0.9, 0.8])
+    assert estimate_relaxation_time_two_start(r, o) == 0
+
+
+def test_estimate_relaxation_time_two_start_no_convergence():
+    """Should return trace length if they never meet."""
+    n = 50
+    r = np.zeros(n)
+    o = np.ones(n)
+    # Use small k to ensure they don't "accidentally" converge
+    tau = estimate_relaxation_time_two_start(r, o, k=0.1)
+    assert tau == n
