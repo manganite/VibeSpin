@@ -22,30 +22,31 @@ import numpy as np
 from models.ising_model import IsingSimulation
 from utils.exceptions import ZeroVarianceAutocorrelationError
 from utils.physics_helpers import calculate_autocorr, calculate_thermodynamics
-from utils.system_helpers import adaptive_equilibrate, parallel_sweep, setup_logging
+from utils.system_helpers import convergence_equilibrate, parallel_sweep, setup_logging
 
 #: Exact Onsager critical temperature for the 2D nearest-neighbour Ising model.
 TC_ISING: float = 2.0 / np.log(1.0 + np.sqrt(2.0))
 
 
 def _measure_efficiency_point(
-    params: tuple[float, int, int, int, int],
+    params: tuple[float, int, int, int, int, int],
 ) -> dict[str, float]:
     """
     Worker: measure algorithmic efficiency at one temperature point.
 
     Runs the Metropolis checkerboard and Wolff cluster algorithms from
-    independent equilibrated states at temperature *T*.  For each algorithm
+    independent equilibrated states at temperature *T*. For each algorithm
     the worker records wall-clock time for *meas_steps* steps via
     ``sim.run()``, computes tau_int from the magnetisation series, and derives
-    ISS = (steps / wall_time) / tau_int.  Cluster sizes are measured in a
+    ISS = (steps / wall_time) / tau_int. Cluster sizes are measured in a
     separate, short Wolff pass to keep the timing paths clean.
 
     Parameters
     ----------
     params : tuple
-        ``(T, L, eq_steps, meas_steps, seed)`` — temperature, lattice size,
-        minimum equilibration steps, measurement steps, and base RNG seed.
+        ``(T, L, eq_probe_steps, eq_max_steps, meas_steps, seed)`` — temperature,
+        lattice size, chunk size for convergence, hard cap on equilibration,
+        measurement steps, and base RNG seed.
 
     Returns
     -------
@@ -53,13 +54,19 @@ def _measure_efficiency_point(
         Keys: ``T``, ``tau_metro``, ``tau_wolff``, ``iss_metro``,
         ``iss_wolff``, ``mean_cluster_frac``, ``chi_metro``, ``chi_wolff``.
     """
-    T, L, eq_steps, meas_steps, seed = params
+    T, L, eq_probe_steps, eq_max_steps, meas_steps, seed = params
 
     # ---- Metropolis checkerboard ----
-    sim_m = IsingSimulation(size=L, temp=T, update='checkerboard', seed=seed)
-    adaptive_equilibrate(sim_m, min_steps=eq_steps)
+    sim_m_r = IsingSimulation(
+        size=L, temp=T, update='checkerboard', init_state='random', seed=seed
+    )
+    sim_m_o = IsingSimulation(
+        size=L, temp=T, update='checkerboard', init_state='ordered', seed=seed
+    )
+    convergence_equilibrate(sim_m_r, sim_m_o, chunk_size=eq_probe_steps, max_steps=eq_max_steps)
+
     t0 = time.perf_counter()
-    mags_m, engs_m = sim_m.run(n_steps=meas_steps)
+    mags_m, engs_m = sim_m_r.run(n_steps=meas_steps)
     t_metro = time.perf_counter() - t0
     mags_m_arr = np.array(mags_m)
     engs_m_arr = np.array(engs_m)
@@ -77,10 +84,12 @@ def _measure_efficiency_point(
     )
 
     # ---- Wolff cluster (tau_int and ISS via sim.run for clean timing) ----
-    sim_w = IsingSimulation(size=L, temp=T, update='wolff', seed=seed + 1)
-    adaptive_equilibrate(sim_w, min_steps=eq_steps)
+    sim_w_r = IsingSimulation(size=L, temp=T, update='wolff', init_state='random', seed=seed + 1)
+    sim_w_o = IsingSimulation(size=L, temp=T, update='wolff', init_state='ordered', seed=seed + 1)
+    convergence_equilibrate(sim_w_r, sim_w_o, chunk_size=eq_probe_steps, max_steps=eq_max_steps)
+
     t0 = time.perf_counter()
-    mags_w, engs_w = sim_w.run(n_steps=meas_steps)
+    mags_w, engs_w = sim_w_r.run(n_steps=meas_steps)
     t_wolff = time.perf_counter() - t0
     mags_w_arr = np.array(mags_w)
     engs_w_arr = np.array(engs_w)
@@ -99,9 +108,10 @@ def _measure_efficiency_point(
 
     # ---- Cluster size: separate short pass to keep timing clean ----
     cluster_steps = min(meas_steps, 300)
-    sim_c = IsingSimulation(size=L, temp=T, update='wolff', seed=seed + 2)
-    sim_c.equilibrate(n_steps=eq_steps)
-    _, _, cluster_sizes_arr = sim_c.run_with_cluster_sizes(n_steps=cluster_steps)
+    sim_c_r = IsingSimulation(size=L, temp=T, update='wolff', init_state='random', seed=seed + 2)
+    sim_c_o = IsingSimulation(size=L, temp=T, update='wolff', init_state='ordered', seed=seed + 2)
+    convergence_equilibrate(sim_c_r, sim_c_o, chunk_size=eq_probe_steps, max_steps=eq_max_steps)
+    _, _, cluster_sizes_arr = sim_c_r.run_with_cluster_sizes(n_steps=cluster_steps)
     mean_cluster_frac = float(np.mean(cluster_sizes_arr)) / (L * L)
 
     return {
@@ -226,8 +236,12 @@ def main() -> None:
     )
     parser.add_argument('--size', type=int, default=64, help='Lattice size L (default: 64)')
     parser.add_argument(
-        '--eq-steps', type=int, default=500,
-        help='Minimum equilibration steps per temperature point (default: 500)',
+        '--eq-probe-steps', type=int, default=500,
+        help='Chunk size for convergence check during equilibration (default: 500)',
+    )
+    parser.add_argument(
+        '--eq-max-steps', type=int, default=200000,
+        help='Hard cap on equilibration steps (default: 200000)',
     )
     parser.add_argument(
         '--meas-steps', type=int, default=2000,
@@ -257,7 +271,7 @@ def main() -> None:
     )
 
     sweep_params = [
-        (T, L, args.eq_steps, args.meas_steps, idx * 1000)
+        (T, L, args.eq_probe_steps, args.eq_max_steps, args.meas_steps, idx * 1000)
         for idx, T in enumerate(temperatures)
     ]
     raw: list[dict[str, float]] = parallel_sweep(

@@ -3,6 +3,8 @@ Side-by-side temperature sweep: continuous clock (XY + anisotropy) vs discrete c
 """
 from __future__ import annotations
 
+import argparse
+import logging
 import os
 import time
 
@@ -11,6 +13,10 @@ import numpy as np
 
 from models.clock_model import ClockSimulation, DiscreteClockSimulation
 from utils.physics_helpers import calculate_thermodynamics
+from utils.system_helpers import (
+    convergence_equilibrate,
+    setup_logging,
+)
 
 
 def sweep_model(
@@ -19,7 +25,8 @@ def sweep_model(
     temperatures: np.ndarray,
     L: int,
     q: int,
-    eq_steps: int,
+    eq_probe_steps: int,
+    eq_max_steps: int,
     meas_steps: int,
     extra_kwargs: dict,
 ) -> tuple[list[float], list[float], list[float], list[float]]:
@@ -29,9 +36,11 @@ def sweep_model(
     spec_h_list: list[float] = []
 
     for T in temperatures:
-        sim = model_cls(size=L, temp=T, q=q, **extra_kwargs)
-        sim.equilibrate(n_steps=eq_steps)
-        mags, engs = sim.run(n_steps=meas_steps)
+        sim_r = model_cls(size=L, temp=T, q=q, init_state='random', **extra_kwargs)
+        sim_o = model_cls(size=L, temp=T, q=q, init_state='ordered', **extra_kwargs)
+        convergence_equilibrate(sim_r, sim_o, chunk_size=eq_probe_steps, max_steps=eq_max_steps)
+
+        mags, engs = sim_r.run(n_steps=meas_steps)
         avg_m, avg_e, susc, spec_h = calculate_thermodynamics(
             mags=np.array(mags), engs=np.array(engs), T=T, L=L,
         )
@@ -43,36 +52,68 @@ def sweep_model(
 
 
 def main() -> None:
-    L = 32
-    q = 6
-    eq_steps = 5000
-    meas_steps = 5000
-    temperatures = np.linspace(0.1, 2.0, 30)
+    parser = argparse.ArgumentParser(description='Compare Discrete vs Continuous Clock Models')
+    parser.add_argument('--size', type=int, default=32, help='Lattice size L')
+    parser.add_argument('--q', type=int, default=6, help='Number of clock states')
+    parser.add_argument(
+        '--eq-probe-steps', type=int, default=500,
+        help='Chunk size for convergence check during equilibration',
+    )
+    parser.add_argument(
+        '--eq-max-steps', type=int, default=100000,
+        help='Hard cap on equilibration steps per temperature point',
+    )
+    parser.add_argument('--meas-steps', type=int, default=5000, help='Measurement steps')
+    parser.add_argument('--t-min', type=float, default=0.1, help='Minimum temperature')
+    parser.add_argument('--t-max', type=float, default=2.0, help='Maximum temperature')
+    parser.add_argument('--t-points', type=int, default=30, help='Number of temperature points')
+    parser.add_argument('--output-dir', type=str, default='results/clock', help='Output directory')
+    parser.add_argument('--verbose', action='store_true', help='Enable verbose logging')
+    args = parser.parse_args()
 
-    print(f'Sweeping q={q} clock models, L={L}, {len(temperatures)} temperatures')
-    print(f'  eq={eq_steps}, meas={meas_steps} steps each\n')
+    log_level = logging.DEBUG if args.verbose else logging.INFO
+    logger = setup_logging(level=log_level)
+
+    L = args.size
+    q = args.q
+    eq_probe_steps = args.eq_probe_steps
+    eq_max_steps = args.eq_max_steps
+    meas_steps = args.meas_steps
+    temperatures = np.linspace(args.t_min, args.t_max, args.t_points)
+
+    logger.info(f'Sweeping q={q} clock models, L={L}, {len(temperatures)} temperatures')
+    logger.info(
+        f'  eq_probe={eq_probe_steps}, eq_max={eq_max_steps}, '
+        f'meas={meas_steps} steps each\n'
+    )
 
     # --- Continuous clock (XY + anisotropy A=0.1) ---
-    print('Running continuous clock (A=0.1)...')
+    logger.info('Running continuous clock (A=0.1)...')
     t0 = time.perf_counter()
     cm, ce, cs, cc = sweep_model(
         model_cls=ClockSimulation,
         temperatures=temperatures,
-        L=L, q=q, eq_steps=eq_steps, meas_steps=meas_steps,
+        L=L, q=q,
+        eq_probe_steps=eq_probe_steps,
+        eq_max_steps=eq_max_steps,
+        meas_steps=meas_steps,
         extra_kwargs={'A': 0.1},
     )
-    print(f'  Done in {time.perf_counter() - t0:.1f}s')
+    logger.info(f'  Done in {time.perf_counter() - t0:.1f}s')
 
     # --- Discrete clock ---
-    print('Running discrete clock...')
+    logger.info('Running discrete clock...')
     t0 = time.perf_counter()
     dm, de, ds, dc = sweep_model(
         model_cls=DiscreteClockSimulation,
         temperatures=temperatures,
-        L=L, q=q, eq_steps=eq_steps, meas_steps=meas_steps,
+        L=L, q=q,
+        eq_probe_steps=eq_probe_steps,
+        eq_max_steps=eq_max_steps,
+        meas_steps=meas_steps,
         extra_kwargs={},
     )
-    print(f'  Done in {time.perf_counter() - t0:.1f}s')
+    logger.info(f'  Done in {time.perf_counter() - t0:.1f}s')
 
     # --- Plot ---
     fig, axes = plt.subplots(2, 2, figsize=(12, 9))
@@ -97,11 +138,10 @@ def main() -> None:
         ax.grid(True, alpha=0.3)
 
     fig.subplots_adjust(hspace=0.3, wspace=0.3)
-    outdir = 'results/clock'
-    os.makedirs(outdir, exist_ok=True)
-    outpath = os.path.join(outdir, 'discrete_vs_continuous.png')
+    os.makedirs(args.output_dir, exist_ok=True)
+    outpath = os.path.join(args.output_dir, 'discrete_vs_continuous.png')
     fig.savefig(outpath, dpi=150)
-    print(f'\nPlot saved to {outpath}')
+    logger.info(f'\nPlot saved to {outpath}')
 
 
 if __name__ == '__main__':

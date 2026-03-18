@@ -21,7 +21,7 @@ from models.ising_model import IsingSimulation
 from utils.exceptions import ZeroVarianceAutocorrelationError
 from utils.physics_helpers import calculate_autocorr
 from utils.system_helpers import (
-    adaptive_equilibrate,
+    convergence_equilibrate,
     parallel_sweep,
     setup_logging,
 )
@@ -31,7 +31,7 @@ TC_ISING: float = 2.0 / np.log(1.0 + np.sqrt(2.0))
 
 
 def _measure_tau_point(
-    params: tuple[str, int, int, int, int],
+    params: tuple[str, int, int, int, int, int],
 ) -> dict[str, Any]:
     """
     Worker: measure tau_int for a specific algorithm and lattice size at Tc.
@@ -39,23 +39,24 @@ def _measure_tau_point(
     Parameters
     ----------
     params : tuple
-        ``(update, L, eq_steps, meas_steps, seed)`` — update scheme, lattice size,
-        minimum equilibration steps, measurement steps, and RNG seed.
+        ``(update, L, eq_probe_steps, eq_max_steps, meas_steps, seed)`` — update
+        scheme, lattice size, chunk size for convergence, hard cap on
+        equilibration, measurement steps, and RNG seed.
 
     Returns
     -------
     dict
         Keys: ``update``, ``L``, ``tau_int``, ``wall_time``.
     """
-    update, L, eq_steps, meas_steps, seed = params
-    sim = IsingSimulation(size=L, temp=TC_ISING, update=update, seed=seed)
+    update, L, eq_probe_steps, eq_max_steps, meas_steps, seed = params
+    sim_r = IsingSimulation(size=L, temp=TC_ISING, update=update, init_state='random', seed=seed)
+    sim_o = IsingSimulation(size=L, temp=TC_ISING, update=update, init_state='ordered', seed=seed)
 
-    # Thorough equilibration at Tc
-    # factor=100.0 ensures probe window is much larger than tau_int
-    adaptive_equilibrate(sim, min_steps=eq_steps, factor=100.0)
+    # Thorough equilibration at Tc via two-start convergence
+    convergence_equilibrate(sim_r, sim_o, chunk_size=eq_probe_steps, max_steps=eq_max_steps)
 
     t0 = time.perf_counter()
-    mags, _ = sim.run(n_steps=meas_steps)
+    mags, _ = sim_r.run(n_steps=meas_steps)
     wall_time = time.perf_counter() - t0
 
     mags_arr = np.array(mags)
@@ -84,8 +85,12 @@ def main() -> None:
         help='Lattice sizes L to sweep (default: 16 32 48 64 96 128)',
     )
     parser.add_argument(
-        '--eq-steps', type=int, default=5000,
-        help='Minimum equilibration steps at Tc (default: 5000)',
+        '--eq-probe-steps', type=int, default=1000,
+        help='Chunk size for convergence check during equilibration (default: 1000)',
+    )
+    parser.add_argument(
+        '--eq-max-steps', type=int, default=500000,
+        help='Hard cap on equilibration steps at Tc (default: 500000)',
     )
     parser.add_argument(
         '--meas-steps-metro', type=int, default=400000,
@@ -114,12 +119,16 @@ def main() -> None:
     sweep_params = []
     # Metropolis points (use 'random' for physical dynamics)
     for idx, L in enumerate(sizes):
-        sweep_params.append(('random', L, args.eq_steps, args.meas_steps_metro, idx * 2000))
+        sweep_params.append(
+            ('random', L, args.eq_probe_steps, args.eq_max_steps, args.meas_steps_metro, idx * 2000)
+        )
 
     # Wolff points
     for idx, L in enumerate(sizes):
         seed = (idx + len(sizes)) * 2000
-        sweep_params.append(('wolff', L, args.eq_steps, args.meas_steps_wolff, seed))
+        sweep_params.append(
+            ('wolff', L, args.eq_probe_steps, args.eq_max_steps, args.meas_steps_wolff, seed)
+        )
 
     raw: list[dict[str, Any]] = parallel_sweep(
         worker_func=_measure_tau_point, params=sweep_params,
