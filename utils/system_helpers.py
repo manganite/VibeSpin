@@ -216,7 +216,7 @@ def convergence_equilibrate(
 
     Uses ``estimate_relaxation_time_two_start`` to detect when the two
     trajectories have entered the same equilibrium band. This is more robust
-     than one-start adaptive methods for complex energy landscapes.
+    than one-start adaptive methods for complex energy landscapes.
 
     Parameters
     ----------
