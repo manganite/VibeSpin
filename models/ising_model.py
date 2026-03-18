@@ -298,6 +298,7 @@ class IsingSimulation(MonteCarloSimulation):
         temp: float,
         J: float = 1.0,
         update: str = 'checkerboard',
+        init_state: str = 'random',
         parallel: bool = False,
         seed: int | None = None,
     ):
@@ -314,6 +315,7 @@ class IsingSimulation(MonteCarloSimulation):
                 stochastic dynamics for coarsening studies), or
                 ``'wolff'`` (Wolff cluster algorithm, highly efficient near T_c
                 due to vanishing critical slowing down).
+            init_state: Initial spin configuration: ``'random'`` (default) or ``'ordered'``.
             parallel: Whether to use parallelized Numba kernels (only for checkerboard).
             seed: Optional random seed for reproducibility.
 
@@ -321,15 +323,19 @@ class IsingSimulation(MonteCarloSimulation):
         ------
             ValueError: If ``update`` is not one of the recognised schemes.
         """
-        super().__init__(size=size, temp=temp, seed=seed)
+        super().__init__(size=size, temp=temp, init_state=init_state, seed=seed)
         if update not in self._VALID_UPDATES:
             valid_opts = sorted(self._VALID_UPDATES)
             raise ValueError(f'Unknown update scheme {update!r}. Valid options: {valid_opts}')
         self.J = J
         self.update = update
         self.parallel = parallel
-        # Initialize random spins +1 or -1
-        self.spins = self.rng.choice(np.array([-1, 1], dtype=np.int8), size=(size, size))
+
+        if self.init_state == 'ordered':
+            self.spins = np.ones((size, size), dtype=np.int8)
+        else:
+            self.spins = self.rng.choice(np.array([-1, 1], dtype=np.int8), size=(size, size))
+
         # Last Wolff cluster size (0 for non-Wolff updates or before any step)
         self.last_cluster_size: int = 0
 

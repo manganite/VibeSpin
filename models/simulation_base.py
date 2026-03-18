@@ -121,7 +121,9 @@ class MonteCarloSimulation(ABC):
     Provides infrastructure for equilibration, measurement runs, and statistical analysis.
     """
 
-    def __init__(self, *, size: int, temp: float, seed: int | None = None):
+    def __init__(
+        self, *, size: int, temp: float, init_state: str = 'random', seed: int | None = None
+    ):
         """
         Initialize the simulation.
 
@@ -129,6 +131,7 @@ class MonteCarloSimulation(ABC):
         ----------
             size: Linear dimension L of the N x N lattice.
             temp: Temperature T of the system.
+            init_state: Initial spin configuration: ``'random'`` (default) or ``'ordered'``.
             seed: Optional random seed for reproducibility.
 
         Raises
@@ -139,15 +142,16 @@ class MonteCarloSimulation(ABC):
             raise ValueError(f'size must be a positive integer, got {size!r}')
         if temp <= 0.0:
             raise ValueError(f'temp must be positive (T > 0), got {temp}')
+        if init_state not in {'random', 'ordered'}:
+            raise ValueError(f"init_state must be 'random' or 'ordered', got {init_state!r}")
         self.size = size
         self.temp = temp
+        self.init_state = init_state
         self.beta = 1.0 / temp
         self.steps = 0
         self.seed = seed
         self.rng = np.random.default_rng(seed)
         self.spins: np.ndarray | None = None  # To be initialized by subclasses
-
-        # Pre-calculate neighbor indices for Periodic Boundary Conditions (PBC)
         self.idx_next = np.roll(np.arange(size), -1)
         self.idx_prev = np.roll(np.arange(size), 1)
 

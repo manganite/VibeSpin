@@ -13,7 +13,7 @@ from models.xy_model import XYSimulation
 from utils.exceptions import ZeroVarianceAutocorrelationError
 from utils.physics_helpers import calculate_autocorr, calculate_entropy, calculate_thermodynamics
 from utils.system_helpers import (
-    adaptive_equilibrate,
+    convergence_equilibrate,
     parallel_sweep,
     plot_temperature_sweep,
     setup_logging,
@@ -27,15 +27,20 @@ def simulate_temperature(
     Worker function to simulate a single temperature point for the XY model.
     """
     T, L, eq_steps, meas_steps, eq_probe_steps, eq_factor, eq_max_steps = params
-    sim = XYSimulation(size=L, temp=T)
-    adaptive_equilibrate(
-        sim,
-        min_steps=eq_steps,
-        probe_steps=eq_probe_steps,
-        factor=eq_factor,
+
+    # Initialize two simulations for the two-start convergence test
+    sim_r = XYSimulation(size=L, temp=T, init_state='random')
+    sim_o = XYSimulation(size=L, temp=T, init_state='ordered')
+
+    # Robust equilibration via two-start convergence
+    convergence_equilibrate(
+        sim_r,
+        sim_o,
+        chunk_size=eq_probe_steps,
         max_steps=eq_max_steps,
     )
-    mags, engs = sim.run(n_steps=meas_steps)
+
+    mags, engs = sim_r.run(n_steps=meas_steps)
     mags_arr = np.array(mags)
     thermo = calculate_thermodynamics(mags=mags_arr, engs=np.array(engs), T=T, L=L)
     try:
@@ -53,20 +58,12 @@ def main() -> None:
     parser = argparse.ArgumentParser(description='2D XY Model Temperature Sweep')
     parser.add_argument('--size', type=int, default=48, help='Linear lattice size L')
     parser.add_argument(
-        '--eq-steps', type=int, default=5000,
-        help='Min equilibration steps (adaptive top-up if tau_int demands it)',
-    )
-    parser.add_argument(
         '--eq-probe-steps', type=int, default=500,
-        help='Probe length for adaptive equilibration',
+        help='Chunk size for convergence check during equilibration',
     )
     parser.add_argument(
-        '--eq-factor', type=float, default=50.0,
-        help='Adaptive stop rule: require probe_steps >= eq_factor * tau_int',
-    )
-    parser.add_argument(
-        '--eq-max-steps', type=int, default=200000,
-        help='Hard cap on adaptive equilibration steps',
+        '--eq-max-steps', type=int, default=200_000,
+        help='Hard cap on total equilibration steps',
     )
     parser.add_argument('--meas-steps', type=int, default=5000, help='Measurement steps')
     parser.add_argument('--t-min', type=float, default=0.1, help='Minimum temperature')
@@ -91,10 +88,10 @@ def main() -> None:
         (
             T,
             L,
-            args.eq_steps,
+            0,  # placeholder for removed eq_steps
             args.meas_steps,
             args.eq_probe_steps,
-            args.eq_factor,
+            0.0, # placeholder for removed eq_factor
             args.eq_max_steps,
         )
         for T in temperatures

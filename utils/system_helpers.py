@@ -9,7 +9,7 @@ import sys
 import warnings
 from collections.abc import Callable, Iterable, Sequence, Sized
 from multiprocessing import Pool
-from typing import Protocol
+from typing import Any, Protocol
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -198,6 +198,67 @@ def adaptive_equilibrate(
     logger.warning(
         f'adaptive_equilibrate: reached max_steps={max_steps} without satisfying '
         f'criterion probe_steps({probe_steps}) >= factor({factor}) * tau_int; '
+        'proceeding anyway.'
+    )
+    return total
+
+
+def convergence_equilibrate(
+    sim_random: _Sim,
+    sim_ordered: _Sim,
+    *,
+    chunk_size: int = 500,
+    max_steps: int = 200_000,
+    **kwargs: Any,
+) -> int:
+    """
+    Equilibrate two simulations (random- and ordered-start) until they converge.
+
+    Uses ``estimate_relaxation_time_two_start`` to detect when the two
+    trajectories have entered the same equilibrium band. This is more robust
+     than one-start adaptive methods for complex energy landscapes.
+
+    Parameters
+    ----------
+        sim_random: Simulation instance started from a random state.
+        sim_ordered: Simulation instance started from an ordered state.
+        chunk_size: Number of steps to run between convergence checks.
+        max_steps: Hard cap on total steps.
+        **kwargs: Passed to ``estimate_relaxation_time_two_start`` (k, smooth, dwell, etc.).
+
+    Returns
+    -------
+        Total number of MC steps run per simulation.
+    """
+    from .physics_helpers import estimate_relaxation_time_two_start  # lazy import
+
+    logger = logging.getLogger('vibespin')
+    mags_r: list[float] = []
+    mags_o: list[float] = []
+    total = 0
+
+    while total < max_steps:
+        mr, _ = sim_random.run(n_steps=chunk_size)
+        mo, _ = sim_ordered.run(n_steps=chunk_size)
+        mags_r.extend(mr)
+        mags_o.extend(mo)
+        total += chunk_size
+
+        # Only check if we have enough data for a meaningful estimate
+        # smooth_window defaults to 30, dwell_window to 30.
+        if total >= 100:
+            tau = estimate_relaxation_time_two_start(
+                trace_random=np.array(mags_r),
+                trace_ordered=np.array(mags_o),
+                **kwargs,
+            )
+            # If estimate_relaxation_time_two_start returns a value < total,
+            # it means convergence was detected at some point in the past.
+            if tau < total:
+                return total
+
+    logger.warning(
+        f'convergence_equilibrate: reached max_steps={max_steps} without convergence; '
         'proceeding anyway.'
     )
     return total

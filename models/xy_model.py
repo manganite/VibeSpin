@@ -356,6 +356,7 @@ class XYSimulation(MonteCarloSimulation):
         temp: float,
         J: float = 1.0,
         update: str = 'checkerboard',
+        init_state: str = 'random',
         parallel: bool = False,
         seed: int | None = None,
     ):
@@ -372,6 +373,7 @@ class XYSimulation(MonteCarloSimulation):
                 stochastic dynamics for kinetics studies), or
                 ``'wolff'`` (Wolff-Evertz cluster algorithm, efficient near
                 the BKT transition).
+            init_state: Initial spin configuration: ``'random'`` (default) or ``'ordered'``.
             parallel: Whether to use parallelized Numba kernels (only for checkerboard).
             seed: Optional random seed for reproducibility.
 
@@ -379,7 +381,7 @@ class XYSimulation(MonteCarloSimulation):
         ------
             ValueError: If ``update`` is not one of the recognised schemes.
         """
-        super().__init__(size=size, temp=temp, seed=seed)
+        super().__init__(size=size, temp=temp, init_state=init_state, seed=seed)
         if update not in self._VALID_UPDATES:
             valid_opts = sorted(self._VALID_UPDATES)
             raise ValueError(f'Unknown update scheme {update!r}. Valid options: {valid_opts}')
@@ -387,10 +389,14 @@ class XYSimulation(MonteCarloSimulation):
         self.update = update
         self.parallel = parallel
 
-        # Initialize random spins as 2D unit vectors
-        # spin = (spin_x, spin_y)
-        angles = self.rng.uniform(0, 2 * np.pi, size=(size, size))
-        self.spins = np.stack([np.cos(angles), np.sin(angles)], axis=-1)
+        if self.init_state == 'ordered':
+            # Ordered state: all spins at angle 0 -> (1, 0)
+            self.spins = np.zeros((size, size, 2), dtype=float)
+            self.spins[..., 0] = 1.0
+        else:
+            # Initialize random spins as 2D unit vectors
+            angles = self.rng.uniform(0, 2 * np.pi, size=(size, size))
+            self.spins = np.stack([np.cos(angles), np.sin(angles)], axis=-1)
 
     def step(self) -> None:
         """Perform one Monte Carlo step using Numba."""

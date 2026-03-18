@@ -412,6 +412,7 @@ class ClockSimulation(MonteCarloSimulation):
         A: float = 1.0,
         q: int = 6,
         update: str = 'checkerboard',
+        init_state: str = 'random',
         parallel: bool = False,
         seed: int | None = None,
     ):
@@ -430,6 +431,7 @@ class ClockSimulation(MonteCarloSimulation):
                 stochastic dynamics for kinetics studies), or
                 ``'wolff'`` (Wolff-Evertz cluster algorithm using the exchange
                 term J; detailed balance holds exactly only when A=0).
+            init_state: Initial spin configuration: ``'random'`` (default) or ``'ordered'``.
             parallel: Whether to use parallelized Numba kernels (only for checkerboard).
             seed: Optional random seed for reproducibility.
 
@@ -437,7 +439,7 @@ class ClockSimulation(MonteCarloSimulation):
         ------
             ValueError: If ``q`` is less than 2 or update scheme is unknown.
         """
-        super().__init__(size=size, temp=temp, seed=seed)
+        super().__init__(size=size, temp=temp, init_state=init_state, seed=seed)
         if q < 2:
             raise ValueError(f'q must be >= 2 (number of clock states), got {q}')
         if update not in self._VALID_UPDATES:
@@ -449,10 +451,14 @@ class ClockSimulation(MonteCarloSimulation):
         self.update = update
         self.parallel = parallel
 
-        # Initialize random spins as 2D unit vectors
-        # spin = (spin_x, spin_y)
-        angles = self.rng.uniform(0, 2 * np.pi, size=(size, size))
-        self.spins = np.stack([np.cos(angles), np.sin(angles)], axis=-1)
+        if self.init_state == 'ordered':
+            # Ordered state: all spins at angle 0 -> (1, 0)
+            self.spins = np.zeros((size, size, 2), dtype=float)
+            self.spins[..., 0] = 1.0
+        else:
+            # Initialize random spins as 2D unit vectors
+            angles = self.rng.uniform(0, 2 * np.pi, size=(size, size))
+            self.spins = np.stack([np.cos(angles), np.sin(angles)], axis=-1)
 
     def step(self) -> None:
         """Perform one Monte Carlo step using Numba."""
@@ -822,6 +828,7 @@ class DiscreteClockSimulation(MonteCarloSimulation):
         J: float = 1.0,
         q: int = 6,
         update: str = 'checkerboard',
+        init_state: str = 'random',
         parallel: bool = False,
         seed: int | None = None,
     ):
@@ -837,6 +844,7 @@ class DiscreteClockSimulation(MonteCarloSimulation):
             update: Update scheme - ``'checkerboard'`` (default, faster) or
                 ``'random'`` (random sequential Metropolis, more physical
                 stochastic dynamics for kinetics studies).
+            init_state: Initial spin configuration: ``'random'`` (default) or ``'ordered'``.
             parallel: Whether to use parallelized Numba kernels (only for checkerboard).
             seed: Optional random seed for reproducibility.
 
@@ -844,7 +852,7 @@ class DiscreteClockSimulation(MonteCarloSimulation):
         ------
             ValueError: If ``q`` is less than 2 or update scheme is unknown.
         """
-        super().__init__(size=size, temp=temp, seed=seed)
+        super().__init__(size=size, temp=temp, init_state=init_state, seed=seed)
         if q < 2:
             raise ValueError(f'q must be >= 2 (number of clock states), got {q}')
         if update not in self._VALID_UPDATES:
@@ -861,8 +869,12 @@ class DiscreteClockSimulation(MonteCarloSimulation):
         self._cos_angles = np.cos(angles)  # per-state cos for observables
         self._sin_angles = np.sin(angles)  # per-state sin for observables
 
-        # Initialize random discrete spins
-        self.spins = self.rng.integers(0, q, size=(size, size), dtype=np.int32)
+        if self.init_state == 'ordered':
+            # Initialize ordered discrete spins (state 0)
+            self.spins = np.zeros((size, size), dtype=np.int32)
+        else:
+            # Initialize random discrete spins
+            self.spins = self.rng.integers(0, q, size=(size, size), dtype=np.int32)
 
     def step(self) -> None:
         """Perform one Monte Carlo sweep using Numba."""
