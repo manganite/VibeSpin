@@ -159,4 +159,4 @@ The `parallel=True` flag is silently ignored when `update='wolff'`. Cluster grow
 
 [[11]](#Bibliography) J. Villain, "Theory of one- and two-dimensional magnets with an easy magnetization plane. II. The planar, classical, two-dimensional magnet," *J. Phys. France* 36, 581-590 (1975). [Open Access](https://doi.org/10.1051/jphys:01975003606058100)
 
-[[12]](#Bibliography) A. D. Sokal, "Monte Carlo Methods in Statistical Mechanics: Foundations and New Algorithms," lecture notes (1989), published in *Functional Integration: Basics and Applications* (C. DeWitt-Morette, P. Cartier, A. Folacci, eds.), Springer, 1997, pp. 131–192.
+[[12]](#Bibliography) A. D. Sokal, \"Monte Carlo Methods in Statistical Mechanics: Foundations and New Algorithms,\" lecture notes (1989), published in *Functional Integration: Basics and Applications* (C. DeWitt-Morette, P. Cartier, A. Folacci, eds.), Springer, 1997, pp. 131–192. [Springer Link](https://link.springer.com/chapter/10.1007/978-1-4899-0319-8_6)
