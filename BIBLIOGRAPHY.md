@@ -17,7 +17,9 @@ Referencing policy is defined in [AGENTS.md](./agents.md#7-scientific-referencin
 ### XY Model
 - J. M. Kosterlitz and D. J. Thouless, "Ordering, metastability and phase transitions in two-dimensional systems," Journal of Physics C: Solid State Physics, vol. 6, no. 7, pp. 1181–1203, 1973. [IOP Open Access](https://iopscience.iop.org/article/10.1088/0022-3719/6/7/010)
 - N. D. Mermin and H. Wagner, "Absence of Ferromagnetism or Antiferromagnetism in One- or Two-Dimensional Isotropic Heisenberg Models," Physical Review Letters, vol. 17, no. 22, pp. 1133–1136, 1966. [APS Open Access](https://journals.aps.org/prl/abstract/10.1103/PhysRevLett.17.1133)
+- J. Villain, "Theory of one- and two-dimensional magnets with an easy magnetization plane. II. The planar, classical, two-dimensional magnet," J. Phys. France 36, 581-590 (1975). [Open Access](https://doi.org/10.1051/jphys:01975003606058100)
 - [XY model on Wikipedia](https://en.wikipedia.org/wiki/XY_model)
+
 
 ### q-state Clock Model
 - J. Lapilli, P. Pfeifer, and C. Wexler, "Universality away from critical points in two-dimensional phase transitions," Physical Review Letters, vol. 96, no. 14, 140603, 2006. [APS Open Access](https://journals.aps.org/prl/abstract/10.1103/PhysRevLett.96.140603)
@@ -65,6 +67,7 @@ Referencing policy is defined in [AGENTS.md](./agents.md#7-scientific-referencin
 ## 4. Monte Carlo Analysis and Autocorrelation
 
 - G. S. Madras and A. D. Sokal, "The pivot algorithm: A highly efficient Monte Carlo method for the self-avoiding walk," Journal of Statistical Physics, vol. 50, no. 1-2, pp. 109–186, 1988. [Springer Open Access](https://link.springer.com/article/10.1007/BF01022990)
+- A. D. Sokal, "Monte Carlo Methods in Statistical Mechanics: Foundations and New Algorithms," lecture notes (1989), published in Functional Integration: Basics and Applications (C. DeWitt-Morette, P. Cartier, A. Folacci, eds.), Springer, 1997, pp. 131–192.
 - [Autocorrelation time on Wikipedia](https://en.wikipedia.org/wiki/Autocorrelation#Time_series)
 - [Critical slowing down on Wikipedia](https://en.wikipedia.org/wiki/Critical_slowing_down)
 

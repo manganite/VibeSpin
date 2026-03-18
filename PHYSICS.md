@@ -29,7 +29,7 @@ $$E = -J \sum_{\langle i,j \rangle} \cos(\theta_i - \theta_j).$$
 
 
 Because continuous symmetry cannot break spontaneously in two dimensions (Mermin–Wagner theorem), the XY model does not develop true long-range order at any finite temperature. Instead it undergoes the Berezinskii–Kosterlitz–Thouless (BKT) transition: at low temperature, bound vortex–antivortex pairs maintain quasi-long-range order with algebraically decaying correlations, while above $T_{\mathrm{BKT}}$ the pairs unbind and correlations decay exponentially. This topological mechanism makes the 2D XY model qualitatively distinct from conventional order–disorder transitions.
-For background, see Kosterlitz and Thouless [[2]](#Bibliography) and Mermin and Wagner [[3]](#Bibliography).
+For background, see Kosterlitz and Thouless [[2]](#Bibliography), Mermin and Wagner [[3]](#Bibliography), and Villain [[11]](#Bibliography).
 See also the [XY model article on Wikipedia](https://en.wikipedia.org/wiki/XY_model).
 
 ### q-state Clock Model
@@ -80,7 +80,8 @@ $$S(T) = S_{\mathrm{ref}} - \int_T^{T_{\mathrm{ref}}} \frac{C_v(T')}{T'}\,dT'.$$
 
 The highest simulated temperature serves as the reference point. For clock models the absolute high-temperature limit is $S_{\mathrm{ref}} = \ln q$ per site (in units of $k_B$), corresponding to equipartition over all $q$ orientations.
 
-Finally, the **integrated autocorrelation time** $\tau_{\mathrm{int}}$, extracted from the magnetization time series, quantifies how many sweeps separate statistically independent samples. Near a critical point $\tau_{\mathrm{int}}$ diverges — the hallmark of critical slowing down — and its magnitude directly governs the statistical efficiency of the Monte Carlo run. VibeSpin uses $\tau_{\mathrm{int}}$ not only as a reported observable but as an active control signal: the adaptive equilibration routine in `utils/system_helpers.py` extends the burn-in until the probe window spans at least `factor` $\times$ $\tau_{\mathrm{int}}$ sweeps, ensuring that equilibrium measurements are taken from a decorrelated state regardless of how strongly $\tau_{\mathrm{int}}$ varies with temperature.
+Finally, the **integrated autocorrelation time** $\tau_{\mathrm{int}}$, extracted from the magnetization time series, quantifies how many sweeps separate statistically independent samples [[12]](#Bibliography).
+ Near a critical point $\tau_{\mathrm{int}}$ diverges — the hallmark of critical slowing down — and its magnitude directly governs the statistical efficiency of the Monte Carlo run. VibeSpin uses $\tau_{\mathrm{int}}$ not only as a reported observable but as an active control signal: the adaptive equilibration routine in `utils/system_helpers.py` extends the burn-in until the probe window spans at least `factor` $\times$ $\tau_{\mathrm{int}}$ sweeps, ensuring that equilibrium measurements are taken from a decorrelated state regardless of how strongly $\tau_{\mathrm{int}}$ varies with temperature.
 
 ### Spatial Diagnostics
 
@@ -155,3 +156,7 @@ The `parallel=True` flag is silently ignored when `update='wolff'`. Cluster grow
 [[9]](#Bibliography) U. Wolff, "Collective Monte Carlo Updating for Spin Systems," *Physical Review Letters*, vol. 62, no. 4, pp. 361–364, 1989. [APS Open Access](https://journals.aps.org/prl/abstract/10.1103/PhysRevLett.62.361)
 
 [[10]](#Bibliography) M. E. J. Newman and G. T. Barkema, "Monte Carlo Methods in Statistical Physics," Oxford University Press, 1999. [Lecture Notes Summary (H. G. Katzgraber)](https://arxiv.org/abs/0905.1629)
+
+[[11]](#Bibliography) J. Villain, "Theory of one- and two-dimensional magnets with an easy magnetization plane. II. The planar, classical, two-dimensional magnet," *J. Phys. France* 36, 581-590 (1975). [Open Access](https://doi.org/10.1051/jphys:01975003606058100)
+
+[[12]](#Bibliography) A. D. Sokal, "Monte Carlo Methods in Statistical Mechanics: Foundations and New Algorithms," lecture notes (1989), published in *Functional Integration: Basics and Applications* (C. DeWitt-Morette, P. Cartier, A. Folacci, eds.), Springer, 1997, pp. 131–192.
