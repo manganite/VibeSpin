@@ -253,7 +253,33 @@ mypy<span class="w"> </span>--explicit-package-bases<span class="w"> </span>mode
 </pre></div>
 </div>
 </li>
-<li><p><strong>Commit Format</strong>: Use <strong>Conventional Commits</strong> (<code class="docutils literal notranslate"><span class="pre">type(scope):</span> <span class="pre">description</span></code>). Example: <code class="docutils literal notranslate"><span class="pre">phys(xy):</span> <span class="pre">implement</span> <span class="pre">helicity</span> <span class="pre">modulus</span> <span class="pre">calculation</span></code>.</p></li>
+<li><p><strong>Commit Format</strong>: All commits MUST adhere to the Conventional Commits specification. This enforces a structured and readable commit history. The format is <code class="docutils literal notranslate"><span class="pre">type(scope):</span> <span class="pre">description</span></code>.</p>
+<ul class="simple">
+<li><p><strong>Type</strong>: The type MUST be one of the following:</p>
+<ul>
+<li><p><code class="docutils literal notranslate"><span class="pre">feat</span></code>: A new feature for the user.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">fix</span></code>: A bug fix for the user.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">docs</span></code>: Documentation only changes.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">style</span></code>: Changes that do not affect the meaning of the code (white-space, formatting, missing semi-colons, etc).</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">refactor</span></code>: A code change that neither fixes a bug nor adds a feature.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">perf</span></code>: A code change that improves performance.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">test</span></code>: Adding missing tests or correcting existing tests.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">chore</span></code>: Changes to the build process or auxiliary tools and libraries such as documentation generation.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">phys</span></code>: Changes related to the physics simulation kernels or models.</p></li>
+</ul>
+</li>
+<li><p><strong>Scope (optional)</strong>: The scope provides additional contextual information and is contained within parenthesis. It can be a noun describing a section of the codebase. Examples: <code class="docutils literal notranslate"><span class="pre">xy</span></code>, <code class="docutils literal notranslate"><span class="pre">ising</span></code>, <code class="docutils literal notranslate"><span class="pre">clock</span></code>, <code class="docutils literal notranslate"><span class="pre">notebooks</span></code>, <code class="docutils literal notranslate"><span class="pre">docs</span></code>, <code class="docutils literal notranslate"><span class="pre">ci</span></code>.</p></li>
+<li><p><strong>Description</strong>: The description is a short, imperative-tense summary of the code change. It should not be capitalized and should not end with a period.</p></li>
+</ul>
+<p>Example of good commit messages:</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">feat(core):</span> <span class="pre">add</span> <span class="pre">support</span> <span class="pre">for</span> <span class="pre">XYZ</span> <span class="pre">model</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">fix(xy):</span> <span class="pre">correct</span> <span class="pre">helicity</span> <span class="pre">modulus</span> <span class="pre">calculation</span> <span class="pre">for</span> <span class="pre">small</span> <span class="pre">lattices</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">docs(readme):</span> <span class="pre">update</span> <span class="pre">installation</span> <span class="pre">instructions</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">test(ising):</span> <span class="pre">add</span> <span class="pre">tests</span> <span class="pre">for</span> <span class="pre">Wolff</span> <span class="pre">algorithm</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">phys(clock):</span> <span class="pre">implement</span> <span class="pre">discrete</span> <span class="pre">speedup</span> <span class="pre">for</span> <span class="pre">q-state</span> <span class="pre">models</span></code></p></li>
+</ul>
+</li>
 <li><p><strong>GitHub Sync</strong>: After a successful local commit, ask the user if they wish to push to the remote repository.</p></li>
 </ul>
 </section>

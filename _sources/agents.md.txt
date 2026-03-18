@@ -90,7 +90,26 @@ Optimize for four outcomes: correct statistical-physics behavior, high simulatio
   ```bash
   pre-commit run --all-files --hook-stage pre-push
   ```
-- **Commit Format**: Use **Conventional Commits** (`type(scope): description`). Example: `phys(xy): implement helicity modulus calculation`.
+- **Commit Format**: All commits MUST adhere to the Conventional Commits specification. This enforces a structured and readable commit history. The format is `type(scope): description`.
+    -   **Type**: The type MUST be one of the following:
+        -   `feat`: A new feature for the user.
+        -   `fix`: A bug fix for the user.
+        -   `docs`: Documentation only changes.
+        -   `style`: Changes that do not affect the meaning of the code (white-space, formatting, missing semi-colons, etc).
+        -   `refactor`: A code change that neither fixes a bug nor adds a feature.
+        -   `perf`: A code change that improves performance.
+        -   `test`: Adding missing tests or correcting existing tests.
+        -   `chore`: Changes to the build process or auxiliary tools and libraries such as documentation generation.
+        -   `phys`: Changes related to the physics simulation kernels or models.
+    -   **Scope (optional)**: The scope provides additional contextual information and is contained within parenthesis. It can be a noun describing a section of the codebase. Examples: `xy`, `ising`, `clock`, `notebooks`, `docs`, `ci`.
+    -   **Description**: The description is a short, imperative-tense summary of the code change. It should not be capitalized and should not end with a period.
+
+    Example of good commit messages:
+    -   `feat(core): add support for XYZ model`
+    -   `fix(xy): correct helicity modulus calculation for small lattices`
+    -   `docs(readme): update installation instructions`
+    -   `test(ising): add tests for Wolff algorithm`
+    -   `phys(clock): implement discrete speedup for q-state models`
 - **GitHub Sync**: After a successful local commit, ask the user if they wish to push to the remote repository.
 
 ### 6. Documentation & Knowledge Management
