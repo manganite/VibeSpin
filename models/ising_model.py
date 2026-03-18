@@ -392,7 +392,7 @@ class IsingSimulation(MonteCarloSimulation):
         Returns
         -------
         magnetization:
-            Array of |M| per spin at each step.
+            Array of `|M|` per spin at each step.
         energies:
             Array of energy per spin at each step.
         cluster_sizes:
