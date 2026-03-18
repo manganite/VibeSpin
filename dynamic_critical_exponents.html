@@ -24,7 +24,7 @@
     <script src="_static/js/theme.js"></script>
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
-    <link rel="next" title="vibespin" href="api/modules.html" />
+    <link rel="next" title="Ising Model: Autocorrelation and Equilibration Analysis" href="ising_autocorrelation_analysis.html" />
     <link rel="prev" title="Wolff vs. Metropolis: Algorithmic Efficiency in the Critical Regime" href="wolff_efficiency.html" /> 
 </head>
 
@@ -72,6 +72,7 @@
 <li class="toctree-l2"><a class="reference internal" href="#Bibliography">Bibliography</a></li>
 </ul>
 </li>
+<li class="toctree-l1"><a class="reference internal" href="ising_autocorrelation_analysis.html">Ising Model: Autocorrelation and Equilibration Analysis</a></li>
 </ul>
 <p class="caption" role="heading"><span class="caption-text">API Reference:</span></p>
 <ul>
@@ -121,7 +122,7 @@ For the 2D Ising model, <span class="math notranslate nohighlight">\(\gamma/\nu 
 <p>If the precomputed NPZ file is unavailable, the notebook runs a lightweight fallback calculation for demonstration using small lattice sizes. This fallback is intended for quick testing and does not provide publication-quality results. For full-scale analysis, please generate the NPZ file using the measurement script.</p>
 <p><strong>References:</strong> , “The pivot algorithm: A highly efficient Monte Carlo method for the self-avoiding walk,” Journal of Statistical Physics, vol. 50, no. 1-2, pp. 109–186, 1988. (<a class="reference external" href="https://link.springer.com/article/10.1007/BF01022990">Springer Open Access</a>) (<a class="reference external" href="https://en.wikipedia.org/wiki/Autocorrelation#Time_series">https://en.wikipedia.org/wiki/Autocorrelation#Time_series</a>)</p>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[5]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[1]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">os</span>
@@ -193,7 +194,7 @@ Lattice sizes L: [ 16  32  48  64  96 128]
 values.</p>
 <p>The slope of the log-log plot corresponds to the dynamical critical exponent <span class="math notranslate nohighlight">\(z\)</span>, which quantifies how autocorrelation time grows with system size. The notebook automatically extracts and displays these exponents for both algorithms, ensuring reproducibility and clarity.</p>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[6]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[2]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Filter out any NaNs and ensure we have at least 3 points</span>
@@ -264,7 +265,7 @@ distribution. For studies of phase-ordering kinetics, aging, or non-equilibrium 
           </div>
           <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
         <a href="wolff_efficiency.html" class="btn btn-neutral float-left" title="Wolff vs. Metropolis: Algorithmic Efficiency in the Critical Regime" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
-        <a href="api/modules.html" class="btn btn-neutral float-right" title="vibespin" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+        <a href="ising_autocorrelation_analysis.html" class="btn btn-neutral float-right" title="Ising Model: Autocorrelation and Equilibration Analysis" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
     </div>
 
   <hr/>

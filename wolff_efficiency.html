@@ -68,6 +68,7 @@
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="dynamic_critical_exponents.html">Dynamical Critical Exponents in the 2D Ising Model</a></li>
+<li class="toctree-l1"><a class="reference internal" href="ising_autocorrelation_analysis.html">Ising Model: Autocorrelation and Equilibration Analysis</a></li>
 </ul>
 <p class="caption" role="heading"><span class="caption-text">API Reference:</span></p>
 <ul>
@@ -108,7 +109,7 @@ without any rejections. The dynamic critical exponent drops to <span class="math
 is large but finite. For a comprehensive review of these methods, see Newman and Barkema <a class="reference internal" href="#Bibliography"><span class="std std-ref">[4]</span></a>.</p>
 <p>This notebook quantifies the crossover using the <strong>independent samples per second</strong> rate, <span class="math notranslate nohighlight">\(\mathrm{ISS} = (\text{steps}/\text{s})/\tau_{\mathrm{int}}\)</span>, which is the correct figure of merit for equilibrium sampling because it accounts simultaneously for both decorrelation efficiency and raw throughput.</p>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[1]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">__future__</span><span class="w"> </span><span class="kn">import</span> <span class="n">annotations</span>
@@ -141,7 +142,7 @@ Exact Onsager T_c = 2.269185
 </pre></div>
 </div>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[2]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">NPZ_PATH</span> <span class="o">=</span> <span class="s1">&#39;../results/ising/wolff_efficiency.npz&#39;</span>
@@ -247,7 +248,7 @@ Loaded pre-computed data: L=64, 20 temperature points.
 <p>The top-left panel shows <span class="math notranslate nohighlight">\(\tau_{\mathrm{int}}(T)\)</span> on a log scale. Metropolis diverges sharply at <span class="math notranslate nohighlight">\(T_c\)</span>; Wolff remains nearly flat across the entire range. The top-right panel converts this into the practical metric ISS, showing where Wolff actually wins. The bottom-left panel displays the mean cluster size fraction <span class="math notranslate nohighlight">\(\langle C \rangle/N^2\)</span> — the mechanism behind Wolff’s advantage. Moving towards <span class="math notranslate nohighlight">\(T_c\)</span> from either side, clusters grow to match the diverging correlation
 length, and each accepted flip decorrelates a macroscopic fraction of the lattice at once. The bottom-right panel confirms that both algorithms converge to the same susceptibility peak, validating that Wolff correctly samples the Boltzmann distribution.</p>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[3]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">fig</span><span class="p">,</span> <span class="n">axes</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">11</span><span class="p">,</span> <span class="mi">8</span><span class="p">))</span>
@@ -312,7 +313,7 @@ roughly one effective spin update per BFS traversal — far fewer than the <span
 <h2>ISS improvement factor at three characteristic temperatures<a class="headerlink" href="#ISS-improvement-factor-at-three-characteristic-temperatures" title="Link to this heading"></a></h2>
 <p>The bar chart below extracts the improvement factor <span class="math notranslate nohighlight">\(\mathrm{ISS}_{\mathrm{Wolff}} / \mathrm{ISS}_{\mathrm{Metro}}\)</span> at <span class="math notranslate nohighlight">\(T_c - 0.4\)</span>, <span class="math notranslate nohighlight">\(T_c\)</span>, and <span class="math notranslate nohighlight">\(T_c + 0.4\)</span>. Values above 1 mean Wolff delivers more independent samples per second; the critical-point bar quantifies the peak advantage, while the off-critical bars confirm that the benefit erodes away from <span class="math notranslate nohighlight">\(T_c\)</span>.</p>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[4]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">t_targets</span>  <span class="o">=</span> <span class="p">[</span><span class="n">TC_ISING</span> <span class="o">-</span> <span class="mf">0.4</span><span class="p">,</span> <span class="n">TC_ISING</span><span class="p">,</span> <span class="n">TC_ISING</span> <span class="o">+</span> <span class="mf">0.4</span><span class="p">]</span>

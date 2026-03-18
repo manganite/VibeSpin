@@ -1,0 +1,215 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="./">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Ising Model: Autocorrelation and Equilibration Analysis &mdash; VibeSpin 0.1.0 documentation</title>
+      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=9edc463e" />
+      <link rel="stylesheet" type="text/css" href="_static/nbsphinx-code-cells.css?v=2aa19091" />
+
+  
+      <script src="_static/jquery.js?v=5d32c60e"></script>
+      <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="_static/documentation_options.js?v=01f34227"></script>
+      <script src="_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="_static/sphinx_highlight.js?v=6ffebe34"></script>
+      <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+      <script>window.MathJax = {"options": {"processHtmlClass": "tex2jax_process|mathjax_process|math|output_area"}}</script>
+      <script>window.MathJax = {"tex": {"inlineMath": [["$", "$"], ["\\(", "\\)"]], "processEscapes": true}, "options": {"ignoreHtmlClass": "tex2jax_ignore|mathjax_ignore|document", "processHtmlClass": "tex2jax_process|mathjax_process|math|output_area"}}</script>
+      <script defer="defer" src="https://cdn.jsdelivr.net/npm/mathjax@4/tex-mml-chtml.js"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="vibespin" href="api/modules.html" />
+    <link rel="prev" title="Dynamical Critical Exponents in the 2D Ising Model" href="dynamic_critical_exponents.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="index.html" class="icon icon-home">
+            VibeSpin
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">User Guides:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="introduction.html">VibeSpin</a></li>
+<li class="toctree-l1"><a class="reference internal" href="physics.html">Physics and Algorithm Guide: VibeSpin</a></li>
+<li class="toctree-l1"><a class="reference internal" href="scripts.html">Scripts Catalog: VibeSpin</a></li>
+<li class="toctree-l1"><a class="reference internal" href="agents.html">Agent Instruction Guide: VibeSpin</a></li>
+<li class="toctree-l1"><a class="reference internal" href="bibliography.html">Project Bibliography: VibeSpin</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Research &amp; Analysis:</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="benchmarks.html">Performance Benchmarking for VibeSpin</a></li>
+<li class="toctree-l1"><a class="reference internal" href="wolff_efficiency.html">Wolff vs. Metropolis: Algorithmic Efficiency in the Critical Regime</a></li>
+<li class="toctree-l1"><a class="reference internal" href="dynamic_critical_exponents.html">Dynamical Critical Exponents in the 2D Ising Model</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Ising Model: Autocorrelation and Equilibration Analysis</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#Raw-Magnetization-Time-Series">Raw Magnetization Time Series</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#Visualization-of-Equilibration">Visualization of Equilibration</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#Bibliography">Bibliography</a></li>
+</ul>
+</li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">API Reference:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="api/modules.html">vibespin</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">VibeSpin</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">Ising Model: Autocorrelation and Equilibration Analysis</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="_sources/ising_autocorrelation_analysis.ipynb.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="Ising-Model:-Autocorrelation-and-Equilibration-Analysis">
+<h1>Ising Model: Autocorrelation and Equilibration Analysis<a class="headerlink" href="#Ising-Model:-Autocorrelation-and-Equilibration-Analysis" title="Link to this heading"></a></h1>
+<p>This notebook investigates the equilibration behavior and autocorrelation of the 2D Ising model <a class="reference internal" href="#Bibliography"><span class="std std-ref">[1]</span></a> comparing three Monte Carlo update schemes: Random-site Metropolis <a class="reference internal" href="#Bibliography"><span class="std std-ref">[2]</span></a>, Checkerboard Metropolis, and the Wolff cluster algorithm <a class="reference internal" href="#Bibliography"><span class="std std-ref">[3]</span></a>.</p>
+<p>The efficiency of these algorithms is highly temperature-dependent, particularly near the Onsager critical temperature <span class="math notranslate nohighlight">\(T_c = 2/\ln(1+\sqrt{2}) \approx 2.269\)</span>. Near <span class="math notranslate nohighlight">\(T_c\)</span>, local update schemes suffer from <em>critical slowing down</em> <a class="reference internal" href="#Bibliography"><span class="std std-ref">[4]</span></a>, where the time required to generate independent samples scales poorly with system size. The Wolff algorithm is designed to mitigate this by performing collective updates.</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">__future__</span><span class="w"> </span><span class="kn">import</span> <span class="n">annotations</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">matplotlib.pyplot</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">plt</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">models.ising_model</span><span class="w"> </span><span class="kn">import</span> <span class="n">IsingSimulation</span>
+
+<span class="c1"># Constants</span>
+<span class="n">TC_ISING</span> <span class="o">=</span> <span class="mf">2.0</span> <span class="o">/</span> <span class="n">np</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="mf">1.0</span> <span class="o">+</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="mf">2.0</span><span class="p">))</span>
+<span class="n">L</span> <span class="o">=</span> <span class="mi">64</span>
+<span class="n">N_STEPS</span> <span class="o">=</span> <span class="mi">1000</span>
+<span class="n">TEMPS</span> <span class="o">=</span> <span class="p">[</span><span class="mf">0.8</span> <span class="o">*</span> <span class="n">TC_ISING</span><span class="p">,</span> <span class="n">TC_ISING</span><span class="p">,</span> <span class="mf">1.2</span> <span class="o">*</span> <span class="n">TC_ISING</span><span class="p">]</span>
+<span class="n">TEMP_LABELS</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;Below Tc&quot;</span><span class="p">,</span> <span class="s2">&quot;At Tc&quot;</span><span class="p">,</span> <span class="s2">&quot;Above Tc&quot;</span><span class="p">]</span>
+<span class="n">UPDATES</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;random&quot;</span><span class="p">,</span> <span class="s2">&quot;checkerboard&quot;</span><span class="p">,</span> <span class="s2">&quot;wolff&quot;</span><span class="p">]</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Critical Temperature Tc: </span><span class="si">{</span><span class="n">TC_ISING</span><span class="si">:</span><span class="s2">.6f</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<section id="Raw-Magnetization-Time-Series">
+<h2>Raw Magnetization Time Series<a class="headerlink" href="#Raw-Magnetization-Time-Series" title="Link to this heading"></a></h2>
+<p>We run simulations starting from a random configuration (high-energy state) without any equilibration steps. This allows us to visualize how quickly each algorithm approaches the equilibrium regime at different temperatures.</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">results</span> <span class="o">=</span> <span class="p">{}</span>
+
+<span class="k">for</span> <span class="n">T</span> <span class="ow">in</span> <span class="n">TEMPS</span><span class="p">:</span>
+    <span class="n">results</span><span class="p">[</span><span class="n">T</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="k">for</span> <span class="n">update</span> <span class="ow">in</span> <span class="n">UPDATES</span><span class="p">:</span>
+        <span class="n">sim</span> <span class="o">=</span> <span class="n">IsingSimulation</span><span class="p">(</span><span class="n">size</span><span class="o">=</span><span class="n">L</span><span class="p">,</span> <span class="n">temp</span><span class="o">=</span><span class="n">T</span><span class="p">,</span> <span class="n">update</span><span class="o">=</span><span class="n">update</span><span class="p">,</span> <span class="n">seed</span><span class="o">=</span><span class="mi">42</span><span class="p">)</span>
+        <span class="c1"># Capture raw time series from step 0</span>
+        <span class="n">mags</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">sim</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="n">n_steps</span><span class="o">=</span><span class="n">N_STEPS</span><span class="p">)</span>
+        <span class="n">results</span><span class="p">[</span><span class="n">T</span><span class="p">][</span><span class="n">update</span><span class="p">]</span> <span class="o">=</span> <span class="n">mags</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Simulations complete.&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</section>
+<section id="Visualization-of-Equilibration">
+<h2>Visualization of Equilibration<a class="headerlink" href="#Visualization-of-Equilibration" title="Link to this heading"></a></h2>
+<p>The following plots show the evolution of the absolute magnetization <span class="math notranslate nohighlight">\(|M|\)</span> over 000$ steps. Note the differences in relaxation speed and fluctuation scales between the algorithms and temperature regimes.</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">fig</span><span class="p">,</span> <span class="n">axes</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">15</span><span class="p">,</span> <span class="mi">10</span><span class="p">),</span> <span class="n">sharex</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">sharey</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+<span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">T</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">TEMPS</span><span class="p">):</span>
+    <span class="k">for</span> <span class="n">j</span><span class="p">,</span> <span class="n">update</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">UPDATES</span><span class="p">):</span>
+        <span class="n">ax</span> <span class="o">=</span> <span class="n">axes</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="n">j</span><span class="p">]</span>
+        <span class="n">mags</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">results</span><span class="p">[</span><span class="n">T</span><span class="p">][</span><span class="n">update</span><span class="p">])</span>
+        <span class="n">ax</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">mags</span><span class="p">,</span> <span class="n">lw</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">i</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">ax</span><span class="o">.</span><span class="n">set_title</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Update: </span><span class="si">{</span><span class="n">update</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">j</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">ax</span><span class="o">.</span><span class="n">set_ylabel</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">TEMP_LABELS</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="si">}</span><span class="s2"> |M|&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">i</span> <span class="o">==</span> <span class="mi">2</span><span class="p">:</span>
+            <span class="n">ax</span><span class="o">.</span><span class="n">set_xlabel</span><span class="p">(</span><span class="s2">&quot;Step&quot;</span><span class="p">)</span>
+        <span class="n">ax</span><span class="o">.</span><span class="n">grid</span><span class="p">(</span><span class="n">alpha</span><span class="o">=</span><span class="mf">0.3</span><span class="p">)</span>
+
+<span class="n">plt</span><span class="o">.</span><span class="n">tight_layout</span><span class="p">()</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+</section>
+<section id="Bibliography">
+<h2>Bibliography<a class="headerlink" href="#Bibliography" title="Link to this heading"></a></h2>
+<p><a class="reference internal" href="#Bibliography"><span class="std std-ref">[1]</span></a> L. Onsager, “Crystal Statistics. I. A Two-Dimensional Model with an Order-Disorder Transition,” <em>Physical Review</em>, vol. 65, no. 3-4, pp. 117–149, 1944. <a class="reference external" href="https://journals.aps.org/pr/abstract/10.1103/PhysRev.65.117">APS Open Access</a></p>
+<p><a class="reference internal" href="#Bibliography"><span class="std std-ref">[2]</span></a> W. K. Hastings, “Monte Carlo sampling methods using Markov chains and their applications,” <em>Biometrika</em>, vol. 57, no. 1, pp. 97–109, 1970. <a class="reference external" href="https://academic.oup.com/biomet/article/57/1/97/252073">Oxford Academic Open Access</a></p>
+<p><a class="reference internal" href="#Bibliography"><span class="std std-ref">[3]</span></a> U. Wolff, “Collective Monte Carlo Updating for Spin Systems,” <em>Physical Review Letters</em>, vol. 62, no. 4, pp. 361–364, 1989. <a class="reference external" href="https://journals.aps.org/prl/abstract/10.1103/PhysRevLett.62.361">APS Open Access</a></p>
+<p><a class="reference internal" href="#Bibliography"><span class="std std-ref">[4]</span></a> M. E. J. Newman and G. T. Barkema, “Monte Carlo Methods in Statistical Physics,” Oxford University Press, 1999. <a class="reference external" href="https://arxiv.org/abs/0905.1629">Lecture Notes Summary (H. G. Katzgraber)</a></p>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="dynamic_critical_exponents.html" class="btn btn-neutral float-left" title="Dynamical Critical Exponents in the 2D Ising Model" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="api/modules.html" class="btn btn-neutral float-right" title="vibespin" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2026, Thomas Lottermoser.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>
