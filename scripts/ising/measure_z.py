@@ -72,7 +72,7 @@ def _measure_tau_point(
     }
 
 
-def run_measure_z() -> None:
+def main() -> None:
     """
     Execute the dynamical critical exponent measurement sweep.
     """
@@ -148,4 +148,4 @@ def run_measure_z() -> None:
 
 
 if __name__ == '__main__':
-    run_measure_z()
+    main()

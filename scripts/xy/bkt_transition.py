@@ -38,7 +38,7 @@ def simulate_bkt_point(params: tuple[float, int, int, int]) -> float:
     return total_vortex_density / meas_steps
 
 
-def run_bkt_study() -> None:
+def main() -> None:
     """Run temperature sweep to observe vortex-density growth near T_BKT."""
     parser = argparse.ArgumentParser(description='2D XY Model BKT Transition Analysis')
     parser.add_argument('--size', type=int, default=40, help='Linear lattice size L')
@@ -90,4 +90,4 @@ def run_bkt_study() -> None:
 
 
 if __name__ == '__main__':
-    run_bkt_study()
+    main()

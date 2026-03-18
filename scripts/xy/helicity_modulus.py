@@ -52,7 +52,7 @@ def simulate_helicity(params: tuple[float, int, int, int]) -> float:
     return upsilon
 
 
-def run_helicity_sweep() -> None:
+def main() -> None:
     """
     Run parallel sweep to calculate helicity modulus across the BKT region.
     """
@@ -101,4 +101,4 @@ def run_helicity_sweep() -> None:
 
 
 if __name__ == '__main__':
-    run_helicity_sweep()
+    main()

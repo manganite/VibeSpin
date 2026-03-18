@@ -212,7 +212,7 @@ def _plot_efficiency(
     plt.close(fig)
 
 
-def run_wolff_efficiency_demo() -> None:
+def main() -> None:
     """
     Execute the Wolff efficiency comparison sweep and save figure and data.
 
@@ -304,4 +304,4 @@ def run_wolff_efficiency_demo() -> None:
 
 
 if __name__ == '__main__':
-    run_wolff_efficiency_demo()
+    main()

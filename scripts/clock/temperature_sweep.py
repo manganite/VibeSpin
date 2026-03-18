@@ -50,7 +50,7 @@ def simulate_temperature(
     return (*thermo, tau)
 
 
-def run_sweep() -> None:
+def main() -> None:
     """
     Execute the temperature sweep and generate standardized 4-panel plots.
     """
@@ -141,4 +141,4 @@ def run_sweep() -> None:
 
 
 if __name__ == '__main__':
-    run_sweep()
+    main()
