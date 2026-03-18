@@ -100,7 +100,7 @@
 <span class="kn">from</span><span class="w"> </span><span class="nn">utils.exceptions</span><span class="w"> </span><span class="kn">import</span> <span class="n">ZeroVarianceAutocorrelationError</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">utils.physics_helpers</span><span class="w"> </span><span class="kn">import</span> <span class="n">calculate_autocorr</span><span class="p">,</span> <span class="n">calculate_entropy</span><span class="p">,</span> <span class="n">calculate_thermodynamics</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">utils.system_helpers</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
-    <span class="n">adaptive_equilibrate</span><span class="p">,</span>
+    <span class="n">convergence_equilibrate</span><span class="p">,</span>
     <span class="n">parallel_sweep</span><span class="p">,</span>
     <span class="n">plot_temperature_sweep</span><span class="p">,</span>
     <span class="n">setup_logging</span><span class="p">,</span>
@@ -116,15 +116,20 @@
 <span class="sd">    Worker function to simulate a single temperature point for the XY model.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="n">T</span><span class="p">,</span> <span class="n">L</span><span class="p">,</span> <span class="n">eq_steps</span><span class="p">,</span> <span class="n">meas_steps</span><span class="p">,</span> <span class="n">eq_probe_steps</span><span class="p">,</span> <span class="n">eq_factor</span><span class="p">,</span> <span class="n">eq_max_steps</span> <span class="o">=</span> <span class="n">params</span>
-    <span class="n">sim</span> <span class="o">=</span> <span class="n">XYSimulation</span><span class="p">(</span><span class="n">size</span><span class="o">=</span><span class="n">L</span><span class="p">,</span> <span class="n">temp</span><span class="o">=</span><span class="n">T</span><span class="p">)</span>
-    <span class="n">adaptive_equilibrate</span><span class="p">(</span>
-        <span class="n">sim</span><span class="p">,</span>
-        <span class="n">min_steps</span><span class="o">=</span><span class="n">eq_steps</span><span class="p">,</span>
-        <span class="n">probe_steps</span><span class="o">=</span><span class="n">eq_probe_steps</span><span class="p">,</span>
-        <span class="n">factor</span><span class="o">=</span><span class="n">eq_factor</span><span class="p">,</span>
+
+    <span class="c1"># Initialize two simulations for the two-start convergence test</span>
+    <span class="n">sim_r</span> <span class="o">=</span> <span class="n">XYSimulation</span><span class="p">(</span><span class="n">size</span><span class="o">=</span><span class="n">L</span><span class="p">,</span> <span class="n">temp</span><span class="o">=</span><span class="n">T</span><span class="p">,</span> <span class="n">init_state</span><span class="o">=</span><span class="s1">&#39;random&#39;</span><span class="p">)</span>
+    <span class="n">sim_o</span> <span class="o">=</span> <span class="n">XYSimulation</span><span class="p">(</span><span class="n">size</span><span class="o">=</span><span class="n">L</span><span class="p">,</span> <span class="n">temp</span><span class="o">=</span><span class="n">T</span><span class="p">,</span> <span class="n">init_state</span><span class="o">=</span><span class="s1">&#39;ordered&#39;</span><span class="p">)</span>
+
+    <span class="c1"># Robust equilibration via two-start convergence</span>
+    <span class="n">convergence_equilibrate</span><span class="p">(</span>
+        <span class="n">sim_r</span><span class="p">,</span>
+        <span class="n">sim_o</span><span class="p">,</span>
+        <span class="n">chunk_size</span><span class="o">=</span><span class="n">eq_probe_steps</span><span class="p">,</span>
         <span class="n">max_steps</span><span class="o">=</span><span class="n">eq_max_steps</span><span class="p">,</span>
     <span class="p">)</span>
-    <span class="n">mags</span><span class="p">,</span> <span class="n">engs</span> <span class="o">=</span> <span class="n">sim</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="n">n_steps</span><span class="o">=</span><span class="n">meas_steps</span><span class="p">)</span>
+
+    <span class="n">mags</span><span class="p">,</span> <span class="n">engs</span> <span class="o">=</span> <span class="n">sim_r</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="n">n_steps</span><span class="o">=</span><span class="n">meas_steps</span><span class="p">)</span>
     <span class="n">mags_arr</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">mags</span><span class="p">)</span>
     <span class="n">thermo</span> <span class="o">=</span> <span class="n">calculate_thermodynamics</span><span class="p">(</span><span class="n">mags</span><span class="o">=</span><span class="n">mags_arr</span><span class="p">,</span> <span class="n">engs</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">engs</span><span class="p">),</span> <span class="n">T</span><span class="o">=</span><span class="n">T</span><span class="p">,</span> <span class="n">L</span><span class="o">=</span><span class="n">L</span><span class="p">)</span>
     <span class="k">try</span><span class="p">:</span>
@@ -145,20 +150,12 @@
     <span class="n">parser</span> <span class="o">=</span> <span class="n">argparse</span><span class="o">.</span><span class="n">ArgumentParser</span><span class="p">(</span><span class="n">description</span><span class="o">=</span><span class="s1">&#39;2D XY Model Temperature Sweep&#39;</span><span class="p">)</span>
     <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;--size&#39;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">int</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="mi">48</span><span class="p">,</span> <span class="n">help</span><span class="o">=</span><span class="s1">&#39;Linear lattice size L&#39;</span><span class="p">)</span>
     <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span>
-        <span class="s1">&#39;--eq-steps&#39;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">int</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="mi">5000</span><span class="p">,</span>
-        <span class="n">help</span><span class="o">=</span><span class="s1">&#39;Min equilibration steps (adaptive top-up if tau_int demands it)&#39;</span><span class="p">,</span>
-    <span class="p">)</span>
-    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span>
         <span class="s1">&#39;--eq-probe-steps&#39;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">int</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="mi">500</span><span class="p">,</span>
-        <span class="n">help</span><span class="o">=</span><span class="s1">&#39;Probe length for adaptive equilibration&#39;</span><span class="p">,</span>
+        <span class="n">help</span><span class="o">=</span><span class="s1">&#39;Chunk size for convergence check during equilibration&#39;</span><span class="p">,</span>
     <span class="p">)</span>
     <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span>
-        <span class="s1">&#39;--eq-factor&#39;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">float</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="mf">50.0</span><span class="p">,</span>
-        <span class="n">help</span><span class="o">=</span><span class="s1">&#39;Adaptive stop rule: require probe_steps &gt;= eq_factor * tau_int&#39;</span><span class="p">,</span>
-    <span class="p">)</span>
-    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span>
-        <span class="s1">&#39;--eq-max-steps&#39;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">int</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="mi">200000</span><span class="p">,</span>
-        <span class="n">help</span><span class="o">=</span><span class="s1">&#39;Hard cap on adaptive equilibration steps&#39;</span><span class="p">,</span>
+        <span class="s1">&#39;--eq-max-steps&#39;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">int</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="mi">200_000</span><span class="p">,</span>
+        <span class="n">help</span><span class="o">=</span><span class="s1">&#39;Hard cap on total equilibration steps&#39;</span><span class="p">,</span>
     <span class="p">)</span>
     <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;--meas-steps&#39;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">int</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="mi">5000</span><span class="p">,</span> <span class="n">help</span><span class="o">=</span><span class="s1">&#39;Measurement steps&#39;</span><span class="p">)</span>
     <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;--t-min&#39;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">float</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="mf">0.1</span><span class="p">,</span> <span class="n">help</span><span class="o">=</span><span class="s1">&#39;Minimum temperature&#39;</span><span class="p">)</span>
@@ -183,10 +180,10 @@
         <span class="p">(</span>
             <span class="n">T</span><span class="p">,</span>
             <span class="n">L</span><span class="p">,</span>
-            <span class="n">args</span><span class="o">.</span><span class="n">eq_steps</span><span class="p">,</span>
+            <span class="mi">0</span><span class="p">,</span>  <span class="c1"># placeholder for removed eq_steps</span>
             <span class="n">args</span><span class="o">.</span><span class="n">meas_steps</span><span class="p">,</span>
             <span class="n">args</span><span class="o">.</span><span class="n">eq_probe_steps</span><span class="p">,</span>
-            <span class="n">args</span><span class="o">.</span><span class="n">eq_factor</span><span class="p">,</span>
+            <span class="mf">0.0</span><span class="p">,</span> <span class="c1"># placeholder for removed eq_factor</span>
             <span class="n">args</span><span class="o">.</span><span class="n">eq_max_steps</span><span class="p">,</span>
         <span class="p">)</span>
         <span class="k">for</span> <span class="n">T</span> <span class="ow">in</span> <span class="n">temperatures</span>

@@ -96,7 +96,7 @@
 <span class="kn">import</span><span class="w"> </span><span class="nn">warnings</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">collections.abc</span><span class="w"> </span><span class="kn">import</span> <span class="n">Callable</span><span class="p">,</span> <span class="n">Iterable</span><span class="p">,</span> <span class="n">Sequence</span><span class="p">,</span> <span class="n">Sized</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">multiprocessing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Pool</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Protocol</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Protocol</span>
 
 <span class="kn">import</span><span class="w"> </span><span class="nn">matplotlib.pyplot</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">plt</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
@@ -299,6 +299,70 @@
     <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span>
         <span class="sa">f</span><span class="s1">&#39;adaptive_equilibrate: reached max_steps=</span><span class="si">{</span><span class="n">max_steps</span><span class="si">}</span><span class="s1"> without satisfying &#39;</span>
         <span class="sa">f</span><span class="s1">&#39;criterion probe_steps(</span><span class="si">{</span><span class="n">probe_steps</span><span class="si">}</span><span class="s1">) &gt;= factor(</span><span class="si">{</span><span class="n">factor</span><span class="si">}</span><span class="s1">) * tau_int; &#39;</span>
+        <span class="s1">&#39;proceeding anyway.&#39;</span>
+    <span class="p">)</span>
+    <span class="k">return</span> <span class="n">total</span></div>
+
+
+
+<div class="viewcode-block" id="convergence_equilibrate">
+<a class="viewcode-back" href="../../api/vibespin.utils.html#utils.system_helpers.convergence_equilibrate">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">convergence_equilibrate</span><span class="p">(</span>
+    <span class="n">sim_random</span><span class="p">:</span> <span class="n">_Sim</span><span class="p">,</span>
+    <span class="n">sim_ordered</span><span class="p">:</span> <span class="n">_Sim</span><span class="p">,</span>
+    <span class="o">*</span><span class="p">,</span>
+    <span class="n">chunk_size</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">500</span><span class="p">,</span>
+    <span class="n">max_steps</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">200_000</span><span class="p">,</span>
+    <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Equilibrate two simulations (random- and ordered-start) until they converge.</span>
+
+<span class="sd">    Uses ``estimate_relaxation_time_two_start`` to detect when the two</span>
+<span class="sd">    trajectories have entered the same equilibrium band. This is more robust</span>
+<span class="sd">    than one-start adaptive methods for complex energy landscapes.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">        sim_random: Simulation instance started from a random state.</span>
+<span class="sd">        sim_ordered: Simulation instance started from an ordered state.</span>
+<span class="sd">        chunk_size: Number of steps to run between convergence checks.</span>
+<span class="sd">        max_steps: Hard cap on total steps.</span>
+<span class="sd">        **kwargs: Passed to ``estimate_relaxation_time_two_start`` (k, smooth, dwell, etc.).</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">        Total number of MC steps run per simulation.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="kn">from</span><span class="w"> </span><span class="nn">.physics_helpers</span><span class="w"> </span><span class="kn">import</span> <span class="n">estimate_relaxation_time_two_start</span>  <span class="c1"># lazy import</span>
+
+    <span class="n">logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="s1">&#39;vibespin&#39;</span><span class="p">)</span>
+    <span class="n">mags_r</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">mags_o</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">total</span> <span class="o">=</span> <span class="mi">0</span>
+
+    <span class="k">while</span> <span class="n">total</span> <span class="o">&lt;</span> <span class="n">max_steps</span><span class="p">:</span>
+        <span class="n">mr</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">sim_random</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="n">n_steps</span><span class="o">=</span><span class="n">chunk_size</span><span class="p">)</span>
+        <span class="n">mo</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">sim_ordered</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="n">n_steps</span><span class="o">=</span><span class="n">chunk_size</span><span class="p">)</span>
+        <span class="n">mags_r</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="n">mr</span><span class="p">)</span>
+        <span class="n">mags_o</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="n">mo</span><span class="p">)</span>
+        <span class="n">total</span> <span class="o">+=</span> <span class="n">chunk_size</span>
+
+        <span class="c1"># Only check if we have enough data for a meaningful estimate</span>
+        <span class="c1"># smooth_window defaults to 30, dwell_window to 30.</span>
+        <span class="k">if</span> <span class="n">total</span> <span class="o">&gt;=</span> <span class="mi">100</span><span class="p">:</span>
+            <span class="n">tau</span> <span class="o">=</span> <span class="n">estimate_relaxation_time_two_start</span><span class="p">(</span>
+                <span class="n">trace_random</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">mags_r</span><span class="p">),</span>
+                <span class="n">trace_ordered</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">mags_o</span><span class="p">),</span>
+                <span class="o">**</span><span class="n">kwargs</span><span class="p">,</span>
+            <span class="p">)</span>
+            <span class="c1"># If estimate_relaxation_time_two_start returns a value &lt; total,</span>
+            <span class="c1"># it means convergence was detected at some point in the past.</span>
+            <span class="k">if</span> <span class="n">tau</span> <span class="o">&lt;</span> <span class="n">total</span><span class="p">:</span>
+                <span class="k">return</span> <span class="n">total</span>
+
+    <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span>
+        <span class="sa">f</span><span class="s1">&#39;convergence_equilibrate: reached max_steps=</span><span class="si">{</span><span class="n">max_steps</span><span class="si">}</span><span class="s1"> without convergence; &#39;</span>
         <span class="s1">&#39;proceeding anyway.&#39;</span>
     <span class="p">)</span>
     <span class="k">return</span> <span class="n">total</span></div>

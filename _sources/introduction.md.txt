@@ -87,7 +87,7 @@ Launch an equilibrium temperature sweep for the XY model:
 python scripts/xy/temperature_sweep.py --size 64 --t-min 0.2 --t-max 1.5 --t-points 20
 ```
 
-Temperature sweep scripts use **adaptive equilibration**: after the mandatory minimum burn-in (`--eq-steps`), the run extends automatically until the probe window covers `--eq-factor` integrated autocorrelation times. This guarantees statistical independence without manual tuning across temperatures where $\tau_{\text{int}}$ varies by orders of magnitude. The `--eq-probe-steps` and `--eq-max-steps` flags cap the probe length and the hard maximum respectively.
+Temperature sweep scripts use **Two-Start Convergence equilibration**: for every temperature point, two independent simulations (one starting from a random disordered state and one from a fully ordered state) are evolved in parallel. The burn-in continues in chunks (defined by `--eq-probe-steps`) until both trajectories converge and remain within the same equilibrium statistical band. This robust non-equilibrium diagnostic guarantees that measurements are free from initialization bias even in complex energy landscapes. The `--eq-max-steps` flag provides a hard cap on the total equilibration time.
 
 Investigate phase-ordering kinetics in the Ising model using random-site updates:
 

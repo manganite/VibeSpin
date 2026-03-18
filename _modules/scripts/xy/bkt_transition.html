@@ -98,31 +98,37 @@
 <span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">models.xy_model</span><span class="w"> </span><span class="kn">import</span> <span class="n">XYSimulation</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">utils.system_helpers</span><span class="w"> </span><span class="kn">import</span> <span class="n">parallel_sweep</span><span class="p">,</span> <span class="n">save_plot</span><span class="p">,</span> <span class="n">setup_logging</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">utils.system_helpers</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
+    <span class="n">convergence_equilibrate</span><span class="p">,</span>
+    <span class="n">parallel_sweep</span><span class="p">,</span>
+    <span class="n">save_plot</span><span class="p">,</span>
+    <span class="n">setup_logging</span><span class="p">,</span>
+<span class="p">)</span>
 
 
 <div class="viewcode-block" id="simulate_bkt_point">
 <a class="viewcode-back" href="../../../api/vibespin.scripts.xy.html#scripts.xy.bkt_transition.simulate_bkt_point">[docs]</a>
-<span class="k">def</span><span class="w"> </span><span class="nf">simulate_bkt_point</span><span class="p">(</span><span class="n">params</span><span class="p">:</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">float</span><span class="p">,</span> <span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">simulate_bkt_point</span><span class="p">(</span><span class="n">params</span><span class="p">:</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">float</span><span class="p">,</span> <span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Worker function to simulate a single temperature and measure average vortex density.</span>
 
 <span class="sd">    Parameters</span>
 <span class="sd">    ----------</span>
-<span class="sd">        params: Tuple of (T, L, eq_steps, meas_steps).</span>
+<span class="sd">        params: Tuple of (T, L, eq_probe_steps, eq_max_steps, meas_steps).</span>
 
 <span class="sd">    Returns</span>
 <span class="sd">    -------</span>
 <span class="sd">        Average vortex density n_v.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
-    <span class="n">T</span><span class="p">,</span> <span class="n">L</span><span class="p">,</span> <span class="n">eq_steps</span><span class="p">,</span> <span class="n">meas_steps</span> <span class="o">=</span> <span class="n">params</span>
-    <span class="n">sim</span> <span class="o">=</span> <span class="n">XYSimulation</span><span class="p">(</span><span class="n">size</span><span class="o">=</span><span class="n">L</span><span class="p">,</span> <span class="n">temp</span><span class="o">=</span><span class="n">T</span><span class="p">)</span>
-    <span class="n">sim</span><span class="o">.</span><span class="n">equilibrate</span><span class="p">(</span><span class="n">n_steps</span><span class="o">=</span><span class="n">eq_steps</span><span class="p">)</span>
+    <span class="n">T</span><span class="p">,</span> <span class="n">L</span><span class="p">,</span> <span class="n">eq_probe_steps</span><span class="p">,</span> <span class="n">eq_max_steps</span><span class="p">,</span> <span class="n">meas_steps</span> <span class="o">=</span> <span class="n">params</span>
+    <span class="n">sim_r</span> <span class="o">=</span> <span class="n">XYSimulation</span><span class="p">(</span><span class="n">size</span><span class="o">=</span><span class="n">L</span><span class="p">,</span> <span class="n">temp</span><span class="o">=</span><span class="n">T</span><span class="p">,</span> <span class="n">init_state</span><span class="o">=</span><span class="s1">&#39;random&#39;</span><span class="p">)</span>
+    <span class="n">sim_o</span> <span class="o">=</span> <span class="n">XYSimulation</span><span class="p">(</span><span class="n">size</span><span class="o">=</span><span class="n">L</span><span class="p">,</span> <span class="n">temp</span><span class="o">=</span><span class="n">T</span><span class="p">,</span> <span class="n">init_state</span><span class="o">=</span><span class="s1">&#39;ordered&#39;</span><span class="p">)</span>
+    <span class="n">convergence_equilibrate</span><span class="p">(</span><span class="n">sim_r</span><span class="p">,</span> <span class="n">sim_o</span><span class="p">,</span> <span class="n">chunk_size</span><span class="o">=</span><span class="n">eq_probe_steps</span><span class="p">,</span> <span class="n">max_steps</span><span class="o">=</span><span class="n">eq_max_steps</span><span class="p">)</span>
 
     <span class="n">total_vortex_density</span> <span class="o">=</span> <span class="mf">0.0</span>
     <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">meas_steps</span><span class="p">):</span>
-        <span class="n">sim</span><span class="o">.</span><span class="n">step</span><span class="p">()</span>
-        <span class="n">total_vortex_density</span> <span class="o">+=</span> <span class="n">sim</span><span class="o">.</span><span class="n">_get_vortex_density</span><span class="p">()</span>
+        <span class="n">sim_r</span><span class="o">.</span><span class="n">step</span><span class="p">()</span>
+        <span class="n">total_vortex_density</span> <span class="o">+=</span> <span class="n">sim_r</span><span class="o">.</span><span class="n">_get_vortex_density</span><span class="p">()</span>
 
     <span class="k">return</span> <span class="n">total_vortex_density</span> <span class="o">/</span> <span class="n">meas_steps</span></div>
 
@@ -134,7 +140,14 @@
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Run temperature sweep to observe vortex-density growth near T_BKT.&quot;&quot;&quot;</span>
     <span class="n">parser</span> <span class="o">=</span> <span class="n">argparse</span><span class="o">.</span><span class="n">ArgumentParser</span><span class="p">(</span><span class="n">description</span><span class="o">=</span><span class="s1">&#39;2D XY Model BKT Transition Analysis&#39;</span><span class="p">)</span>
     <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;--size&#39;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">int</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="mi">40</span><span class="p">,</span> <span class="n">help</span><span class="o">=</span><span class="s1">&#39;Linear lattice size L&#39;</span><span class="p">)</span>
-    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;--eq-steps&#39;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">int</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="mi">10000</span><span class="p">,</span> <span class="n">help</span><span class="o">=</span><span class="s1">&#39;Equilibration steps&#39;</span><span class="p">)</span>
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span>
+        <span class="s1">&#39;--eq-probe-steps&#39;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">int</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="mi">1000</span><span class="p">,</span>
+        <span class="n">help</span><span class="o">=</span><span class="s1">&#39;Chunk size for convergence check during equilibration (default: 1000)&#39;</span><span class="p">,</span>
+    <span class="p">)</span>
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span>
+        <span class="s1">&#39;--eq-max-steps&#39;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">int</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="mi">200000</span><span class="p">,</span>
+        <span class="n">help</span><span class="o">=</span><span class="s1">&#39;Hard cap on equilibration steps (default: 200000)&#39;</span><span class="p">,</span>
+    <span class="p">)</span>
     <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;--meas-steps&#39;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">int</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="mi">100</span><span class="p">,</span> <span class="n">help</span><span class="o">=</span><span class="s1">&#39;Measurement steps&#39;</span><span class="p">)</span>
     <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;--t-min&#39;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">float</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="mf">0.5</span><span class="p">,</span> <span class="n">help</span><span class="o">=</span><span class="s1">&#39;Minimum temperature&#39;</span><span class="p">)</span>
     <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;--t-max&#39;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">float</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="mf">1.5</span><span class="p">,</span> <span class="n">help</span><span class="o">=</span><span class="s1">&#39;Maximum temperature&#39;</span><span class="p">)</span>
@@ -156,7 +169,10 @@
     <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Starting BKT transition study (vortex density) for L=</span><span class="si">{</span><span class="n">args</span><span class="o">.</span><span class="n">size</span><span class="si">}</span><span class="s1">...&#39;</span><span class="p">)</span>
     <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Range: [</span><span class="si">{</span><span class="n">args</span><span class="o">.</span><span class="n">t_min</span><span class="si">}</span><span class="s1">, </span><span class="si">{</span><span class="n">args</span><span class="o">.</span><span class="n">t_max</span><span class="si">}</span><span class="s1">] with </span><span class="si">{</span><span class="n">args</span><span class="o">.</span><span class="n">t_points</span><span class="si">}</span><span class="s1"> points.&#39;</span><span class="p">)</span>
 
-    <span class="n">sweep_params</span> <span class="o">=</span> <span class="p">[(</span><span class="n">T</span><span class="p">,</span> <span class="n">args</span><span class="o">.</span><span class="n">size</span><span class="p">,</span> <span class="n">args</span><span class="o">.</span><span class="n">eq_steps</span><span class="p">,</span> <span class="n">args</span><span class="o">.</span><span class="n">meas_steps</span><span class="p">)</span> <span class="k">for</span> <span class="n">T</span> <span class="ow">in</span> <span class="n">temperatures</span><span class="p">]</span>
+    <span class="n">sweep_params</span> <span class="o">=</span> <span class="p">[</span>
+        <span class="p">(</span><span class="n">T</span><span class="p">,</span> <span class="n">args</span><span class="o">.</span><span class="n">size</span><span class="p">,</span> <span class="n">args</span><span class="o">.</span><span class="n">eq_probe_steps</span><span class="p">,</span> <span class="n">args</span><span class="o">.</span><span class="n">eq_max_steps</span><span class="p">,</span> <span class="n">args</span><span class="o">.</span><span class="n">meas_steps</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">T</span> <span class="ow">in</span> <span class="n">temperatures</span>
+    <span class="p">]</span>
     <span class="n">vortex_densities</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span> <span class="o">=</span> <span class="n">parallel_sweep</span><span class="p">(</span>
         <span class="n">worker_func</span><span class="o">=</span><span class="n">simulate_bkt_point</span><span class="p">,</span> <span class="n">params</span><span class="o">=</span><span class="n">sweep_params</span>
     <span class="p">)</span>
