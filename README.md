@@ -110,7 +110,7 @@ python scripts/ising/wolff_efficiency.py --size 64 --t-min 1.8 --t-max 3.2 --t-p
 Measure the dynamical critical exponent $z$ at $T_c$:
 
 ```bash
-python scripts/ising/measure_z.py --sizes 16 32 64 128 --eq-steps 5000
+python scripts/ising/measure_z.py --sizes 16 32 48 64 96 128 --n-seeds 10
 ```
 
 ## Development guidance
