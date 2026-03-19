@@ -11,7 +11,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 from models.xy_model import XYSimulation
-from scripts._cli import parse_args_compat
+from utils.cli_helpers import parse_args_compat
 from utils.system_helpers import convergence_equilibrate, parallel_sweep, save_plot, setup_logging
 
 

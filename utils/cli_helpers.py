@@ -1,4 +1,4 @@
-"""Shared CLI parsing helpers for script entry points."""
+"""CLI helper utilities shared by script entry points."""
 from __future__ import annotations
 
 import argparse

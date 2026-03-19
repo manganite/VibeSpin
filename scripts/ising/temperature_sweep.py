@@ -10,7 +10,7 @@ import logging
 import numpy as np
 
 from models.ising_model import IsingSimulation
-from scripts._cli import parse_args_compat
+from utils.cli_helpers import parse_args_compat
 from utils.exceptions import ZeroVarianceAutocorrelationError
 from utils.physics_helpers import calculate_autocorr, calculate_entropy, calculate_thermodynamics
 from utils.system_helpers import (

@@ -11,7 +11,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 from models.ising_model import IsingSimulation
-from scripts._cli import parse_args_compat
+from utils.cli_helpers import parse_args_compat
 from utils.physics_helpers import get_averaged_correlation
 from utils.system_helpers import ensure_results_dir, parallel_sweep, save_plot, setup_logging
 

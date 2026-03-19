@@ -13,7 +13,7 @@ import logging
 import numpy as np
 
 from models.clock_model import ClockSimulation
-from scripts._cli import parse_args_compat
+from utils.cli_helpers import parse_args_compat
 from utils.system_helpers import ensure_results_dir, plot_ordering_evolution, setup_logging
 
 

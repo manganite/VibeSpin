@@ -11,17 +11,6 @@ Subpackages
    vibespin.scripts.ising
    vibespin.scripts.xy
 
-Submodules
-----------
-
-scripts.\_cli module
---------------------
-
-.. automodule:: scripts._cli
-   :members:
-   :show-inheritance:
-   :undoc-members:
-
 Module contents
 ---------------
 
