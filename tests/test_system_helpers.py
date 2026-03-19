@@ -7,6 +7,7 @@ and adaptive equilibration.
 """
 from __future__ import annotations
 
+import logging
 import os
 import shutil
 import tempfile
@@ -82,6 +83,36 @@ def test_setup_logging():
     logger = setup_logging()
     assert logger.name == 'vibespin'
     assert len(logger.handlers) >= 1
+
+
+def test_setup_logging_with_file(temp_dir):
+    """setup_logging should create the parent directory and a file handler when requested."""
+    log_path = os.path.join(temp_dir, 'logs', 'vibespin.log')
+    logger = logging.getLogger('vibespin')
+    original_handlers = list(logger.handlers)
+    for handler in original_handlers:
+        logger.removeHandler(handler)
+
+    try:
+        logger = setup_logging(log_file=log_path)
+
+        file_handlers = [h for h in logger.handlers if h.__class__.__name__ == 'FileHandler']
+        assert os.path.isdir(os.path.dirname(log_path))
+        assert file_handlers
+    finally:
+        for handler in logger.handlers[:]:
+            logger.removeHandler(handler)
+            handler.close()
+        for handler in original_handlers:
+            logger.addHandler(handler)
+
+
+def test_ensure_results_dir_empty_string():
+    """ensure_results_dir should be a no-op for empty directory strings."""
+    with patch('utils.system_helpers.os.makedirs') as mock_makedirs:
+        path = ensure_results_dir(directory='')
+    assert path == ''
+    mock_makedirs.assert_not_called()
 
 
 # ---- File I/O ----
@@ -294,6 +325,51 @@ def test_adaptive_equilibrate_invalid_probe_steps():
         adaptive_equilibrate(sim, min_steps=10, probe_steps=2)
 
 
+def test_adaptive_equilibrate_invalid_min_steps():
+    """Negative min_steps should raise ValueError."""
+    sim = _StubSim()
+    with pytest.raises(ValueError, match='min_steps must be non-negative'):
+        adaptive_equilibrate(sim, min_steps=-1, probe_steps=10)
+
+
+def test_adaptive_equilibrate_invalid_factor():
+    """Non-positive factor should raise ValueError."""
+    sim = _StubSim()
+    with pytest.raises(ValueError, match='factor must be positive'):
+        adaptive_equilibrate(sim, min_steps=10, probe_steps=10, factor=0.0)
+
+
+def test_adaptive_equilibrate_invalid_max_steps():
+    """max_steps smaller than min_steps should raise ValueError."""
+    sim = _StubSim()
+    with pytest.raises(ValueError, match='max_steps must be >= min_steps'):
+        adaptive_equilibrate(sim, min_steps=20, probe_steps=10, max_steps=10)
+
+
+def test_adaptive_equilibrate_warns_on_max_steps(caplog):
+    """If the criterion is never met before max_steps, the function should warn and return."""
+
+    class _RunSim:
+        def equilibrate(self, *, n_steps: int) -> None:
+            pass
+
+        def run(self, *, n_steps: int) -> tuple[np.ndarray, np.ndarray]:
+            return np.linspace(0.0, 1.0, n_steps), np.zeros(n_steps)
+
+    caplog.set_level('WARNING', logger='vibespin')
+    with patch('utils.physics_helpers.calculate_autocorr', return_value=(np.array([0.0]), 1e9)):
+        total = adaptive_equilibrate(
+            _RunSim(),
+            min_steps=10,
+            probe_steps=5,
+            factor=2.0,
+            max_steps=15,
+        )
+
+    assert total == 15
+    assert 'reached max_steps=15' in caplog.text
+
+
 def test_adaptive_equilibrate_only_swallows_zero_variance():
     """Invalid autocorrelation inputs must still surface to the caller."""
 
@@ -307,6 +383,119 @@ def test_adaptive_equilibrate_only_swallows_zero_variance():
     sim = _ShortRunSim()
     with pytest.raises(ValueError, match='at least 3'):
         adaptive_equilibrate(sim, min_steps=5, probe_steps=3)
+
+
+def test_convergence_equilibrate_warns_on_max_steps(caplog):
+    """Two-start equilibration should warn when no convergence is detected before max_steps."""
+
+    class _ConvergenceStub:
+        def run(self, *, n_steps: int) -> tuple[np.ndarray, np.ndarray]:
+            return np.ones(n_steps), np.zeros(n_steps)
+
+    caplog.set_level('WARNING', logger='vibespin')
+    with patch('utils.physics_helpers.estimate_relaxation_time_two_start', return_value=1000):
+        from utils.system_helpers import convergence_equilibrate
+
+        total = convergence_equilibrate(
+            _ConvergenceStub(),
+            _ConvergenceStub(),
+            chunk_size=50,
+            max_steps=100,
+        )
+
+    assert total == 100
+    assert 'without convergence' in caplog.text
+
+
+def test_plot_temperature_sweep_with_entropy_only(temp_dir):
+    """Optional panel layout should handle entropy-only inputs."""
+    temps = np.array([1.0, 2.0])
+    data = np.array([0.5, 0.6])
+    with patch('utils.system_helpers.save_plot') as mock_save:
+        plot_temperature_sweep(
+            temperatures=temps,
+            avg_m=data,
+            avg_e=data,
+            susc=data,
+            spec_h=data,
+            entropy=np.array([0.1, 0.2]),
+            tau_int=None,
+            title='Entropy only',
+            filename='entropy_only.png',
+            directory=temp_dir,
+        )
+        mock_save.assert_called_once()
+    plt.close('all')
+
+
+def test_plot_temperature_sweep_with_tau_only(temp_dir):
+    """Optional panel layout should handle tau-only inputs."""
+    temps = np.array([1.0, 2.0])
+    data = np.array([0.5, 0.6])
+    with patch('utils.system_helpers.save_plot') as mock_save:
+        plot_temperature_sweep(
+            temperatures=temps,
+            avg_m=data,
+            avg_e=data,
+            susc=data,
+            spec_h=data,
+            entropy=None,
+            tau_int=np.array([2.0, 3.0]),
+            title='Tau only',
+            filename='tau_only.png',
+            directory=temp_dir,
+        )
+        mock_save.assert_called_once()
+    plt.close('all')
+
+
+def test_plot_ordering_kinetics_without_third_metric(temp_dir):
+    """Second panel should be disabled cleanly when no third metric is provided."""
+    t = np.array([1, 10])
+    R = np.array([1.0, 2.0])
+    with patch('utils.system_helpers.save_plot') as mock_save:
+        plot_ordering_kinetics(
+            t=t,
+            R_sk=R,
+            R_xi=R,
+            third_metric=None,
+            third_metric_label=None,
+            exponents={'R_sk': 0.5, 'xi': 0.5, 'third': None},
+            prefactors={'R_sk': 1.0, 'xi': 1.0, 'third': None},
+            fit_mask=np.ones_like(t, dtype=bool),
+            title='No third metric',
+            filename='no_third_metric.png',
+            directory=temp_dir,
+        )
+        mock_save.assert_called_once()
+    plt.close('all')
+
+
+def test_plot_ordering_evolution_vector_vorticity_with_xi_marker(temp_dir):
+    """Vector + vorticity branch should render and annotate xi when G(r) crosses 1/e."""
+    targets = [1, 10]
+    spins = np.ones((16, 16, 2))
+    snapshots = [spins, spins]
+    vort = np.zeros((16, 16))
+    vort[0, 0] = 1.0
+    vorticity_data = [vort, vort]
+    r = np.arange(8)
+    g = np.array([1.0, 0.8, 0.5, 0.3, 0.2, 0.1, 0.08, 0.05])
+    gr_data = [(r, g), (r, g)]
+
+    with patch('utils.system_helpers.save_plot') as mock_save:
+        plot_ordering_evolution(
+            targets=targets,
+            snapshots=snapshots,
+            gr_data=gr_data,
+            vorticity_data=vorticity_data,
+            title='Vector with vorticity',
+            filename='vector_vorticity.png',
+            directory=temp_dir,
+            is_vector=True,
+        )
+        mock_save.assert_called_once()
+    plt.close('all')
 
 
 def test_zero_variance_error_is_runtime_error():
