@@ -160,6 +160,7 @@ def main() -> None:
             tau_wolff_samples[i, s] = float(r['tau_int'])
 
     def _summary(samples: np.ndarray) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
+        """Compute median and 16-84 percentile envelopes across seeds."""
         med = np.nanmedian(samples, axis=1)
         p16 = np.nanpercentile(samples, 16, axis=1)
         p84 = np.nanpercentile(samples, 84, axis=1)
