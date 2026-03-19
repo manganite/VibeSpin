@@ -29,7 +29,7 @@ TC_ISING: float = 2.0 / np.log(1.0 + np.sqrt(2.0))
 
 
 def _measure_efficiency_point(
-    params: tuple[float, int, int, int, int, int],
+    params: tuple[int, int, float, int, int, int, int],
 ) -> dict[str, float]:
     """
     Worker: measure algorithmic efficiency at one temperature point.
@@ -44,9 +44,10 @@ def _measure_efficiency_point(
     Parameters
     ----------
     params : tuple
-        ``(T, L, eq_probe_steps, eq_max_steps, meas_steps, seed)`` — temperature,
-        lattice size, chunk size for convergence, hard cap on equilibration,
-        measurement steps, and base RNG seed.
+        ``(temp_idx, seed_idx, T, L, eq_probe_steps, eq_max_steps, meas_steps)``
+        where ``temp_idx`` and ``seed_idx`` identify the grid position and
+        random-seed replicate. A deterministic base seed is derived from these
+        indices so aggregation is reproducible.
 
     Returns
     -------
@@ -54,7 +55,8 @@ def _measure_efficiency_point(
         Keys: ``T``, ``tau_metro``, ``tau_wolff``, ``iss_metro``,
         ``iss_wolff``, ``mean_cluster_frac``, ``chi_metro``, ``chi_wolff``.
     """
-    T, L, eq_probe_steps, eq_max_steps, meas_steps, seed = params
+    temp_idx, seed_idx, T, L, eq_probe_steps, eq_max_steps, meas_steps = params
+    seed = int(temp_idx * 100_000 + seed_idx * 1_000)
 
     # ---- Metropolis checkerboard ----
     sim_m_r = IsingSimulation(
@@ -115,6 +117,8 @@ def _measure_efficiency_point(
     mean_cluster_frac = float(np.mean(cluster_sizes_arr)) / (L * L)
 
     return {
+        'temp_idx': float(temp_idx),
+        'seed_idx': float(seed_idx),
         'T': T,
         'tau_metro': tau_metro,
         'tau_wolff': tau_wolff,
@@ -253,6 +257,10 @@ def main() -> None:
         '--t-points', type=int, default=20, help='Temperature grid points (default: 20)',
     )
     parser.add_argument(
+        '--n-seeds', type=int, default=10,
+        help='Independent seed replicas per temperature point (default: 10)',
+    )
+    parser.add_argument(
         '--output-dir', type=str, default='results/ising',
         help='Output directory (default: results/ising)',
     )
@@ -266,38 +274,96 @@ def main() -> None:
     L = args.size
     temperatures: np.ndarray = np.linspace(args.t_min, args.t_max, args.t_points)
     logger.info(
-        'Wolff efficiency demo: L=%d, T in [%.2f, %.2f], %d points, %d meas steps.',
-        L, args.t_min, args.t_max, args.t_points, args.meas_steps,
+        (
+            'Wolff efficiency demo: L=%d, T in [%.2f, %.2f], %d points, '
+            '%d seed replicas, %d meas steps.'
+        ),
+        L, args.t_min, args.t_max, args.t_points, args.n_seeds, args.meas_steps,
     )
 
     sweep_params = [
-        (T, L, args.eq_probe_steps, args.eq_max_steps, args.meas_steps, idx * 1000)
-        for idx, T in enumerate(temperatures)
+        (temp_idx, seed_idx, T, L, args.eq_probe_steps, args.eq_max_steps, args.meas_steps)
+        for temp_idx, T in enumerate(temperatures)
+        for seed_idx in range(args.n_seeds)
     ]
     raw: list[dict[str, float]] = parallel_sweep(
         worker_func=_measure_efficiency_point, params=sweep_params,
     )
 
-    tau_metro = np.array([r['tau_metro'] for r in raw])
-    tau_wolff = np.array([r['tau_wolff'] for r in raw])
-    iss_metro = np.array([r['iss_metro'] for r in raw])
-    iss_wolff = np.array([r['iss_wolff'] for r in raw])
-    mean_cluster_frac = np.array([r['mean_cluster_frac'] for r in raw])
-    chi_metro = np.array([r['chi_metro'] for r in raw])
-    chi_wolff = np.array([r['chi_wolff'] for r in raw])
+    n_temp = len(temperatures)
+    n_seed = int(args.n_seeds)
+
+    tau_metro_samples = np.full((n_temp, n_seed), np.nan)
+    tau_wolff_samples = np.full((n_temp, n_seed), np.nan)
+    iss_metro_samples = np.full((n_temp, n_seed), np.nan)
+    iss_wolff_samples = np.full((n_temp, n_seed), np.nan)
+    mean_cluster_frac_samples = np.full((n_temp, n_seed), np.nan)
+    chi_metro_samples = np.full((n_temp, n_seed), np.nan)
+    chi_wolff_samples = np.full((n_temp, n_seed), np.nan)
+
+    for r in raw:
+        i = int(r['temp_idx'])
+        s = int(r['seed_idx'])
+        tau_metro_samples[i, s] = float(r['tau_metro'])
+        tau_wolff_samples[i, s] = float(r['tau_wolff'])
+        iss_metro_samples[i, s] = float(r['iss_metro'])
+        iss_wolff_samples[i, s] = float(r['iss_wolff'])
+        mean_cluster_frac_samples[i, s] = float(r['mean_cluster_frac'])
+        chi_metro_samples[i, s] = float(r['chi_metro'])
+        chi_wolff_samples[i, s] = float(r['chi_wolff'])
+
+    def _summary(samples: np.ndarray) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
+        med = np.nanmedian(samples, axis=1)
+        p16 = np.nanpercentile(samples, 16, axis=1)
+        p84 = np.nanpercentile(samples, 84, axis=1)
+        return med, p16, p84
+
+    tau_metro, tau_metro_p16, tau_metro_p84 = _summary(tau_metro_samples)
+    tau_wolff, tau_wolff_p16, tau_wolff_p84 = _summary(tau_wolff_samples)
+    iss_metro, iss_metro_p16, iss_metro_p84 = _summary(iss_metro_samples)
+    iss_wolff, iss_wolff_p16, iss_wolff_p84 = _summary(iss_wolff_samples)
+    (
+        mean_cluster_frac,
+        mean_cluster_frac_p16,
+        mean_cluster_frac_p84,
+    ) = _summary(mean_cluster_frac_samples)
+    chi_metro, chi_metro_p16, chi_metro_p84 = _summary(chi_metro_samples)
+    chi_wolff, chi_wolff_p16, chi_wolff_p84 = _summary(chi_wolff_samples)
 
     os.makedirs(args.output_dir, exist_ok=True)
     npz_path = os.path.join(args.output_dir, 'wolff_efficiency.npz')
     np.savez(
         npz_path,
         temperatures=temperatures,
+        n_seeds=np.int64(n_seed),
         tau_metro=tau_metro,
+        tau_metro_p16=tau_metro_p16,
+        tau_metro_p84=tau_metro_p84,
+        tau_metro_samples=tau_metro_samples,
         tau_wolff=tau_wolff,
+        tau_wolff_p16=tau_wolff_p16,
+        tau_wolff_p84=tau_wolff_p84,
+        tau_wolff_samples=tau_wolff_samples,
         iss_metro=iss_metro,
+        iss_metro_p16=iss_metro_p16,
+        iss_metro_p84=iss_metro_p84,
+        iss_metro_samples=iss_metro_samples,
         iss_wolff=iss_wolff,
+        iss_wolff_p16=iss_wolff_p16,
+        iss_wolff_p84=iss_wolff_p84,
+        iss_wolff_samples=iss_wolff_samples,
         mean_cluster_frac=mean_cluster_frac,
+        mean_cluster_frac_p16=mean_cluster_frac_p16,
+        mean_cluster_frac_p84=mean_cluster_frac_p84,
+        mean_cluster_frac_samples=mean_cluster_frac_samples,
         chi_metro=chi_metro,
+        chi_metro_p16=chi_metro_p16,
+        chi_metro_p84=chi_metro_p84,
+        chi_metro_samples=chi_metro_samples,
         chi_wolff=chi_wolff,
+        chi_wolff_p16=chi_wolff_p16,
+        chi_wolff_p84=chi_wolff_p84,
+        chi_wolff_samples=chi_wolff_samples,
         L=np.int64(L),
     )
     logger.info('Data saved to %s', npz_path)
