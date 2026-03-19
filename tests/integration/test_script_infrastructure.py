@@ -1,11 +1,14 @@
 """
-Tests for the measure_z.py script infrastructure.
+Integration tests for script infrastructure patterns.
 
-Validates:
-- Deterministic seed generation and reproducibility
-- NPZ output schema and shapes
-- Multi-seed aggregation logic
-- Fallback demo mode execution
+Tests reusable infrastructure components used by multiple analysis scripts:
+- Deterministic seed generation and reproducibility (seed-based RNG protocols)
+- NPZ output schema and shapes (multi-algorithm aggregation formats)
+- Multi-seed aggregation logic (per-seed sample arrays, percentiles)
+- Fallback demo mode execution (lightweight standalone testing)
+
+Current coverage: measure_z.py (Wolff/Metropolis scaling analysis)
+Future extensions: temperature_sweep.py, wolff_efficiency.py, ordering_kinetics.py, etc.
 """
 from __future__ import annotations
 
