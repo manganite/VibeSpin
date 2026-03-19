@@ -11,6 +11,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 from models.ising_model import IsingSimulation
+from scripts._cli import parse_args_compat
 from utils.physics_helpers import get_averaged_correlation
 from utils.system_helpers import ensure_results_dir, parallel_sweep, save_plot, setup_logging
 
@@ -66,7 +67,7 @@ def run_divergence_analysis() -> None:
     parser.add_argument('--log-file', type=str, default=None, help='Optional log file path')
     parser.add_argument('--verbose', action='store_true', help='Enable verbose logging')
 
-    args = parser.parse_arguments() if hasattr(parser, 'parse_arguments') else parser.parse_args()
+    args = parse_args_compat(parser)
 
     # Configure logging
     log_level = logging.DEBUG if args.verbose else logging.INFO

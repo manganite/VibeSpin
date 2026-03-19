@@ -11,6 +11,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 from models.xy_model import XYSimulation
+from scripts._cli import parse_args_compat
 from utils.system_helpers import convergence_equilibrate, parallel_sweep, save_plot, setup_logging
 
 
@@ -75,7 +76,7 @@ def main() -> None:
     parser.add_argument('--log-file', type=str, default=None, help='Optional log file path')
     parser.add_argument('--verbose', action='store_true', help='Enable verbose logging')
 
-    args = parser.parse_arguments() if hasattr(parser, 'parse_arguments') else parser.parse_args()
+    args = parse_args_compat(parser)
 
     # Configure logging
     log_level = logging.DEBUG if args.verbose else logging.INFO

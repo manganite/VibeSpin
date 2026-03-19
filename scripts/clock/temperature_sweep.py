@@ -10,6 +10,7 @@ import logging
 import numpy as np
 
 from models.clock_model import ClockSimulation, DiscreteClockSimulation
+from scripts._cli import parse_args_compat
 from utils.exceptions import ZeroVarianceAutocorrelationError
 from utils.physics_helpers import calculate_autocorr, calculate_entropy, calculate_thermodynamics
 from utils.system_helpers import (
@@ -82,7 +83,7 @@ def main() -> None:
     parser.add_argument('--log-file', type=str, default=None, help='Optional log file path')
     parser.add_argument('--verbose', action='store_true', help='Enable verbose logging')
 
-    args = parser.parse_arguments() if hasattr(parser, 'parse_arguments') else parser.parse_args()
+    args = parse_args_compat(parser)
 
     # Configure logging
     log_level = logging.DEBUG if args.verbose else logging.INFO
