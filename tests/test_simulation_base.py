@@ -48,7 +48,7 @@ def test_base_init_rejects_invalid_init_state() -> None:
 
 def test_base_accepts_numpy_integer_size() -> None:
     """NumPy integer lattice sizes should be accepted by base-class validation."""
-    sim = _DummySimulation(size=np.int64(6), temp=1.5)
+    sim = _DummySimulation(size=np.int64(6), temp=1.5)  # type: ignore[arg-type]
     assert sim.size == 6
 
 
