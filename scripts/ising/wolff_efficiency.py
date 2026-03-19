@@ -30,7 +30,7 @@ TC_ISING: float = 2.0 / np.log(1.0 + np.sqrt(2.0))
 
 def _measure_efficiency_point(
     params: tuple[int, int, float, int, int, int, int],
-) -> dict[str, float]:
+) -> dict[str, float | int]:
     """
     Worker: measure algorithmic efficiency at one temperature point.
 
@@ -117,8 +117,8 @@ def _measure_efficiency_point(
     mean_cluster_frac = float(np.mean(cluster_sizes_arr)) / (L * L)
 
     return {
-        'temp_idx': float(temp_idx),
-        'seed_idx': float(seed_idx),
+        'temp_idx': int(temp_idx),
+        'seed_idx': int(seed_idx),
         'T': T,
         'tau_metro': tau_metro,
         'tau_wolff': tau_wolff,
@@ -133,13 +133,28 @@ def _measure_efficiency_point(
 def _plot_efficiency(
     *,
     temperatures: np.ndarray,
-    tau_metro: np.ndarray,
-    tau_wolff: np.ndarray,
+    tau_metro_norm: np.ndarray,
+    tau_metro_norm_p16: np.ndarray,
+    tau_metro_norm_p84: np.ndarray,
+    tau_wolff_norm: np.ndarray,
+    tau_wolff_norm_p16: np.ndarray,
+    tau_wolff_norm_p84: np.ndarray,
     iss_metro: np.ndarray,
+    iss_metro_p16: np.ndarray,
+    iss_metro_p84: np.ndarray,
     iss_wolff: np.ndarray,
+    iss_wolff_p16: np.ndarray,
+    iss_wolff_p84: np.ndarray,
     mean_cluster_frac: np.ndarray,
+    mean_cluster_frac_p16: np.ndarray,
+    mean_cluster_frac_p84: np.ndarray,
     chi_metro: np.ndarray,
+    chi_metro_p16: np.ndarray,
+    chi_metro_p84: np.ndarray,
     chi_wolff: np.ndarray,
+    chi_wolff_p16: np.ndarray,
+    chi_wolff_p84: np.ndarray,
+    n_seeds: int,
     L: int,
     directory: str,
 ) -> None:
@@ -150,20 +165,50 @@ def _plot_efficiency(
     ----------
     temperatures : np.ndarray
         Sorted temperature array.
-    tau_metro : np.ndarray
-        Integrated autocorrelation time for Metropolis checkerboard (steps).
-    tau_wolff : np.ndarray
-        Integrated autocorrelation time for Wolff cluster (steps).
+    tau_metro_norm : np.ndarray
+        Work-normalized integrated autocorrelation time for Metropolis.
+    tau_metro_norm_p16 : np.ndarray
+        16th percentile band for ``tau_metro_norm``.
+    tau_metro_norm_p84 : np.ndarray
+        84th percentile band for ``tau_metro_norm``.
+    tau_wolff_norm : np.ndarray
+        Work-normalized integrated autocorrelation time for Wolff.
+    tau_wolff_norm_p16 : np.ndarray
+        16th percentile band for ``tau_wolff_norm``.
+    tau_wolff_norm_p84 : np.ndarray
+        84th percentile band for ``tau_wolff_norm``.
     iss_metro : np.ndarray
         Independent samples per second — Metropolis.
+    iss_metro_p16 : np.ndarray
+        16th percentile band for ``iss_metro``.
+    iss_metro_p84 : np.ndarray
+        84th percentile band for ``iss_metro``.
     iss_wolff : np.ndarray
         Independent samples per second — Wolff.
+    iss_wolff_p16 : np.ndarray
+        16th percentile band for ``iss_wolff``.
+    iss_wolff_p84 : np.ndarray
+        84th percentile band for ``iss_wolff``.
     mean_cluster_frac : np.ndarray
         Mean cluster size fraction per Wolff step, ``<C> / N^2``.
+    mean_cluster_frac_p16 : np.ndarray
+        16th percentile band for ``mean_cluster_frac``.
+    mean_cluster_frac_p84 : np.ndarray
+        84th percentile band for ``mean_cluster_frac``.
     chi_metro : np.ndarray
         Magnetic susceptibility from Metropolis.
+    chi_metro_p16 : np.ndarray
+        16th percentile band for ``chi_metro``.
+    chi_metro_p84 : np.ndarray
+        84th percentile band for ``chi_metro``.
     chi_wolff : np.ndarray
         Magnetic susceptibility from Wolff.
+    chi_wolff_p16 : np.ndarray
+        16th percentile band for ``chi_wolff``.
+    chi_wolff_p84 : np.ndarray
+        84th percentile band for ``chi_wolff``.
+    n_seeds : int
+        Number of seed replicas used for uncertainty estimation.
     L : int
         Lattice size used in the simulation.
     directory : str
@@ -172,51 +217,88 @@ def _plot_efficiency(
     palette = {'metro': '#4878CF', 'wolff': '#D65F5F'}
     fig, axes = plt.subplots(2, 2, figsize=(11, 8))
     fig.suptitle(
-        f'Wolff vs. Metropolis Efficiency — 2D Ising Model  (L = {L})',
+        f'Wolff vs. Metropolis Efficiency — 2D Ising Model  (L = {L}, seeds = {n_seeds})',
         fontsize=13,
     )
 
-    # Panel 1: tau_int(T)
+    # Panel 1: work-normalized tau_int(T)
     ax = axes[0, 0]
     ax.semilogy(
-        temperatures, tau_metro, '-o', color=palette['metro'], ms=4, label='Metropolis',
+        temperatures, tau_metro_norm, '-o', color=palette['metro'], ms=4, label='Metropolis',
     )
     ax.semilogy(
-        temperatures, tau_wolff, '-s', color=palette['wolff'], ms=4, label='Wolff',
+        temperatures,
+        tau_wolff_norm,
+        '-s',
+        color=palette['wolff'],
+        ms=4,
+        label='Wolff (normalised)',
+    )
+    ax.fill_between(
+        temperatures, tau_metro_norm_p16, tau_metro_norm_p84,
+        color=palette['metro'], alpha=0.15,
+    )
+    ax.fill_between(
+        temperatures, tau_wolff_norm_p16, tau_wolff_norm_p84,
+        color=palette['wolff'], alpha=0.15,
     )
     ax.axvline(TC_ISING, color='0.4', ls='--', lw=1, label=r'$T_c$')
     ax.set_xlabel('Temperature $T$')
-    ax.set_ylabel(r'$\tau_{\mathrm{int}}$ (steps)')
-    ax.set_title('Integrated autocorrelation time')
+    ax.set_ylabel(r'$\tau^{\mathrm{norm}}_{\mathrm{int}}$ ($L^2$-sweep equiv.)')
+    ax.set_title('Integrated autocorrelation time\n(work-normalised; median with 16–84% band)')
     ax.legend(fontsize=8)
 
     # Panel 2: ISS(T)
     ax = axes[0, 1]
-    ax.plot(temperatures, iss_metro, '-o', color=palette['metro'], ms=4, label='Metropolis')
-    ax.plot(temperatures, iss_wolff, '-s', color=palette['wolff'], ms=4, label='Wolff')
+    ax.semilogy(temperatures, iss_metro, '-o', color=palette['metro'], ms=4, label='Metropolis')
+    ax.semilogy(temperatures, iss_wolff, '-s', color=palette['wolff'], ms=4, label='Wolff')
+    ax.fill_between(
+        temperatures, iss_metro_p16, iss_metro_p84,
+        color=palette['metro'], alpha=0.15,
+    )
+    ax.fill_between(
+        temperatures, iss_wolff_p16, iss_wolff_p84,
+        color=palette['wolff'], alpha=0.15,
+    )
     ax.axvline(TC_ISING, color='0.4', ls='--', lw=1, label=r'$T_c$')
     ax.set_xlabel('Temperature $T$')
     ax.set_ylabel('Independent samples / s')
-    ax.set_title('Sampling efficiency (ISS)')
+    ax.set_title('Sampling efficiency ISS\n(median with 16–84% band)')
     ax.legend(fontsize=8)
 
     # Panel 3: mean cluster size fraction <C>/N^2
     ax = axes[1, 0]
     ax.plot(temperatures, mean_cluster_frac, '-^', color=palette['wolff'], ms=4)
+    ax.fill_between(
+        temperatures, mean_cluster_frac_p16, mean_cluster_frac_p84,
+        color=palette['wolff'], alpha=0.15,
+    )
     ax.axvline(TC_ISING, color='0.4', ls='--', lw=1, label=r'$T_c$')
     ax.set_xlabel('Temperature $T$')
     ax.set_ylabel(r'$\langle C \rangle \,/\, N^2$')
-    ax.set_title('Mean cluster size fraction (Wolff)')
+    ax.set_title(
+        r'Mean cluster size fraction (Wolff)'
+        + '\n'
+        + r'= normalisation factor $\langle C\rangle/L^2$',
+    )
     ax.legend(fontsize=8)
 
     # Panel 4: chi(T) consistency check
     ax = axes[1, 1]
     ax.plot(temperatures, chi_metro, '-o', color=palette['metro'], ms=4, label='Metropolis')
     ax.plot(temperatures, chi_wolff, '-s', color=palette['wolff'], ms=4, label='Wolff')
+    ax.fill_between(
+        temperatures, chi_metro_p16, chi_metro_p84,
+        color=palette['metro'], alpha=0.15,
+    )
+    ax.fill_between(
+        temperatures, chi_wolff_p16, chi_wolff_p84,
+        color=palette['wolff'], alpha=0.15,
+    )
     ax.axvline(TC_ISING, color='0.4', ls='--', lw=1, label=r'$T_c$')
     ax.set_xlabel('Temperature $T$')
     ax.set_ylabel(r'$\chi$')
-    ax.set_title(r'Susceptibility $\chi$ (consistency check)')
+    ax.set_title(r'Susceptibility (agreement validates correctness)')
     ax.legend(fontsize=8)
 
     fig.tight_layout()
@@ -286,7 +368,7 @@ def main() -> None:
         for temp_idx, T in enumerate(temperatures)
         for seed_idx in range(args.n_seeds)
     ]
-    raw: list[dict[str, float]] = parallel_sweep(
+    raw: list[dict[str, float | int]] = parallel_sweep(
         worker_func=_measure_efficiency_point, params=sweep_params,
     )
 
@@ -330,6 +412,12 @@ def main() -> None:
     chi_metro, chi_metro_p16, chi_metro_p84 = _summary(chi_metro_samples)
     chi_wolff, chi_wolff_p16, chi_wolff_p84 = _summary(chi_wolff_samples)
 
+    # Work-normalized tau for cross-algorithm comparability.
+    tau_metro_norm_samples = tau_metro_samples
+    tau_wolff_norm_samples = tau_wolff_samples * mean_cluster_frac_samples
+    tau_metro_norm, tau_metro_norm_p16, tau_metro_norm_p84 = _summary(tau_metro_norm_samples)
+    tau_wolff_norm, tau_wolff_norm_p16, tau_wolff_norm_p84 = _summary(tau_wolff_norm_samples)
+
     os.makedirs(args.output_dir, exist_ok=True)
     npz_path = os.path.join(args.output_dir, 'wolff_efficiency.npz')
     np.savez(
@@ -370,13 +458,28 @@ def main() -> None:
 
     _plot_efficiency(
         temperatures=temperatures,
-        tau_metro=tau_metro,
-        tau_wolff=tau_wolff,
+        tau_metro_norm=tau_metro_norm,
+        tau_metro_norm_p16=tau_metro_norm_p16,
+        tau_metro_norm_p84=tau_metro_norm_p84,
+        tau_wolff_norm=tau_wolff_norm,
+        tau_wolff_norm_p16=tau_wolff_norm_p16,
+        tau_wolff_norm_p84=tau_wolff_norm_p84,
         iss_metro=iss_metro,
+        iss_metro_p16=iss_metro_p16,
+        iss_metro_p84=iss_metro_p84,
         iss_wolff=iss_wolff,
+        iss_wolff_p16=iss_wolff_p16,
+        iss_wolff_p84=iss_wolff_p84,
         mean_cluster_frac=mean_cluster_frac,
+        mean_cluster_frac_p16=mean_cluster_frac_p16,
+        mean_cluster_frac_p84=mean_cluster_frac_p84,
         chi_metro=chi_metro,
+        chi_metro_p16=chi_metro_p16,
+        chi_metro_p84=chi_metro_p84,
         chi_wolff=chi_wolff,
+        chi_wolff_p16=chi_wolff_p16,
+        chi_wolff_p84=chi_wolff_p84,
+        n_seeds=n_seed,
         L=L,
         directory=args.output_dir,
     )
