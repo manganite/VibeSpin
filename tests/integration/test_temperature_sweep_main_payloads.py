@@ -4,15 +4,11 @@ from __future__ import annotations
 import sys
 from typing import Any
 
-from scripts.clock.temperature_sweep import SweepPoint as ClockSweepPoint
-from scripts.ising.temperature_sweep import SweepPoint as IsingSweepPoint
-from scripts.xy.temperature_sweep import SweepPoint as XYSweepPoint
-
 
 def _capture_sweep_params(
     monkeypatch,
     module: Any,
-    sweep_point_type: type,
+    expected_fields: tuple[str, ...],
     argv: list[str],
 ) -> None:
     """Run a sweep main() with patched dependencies and assert typed payload construction."""
@@ -31,7 +27,13 @@ def _capture_sweep_params(
 
     assert 'params' in captured
     assert len(captured['params']) == 2
-    assert all(isinstance(p, sweep_point_type) for p in captured['params'])
+    for payload in captured['params']:
+        # Payload should be a named tuple-like object with stable field names.
+        assert isinstance(payload, tuple)
+        assert hasattr(payload, '_fields')
+        assert tuple(payload._fields) == expected_fields
+        for field in expected_fields:
+            assert hasattr(payload, field)
 
 
 def test_ising_main_builds_typed_sweep_payloads(monkeypatch) -> None:
@@ -41,7 +43,7 @@ def test_ising_main_builds_typed_sweep_payloads(monkeypatch) -> None:
     _capture_sweep_params(
         monkeypatch,
         ising_module,
-        IsingSweepPoint,
+        ('temperature', 'size', 'meas_steps', 'eq_probe_steps', 'eq_max_steps'),
         ['ising_temperature_sweep', '--size', '8', '--meas-steps', '20', '--t-points', '2'],
     )
 
@@ -53,7 +55,7 @@ def test_xy_main_builds_typed_sweep_payloads(monkeypatch) -> None:
     _capture_sweep_params(
         monkeypatch,
         xy_module,
-        XYSweepPoint,
+        ('temperature', 'size', 'meas_steps', 'eq_probe_steps', 'eq_max_steps'),
         ['xy_temperature_sweep', '--size', '8', '--meas-steps', '20', '--t-points', '2'],
     )
 
@@ -65,6 +67,15 @@ def test_clock_main_builds_typed_sweep_payloads(monkeypatch) -> None:
     _capture_sweep_params(
         monkeypatch,
         clock_module,
-        ClockSweepPoint,
+        (
+            'temperature',
+            'size',
+            'q',
+            'aniso',
+            'meas_steps',
+            'eq_probe_steps',
+            'eq_max_steps',
+            'discrete',
+        ),
         ['clock_temperature_sweep', '--size', '8', '--meas-steps', '20', '--t-points', '2'],
     )

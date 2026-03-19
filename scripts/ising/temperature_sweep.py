@@ -23,7 +23,7 @@ from utils.system_helpers import (
 
 
 def simulate_temperature(
-    params: SweepPoint,
+    params: _SweepPoint,
 ) -> tuple[float, float, float, float, float]:
     """
     Worker function to simulate a single temperature point for the Ising model.
@@ -58,7 +58,7 @@ def simulate_temperature(
     return (*thermo, tau)
 
 
-class SweepPoint(NamedTuple):
+class _SweepPoint(NamedTuple):
     """Typed worker payload for one temperature point in the sweep."""
 
     temperature: float
@@ -101,8 +101,8 @@ def main() -> None:
 
     logger.info(f'Starting Ising temperature sweep (L={L})...')
     # Bundle parameters for parallel sweep
-    sweep_params: list[SweepPoint] = [
-        SweepPoint(
+    sweep_params: list[_SweepPoint] = [
+        _SweepPoint(
             temperature=T,
             size=L,
             meas_steps=args.meas_steps,
