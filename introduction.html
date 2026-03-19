@@ -88,7 +88,7 @@
 <li class="toctree-l1"><a class="reference internal" href="benchmarks.html">Performance Benchmarking for VibeSpin</a></li>
 <li class="toctree-l1"><a class="reference internal" href="wolff_efficiency.html">Wolff vs. Metropolis: Algorithmic Efficiency in the Critical Regime</a></li>
 <li class="toctree-l1"><a class="reference internal" href="dynamic_critical_exponents.html">Dynamical Critical Exponents in the 2D Ising Model</a></li>
-<li class="toctree-l1"><a class="reference internal" href="ising_autocorrelation_analysis.html">Ising Model: Relaxation to Equilibrium</a></li>
+<li class="toctree-l1"><a class="reference internal" href="ising_relaxation_and_autocorrelation_analysis.html">Ising Model: Relaxation to Equilibrium</a></li>
 </ul>
 <p class="caption" role="heading"><span class="caption-text">API Reference:</span></p>
 <ul>
@@ -212,7 +212,7 @@ python<span class="w"> </span>benchmark.py<span class="w"> </span>--sizes<span c
 </pre></div>
 </div>
 <p>Measure the dynamical critical exponent <span class="math notranslate nohighlight">\(z\)</span> at <span class="math notranslate nohighlight">\(T_c\)</span>:</p>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>python<span class="w"> </span>scripts/ising/measure_z.py<span class="w"> </span>--sizes<span class="w"> </span><span class="m">16</span><span class="w"> </span><span class="m">32</span><span class="w"> </span><span class="m">64</span><span class="w"> </span><span class="m">128</span><span class="w"> </span>--eq-steps<span class="w"> </span><span class="m">5000</span>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>python<span class="w"> </span>scripts/ising/measure_z.py<span class="w"> </span>--sizes<span class="w"> </span><span class="m">16</span><span class="w"> </span><span class="m">32</span><span class="w"> </span><span class="m">48</span><span class="w"> </span><span class="m">64</span><span class="w"> </span><span class="m">96</span><span class="w"> </span><span class="m">128</span><span class="w"> </span>--n-seeds<span class="w"> </span><span class="m">10</span>
 </pre></div>
 </div>
 </section>
@@ -271,7 +271,7 @@ make<span class="w"> </span>html
 <li><p><a class="reference internal" href="agents.html"><span class="doc">Agent Instruction Guide</span></a>: Mandatory technical constraints for AI Agents.</p></li>
 <li><p><a class="reference internal" href="benchmarks.html"><span class="doc">Performance Benchmarks</span></a>: Detailed scaling analysis.</p></li>
 <li><p><a class="reference internal" href="dynamic_critical_exponents.html"><span class="doc">Dynamic Critical Exponents</span></a>: Scaling analysis of autocorrelation times at criticality.</p></li>
-<li><p><a class="reference internal" href="ising_autocorrelation_analysis.html"><span class="doc">Ising Autocorrelation Analysis</span></a>: Comparative analysis of equilibration and autocorrelation across update schemes.</p></li>
+<li><p><a class="reference internal" href="ising_relaxation_and_autocorrelation_analysis.html"><span class="doc">Ising Relaxation and Autocorrelation Analysis</span></a>: Comparative analysis of equilibration and autocorrelation across update schemes.</p></li>
 </ul>
 </section>
 </section>

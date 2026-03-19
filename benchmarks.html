@@ -58,8 +58,12 @@
 <p class="caption" role="heading"><span class="caption-text">Research &amp; Analysis:</span></p>
 <ul class="current">
 <li class="toctree-l1 current"><a class="current reference internal" href="#">Performance Benchmarking for VibeSpin</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="#Setup">Setup</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#Setup">Setup</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#Throughput-timing-helper">Throughput timing helper</a></li>
+</ul>
+</li>
 <li class="toctree-l2"><a class="reference internal" href="#Throughput-Benchmark">Throughput Benchmark</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#Load-or-compute-data">Load or compute data</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#Throughput:-Log-Log-Plot">Throughput: Log-Log Plot</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#Thermodynamic-Analysis-Cost:-Per-Step-Collection">Thermodynamic Analysis Cost: Per-Step Collection</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#Thermodynamic-Overhead-Ratio">Thermodynamic Overhead Ratio</a></li>
@@ -81,7 +85,7 @@
 </li>
 <li class="toctree-l1"><a class="reference internal" href="wolff_efficiency.html">Wolff vs. Metropolis: Algorithmic Efficiency in the Critical Regime</a></li>
 <li class="toctree-l1"><a class="reference internal" href="dynamic_critical_exponents.html">Dynamical Critical Exponents in the 2D Ising Model</a></li>
-<li class="toctree-l1"><a class="reference internal" href="ising_autocorrelation_analysis.html">Ising Model: Relaxation to Equilibrium</a></li>
+<li class="toctree-l1"><a class="reference internal" href="ising_relaxation_and_autocorrelation_analysis.html">Ising Model: Relaxation to Equilibrium</a></li>
 </ul>
 <p class="caption" role="heading"><span class="caption-text">API Reference:</span></p>
 <ul>
@@ -183,6 +187,9 @@ curves in total.</p>
 </pre></div>
 </div>
 </div>
+<section id="Throughput-timing-helper">
+<h3>Throughput timing helper<a class="headerlink" href="#Throughput-timing-helper" title="Link to this heading"></a></h3>
+<p>The next code cell defines <code class="docutils literal notranslate"><span class="pre">measure_performance</span></code>, the timing helper used throughout the notebook. It warms up the JIT-compiled sweep and observable kernels before benchmarking, then reports both raw sweep throughput and the per-step cost of the thermodynamic observables that are sampled inside measurement windows.</p>
 <div class="nbinput nblast docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[3]:
 </pre></div>
@@ -231,6 +238,7 @@ curves in total.</p>
 </div>
 </div>
 </section>
+</section>
 <section id="Throughput-Benchmark">
 <h2>Throughput Benchmark<a class="headerlink" href="#Throughput-Benchmark" title="Link to this heading"></a></h2>
 <p>The benchmark runs all eight model variants at lattice sizes <span class="math notranslate nohighlight">\(L \in \{32, 64, 128, 256, 512\}\)</span>. Temperatures are fixed at physically relevant points: <span class="math notranslate nohighlight">\(T = 2.269\)</span> for Ising (within 0.1% of the known 2D critical temperature <span class="math notranslate nohighlight">\(T_c \approx 2.2692\)</span>), <span class="math notranslate nohighlight">\(T = 0.89\)</span> for XY (near the Berezinskii:nbsphinx-math:<cite>u2`013Kosterlitz:nbsphinx-math:</cite>u2`013Thouless transition at <span class="math notranslate nohighlight">\(T_{\text{BKT}} \approx 0.89\)</span>), and <span class="math notranslate nohighlight">\(T = 0.5\)</span> for both <span class="math notranslate nohighlight">\(q = 6\)</span> clock variants (well inside the
@@ -273,23 +281,29 @@ ordered phase). Choosing these points ensures realistic acceptance rates rather 
 <span class="n">_NPZ_PATH</span> <span class="o">=</span> <span class="s1">&#39;../results/benchmarks/scaling_benchmark.npz&#39;</span>
 <span class="n">_NPZ_METRICS</span> <span class="o">=</span> <span class="p">(</span><span class="s1">&#39;sps&#39;</span><span class="p">,</span> <span class="s1">&#39;thermo_ms&#39;</span><span class="p">,</span> <span class="s1">&#39;corr_ms&#39;</span><span class="p">,</span> <span class="s1">&#39;vort_ms&#39;</span><span class="p">,</span> <span class="s1">&#39;vden_ms&#39;</span><span class="p">,</span> <span class="s1">&#39;heli_ms&#39;</span><span class="p">)</span>
 
+<span class="n">_cache_ok</span> <span class="o">=</span> <span class="kc">False</span>
 <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">_NPZ_PATH</span><span class="p">):</span>
     <span class="n">_data</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">_NPZ_PATH</span><span class="p">,</span> <span class="n">allow_pickle</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
-    <span class="n">_npz_names</span> <span class="o">=</span> <span class="p">[</span><span class="nb">str</span><span class="p">(</span><span class="n">n</span><span class="p">)</span> <span class="k">for</span> <span class="n">n</span> <span class="ow">in</span> <span class="n">_data</span><span class="p">[</span><span class="s1">&#39;model_names&#39;</span><span class="p">]]</span>
-    <span class="n">_npz_sizes</span> <span class="o">=</span> <span class="p">[</span><span class="nb">int</span><span class="p">(</span><span class="n">s</span><span class="p">)</span> <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="n">_data</span><span class="p">[</span><span class="s1">&#39;sizes&#39;</span><span class="p">]]</span>
-    <span class="n">results</span> <span class="o">=</span> <span class="p">{</span>
-        <span class="n">name</span><span class="p">:</span> <span class="p">{</span>
-            <span class="n">L</span><span class="p">:</span> <span class="p">{</span><span class="n">m</span><span class="p">:</span> <span class="nb">float</span><span class="p">(</span><span class="n">_data</span><span class="p">[</span><span class="n">m</span><span class="p">][</span><span class="n">i</span><span class="p">,</span> <span class="n">j</span><span class="p">])</span> <span class="k">for</span> <span class="n">m</span> <span class="ow">in</span> <span class="n">_NPZ_METRICS</span><span class="p">}</span>
-            <span class="k">for</span> <span class="n">j</span><span class="p">,</span> <span class="n">L</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">_npz_sizes</span><span class="p">)</span>
+    <span class="n">_required</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;model_names&#39;</span><span class="p">,</span> <span class="s1">&#39;sizes&#39;</span><span class="p">}</span> <span class="o">|</span> <span class="nb">set</span><span class="p">(</span><span class="n">_NPZ_METRICS</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">_required</span><span class="o">.</span><span class="n">issubset</span><span class="p">(</span><span class="nb">set</span><span class="p">(</span><span class="n">_data</span><span class="o">.</span><span class="n">files</span><span class="p">)):</span>
+        <span class="n">_npz_names</span> <span class="o">=</span> <span class="p">[</span><span class="nb">str</span><span class="p">(</span><span class="n">n</span><span class="p">)</span> <span class="k">for</span> <span class="n">n</span> <span class="ow">in</span> <span class="n">_data</span><span class="p">[</span><span class="s1">&#39;model_names&#39;</span><span class="p">]]</span>
+        <span class="n">_npz_sizes</span> <span class="o">=</span> <span class="p">[</span><span class="nb">int</span><span class="p">(</span><span class="n">s</span><span class="p">)</span> <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="n">_data</span><span class="p">[</span><span class="s1">&#39;sizes&#39;</span><span class="p">]]</span>
+        <span class="n">results</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="n">name</span><span class="p">:</span> <span class="p">{</span>
+                <span class="n">L</span><span class="p">:</span> <span class="p">{</span><span class="n">m</span><span class="p">:</span> <span class="nb">float</span><span class="p">(</span><span class="n">_data</span><span class="p">[</span><span class="n">m</span><span class="p">][</span><span class="n">i</span><span class="p">,</span> <span class="n">j</span><span class="p">])</span> <span class="k">for</span> <span class="n">m</span> <span class="ow">in</span> <span class="n">_NPZ_METRICS</span><span class="p">}</span>
+                <span class="k">for</span> <span class="n">j</span><span class="p">,</span> <span class="n">L</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">_npz_sizes</span><span class="p">)</span>
+            <span class="p">}</span>
+            <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">name</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">_npz_names</span><span class="p">)</span>
         <span class="p">}</span>
-        <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">name</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">_npz_names</span><span class="p">)</span>
-    <span class="p">}</span>
-    <span class="n">sizes</span> <span class="o">=</span> <span class="n">_npz_sizes</span>
-    <span class="n">_loaded_from_npz</span> <span class="o">=</span> <span class="kc">True</span>
-    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Loaded from </span><span class="si">{</span><span class="n">_NPZ_PATH</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
-    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;  Models : </span><span class="si">{</span><span class="n">_npz_names</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
-    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;  Sizes  : </span><span class="si">{</span><span class="n">_npz_sizes</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
-<span class="k">else</span><span class="p">:</span>
+        <span class="n">sizes</span> <span class="o">=</span> <span class="n">_npz_sizes</span>
+        <span class="n">_loaded_from_npz</span> <span class="o">=</span> <span class="kc">True</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Loaded from </span><span class="si">{</span><span class="n">_NPZ_PATH</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;  Models : </span><span class="si">{</span><span class="n">_npz_names</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;  Sizes  : </span><span class="si">{</span><span class="n">_npz_sizes</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
+        <span class="n">_cache_ok</span> <span class="o">=</span> <span class="kc">True</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Cache at </span><span class="si">{</span><span class="n">_NPZ_PATH</span><span class="si">}</span><span class="s1"> is missing expected keys; running inline benchmark.&#39;</span><span class="p">)</span>
+<span class="k">if</span> <span class="ow">not</span> <span class="n">_cache_ok</span><span class="p">:</span>
     <span class="n">results</span> <span class="o">=</span> <span class="p">{</span><span class="n">name</span><span class="p">:</span> <span class="p">{}</span> <span class="k">for</span> <span class="n">name</span><span class="p">,</span> <span class="n">_</span> <span class="ow">in</span> <span class="n">model_configs</span><span class="p">}</span>
     <span class="k">for</span> <span class="n">L</span> <span class="ow">in</span> <span class="n">tqdm</span><span class="p">(</span><span class="n">sizes</span><span class="p">,</span> <span class="n">desc</span><span class="o">=</span><span class="s1">&#39;Lattice Sizes&#39;</span><span class="p">):</span>
         <span class="k">for</span> <span class="n">name</span><span class="p">,</span> <span class="n">constructor</span> <span class="ow">in</span> <span class="n">model_configs</span><span class="p">:</span>
@@ -309,9 +323,20 @@ ordered phase). Choosing these points ensures realistic acceptance rates rather 
 <div class="highlight"><pre>
 Loaded from ../results/benchmarks/scaling_benchmark.npz
   Models : [&#39;Ising (Checkerboard)&#39;, &#39;Ising (Random)&#39;, &#39;XY (Checkerboard)&#39;, &#39;XY (Random)&#39;, &#39;Clock Continuous (Checkerboard)&#39;, &#39;Clock Continuous (Random)&#39;, &#39;Clock Discrete (Checkerboard)&#39;, &#39;Clock Discrete (Random)&#39;]
-  Sizes  : [64, 128, 256, 512]
+  Sizes  : [32, 64, 128, 256, 512]
 </pre></div></div>
 </div>
+</section>
+<section id="Load-or-compute-data">
+<h2>Load or compute data<a class="headerlink" href="#Load-or-compute-data" title="Link to this heading"></a></h2>
+<p>This notebook benchmarks throughput (sweeps/second) and per-step overhead across six model types and two update schemes across five lattice sizes. The measurement results are cached at <code class="docutils literal notranslate"><span class="pre">../results/benchmarks/scaling_benchmark.npz</span></code>.</p>
+<p>When the cache file is present, the notebook loads it directly and extracts all benchmark metrics for subsequent plots. No recomputation occurs; all analysis cells proceed immediately with the cached data.</p>
+<p>When the cache file is absent, the notebook runs an inline fallback—a quick benchmark at sizes [32, 64, 128, 256, 512] with modest sweep counts per size. This inline computation is useful for verifying that the analysis pipeline works end-to-end and for generating rough estimates within a few minutes. However, the fallback uses reduced sweep counts compared to a rigorous measurement, so its timings should be viewed as demo-quality rather than publication-ready.</p>
+<p>For production-quality benchmarks covering the full parameter space and longer averaging windows, run:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>python<span class="w"> </span>scripts/benchmarks/throughput.py<span class="w"> </span>--sizes<span class="w"> </span><span class="m">32</span><span class="w"> </span><span class="m">64</span><span class="w"> </span><span class="m">128</span><span class="w"> </span><span class="m">256</span><span class="w"> </span><span class="m">512</span><span class="w"> </span>--sweeps<span class="w"> </span><span class="m">500</span>
+</pre></div>
+</div>
+<p>This script populates <code class="docutils literal notranslate"><span class="pre">../results/benchmarks/scaling_benchmark.npz</span></code>, and the notebook will automatically use the updated cache on subsequent runs.</p>
 </section>
 <section id="Throughput:-Log-Log-Plot">
 <h2>Throughput: Log-Log Plot<a class="headerlink" href="#Throughput:-Log-Log-Plot" title="Link to this heading"></a></h2>
@@ -346,7 +371,7 @@ length-<span class="math notranslate nohighlight">\(q\)</span> cosine table, rec
 <div class="prompt empty docutils container">
 </div>
 <div class="output_area docutils container">
-<img alt="_images/benchmarks_8_0.png" src="_images/benchmarks_8_0.png" />
+<img alt="_images/benchmarks_10_0.png" src="_images/benchmarks_10_0.png" />
 </div>
 </div>
 </section>
@@ -386,7 +411,7 @@ length-<span class="math notranslate nohighlight">\(q\)</span> cosine table, rec
 <div class="prompt empty docutils container">
 </div>
 <div class="output_area docutils container">
-<img alt="_images/benchmarks_10_0.png" src="_images/benchmarks_10_0.png" />
+<img alt="_images/benchmarks_12_0.png" src="_images/benchmarks_12_0.png" />
 </div>
 </div>
 </section>
@@ -428,7 +453,7 @@ the measurement pass. The discrete clock sits between the two, in line with its 
 <div class="prompt empty docutils container">
 </div>
 <div class="output_area docutils container">
-<img alt="_images/benchmarks_12_0.png" src="_images/benchmarks_12_0.png" />
+<img alt="_images/benchmarks_14_0.png" src="_images/benchmarks_14_0.png" />
 </div>
 </div>
 </section>
@@ -475,7 +500,7 @@ most CPUs). Values slightly below 1 are possible when Numba vectorizes inner loo
 <div class="prompt empty docutils container">
 </div>
 <div class="output_area docutils container">
-<img alt="_images/benchmarks_14_0.png" src="_images/benchmarks_14_0.png" />
+<img alt="_images/benchmarks_16_0.png" src="_images/benchmarks_16_0.png" />
 </div>
 </div>
 </section>
@@ -512,7 +537,7 @@ Random-sequential update variants show slightly higher cost than checkerboard at
 <div class="prompt empty docutils container">
 </div>
 <div class="output_area docutils container">
-<img alt="_images/benchmarks_16_0.png" src="_images/benchmarks_16_0.png" />
+<img alt="_images/benchmarks_18_0.png" src="_images/benchmarks_18_0.png" />
 </div>
 </div>
 </section>
@@ -573,24 +598,24 @@ Performance metrics at L = 512 (N = 262144)
 ---------------------------------------------------------------------------------------------------------
 Model                               |   Sweeps/s | Sweep (ms) |  Pure (ms) | Thermo (ms) | Overhead (%)
 ---------------------------------------------------------------------------------------------------------
-Ising (Checkerboard)                |      323.0 |       3.10 |       2.84 |       0.252 |         8.2%
-Ising (Random)                      |      105.5 |       9.48 |       9.25 |       0.231 |         2.4%
-XY (Checkerboard)                   |       76.4 |      13.09 |       9.64 |       3.447 |        26.3%
-XY (Random)                         |       46.4 |      21.57 |      18.12 |       3.450 |        16.0%
-Clock Continuous (Checkerboard)     |       36.7 |      27.22 |      14.23 |      12.991 |        47.7%
-Clock Continuous (Random)           |       26.6 |      37.54 |      23.05 |      14.495 |        38.6%
-Clock Discrete (Checkerboard)       |       84.1 |      11.89 |       9.24 |       2.656 |        22.3%
-Clock Discrete (Random)             |       50.6 |      19.78 |      17.02 |       2.756 |        13.9%
+Ising (Checkerboard)                |      201.8 |       4.95 |       4.61 |       0.344 |         6.9%
+Ising (Random)                      |       57.2 |      17.47 |      17.02 |       0.450 |         2.6%
+XY (Checkerboard)                   |       32.4 |      30.87 |      17.18 |      13.690 |        44.4%
+XY (Random)                         |       17.8 |      56.14 |      50.65 |       5.490 |         9.8%
+Clock Continuous (Checkerboard)     |       24.3 |      41.22 |      21.20 |      20.023 |        48.6%
+Clock Continuous (Random)           |       12.8 |      78.13 |      58.26 |      19.877 |        25.4%
+Clock Discrete (Checkerboard)       |       56.9 |      17.57 |      13.27 |       4.300 |        24.5%
+Clock Discrete (Random)             |       32.5 |      30.79 |      26.82 |       3.966 |        12.9%
 
 1. Checkerboard vs Random Speedup (at constant model representation):
-  Ising             :  3.06x faster with Checkerboard updates
-  XY                :  1.65x faster with Checkerboard updates
-  Clock Continuous  :  1.38x faster with Checkerboard updates
-  Clock Discrete    :  1.66x faster with Checkerboard updates
+  Ising             :  3.53x faster with Checkerboard updates
+  XY                :  1.82x faster with Checkerboard updates
+  Clock Continuous  :  1.90x faster with Checkerboard updates
+  Clock Discrete    :  1.75x faster with Checkerboard updates
 
 2. Discrete vs Continuous Speedup (at constant update scheme):
-  Checkerboard:  2.29x faster with Discrete representation
-  Random      :  1.90x faster with Discrete representation
+  Checkerboard:  2.35x faster with Discrete representation
+  Random      :  2.54x faster with Discrete representation
 </pre></div></div>
 </div>
 <p>The table above reports performance at the largest lattice size and separates total sweep time from measurement overhead. Pure simulation time isolates update-kernel cost, while thermodynamic time captures per-step collection of energy and magnetization during measurement windows.</p>
@@ -697,7 +722,7 @@ separate as <span class="math notranslate nohighlight">\(N\)</span> grows, inclu
 <div class="prompt empty docutils container">
 </div>
 <div class="output_area docutils container">
-<img alt="_images/benchmarks_21_0.png" src="_images/benchmarks_21_0.png" />
+<img alt="_images/benchmarks_23_0.png" src="_images/benchmarks_23_0.png" />
 </div>
 </div>
 <div class="nboutput nblast docutils container">
@@ -708,19 +733,19 @@ separate as <span class="math notranslate nohighlight">\(N\)</span> grows, inclu
 G(r) cost per call at L=512 (N=262144)
 Model                                 ms/call  representation
 ------------------------------------------------------------------------
-Ising (Checkerboard)                    10.39  scalar, 1 FFT
-Ising (Random)                           9.19  scalar, 1 FFT
-XY (Checkerboard)                       11.43  2-component float, 2 FFTs
-XY (Random)                             11.72  2-component float, 2 FFTs
-Clock Continuous (Checkerboard)         11.72  2-component float, 2 FFTs
-Clock Continuous (Random)               11.79  2-component float, 2 FFTs
-Clock Discrete (Checkerboard)           18.17  int -&gt; float + 2 FFTs
-Clock Discrete (Random)                 18.86  int -&gt; float + 2 FFTs
+Ising (Checkerboard)                    22.63  scalar, 1 FFT
+Ising (Random)                          29.37  scalar, 1 FFT
+XY (Checkerboard)                       30.08  2-component float, 2 FFTs
+XY (Random)                             25.07  2-component float, 2 FFTs
+Clock Continuous (Checkerboard)         23.28  2-component float, 2 FFTs
+Clock Continuous (Random)               40.85  2-component float, 2 FFTs
+Clock Discrete (Checkerboard)           42.97  int -&gt; float + 2 FFTs
+Clock Discrete (Random)                 40.22  int -&gt; float + 2 FFTs
 
 Tier means:
-  Ising (scalar, 1 FFT)                9.79 ms  (reference)
-  XY / Clock Continuous (2 FFTs)      11.66 ms  (1.19x Ising)
-  Clock Discrete (convert + 2 FFTs)   18.51 ms  (1.59x XY tier,  1.89x Ising)
+  Ising (scalar, 1 FFT)               26.00 ms  (reference)
+  XY / Clock Continuous (2 FFTs)      29.82 ms  (1.15x Ising)
+  Clock Discrete (convert + 2 FFTs)   41.59 ms  (1.39x XY tier,  1.60x Ising)
 </pre></div></div>
 </div>
 </section>
@@ -768,7 +793,7 @@ the true value diverges with <span class="math notranslate nohighlight">\(L\)</s
 <div class="prompt empty docutils container">
 </div>
 <div class="output_area docutils container">
-<script type="application/vnd.jupyter.widget-view+json">{"model_id": "0993a1f7a1404ef29765b521df8b165a", "version_major": 2, "version_minor": 0}</script></div>
+<script type="application/vnd.jupyter.widget-view+json">{"model_id": "efed78a21a69435e9d42c57035efb199", "version_major": 2, "version_minor": 0}</script></div>
 </div>
 <div class="nboutput nblast docutils container">
 <div class="prompt empty docutils container">
@@ -779,14 +804,14 @@ MC autocorrelation at L=64  (2000-sweep series, 500-step burn-in)
 ------------------------------------------------------------------------
 Model                                 tau_int (sweeps)    ISS (samples/s)
 ------------------------------------------------------------------------
-Ising (Checkerboard)                            153.1             172.0
-Ising (Random)                                  269.1              31.1
-XY (Checkerboard)                               145.6              35.9
-XY (Random)                                     296.1              15.0
-Clock Continuous (Checkerboard)                  97.9              25.8
-Clock Continuous (Random)                       139.6              16.8
-Clock Discrete (Checkerboard)                   313.7              17.8
-Clock Discrete (Random)                          75.2              59.2
+Ising (Checkerboard)                            153.1              99.3
+Ising (Random)                                  269.1              17.7
+XY (Checkerboard)                               145.6              23.9
+XY (Random)                                     296.1               4.9
+Clock Continuous (Checkerboard)                  97.9              14.7
+Clock Continuous (Random)                       139.6               5.1
+Clock Discrete (Checkerboard)                   313.7               7.8
+Clock Discrete (Random)                          75.2              26.7
 </pre></div></div>
 </div>
 <p>The table above reports raw numbers. The two panels below plot the same data as horizontal bar charts, making it straightforward to rank models by decorrelation speed and by effective sampling rate in a single glance.</p>
@@ -832,7 +857,7 @@ Clock Discrete (Random)                          75.2              59.2
 <div class="prompt empty docutils container">
 </div>
 <div class="output_area docutils container">
-<img alt="_images/benchmarks_25_0.png" src="_images/benchmarks_25_0.png" />
+<img alt="_images/benchmarks_27_0.png" src="_images/benchmarks_27_0.png" />
 </div>
 </div>
 </section>
@@ -870,7 +895,7 @@ Clock Discrete (Random)                          75.2              59.2
 <div class="prompt empty docutils container">
 </div>
 <div class="output_area docutils container">
-<img alt="_images/benchmarks_28_0.png" src="_images/benchmarks_28_0.png" />
+<img alt="_images/benchmarks_30_0.png" src="_images/benchmarks_30_0.png" />
 </div>
 </div>
 </section>
@@ -926,7 +951,7 @@ Clock Discrete (Random)                          75.2              59.2
 <div class="prompt empty docutils container">
 </div>
 <div class="output_area docutils container">
-<img alt="_images/benchmarks_30_0.png" src="_images/benchmarks_30_0.png" />
+<img alt="_images/benchmarks_32_0.png" src="_images/benchmarks_32_0.png" />
 </div>
 </div>
 <p>This section times non-local observables for XY and clock-family models, focusing on vortex-density and helicity related computations that require plaquette traversals and additional phase operations.</p>
@@ -937,7 +962,7 @@ Clock Discrete (Random)                          75.2              59.2
 <p>Checkerboard updates partition the lattice into two independent sublattices, one updated per half-step. Because sites within each sublattice do not share nearest neighbours, all updates in a sublattice pass are independent and can execute concurrently without read-write conflicts. VibeSpin exposes this via <code class="docutils literal notranslate"><span class="pre">parallel=True</span></code>, which directs Numba to spawn threads across the sublattice using <code class="docutils literal notranslate"><span class="pre">prange</span></code>.</p>
 <p>The code below measures Ising checkerboard throughput at <span class="math notranslate nohighlight">\(L \in \{128, 256, 512, 1024\}\)</span> in both serial and parallel modes. The left panel shows absolute throughput; the right panel shows the speedup ratio, revealing the crossover from overhead-bound to compute-bound as <span class="math notranslate nohighlight">\(L\)</span> grows.</p>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[23]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[16]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">p_sizes</span> <span class="o">=</span> <span class="p">[</span><span class="mi">128</span><span class="p">,</span> <span class="mi">256</span><span class="p">,</span> <span class="mi">512</span><span class="p">,</span> <span class="mi">1024</span><span class="p">]</span>
@@ -982,13 +1007,13 @@ Clock Discrete (Random)                          75.2              59.2
 <div class="prompt empty docutils container">
 </div>
 <div class="output_area docutils container">
-<script type="application/vnd.jupyter.widget-view+json">{"model_id": "276fda20648e4df6be1769c9a930fd25", "version_major": 2, "version_minor": 0}</script></div>
+<script type="application/vnd.jupyter.widget-view+json">{"model_id": "50b4d636750142bcb24b1903a618ee91", "version_major": 2, "version_minor": 0}</script></div>
 </div>
 <div class="nboutput nblast docutils container">
 <div class="prompt empty docutils container">
 </div>
 <div class="output_area docutils container">
-<img alt="_images/benchmarks_33_1.png" src="_images/benchmarks_33_1.png" />
+<img alt="_images/benchmarks_35_1.png" src="_images/benchmarks_35_1.png" />
 </div>
 </div>
 </section>
@@ -1053,7 +1078,7 @@ Clock Discrete (Random)                          75.2              59.2
 <div class="prompt empty docutils container">
 </div>
 <div class="output_area docutils container">
-<img alt="_images/benchmarks_36_0.png" src="_images/benchmarks_36_0.png" />
+<img alt="_images/benchmarks_38_0.png" src="_images/benchmarks_38_0.png" />
 </div>
 </div>
 <p>The final panelized figure aggregates update throughput, per-spin update cost, observable overheads, and analysis-time scaling across models. Use this summary to compare asymptotic trends rather than single-point values, since warm-up costs and finite-size effects can distort small-system timings. In equilibrium workflows near criticality, combine these timing curves with autocorrelation behavior to estimate effective independent-sample throughput.</p>
@@ -1065,7 +1090,9 @@ Clock Discrete (Random)                          75.2              59.2
 <p><a class="reference internal" href="#Bibliography"><span class="std std-ref">[3]</span></a> J. Villain, “Theory of one- and two-dimensional magnets with an easy magnetization plane. II. The planar, classical, two-dimensional magnet,” <em>J. Phys. France</em> 36, 581-590 (1975). <a class="reference external" href="https://doi.org/10.1051/jphys:01975003606058100">Open Access</a></p>
 <p><a class="reference internal" href="#Bibliography"><span class="std std-ref">[4]</span></a> J. Lapilli, P. Pfeifer, and C. Wexler, “Universality away from critical points in two-dimensional phase transitions,” <em>Physical Review Letters</em>, vol. 96, no. 14, 140603, 2006. <a class="reference external" href="https://journals.aps.org/prl/abstract/10.1103/PhysRevLett.96.140603">APS Open Access</a></p>
 <p><a class="reference internal" href="#Bibliography"><span class="std std-ref">[5]</span></a> W. K. Hastings, “Monte Carlo sampling methods using Markov chains and their applications,” <em>Biometrika</em>, vol. 57, no. 1, pp. 97–109, 1970. <a class="reference external" href="https://academic.oup.com/biomet/article/57/1/97/252073">Oxford Academic Open Access</a></p>
-</section>
+<script type="application/vnd.jupyter.widget-state+json">
+{"state": {"0bd747526d8d488bb9e3b16e0485414a": {"model_module": "@jupyter-widgets/base", "model_module_version": "2.0.0", "model_name": "LayoutModel", "state": {"_model_module": "@jupyter-widgets/base", "_model_module_version": "2.0.0", "_model_name": "LayoutModel", "_view_count": null, "_view_module": "@jupyter-widgets/base", "_view_module_version": "2.0.0", "_view_name": "LayoutView", "align_content": null, "align_items": null, "align_self": null, "border_bottom": null, "border_left": null, "border_right": null, "border_top": null, "bottom": null, "display": null, "flex": null, "flex_flow": null, "grid_area": null, "grid_auto_columns": null, "grid_auto_flow": null, "grid_auto_rows": null, "grid_column": null, "grid_gap": null, "grid_row": null, "grid_template_areas": null, "grid_template_columns": null, "grid_template_rows": null, "height": null, "justify_content": null, "justify_items": null, "left": null, "margin": null, "max_height": null, "max_width": null, "min_height": null, "min_width": null, "object_fit": null, "object_position": null, "order": null, "overflow": null, "padding": null, "right": null, "top": null, "visibility": null, "width": null}}, "0df71d9cb1e04634b2593b6628951009": {"model_module": "@jupyter-widgets/base", "model_module_version": "2.0.0", "model_name": "LayoutModel", "state": {"_model_module": "@jupyter-widgets/base", "_model_module_version": "2.0.0", "_model_name": "LayoutModel", "_view_count": null, "_view_module": "@jupyter-widgets/base", "_view_module_version": "2.0.0", "_view_name": "LayoutView", "align_content": null, "align_items": null, "align_self": null, "border_bottom": null, "border_left": null, "border_right": null, "border_top": null, "bottom": null, "display": null, "flex": null, "flex_flow": null, "grid_area": null, "grid_auto_columns": null, "grid_auto_flow": null, "grid_auto_rows": null, "grid_column": null, "grid_gap": null, "grid_row": null, "grid_template_areas": null, "grid_template_columns": null, "grid_template_rows": null, "height": null, "justify_content": null, "justify_items": null, "left": null, "margin": null, "max_height": null, "max_width": null, "min_height": null, "min_width": null, "object_fit": null, "object_position": null, "order": null, "overflow": null, "padding": null, "right": null, "top": null, "visibility": null, "width": null}}, "13db8d36a67a42038b7646843f0b57ec": {"model_module": "@jupyter-widgets/base", "model_module_version": "2.0.0", "model_name": "LayoutModel", "state": {"_model_module": "@jupyter-widgets/base", "_model_module_version": "2.0.0", "_model_name": "LayoutModel", "_view_count": null, "_view_module": "@jupyter-widgets/base", "_view_module_version": "2.0.0", "_view_name": "LayoutView", "align_content": null, "align_items": null, "align_self": null, "border_bottom": null, "border_left": null, "border_right": null, "border_top": null, "bottom": null, "display": null, "flex": null, "flex_flow": null, "grid_area": null, "grid_auto_columns": null, "grid_auto_flow": null, "grid_auto_rows": null, "grid_column": null, "grid_gap": null, "grid_row": null, "grid_template_areas": null, "grid_template_columns": null, "grid_template_rows": null, "height": null, "justify_content": null, "justify_items": null, "left": null, "margin": null, "max_height": null, "max_width": null, "min_height": null, "min_width": null, "object_fit": null, "object_position": null, "order": null, "overflow": null, "padding": null, "right": null, "top": null, "visibility": null, "width": null}}, "17b6b66962bb4131bc6a16e42af104e9": {"model_module": "@jupyter-widgets/base", "model_module_version": "2.0.0", "model_name": "LayoutModel", "state": {"_model_module": "@jupyter-widgets/base", "_model_module_version": "2.0.0", "_model_name": "LayoutModel", "_view_count": null, "_view_module": "@jupyter-widgets/base", "_view_module_version": "2.0.0", "_view_name": "LayoutView", "align_content": null, "align_items": null, "align_self": null, "border_bottom": null, "border_left": null, "border_right": null, "border_top": null, "bottom": null, "display": null, "flex": null, "flex_flow": null, "grid_area": null, "grid_auto_columns": null, "grid_auto_flow": null, "grid_auto_rows": null, "grid_column": null, "grid_gap": null, "grid_row": null, "grid_template_areas": null, "grid_template_columns": null, "grid_template_rows": null, "height": null, "justify_content": null, "justify_items": null, "left": null, "margin": null, "max_height": null, "max_width": null, "min_height": null, "min_width": null, "object_fit": null, "object_position": null, "order": null, "overflow": null, "padding": null, "right": null, "top": null, "visibility": null, "width": null}}, "2aa1ae6db6ad402b866611d920aa96c8": {"model_module": "@jupyter-widgets/base", "model_module_version": "2.0.0", "model_name": "LayoutModel", "state": {"_model_module": "@jupyter-widgets/base", "_model_module_version": "2.0.0", "_model_name": "LayoutModel", "_view_count": null, "_view_module": "@jupyter-widgets/base", "_view_module_version": "2.0.0", "_view_name": "LayoutView", "align_content": null, "align_items": null, "align_self": null, "border_bottom": null, "border_left": null, "border_right": null, "border_top": null, "bottom": null, "display": null, "flex": null, "flex_flow": null, "grid_area": null, "grid_auto_columns": null, "grid_auto_flow": null, "grid_auto_rows": null, "grid_column": null, "grid_gap": null, "grid_row": null, "grid_template_areas": null, "grid_template_columns": null, "grid_template_rows": null, "height": null, "justify_content": null, "justify_items": null, "left": null, "margin": null, "max_height": null, "max_width": null, "min_height": null, "min_width": null, "object_fit": null, "object_position": null, "order": null, "overflow": null, "padding": null, "right": null, "top": null, "visibility": null, "width": null}}, "2c4343f9346b483c864fc90067e5f1f9": {"model_module": "@jupyter-widgets/base", "model_module_version": "2.0.0", "model_name": "LayoutModel", "state": {"_model_module": "@jupyter-widgets/base", "_model_module_version": "2.0.0", "_model_name": "LayoutModel", "_view_count": null, "_view_module": "@jupyter-widgets/base", "_view_module_version": "2.0.0", "_view_name": "LayoutView", "align_content": null, "align_items": null, "align_self": null, "border_bottom": null, "border_left": null, "border_right": null, "border_top": null, "bottom": null, "display": null, "flex": null, "flex_flow": null, "grid_area": null, "grid_auto_columns": null, "grid_auto_flow": null, "grid_auto_rows": null, "grid_column": null, "grid_gap": null, "grid_row": null, "grid_template_areas": null, "grid_template_columns": null, "grid_template_rows": null, "height": null, "justify_content": null, "justify_items": null, "left": null, "margin": null, "max_height": null, "max_width": null, "min_height": null, "min_width": null, "object_fit": null, "object_position": null, "order": null, "overflow": null, "padding": null, "right": null, "top": null, "visibility": null, "width": null}}, "30cba0847deb4dd6b0e436f22623f1ba": {"model_module": "@jupyter-widgets/controls", "model_module_version": "2.0.0", "model_name": "HTMLModel", "state": {"_dom_classes": [], "_model_module": "@jupyter-widgets/controls", "_model_module_version": "2.0.0", "_model_name": "HTMLModel", "_view_count": null, "_view_module": "@jupyter-widgets/controls", "_view_module_version": "2.0.0", "_view_name": "HTMLView", "description": "", "description_allow_html": false, "layout": "IPY_MODEL_c0ea0954574d4881ace56162b33adafa", "placeholder": "\u200b", "style": "IPY_MODEL_697b062949c14a1091f5331cb490f3e4", "tabbable": null, "tooltip": null, "value": "\u20078/8\u2007[00:10&lt;00:00,\u2007\u20071.52s/it]"}}, "3e0732e23e3a4d70b16688981fe0fffc": {"model_module": "@jupyter-widgets/controls", "model_module_version": "2.0.0", "model_name": "HTMLStyleModel", "state": {"_model_module": "@jupyter-widgets/controls", "_model_module_version": "2.0.0", "_model_name": "HTMLStyleModel", "_view_count": null, "_view_module": "@jupyter-widgets/base", "_view_module_version": "2.0.0", "_view_name": "StyleView", "background": null, "description_width": "", "font_size": null, "text_color": null}}, "50b4d636750142bcb24b1903a618ee91": {"model_module": "@jupyter-widgets/controls", "model_module_version": "2.0.0", "model_name": "HBoxModel", "state": {"_dom_classes": [], "_model_module": "@jupyter-widgets/controls", "_model_module_version": "2.0.0", "_model_name": "HBoxModel", "_view_count": null, "_view_module": "@jupyter-widgets/controls", "_view_module_version": "2.0.0", "_view_name": "HBoxView", "box_style": "", "children": ["IPY_MODEL_c7627a8224714f27bb918015eebc25eb", "IPY_MODEL_dc92cff0b0124c8ab997d701db37906a", "IPY_MODEL_c2ba3380febc431dbffe6a2d1d9547e7"], "layout": "IPY_MODEL_2aa1ae6db6ad402b866611d920aa96c8", "tabbable": null, "tooltip": null}}, "5dd960da503c4483b0ff7f0abbd6abe0": {"model_module": "@jupyter-widgets/controls", "model_module_version": "2.0.0", "model_name": "FloatProgressModel", "state": {"_dom_classes": [], "_model_module": "@jupyter-widgets/controls", "_model_module_version": "2.0.0", "_model_name": "FloatProgressModel", "_view_count": null, "_view_module": "@jupyter-widgets/controls", "_view_module_version": "2.0.0", "_view_name": "ProgressView", "bar_style": "success", "description": "", "description_allow_html": false, "layout": "IPY_MODEL_13db8d36a67a42038b7646843f0b57ec", "max": 8, "min": 0, "orientation": "horizontal", "style": "IPY_MODEL_a51c44a072f846e687a4cfb78fa774e4", "tabbable": null, "tooltip": null, "value": 8}}, "5ec7dbe01dd0472bb7887b4c62b3c73f": {"model_module": "@jupyter-widgets/controls", "model_module_version": "2.0.0", "model_name": "HTMLStyleModel", "state": {"_model_module": "@jupyter-widgets/controls", "_model_module_version": "2.0.0", "_model_name": "HTMLStyleModel", "_view_count": null, "_view_module": "@jupyter-widgets/base", "_view_module_version": "2.0.0", "_view_name": "StyleView", "background": null, "description_width": "", "font_size": null, "text_color": null}}, "697b062949c14a1091f5331cb490f3e4": {"model_module": "@jupyter-widgets/controls", "model_module_version": "2.0.0", "model_name": "HTMLStyleModel", "state": {"_model_module": "@jupyter-widgets/controls", "_model_module_version": "2.0.0", "_model_name": "HTMLStyleModel", "_view_count": null, "_view_module": "@jupyter-widgets/base", "_view_module_version": "2.0.0", "_view_name": "StyleView", "background": null, "description_width": "", "font_size": null, "text_color": null}}, "919361a64f234df3840e52a71a09fe4d": {"model_module": "@jupyter-widgets/controls", "model_module_version": "2.0.0", "model_name": "ProgressStyleModel", "state": {"_model_module": "@jupyter-widgets/controls", "_model_module_version": "2.0.0", "_model_name": "ProgressStyleModel", "_view_count": null, "_view_module": "@jupyter-widgets/base", "_view_module_version": "2.0.0", "_view_name": "StyleView", "bar_color": null, "description_width": ""}}, "943986f6100e413692943ef6f423ad2b": {"model_module": "@jupyter-widgets/controls", "model_module_version": "2.0.0", "model_name": "HTMLModel", "state": {"_dom_classes": [], "_model_module": "@jupyter-widgets/controls", "_model_module_version": "2.0.0", "_model_name": "HTMLModel", "_view_count": null, "_view_module": "@jupyter-widgets/controls", "_view_module_version": "2.0.0", "_view_name": "HTMLView", "description": "", "description_allow_html": false, "layout": "IPY_MODEL_fa6340665e174b3bb70e9868ad2293f1", "placeholder": "\u200b", "style": "IPY_MODEL_bb90399bd7474bbc9ab758b31c07e824", "tabbable": null, "tooltip": null, "value": "Autocorrelation:\u2007100%"}}, "a51c44a072f846e687a4cfb78fa774e4": {"model_module": "@jupyter-widgets/controls", "model_module_version": "2.0.0", "model_name": "ProgressStyleModel", "state": {"_model_module": "@jupyter-widgets/controls", "_model_module_version": "2.0.0", "_model_name": "ProgressStyleModel", "_view_count": null, "_view_module": "@jupyter-widgets/base", "_view_module_version": "2.0.0", "_view_name": "StyleView", "bar_color": null, "description_width": ""}}, "bb90399bd7474bbc9ab758b31c07e824": {"model_module": "@jupyter-widgets/controls", "model_module_version": "2.0.0", "model_name": "HTMLStyleModel", "state": {"_model_module": "@jupyter-widgets/controls", "_model_module_version": "2.0.0", "_model_name": "HTMLStyleModel", "_view_count": null, "_view_module": "@jupyter-widgets/base", "_view_module_version": "2.0.0", "_view_name": "StyleView", "background": null, "description_width": "", "font_size": null, "text_color": null}}, "c0ea0954574d4881ace56162b33adafa": {"model_module": "@jupyter-widgets/base", "model_module_version": "2.0.0", "model_name": "LayoutModel", "state": {"_model_module": "@jupyter-widgets/base", "_model_module_version": "2.0.0", "_model_name": "LayoutModel", "_view_count": null, "_view_module": "@jupyter-widgets/base", "_view_module_version": "2.0.0", "_view_name": "LayoutView", "align_content": null, "align_items": null, "align_self": null, "border_bottom": null, "border_left": null, "border_right": null, "border_top": null, "bottom": null, "display": null, "flex": null, "flex_flow": null, "grid_area": null, "grid_auto_columns": null, "grid_auto_flow": null, "grid_auto_rows": null, "grid_column": null, "grid_gap": null, "grid_row": null, "grid_template_areas": null, "grid_template_columns": null, "grid_template_rows": null, "height": null, "justify_content": null, "justify_items": null, "left": null, "margin": null, "max_height": null, "max_width": null, "min_height": null, "min_width": null, "object_fit": null, "object_position": null, "order": null, "overflow": null, "padding": null, "right": null, "top": null, "visibility": null, "width": null}}, "c2ba3380febc431dbffe6a2d1d9547e7": {"model_module": "@jupyter-widgets/controls", "model_module_version": "2.0.0", "model_name": "HTMLModel", "state": {"_dom_classes": [], "_model_module": "@jupyter-widgets/controls", "_model_module_version": "2.0.0", "_model_name": "HTMLModel", "_view_count": null, "_view_module": "@jupyter-widgets/controls", "_view_module_version": "2.0.0", "_view_name": "HTMLView", "description": "", "description_allow_html": false, "layout": "IPY_MODEL_0bd747526d8d488bb9e3b16e0485414a", "placeholder": "\u200b", "style": "IPY_MODEL_5ec7dbe01dd0472bb7887b4c62b3c73f", "tabbable": null, "tooltip": null, "value": "\u20074/4\u2007[00:02&lt;00:00,\u2007\u20071.27it/s]"}}, "c7627a8224714f27bb918015eebc25eb": {"model_module": "@jupyter-widgets/controls", "model_module_version": "2.0.0", "model_name": "HTMLModel", "state": {"_dom_classes": [], "_model_module": "@jupyter-widgets/controls", "_model_module_version": "2.0.0", "_model_name": "HTMLModel", "_view_count": null, "_view_module": "@jupyter-widgets/controls", "_view_module_version": "2.0.0", "_view_name": "HTMLView", "description": "", "description_allow_html": false, "layout": "IPY_MODEL_0df71d9cb1e04634b2593b6628951009", "placeholder": "\u200b", "style": "IPY_MODEL_3e0732e23e3a4d70b16688981fe0fffc", "tabbable": null, "tooltip": null, "value": "Parallel\u2007Benchmark:\u2007100%"}}, "dc92cff0b0124c8ab997d701db37906a": {"model_module": "@jupyter-widgets/controls", "model_module_version": "2.0.0", "model_name": "FloatProgressModel", "state": {"_dom_classes": [], "_model_module": "@jupyter-widgets/controls", "_model_module_version": "2.0.0", "_model_name": "FloatProgressModel", "_view_count": null, "_view_module": "@jupyter-widgets/controls", "_view_module_version": "2.0.0", "_view_name": "ProgressView", "bar_style": "success", "description": "", "description_allow_html": false, "layout": "IPY_MODEL_2c4343f9346b483c864fc90067e5f1f9", "max": 4, "min": 0, "orientation": "horizontal", "style": "IPY_MODEL_919361a64f234df3840e52a71a09fe4d", "tabbable": null, "tooltip": null, "value": 4}}, "efed78a21a69435e9d42c57035efb199": {"model_module": "@jupyter-widgets/controls", "model_module_version": "2.0.0", "model_name": "HBoxModel", "state": {"_dom_classes": [], "_model_module": "@jupyter-widgets/controls", "_model_module_version": "2.0.0", "_model_name": "HBoxModel", "_view_count": null, "_view_module": "@jupyter-widgets/controls", "_view_module_version": "2.0.0", "_view_name": "HBoxView", "box_style": "", "children": ["IPY_MODEL_943986f6100e413692943ef6f423ad2b", "IPY_MODEL_5dd960da503c4483b0ff7f0abbd6abe0", "IPY_MODEL_30cba0847deb4dd6b0e436f22623f1ba"], "layout": "IPY_MODEL_17b6b66962bb4131bc6a16e42af104e9", "tabbable": null, "tooltip": null}}, "fa6340665e174b3bb70e9868ad2293f1": {"model_module": "@jupyter-widgets/base", "model_module_version": "2.0.0", "model_name": "LayoutModel", "state": {"_model_module": "@jupyter-widgets/base", "_model_module_version": "2.0.0", "_model_name": "LayoutModel", "_view_count": null, "_view_module": "@jupyter-widgets/base", "_view_module_version": "2.0.0", "_view_name": "LayoutView", "align_content": null, "align_items": null, "align_self": null, "border_bottom": null, "border_left": null, "border_right": null, "border_top": null, "bottom": null, "display": null, "flex": null, "flex_flow": null, "grid_area": null, "grid_auto_columns": null, "grid_auto_flow": null, "grid_auto_rows": null, "grid_column": null, "grid_gap": null, "grid_row": null, "grid_template_areas": null, "grid_template_columns": null, "grid_template_rows": null, "height": null, "justify_content": null, "justify_items": null, "left": null, "margin": null, "max_height": null, "max_width": null, "min_height": null, "min_width": null, "object_fit": null, "object_position": null, "order": null, "overflow": null, "padding": null, "right": null, "top": null, "visibility": null, "width": null}}}, "version_major": 2, "version_minor": 0}
+</script></section>
 </section>
 
 

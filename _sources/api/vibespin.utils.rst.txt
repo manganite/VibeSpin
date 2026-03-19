@@ -4,6 +4,14 @@ vibespin.utils package
 Submodules
 ----------
 
+utils.cli\_helpers module
+-------------------------
+
+.. automodule:: utils.cli_helpers
+   :members:
+   :show-inheritance:
+   :undoc-members:
+
 utils.exceptions module
 -----------------------
 

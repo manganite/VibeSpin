@@ -24,7 +24,7 @@
     <script src="_static/js/theme.js"></script>
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
-    <link rel="next" title="Ising Model: Relaxation to Equilibrium" href="ising_autocorrelation_analysis.html" />
+    <link rel="next" title="Ising Model: Relaxation to Equilibrium" href="ising_relaxation_and_autocorrelation_analysis.html" />
     <link rel="prev" title="Wolff vs. Metropolis: Algorithmic Efficiency in the Critical Regime" href="wolff_efficiency.html" /> 
 </head>
 
@@ -60,15 +60,24 @@
 <li class="toctree-l1"><a class="reference internal" href="benchmarks.html">Performance Benchmarking for VibeSpin</a></li>
 <li class="toctree-l1"><a class="reference internal" href="wolff_efficiency.html">Wolff vs. Metropolis: Algorithmic Efficiency in the Critical Regime</a></li>
 <li class="toctree-l1 current"><a class="current reference internal" href="#">Dynamical Critical Exponents in the 2D Ising Model</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="#Why-the-slopes-differ">Why the slopes differ</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#Why-the-slopes-differ">Why the slopes differ</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#Defining-\tau_{\mathrm{int}}-and-the-update-unit">Defining <span class="math notranslate nohighlight">\(\tau_{\mathrm{int}}\)</span> and the update unit</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#Normalisation-to-sweep-equivalent-units">Normalisation to sweep-equivalent units</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#Units-used-in-this-notebook">Units used in this notebook</a></li>
+</ul>
+</li>
 <li class="toctree-l2"><a class="reference internal" href="#Load-or-compute-data">Load or compute data</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#Scaling-plot">Scaling plot</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#Scaling-fit-with-diagnostics-and-uncertainty">Scaling fit with diagnostics and uncertainty</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#Primary-estimate:-per-seed-z-distribution">Primary estimate: per-seed z distribution</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#Reference-curve:-OLS-fit-on-per-size-medians">Reference curve: OLS fit on per-size medians</a></li>
+</ul>
+</li>
 <li class="toctree-l2"><a class="reference internal" href="#Reading-the-result">Reading the result</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#Scientific-implication">Scientific implication</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#Bibliography">Bibliography</a></li>
 </ul>
 </li>
-<li class="toctree-l1"><a class="reference internal" href="ising_autocorrelation_analysis.html">Ising Model: Relaxation to Equilibrium</a></li>
+<li class="toctree-l1"><a class="reference internal" href="ising_relaxation_and_autocorrelation_analysis.html">Ising Model: Relaxation to Equilibrium</a></li>
 </ul>
 <p class="caption" role="heading"><span class="caption-text">API Reference:</span></p>
 <ul>
@@ -101,19 +110,72 @@
              
   <section id="Dynamical-Critical-Exponents-in-the-2D-Ising-Model">
 <h1>Dynamical Critical Exponents in the 2D Ising Model<a class="headerlink" href="#Dynamical-Critical-Exponents-in-the-2D-Ising-Model" title="Link to this heading"></a></h1>
-<p>Critical slowing down makes equilibrium sampling progressively harder as a continuous transition is approached. At the Onsager point, the integrated autocorrelation time scales as <span class="math notranslate nohighlight">\(\tau_{\mathrm{int}} \propto L^z\)</span>, so the dynamical critical exponent <span class="math notranslate nohighlight">\(z\)</span> measures how quickly the cost of generating statistically independent configurations grows with lattice size <a class="reference internal" href="#Bibliography"><span class="std std-ref">[1]</span></a>.</p>
-<p>This notebook compares random-site Metropolis dynamics with the Wolff cluster update using the same measurement target as <code class="docutils literal notranslate"><span class="pre">scripts/ising/measure_z.py</span></code>. The central comparison is the slope of <span class="math notranslate nohighlight">\(\tau_{\mathrm{int}}(L)\)</span> on log-log axes: Metropolis remains diffusion-limited, while Wolff removes most of the critical slowdown <a class="reference internal" href="#Bibliography"><span class="std std-ref">[2]</span></a>.</p>
+<p>Critical slowing down makes equilibrium sampling progressively harder as a continuous transition is approached. At the Onsager point, the integrated autocorrelation time of the magnetization scales as</p>
+<div class="math notranslate nohighlight">
+\[\tau_{\mathrm{int}}(L) \propto L^z,\]</div>
+<p>so the dynamical critical exponent <span class="math notranslate nohighlight">\(z\)</span> quantifies how fast the decorrelation cost grows with lattice size <a class="reference internal" href="bibliography.html"><span class="doc">[1]</span></a>.</p>
+<p>This notebook compares random-site Metropolis dynamics with the Wolff cluster update using the same measurement target as <code class="docutils literal notranslate"><span class="pre">scripts/ising/measure_z.py</span></code>. The central observable is the slope of <span class="math notranslate nohighlight">\(\tau_{\mathrm{int}}(L)\)</span> on log-log axes: Metropolis remains diffusion-limited (<span class="math notranslate nohighlight">\(z \approx 2.17\)</span>), while Wolff drastically reduces critical slowing down. In the cluster-step units used throughout this notebook, <span class="math notranslate nohighlight">\(z^{\mathrm{cs}} \approx 0.5\)</span> (asymptotic value; fits at
+<span class="math notranslate nohighlight">\(L = 16\)</span>–<span class="math notranslate nohighlight">\(128\)</span> yield <span class="math notranslate nohighlight">\(z^{\mathrm{cs}} \approx 0.40\)</span>); normalised to equivalent-sweep units, <span class="math notranslate nohighlight">\(z^{\mathrm{sw}} \approx 0.25\)</span> <a class="reference internal" href="bibliography.html"><span class="doc">[2, 3]</span></a>.</p>
+<p>The analysis is organized in four parts:</p>
+<ol class="arabic simple">
+<li><p>Physical mechanism: why local and cluster dynamics produce different scaling slopes, and what the unit convention means.</p></li>
+<li><p>Data ingestion: load cached script output (or run a small fallback demo).</p></li>
+<li><p>Uncertainty-aware fitting: estimate <span class="math notranslate nohighlight">\(z\)</span> in log-log space with diagnostics and confidence intervals.</p></li>
+<li><p>Interpretation: connect numerical slopes to sampling strategy and the difference between algorithmic efficiency and physical dynamics.</p></li>
+</ol>
 <section id="Why-the-slopes-differ">
 <h2>Why the slopes differ<a class="headerlink" href="#Why-the-slopes-differ" title="Link to this heading"></a></h2>
-<p>Local Metropolis updates move domain walls one spin at a time, so correlations relax diffusively near <span class="math notranslate nohighlight">\(T_c\)</span> and the autocorrelation time grows steeply with <span class="math notranslate nohighlight">\(L\)</span>. Wolff instead flips correlated domains as a single accepted move, matching the scale of the critical fluctuations and flattening the growth of <span class="math notranslate nohighlight">\(\tau_{\mathrm{int}}\)</span>.</p>
-<p>For Wolff it is useful to distinguish cluster-step time from sweep-equivalent time. The plot below reports the measured exponent in cluster-step units; when one rescales by the typical number of spins flipped per cluster, the effective sweep-based exponent is smaller still <a class="reference internal" href="#Bibliography"><span class="std std-ref">[2]</span></a>.</p>
+<p>Local Metropolis updates propose one spin-flip at a time, so relaxation near <span class="math notranslate nohighlight">\(T_c\)</span> is diffusive: the correlation length <span class="math notranslate nohighlight">\(\xi\)</span> diverges as the transition is approached, and the system must cross free-energy barriers through small local moves. This leads to <span class="math notranslate nohighlight">\(z \approx 2.17\)</span> for the 2D Ising random-site Metropolis <a class="reference internal" href="bibliography.html"><span class="doc">[3]</span></a>.</p>
+<p>Wolff instead grows a cluster from a random seed by bonding same-sign nearest neighbours with probability</p>
+<div class="math notranslate nohighlight">
+\[P_{\mathrm{add}} = 1 - e^{-2\beta J},\]</div>
+<p>a choice derived from the Fortuin–Kasteleyn random-cluster representation <a class="reference internal" href="bibliography.html"><span class="doc">[4]</span></a> that guarantees detailed balance with a 100% acceptance rate. Flipping a whole correlated domain in one move matches the scale of critical fluctuations and suppresses the diffusive bottleneck, yielding <span class="math notranslate nohighlight">\(z^{\mathrm{cs}} \approx 0.5\)</span> in cluster-step units <a class="reference internal" href="bibliography.html"><span class="doc">[2, 3]</span></a>.</p>
+<section id="Defining-\tau_{\mathrm{int}}-and-the-update-unit">
+<h3>Defining <span class="math notranslate nohighlight">\(\tau_{\mathrm{int}}\)</span> and the update unit<a class="headerlink" href="#Defining-\tau_{\mathrm{int}}-and-the-update-unit" title="Link to this heading"></a></h3>
+<p><span class="math notranslate nohighlight">\(\tau_{\mathrm{int}}\)</span> counts the number of update steps required to generate one statistically independent sample. The meaning of “one step” differs between algorithms:</p>
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>Algorithm</p></th>
+<th class="head"><p>Work per step</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>Random-site Metropolis</p></td>
+<td><p>one spin-flip attempt</p></td>
+</tr>
+<tr class="row-odd"><td><p>Wolff cluster</p></td>
+<td><p>one cluster flip of <span class="math notranslate nohighlight">\(\langle C \rangle\)</span> spins — 100% acceptance rate</p></td>
+</tr>
+</tbody>
+</table>
+<p>Counting raw step numbers treats a Wolff step near <span class="math notranslate nohighlight">\(T_c\)</span> — which flips an <span class="math notranslate nohighlight">\(O(L^{7/4})\)</span>-spin cluster — as equivalent to a single Metropolis attempt. Comparing raw <span class="math notranslate nohighlight">\(\tau_{\mathrm{int}}\)</span> values directly is therefore <strong>misleading</strong>.</p>
+</section>
+<section id="Normalisation-to-sweep-equivalent-units">
+<h3>Normalisation to sweep-equivalent units<a class="headerlink" href="#Normalisation-to-sweep-equivalent-units" title="Link to this heading"></a></h3>
+<p>The standard fix is to express both algorithms in units of one <span class="math notranslate nohighlight">\(L^2\)</span>-flip-attempt sweep. Metropolis is already in this unit; Wolff requires reweighting by the mean cluster fraction:</p>
+<div class="math notranslate nohighlight">
+\[\tau^{\mathrm{sw}}_{\mathrm{Wolff}} = \tau^{\mathrm{cs}}_{\mathrm{Wolff}} \times \frac{\langle C \rangle}{L^2}.\]</div>
+<p>At <span class="math notranslate nohighlight">\(T_c\)</span>, the mean Wolff cluster size scales as <span class="math notranslate nohighlight">\(\langle C \rangle \sim \chi \sim L^{\gamma/\nu} = L^{7/4}\)</span>, using the exact 2D Ising exponents <span class="math notranslate nohighlight">\(\gamma = 7/4\)</span> and <span class="math notranslate nohighlight">\(\nu = 1\)</span>. Substituting into the sweep-equivalent relation:</p>
+<div class="math notranslate nohighlight">
+\[z^{\mathrm{sw}} = z^{\mathrm{cs}} + \frac{7}{4} - 2 = z^{\mathrm{cs}} - \frac{1}{4}.\]</div>
+<p>With <span class="math notranslate nohighlight">\(z^{\mathrm{cs}} \approx 0.5\)</span>, this gives <span class="math notranslate nohighlight">\(z^{\mathrm{sw}} \approx 0.25\)</span> — a 9× reduction relative to Metropolis, but <strong>not</strong> zero. Wolff drastically reduces critical slowing down; it does not eliminate it.</p>
+<p>For the full work-normalisation derivation, ISS (independent-samples-per-second) comparison, and temperature-resolved data, see the companion <a class="reference internal" href="wolff_efficiency.html"><span class="doc">Wolff Efficiency</span></a> notebook.</p>
+</section>
+<section id="Units-used-in-this-notebook">
+<h3>Units used in this notebook<a class="headerlink" href="#Units-used-in-this-notebook" title="Link to this heading"></a></h3>
+<p>This notebook reports <span class="math notranslate nohighlight">\(\tau_{\mathrm{int}}\)</span> in <strong>cluster-step units</strong> throughout, matching the output of <code class="docutils literal notranslate"><span class="pre">scripts/ising/measure_z.py</span></code>. The measured Wolff slope is therefore the cluster-step exponent <span class="math notranslate nohighlight">\(z^{\mathrm{cs}} \approx 0.5\)</span> (asymptotic value; fits at <span class="math notranslate nohighlight">\(L = 16\)</span>–<span class="math notranslate nohighlight">\(128\)</span> yield <span class="math notranslate nohighlight">\(z^{\mathrm{cs}} \approx 0.40\)</span>). The sweep-equivalent exponent is <span class="math notranslate nohighlight">\(z^{\mathrm{sw}} = z^{\mathrm{cs}} - 1/4 \approx 0.25\)</span>.</p>
+</section>
 </section>
 <section id="Load-or-compute-data">
 <h2>Load or compute data<a class="headerlink" href="#Load-or-compute-data" title="Link to this heading"></a></h2>
-<p>If the script output <code class="docutils literal notranslate"><span class="pre">../results/ising/dynamic_exponent_z.npz</span></code> is present, the notebook loads it directly. Otherwise it runs a deliberately small inline fallback so the workflow stays self-contained. The fallback is useful for checking the analysis path, but only the script-backed dataset should be treated as a serious estimate of <span class="math notranslate nohighlight">\(z\)</span> because the published-quality measurement needs much longer trajectories and careful equilibration <a class="reference internal" href="#Bibliography"><span class="std std-ref">[3]</span></a>.</p>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>python<span class="w"> </span>scripts/ising/measure_z.py<span class="w"> </span>--sizes<span class="w"> </span><span class="m">16</span><span class="w"> </span><span class="m">32</span><span class="w"> </span><span class="m">48</span><span class="w"> </span><span class="m">64</span><span class="w"> </span><span class="m">96</span><span class="w"> </span><span class="m">128</span>
+<p>This notebook needs <span class="math notranslate nohighlight">\(\tau_{\mathrm{int}}(L)\)</span> measurements at <span class="math notranslate nohighlight">\(T_c\)</span> for random-site Metropolis and Wolff updates across multiple lattice sizes. It first searches for precomputed results at <code class="docutils literal notranslate"><span class="pre">../results/ising/dynamic_exponent_z.npz</span></code>.</p>
+<p>If the cache exists, the notebook loads it directly. When per-size replicate arrays (<code class="docutils literal notranslate"><span class="pre">tau_metro_samples</span></code>, <code class="docutils literal notranslate"><span class="pre">tau_wolff_samples</span></code>) are present, medians are used as central values and 16–84% percentile bands are shown as error bars. If those fields are absent (legacy single-trajectory cache), the notebook still runs and treats each size as a single-point estimate with no error bars.</p>
+<p>If the cache is missing, the notebook runs a small inline fallback (sizes 16, 24, 32 with short trajectories). The fallback is only for pipeline validation and quick plotting; it is not a publication-quality estimate of <span class="math notranslate nohighlight">\(z\)</span>.</p>
+<p>To generate high-quality cached data with uncertainty bands, run:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>python<span class="w"> </span>scripts/ising/measure_z.py<span class="w"> </span>--sizes<span class="w"> </span><span class="m">16</span><span class="w"> </span><span class="m">32</span><span class="w"> </span><span class="m">48</span><span class="w"> </span><span class="m">64</span><span class="w"> </span><span class="m">96</span><span class="w"> </span><span class="m">128</span><span class="w"> </span>--n-seeds<span class="w"> </span><span class="m">10</span>
 </pre></div>
 </div>
+<p>This writes <code class="docutils literal notranslate"><span class="pre">../results/ising/dynamic_exponent_z.npz</span></code> with 10 independent seed replicas per (algorithm, <span class="math notranslate nohighlight">\(L\)</span>) point, matching the replication depth of the reference notebooks.</p>
 <div class="nbinput docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[1]:
 </pre></div>
@@ -150,26 +212,57 @@
     <span class="k">return</span> <span class="nb">float</span><span class="p">(</span><span class="n">tau_int</span><span class="p">)</span>
 
 
+<span class="k">def</span><span class="w"> </span><span class="nf">_shape_to_samples</span><span class="p">(</span><span class="n">arr</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Return a 2D (n_size, n_rep) view for uncertainty handling.&quot;&quot;&quot;</span>
+    <span class="n">a</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">arr</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">float</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">a</span><span class="o">.</span><span class="n">ndim</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">a</span><span class="p">[:,</span> <span class="kc">None</span><span class="p">]</span>
+    <span class="k">return</span> <span class="n">a</span>
+
+
+<span class="n">_cache_ok</span> <span class="o">=</span> <span class="kc">False</span>
 <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">NPZ_PATH</span><span class="p">):</span>
     <span class="n">data</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">NPZ_PATH</span><span class="p">)</span>
-    <span class="n">L_metro</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="s1">&#39;L_metro&#39;</span><span class="p">]</span>
-    <span class="n">tau_metro</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="s1">&#39;tau_metro&#39;</span><span class="p">]</span>
-    <span class="n">L_wolff</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="s1">&#39;L_wolff&#39;</span><span class="p">]</span>
-    <span class="n">tau_wolff</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="s1">&#39;tau_wolff&#39;</span><span class="p">]</span>
-    <span class="n">Tc</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">data</span><span class="p">[</span><span class="s1">&#39;Tc&#39;</span><span class="p">])</span>
-    <span class="nb">print</span><span class="p">(</span>
-        <span class="sa">f</span><span class="s1">&#39;Loaded pre-computed data from </span><span class="si">{</span><span class="n">NPZ_PATH</span><span class="si">}</span><span class="s1">: &#39;</span>
-        <span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">L_metro</span><span class="p">)</span><span class="si">}</span><span class="s1"> Metropolis points, </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">L_wolff</span><span class="p">)</span><span class="si">}</span><span class="s1"> Wolff points.&#39;</span>
-    <span class="p">)</span>
+    <span class="n">required</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;L_metro&#39;</span><span class="p">,</span> <span class="s1">&#39;tau_metro&#39;</span><span class="p">,</span> <span class="s1">&#39;L_wolff&#39;</span><span class="p">,</span> <span class="s1">&#39;tau_wolff&#39;</span><span class="p">,</span> <span class="s1">&#39;Tc&#39;</span><span class="p">}</span>
+    <span class="k">if</span> <span class="n">required</span><span class="o">.</span><span class="n">issubset</span><span class="p">(</span><span class="nb">set</span><span class="p">(</span><span class="n">data</span><span class="o">.</span><span class="n">files</span><span class="p">)):</span>
+        <span class="n">L_metro</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">data</span><span class="p">[</span><span class="s1">&#39;L_metro&#39;</span><span class="p">],</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">float</span><span class="p">)</span>
+        <span class="n">tau_metro</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">data</span><span class="p">[</span><span class="s1">&#39;tau_metro&#39;</span><span class="p">],</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">float</span><span class="p">)</span>
+        <span class="n">L_wolff</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">data</span><span class="p">[</span><span class="s1">&#39;L_wolff&#39;</span><span class="p">],</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">float</span><span class="p">)</span>
+        <span class="n">tau_wolff</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">data</span><span class="p">[</span><span class="s1">&#39;tau_wolff&#39;</span><span class="p">],</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">float</span><span class="p">)</span>
+        <span class="n">Tc</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">data</span><span class="p">[</span><span class="s1">&#39;Tc&#39;</span><span class="p">])</span>
 
-<span class="k">else</span><span class="p">:</span>
+        <span class="c1"># Optional replicate/sample arrays for uncertainty-aware aggregation.</span>
+        <span class="n">tau_metro_samples</span> <span class="o">=</span> <span class="n">_shape_to_samples</span><span class="p">(</span><span class="n">data</span><span class="p">[</span><span class="s1">&#39;tau_metro_samples&#39;</span><span class="p">])</span> <span class="k">if</span> <span class="s1">&#39;tau_metro_samples&#39;</span> <span class="ow">in</span> <span class="n">data</span><span class="o">.</span><span class="n">files</span> <span class="k">else</span> <span class="n">tau_metro</span><span class="p">[:,</span> <span class="kc">None</span><span class="p">]</span>
+        <span class="n">tau_wolff_samples</span> <span class="o">=</span> <span class="n">_shape_to_samples</span><span class="p">(</span><span class="n">data</span><span class="p">[</span><span class="s1">&#39;tau_wolff_samples&#39;</span><span class="p">])</span> <span class="k">if</span> <span class="s1">&#39;tau_wolff_samples&#39;</span> <span class="ow">in</span> <span class="n">data</span><span class="o">.</span><span class="n">files</span> <span class="k">else</span> <span class="n">tau_wolff</span><span class="p">[:,</span> <span class="kc">None</span><span class="p">]</span>
+
+        <span class="c1"># Robust summary across replicates if available.</span>
+        <span class="n">tau_metro_med</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">nanmedian</span><span class="p">(</span><span class="n">tau_metro_samples</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+        <span class="n">tau_wolff_med</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">nanmedian</span><span class="p">(</span><span class="n">tau_wolff_samples</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+        <span class="n">tau_metro_p16</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">nanpercentile</span><span class="p">(</span><span class="n">tau_metro_samples</span><span class="p">,</span> <span class="mi">16</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+        <span class="n">tau_metro_p84</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">nanpercentile</span><span class="p">(</span><span class="n">tau_metro_samples</span><span class="p">,</span> <span class="mi">84</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+        <span class="n">tau_wolff_p16</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">nanpercentile</span><span class="p">(</span><span class="n">tau_wolff_samples</span><span class="p">,</span> <span class="mi">16</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+        <span class="n">tau_wolff_p84</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">nanpercentile</span><span class="p">(</span><span class="n">tau_wolff_samples</span><span class="p">,</span> <span class="mi">84</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+
+        <span class="n">n_rep_m</span> <span class="o">=</span> <span class="n">tau_metro_samples</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+        <span class="n">n_rep_w</span> <span class="o">=</span> <span class="n">tau_wolff_samples</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+        <span class="nb">print</span><span class="p">(</span>
+            <span class="sa">f</span><span class="s1">&#39;Loaded pre-computed data from </span><span class="si">{</span><span class="n">NPZ_PATH</span><span class="si">}</span><span class="s1">: &#39;</span>
+            <span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">L_metro</span><span class="p">)</span><span class="si">}</span><span class="s1"> Metropolis sizes (replicates per size: </span><span class="si">{</span><span class="n">n_rep_m</span><span class="si">}</span><span class="s1">), &#39;</span>
+            <span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">L_wolff</span><span class="p">)</span><span class="si">}</span><span class="s1"> Wolff sizes (replicates per size: </span><span class="si">{</span><span class="n">n_rep_w</span><span class="si">}</span><span class="s1">).&#39;</span>
+        <span class="p">)</span>
+        <span class="n">_cache_ok</span> <span class="o">=</span> <span class="kc">True</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Cache at </span><span class="si">{</span><span class="n">NPZ_PATH</span><span class="si">}</span><span class="s1"> is missing expected keys; running inline fallback.&#39;</span><span class="p">)</span>
+
+<span class="k">if</span> <span class="ow">not</span> <span class="n">_cache_ok</span><span class="p">:</span>
     <span class="nb">print</span><span class="p">(</span>
         <span class="s1">&#39;Pre-computed data not found. Running inline demo &#39;</span>
         <span class="s1">&#39;(sizes 16, 24, 32; non-publication-quality).&#39;</span>
-<span class="p">)</span>
+    <span class="p">)</span>
     <span class="n">sizes</span> <span class="o">=</span> <span class="p">[</span><span class="mi">16</span><span class="p">,</span> <span class="mi">24</span><span class="p">,</span> <span class="mi">32</span><span class="p">]</span>
     <span class="n">L_metro</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">sizes</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">float</span><span class="p">)</span>
     <span class="n">L_wolff</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">sizes</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">float</span><span class="p">)</span>
+
     <span class="n">tau_metro</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span>
         <span class="p">[</span><span class="n">estimate_tau</span><span class="p">(</span><span class="n">update</span><span class="o">=</span><span class="s1">&#39;random&#39;</span><span class="p">,</span> <span class="n">size</span><span class="o">=</span><span class="n">size</span><span class="p">,</span> <span class="n">meas_steps</span><span class="o">=</span><span class="mi">2500</span><span class="p">,</span> <span class="n">seed</span><span class="o">=</span><span class="n">idx</span> <span class="o">*</span> <span class="mi">100</span><span class="p">)</span> <span class="k">for</span> <span class="n">idx</span><span class="p">,</span> <span class="n">size</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">sizes</span><span class="p">)],</span>
         <span class="n">dtype</span><span class="o">=</span><span class="nb">float</span><span class="p">,</span>
@@ -178,6 +271,16 @@
         <span class="p">[</span><span class="n">estimate_tau</span><span class="p">(</span><span class="n">update</span><span class="o">=</span><span class="s1">&#39;wolff&#39;</span><span class="p">,</span> <span class="n">size</span><span class="o">=</span><span class="n">size</span><span class="p">,</span> <span class="n">meas_steps</span><span class="o">=</span><span class="mi">800</span><span class="p">,</span> <span class="n">seed</span><span class="o">=</span><span class="n">idx</span> <span class="o">*</span> <span class="mi">100</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span> <span class="k">for</span> <span class="n">idx</span><span class="p">,</span> <span class="n">size</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">sizes</span><span class="p">)],</span>
         <span class="n">dtype</span><span class="o">=</span><span class="nb">float</span><span class="p">,</span>
     <span class="p">)</span>
+
+    <span class="n">tau_metro_samples</span> <span class="o">=</span> <span class="n">tau_metro</span><span class="p">[:,</span> <span class="kc">None</span><span class="p">]</span>
+    <span class="n">tau_wolff_samples</span> <span class="o">=</span> <span class="n">tau_wolff</span><span class="p">[:,</span> <span class="kc">None</span><span class="p">]</span>
+    <span class="n">tau_metro_med</span> <span class="o">=</span> <span class="n">tau_metro</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+    <span class="n">tau_wolff_med</span> <span class="o">=</span> <span class="n">tau_wolff</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+    <span class="n">tau_metro_p16</span> <span class="o">=</span> <span class="n">tau_metro</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+    <span class="n">tau_metro_p84</span> <span class="o">=</span> <span class="n">tau_metro</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+    <span class="n">tau_wolff_p16</span> <span class="o">=</span> <span class="n">tau_wolff</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+    <span class="n">tau_wolff_p84</span> <span class="o">=</span> <span class="n">tau_wolff</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+
     <span class="n">Tc</span> <span class="o">=</span> <span class="n">TC_ISING</span>
     <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Computed fallback data at T_c = </span><span class="si">{</span><span class="n">Tc</span><span class="si">:</span><span class="s1">.6f</span><span class="si">}</span><span class="s1"> for sizes </span><span class="si">{</span><span class="n">sizes</span><span class="si">}</span><span class="s1">.&#39;</span><span class="p">)</span>
 </pre></div>
@@ -188,80 +291,233 @@
 </div>
 <div class="output_area docutils container">
 <div class="highlight"><pre>
-Loaded pre-computed data from ../results/ising/dynamic_exponent_z.npz: 6 Metropolis points, 6 Wolff points.
+Loaded pre-computed data from ../results/ising/dynamic_exponent_z.npz: 6 Metropolis sizes (replicates per size: 10), 6 Wolff sizes (replicates per size: 10).
 </pre></div></div>
 </div>
 </section>
-<section id="Scaling-plot">
-<h2>Scaling plot<a class="headerlink" href="#Scaling-plot" title="Link to this heading"></a></h2>
-<p>The fit uses the shared <code class="docutils literal notranslate"><span class="pre">power_fit</span></code> helper on the finite points only, then overlays the inferred power law on top of the raw data. The exact numbers depend on whether the notebook loaded the full script output or the smaller fallback dataset, but the qualitative separation between the two algorithms should be stable.</p>
+<section id="Scaling-fit-with-diagnostics-and-uncertainty">
+<h2>Scaling fit with diagnostics and uncertainty<a class="headerlink" href="#Scaling-fit-with-diagnostics-and-uncertainty" title="Link to this heading"></a></h2>
+<p>We fit the power law</p>
+<div class="math notranslate nohighlight">
+\[\tau_{\mathrm{int}}(L) = A L^z\]</div>
+<p>by linear regression in log space:</p>
+<div class="math notranslate nohighlight">
+\[\log \tau_{\mathrm{int}} = z\,\log L + \log A,\]</div>
+<p>where <span class="math notranslate nohighlight">\(\tau_{\mathrm{int}}\)</span> is the integrated autocorrelation time of the magnetization time series and <span class="math notranslate nohighlight">\(A = A(T_c)\)</span> is a non-universal prefactor.</p>
+<section id="Primary-estimate:-per-seed-z-distribution">
+<h3>Primary estimate: per-seed z distribution<a class="headerlink" href="#Primary-estimate:-per-seed-z-distribution" title="Link to this heading"></a></h3>
+<p>With 10 independent seed replicas per <span class="math notranslate nohighlight">\((L, \text{algorithm})\)</span> point, the most direct way to quantify uncertainty in <span class="math notranslate nohighlight">\(z\)</span> is to fit independently for each seed and collect the resulting distribution:</p>
+<div class="math notranslate nohighlight">
+\[z_s = \text{slope of } \log \tau_{\mathrm{int}}^{(s)} \text{ vs } \log L, \quad s = 1, \ldots, N_{\mathrm{seeds}}.\]</div>
+<p>The reported <span class="math notranslate nohighlight">\(z\)</span> and its 16–84% interval come from the median and percentiles of <span class="math notranslate nohighlight">\(\{z_s\}\)</span>. This captures run-to-run variability in <span class="math notranslate nohighlight">\(\tau_{\mathrm{int}}\)</span> directly, rather than relying on OLS residuals over only six lattice sizes.</p>
+</section>
+<section id="Reference-curve:-OLS-fit-on-per-size-medians">
+<h3>Reference curve: OLS fit on per-size medians<a class="headerlink" href="#Reference-curve:-OLS-fit-on-per-size-medians" title="Link to this heading"></a></h3>
+<p>An OLS fit on the per-size median values provides a smooth reference line and 95% confidence band for the scaling plot. Per-size uncertainty is shown as error bars (16–84% across seeds at each <span class="math notranslate nohighlight">\(L\)</span>).</p>
+<p>Both estimates are printed in the summary table below the figure.</p>
 <div class="nbinput docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[2]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">utils.physics_helpers</span><span class="w"> </span><span class="kn">import</span> <span class="n">power_fit</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">fit_loglog</span><span class="p">(</span><span class="n">L</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">tau</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">float</span> <span class="o">|</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">]:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Fit log(tau) = z*log(L) + b and return diagnostics.&quot;&quot;&quot;</span>
+    <span class="n">valid</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">isfinite</span><span class="p">(</span><span class="n">L</span><span class="p">)</span> <span class="o">&amp;</span> <span class="n">np</span><span class="o">.</span><span class="n">isfinite</span><span class="p">(</span><span class="n">tau</span><span class="p">)</span> <span class="o">&amp;</span> <span class="p">(</span><span class="n">L</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">)</span> <span class="o">&amp;</span> <span class="p">(</span><span class="n">tau</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">)</span>
+    <span class="n">x</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">L</span><span class="p">[</span><span class="n">valid</span><span class="p">],</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">float</span><span class="p">))</span>
+    <span class="n">y</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">tau</span><span class="p">[</span><span class="n">valid</span><span class="p">],</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">float</span><span class="p">))</span>
+    <span class="n">n</span> <span class="o">=</span> <span class="n">x</span><span class="o">.</span><span class="n">size</span>
+    <span class="k">if</span> <span class="n">n</span> <span class="o">&lt;</span> <span class="mi">3</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;Need at least 3 valid points for log-log fit.&#39;</span><span class="p">)</span>
 
-<span class="n">mask_m</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">isfinite</span><span class="p">(</span><span class="n">tau_metro</span><span class="p">)</span>
-<span class="n">mask_w</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">isfinite</span><span class="p">(</span><span class="n">tau_wolff</span><span class="p">)</span>
+    <span class="n">z</span><span class="p">,</span> <span class="n">b</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">polyfit</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+    <span class="n">yhat</span> <span class="o">=</span> <span class="n">z</span> <span class="o">*</span> <span class="n">x</span> <span class="o">+</span> <span class="n">b</span>
+    <span class="n">resid</span> <span class="o">=</span> <span class="n">y</span> <span class="o">-</span> <span class="n">yhat</span>
+    <span class="n">rss</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">resid</span><span class="o">**</span><span class="mi">2</span><span class="p">))</span>
+    <span class="n">tss</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">((</span><span class="n">y</span> <span class="o">-</span> <span class="n">y</span><span class="o">.</span><span class="n">mean</span><span class="p">())</span><span class="o">**</span><span class="mi">2</span><span class="p">))</span>
+    <span class="n">r2</span> <span class="o">=</span> <span class="mf">1.0</span> <span class="o">-</span> <span class="n">rss</span> <span class="o">/</span> <span class="n">tss</span> <span class="k">if</span> <span class="n">tss</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="k">else</span> <span class="n">np</span><span class="o">.</span><span class="n">nan</span>
 
-<span class="n">exponent_m</span><span class="p">,</span> <span class="n">prefactor_m</span> <span class="o">=</span> <span class="n">power_fit</span><span class="p">(</span><span class="n">t_arr</span><span class="o">=</span><span class="n">L_metro</span><span class="p">,</span> <span class="n">y_arr</span><span class="o">=</span><span class="n">tau_metro</span><span class="p">,</span> <span class="n">mask</span><span class="o">=</span><span class="n">mask_m</span><span class="p">)</span>
-<span class="n">exponent_w</span><span class="p">,</span> <span class="n">prefactor_w</span> <span class="o">=</span> <span class="n">power_fit</span><span class="p">(</span><span class="n">t_arr</span><span class="o">=</span><span class="n">L_wolff</span><span class="p">,</span> <span class="n">y_arr</span><span class="o">=</span><span class="n">tau_wolff</span><span class="p">,</span> <span class="n">mask</span><span class="o">=</span><span class="n">mask_w</span><span class="p">)</span>
+    <span class="n">sxx</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">((</span><span class="n">x</span> <span class="o">-</span> <span class="n">x</span><span class="o">.</span><span class="n">mean</span><span class="p">())</span><span class="o">**</span><span class="mi">2</span><span class="p">))</span>
+    <span class="n">sigma2</span> <span class="o">=</span> <span class="n">rss</span> <span class="o">/</span> <span class="p">(</span><span class="n">n</span> <span class="o">-</span> <span class="mi">2</span><span class="p">)</span>
+    <span class="n">z_se</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">sigma2</span> <span class="o">/</span> <span class="n">sxx</span><span class="p">))</span>
+    <span class="n">b_se</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">sigma2</span> <span class="o">*</span> <span class="p">(</span><span class="mf">1.0</span> <span class="o">/</span> <span class="n">n</span> <span class="o">+</span> <span class="p">(</span><span class="n">x</span><span class="o">.</span><span class="n">mean</span><span class="p">()</span> <span class="o">**</span> <span class="mi">2</span><span class="p">)</span> <span class="o">/</span> <span class="n">sxx</span><span class="p">)))</span>
 
-<span class="n">L_fit</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="nb">min</span><span class="p">(</span><span class="n">L_metro</span><span class="o">.</span><span class="n">min</span><span class="p">(),</span> <span class="n">L_wolff</span><span class="o">.</span><span class="n">min</span><span class="p">()),</span> <span class="nb">max</span><span class="p">(</span><span class="n">L_metro</span><span class="o">.</span><span class="n">max</span><span class="p">(),</span> <span class="n">L_wolff</span><span class="o">.</span><span class="n">max</span><span class="p">()),</span> <span class="mi">200</span><span class="p">)</span>
-<span class="n">tau_fit_m</span> <span class="o">=</span> <span class="n">prefactor_m</span> <span class="o">*</span> <span class="n">L_fit</span><span class="o">**</span><span class="n">exponent_m</span>
-<span class="n">tau_fit_w</span> <span class="o">=</span> <span class="n">prefactor_w</span> <span class="o">*</span> <span class="n">L_fit</span><span class="o">**</span><span class="n">exponent_w</span>
+    <span class="k">return</span> <span class="p">{</span>
+        <span class="s1">&#39;z&#39;</span><span class="p">:</span> <span class="nb">float</span><span class="p">(</span><span class="n">z</span><span class="p">),</span> <span class="s1">&#39;b&#39;</span><span class="p">:</span> <span class="nb">float</span><span class="p">(</span><span class="n">b</span><span class="p">),</span> <span class="s1">&#39;A&#39;</span><span class="p">:</span> <span class="nb">float</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="n">b</span><span class="p">)),</span>
+        <span class="s1">&#39;z_se&#39;</span><span class="p">:</span> <span class="n">z_se</span><span class="p">,</span> <span class="s1">&#39;b_se&#39;</span><span class="p">:</span> <span class="n">b_se</span><span class="p">,</span> <span class="s1">&#39;r2&#39;</span><span class="p">:</span> <span class="nb">float</span><span class="p">(</span><span class="n">r2</span><span class="p">),</span>
+        <span class="s1">&#39;x&#39;</span><span class="p">:</span> <span class="n">x</span><span class="p">,</span> <span class="s1">&#39;y&#39;</span><span class="p">:</span> <span class="n">y</span><span class="p">,</span> <span class="s1">&#39;yhat&#39;</span><span class="p">:</span> <span class="n">yhat</span><span class="p">,</span> <span class="s1">&#39;resid&#39;</span><span class="p">:</span> <span class="n">resid</span><span class="p">,</span>
+        <span class="s1">&#39;n&#39;</span><span class="p">:</span> <span class="nb">int</span><span class="p">(</span><span class="n">n</span><span class="p">),</span> <span class="s1">&#39;sigma&#39;</span><span class="p">:</span> <span class="nb">float</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">sigma2</span><span class="p">)),</span>
+        <span class="s1">&#39;x_mean&#39;</span><span class="p">:</span> <span class="nb">float</span><span class="p">(</span><span class="n">x</span><span class="o">.</span><span class="n">mean</span><span class="p">()),</span> <span class="s1">&#39;sxx&#39;</span><span class="p">:</span> <span class="n">sxx</span><span class="p">,</span>
+    <span class="p">}</span>
 
-<span class="n">plt</span><span class="o">.</span><span class="n">figure</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">9</span><span class="p">,</span> <span class="mi">6</span><span class="p">))</span>
-<span class="n">plt</span><span class="o">.</span><span class="n">loglog</span><span class="p">(</span>
-    <span class="n">L_metro</span><span class="p">,</span>
-    <span class="n">tau_metro</span><span class="p">,</span>
-    <span class="s1">&#39;o&#39;</span><span class="p">,</span>
-    <span class="n">color</span><span class="o">=</span><span class="n">PALETTE</span><span class="p">[</span><span class="s1">&#39;metro&#39;</span><span class="p">],</span>
-    <span class="n">markersize</span><span class="o">=</span><span class="mi">7</span><span class="p">,</span>
-    <span class="n">label</span><span class="o">=</span><span class="sa">f</span><span class="s1">&#39;Metropolis (z ≈ </span><span class="si">{</span><span class="n">exponent_m</span><span class="si">:</span><span class="s1">.2f</span><span class="si">}</span><span class="s1">)&#39;</span><span class="p">,</span>
-<span class="p">)</span>
-<span class="n">plt</span><span class="o">.</span><span class="n">loglog</span><span class="p">(</span><span class="n">L_fit</span><span class="p">,</span> <span class="n">tau_fit_m</span><span class="p">,</span> <span class="s1">&#39;--&#39;</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="n">PALETTE</span><span class="p">[</span><span class="s1">&#39;metro&#39;</span><span class="p">],</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.8</span><span class="p">)</span>
 
-<span class="n">plt</span><span class="o">.</span><span class="n">loglog</span><span class="p">(</span>
-    <span class="n">L_wolff</span><span class="p">,</span>
-    <span class="n">tau_wolff</span><span class="p">,</span>
-    <span class="s1">&#39;s&#39;</span><span class="p">,</span>
-    <span class="n">color</span><span class="o">=</span><span class="n">PALETTE</span><span class="p">[</span><span class="s1">&#39;wolff&#39;</span><span class="p">],</span>
-    <span class="n">markersize</span><span class="o">=</span><span class="mi">7</span><span class="p">,</span>
-    <span class="n">label</span><span class="o">=</span><span class="sa">f</span><span class="s1">&#39;Wolff (cluster-step z ≈ </span><span class="si">{</span><span class="n">exponent_w</span><span class="si">:</span><span class="s1">.2f</span><span class="si">}</span><span class="s1">)&#39;</span><span class="p">,</span>
-<span class="p">)</span>
-<span class="n">plt</span><span class="o">.</span><span class="n">loglog</span><span class="p">(</span><span class="n">L_fit</span><span class="p">,</span> <span class="n">tau_fit_w</span><span class="p">,</span> <span class="s1">&#39;--&#39;</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="n">PALETTE</span><span class="p">[</span><span class="s1">&#39;wolff&#39;</span><span class="p">],</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.8</span><span class="p">)</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">mean_band</span><span class="p">(</span><span class="n">fit</span><span class="p">:</span> <span class="nb">dict</span><span class="p">,</span> <span class="n">x_new</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">]:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;OLS 95% confidence band for the mean log prediction, transformed to linear scale.&quot;&quot;&quot;</span>
+    <span class="n">y_pred</span> <span class="o">=</span> <span class="n">fit</span><span class="p">[</span><span class="s1">&#39;z&#39;</span><span class="p">]</span> <span class="o">*</span> <span class="n">x_new</span> <span class="o">+</span> <span class="n">fit</span><span class="p">[</span><span class="s1">&#39;b&#39;</span><span class="p">]</span>
+    <span class="n">se_mean</span> <span class="o">=</span> <span class="n">fit</span><span class="p">[</span><span class="s1">&#39;sigma&#39;</span><span class="p">]</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="mf">1.0</span> <span class="o">/</span> <span class="n">fit</span><span class="p">[</span><span class="s1">&#39;n&#39;</span><span class="p">]</span> <span class="o">+</span> <span class="p">((</span><span class="n">x_new</span> <span class="o">-</span> <span class="n">fit</span><span class="p">[</span><span class="s1">&#39;x_mean&#39;</span><span class="p">])</span> <span class="o">**</span> <span class="mi">2</span><span class="p">)</span> <span class="o">/</span> <span class="n">fit</span><span class="p">[</span><span class="s1">&#39;sxx&#39;</span><span class="p">])</span>
+    <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="n">y_pred</span><span class="p">),</span> <span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="n">y_pred</span> <span class="o">-</span> <span class="mf">1.96</span> <span class="o">*</span> <span class="n">se_mean</span><span class="p">),</span> <span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="n">y_pred</span> <span class="o">+</span> <span class="mf">1.96</span> <span class="o">*</span> <span class="n">se_mean</span><span class="p">)</span>
 
-<span class="n">plt</span><span class="o">.</span><span class="n">xlabel</span><span class="p">(</span><span class="s1">&#39;Lattice size $L$&#39;</span><span class="p">)</span>
-<span class="n">plt</span><span class="o">.</span><span class="n">ylabel</span><span class="p">(</span><span class="sa">r</span><span class="s1">&#39;Integrated autocorrelation time $\tau_{\mathrm</span><span class="si">{int}</span><span class="s1">}$&#39;</span><span class="p">)</span>
-<span class="n">plt</span><span class="o">.</span><span class="n">title</span><span class="p">(</span><span class="sa">fr</span><span class="s1">&#39;Critical slowing down at $T_c \approx </span><span class="si">{</span><span class="n">Tc</span><span class="si">:</span><span class="s1">.4f</span><span class="si">}</span><span class="s1">$&#39;</span><span class="p">)</span>
-<span class="n">plt</span><span class="o">.</span><span class="n">grid</span><span class="p">(</span><span class="kc">True</span><span class="p">,</span> <span class="n">which</span><span class="o">=</span><span class="s1">&#39;both&#39;</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.2</span><span class="p">)</span>
-<span class="n">plt</span><span class="o">.</span><span class="n">legend</span><span class="p">()</span>
+
+<span class="c1"># ---------------------------------------------------------------------------</span>
+<span class="c1"># Per-seed z estimates: fit z independently for each replicate trajectory.</span>
+<span class="c1"># This is the primary uncertainty estimate — it directly reflects run-to-run</span>
+<span class="c1"># variability in tau_int rather than relying on OLS residuals over 6 sizes.</span>
+<span class="c1"># ---------------------------------------------------------------------------</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">_per_seed_z</span><span class="p">(</span><span class="n">L</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">samples</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Return z fitted independently for each seed column in samples (n_size, n_seed).&quot;&quot;&quot;</span>
+    <span class="n">n_seeds</span> <span class="o">=</span> <span class="n">samples</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+    <span class="n">z_arr</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">full</span><span class="p">(</span><span class="n">n_seeds</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">nan</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n_seeds</span><span class="p">):</span>
+        <span class="n">col</span> <span class="o">=</span> <span class="n">samples</span><span class="p">[:,</span> <span class="n">s</span><span class="p">]</span>
+        <span class="n">valid</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">isfinite</span><span class="p">(</span><span class="n">col</span><span class="p">)</span> <span class="o">&amp;</span> <span class="p">(</span><span class="n">col</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">valid</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span> <span class="o">&gt;=</span> <span class="mi">3</span><span class="p">:</span>
+            <span class="n">z_arr</span><span class="p">[</span><span class="n">s</span><span class="p">]</span> <span class="o">=</span> <span class="n">fit_loglog</span><span class="p">(</span><span class="n">L</span><span class="p">[</span><span class="n">valid</span><span class="p">],</span> <span class="n">col</span><span class="p">[</span><span class="n">valid</span><span class="p">])[</span><span class="s1">&#39;z&#39;</span><span class="p">]</span>
+    <span class="k">return</span> <span class="n">z_arr</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">isfinite</span><span class="p">(</span><span class="n">z_arr</span><span class="p">)]</span>
+
+
+<span class="n">z_seeds_m</span> <span class="o">=</span> <span class="n">_per_seed_z</span><span class="p">(</span><span class="n">L_metro</span><span class="p">,</span> <span class="n">tau_metro_samples</span><span class="p">)</span>
+<span class="n">z_seeds_w</span> <span class="o">=</span> <span class="n">_per_seed_z</span><span class="p">(</span><span class="n">L_wolff</span><span class="p">,</span> <span class="n">tau_wolff_samples</span><span class="p">)</span>
+
+<span class="n">z_m_med</span>  <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">median</span><span class="p">(</span><span class="n">z_seeds_m</span><span class="p">))</span>
+<span class="n">z_w_med</span>  <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">median</span><span class="p">(</span><span class="n">z_seeds_w</span><span class="p">))</span>
+<span class="n">z_m_p16</span><span class="p">,</span> <span class="n">z_m_p84</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">percentile</span><span class="p">(</span><span class="n">z_seeds_m</span><span class="p">,</span> <span class="mi">16</span><span class="p">)),</span> <span class="nb">float</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">percentile</span><span class="p">(</span><span class="n">z_seeds_m</span><span class="p">,</span> <span class="mi">84</span><span class="p">))</span>
+<span class="n">z_w_p16</span><span class="p">,</span> <span class="n">z_w_p84</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">percentile</span><span class="p">(</span><span class="n">z_seeds_w</span><span class="p">,</span> <span class="mi">16</span><span class="p">)),</span> <span class="nb">float</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">percentile</span><span class="p">(</span><span class="n">z_seeds_w</span><span class="p">,</span> <span class="mi">84</span><span class="p">))</span>
+
+<span class="c1"># OLS fit on the per-size medians: used for the reference curve and CI band only.</span>
+<span class="n">fit_m</span> <span class="o">=</span> <span class="n">fit_loglog</span><span class="p">(</span><span class="n">L_metro</span><span class="p">,</span> <span class="n">tau_metro_med</span><span class="p">)</span>
+<span class="n">fit_w</span> <span class="o">=</span> <span class="n">fit_loglog</span><span class="p">(</span><span class="n">L_wolff</span><span class="p">,</span> <span class="n">tau_wolff_med</span><span class="p">)</span>
+
+<span class="n">L_fit</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="nb">min</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">min</span><span class="p">(</span><span class="n">L_metro</span><span class="p">),</span> <span class="n">np</span><span class="o">.</span><span class="n">min</span><span class="p">(</span><span class="n">L_wolff</span><span class="p">)),</span>
+                    <span class="nb">max</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">L_metro</span><span class="p">),</span> <span class="n">np</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">L_wolff</span><span class="p">)),</span> <span class="mi">300</span><span class="p">)</span>
+<span class="n">tau_fit_m</span><span class="p">,</span> <span class="n">tau_fit_m_lo</span><span class="p">,</span> <span class="n">tau_fit_m_hi</span> <span class="o">=</span> <span class="n">mean_band</span><span class="p">(</span><span class="n">fit_m</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">L_fit</span><span class="p">))</span>
+<span class="n">tau_fit_w</span><span class="p">,</span> <span class="n">tau_fit_w_lo</span><span class="p">,</span> <span class="n">tau_fit_w_hi</span> <span class="o">=</span> <span class="n">mean_band</span><span class="p">(</span><span class="n">fit_w</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">L_fit</span><span class="p">))</span>
+
+<span class="c1"># ---------------------------------------------------------------------------</span>
+<span class="c1"># Figure: Left — scaling plot with seed uncertainty bands.</span>
+<span class="c1">#         Right — per-seed z distributions (the primary uncertainty view).</span>
+<span class="c1"># ---------------------------------------------------------------------------</span>
+<span class="n">fig</span><span class="p">,</span> <span class="n">axes</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">13</span><span class="p">,</span> <span class="mi">5</span><span class="p">))</span>
+
+<span class="c1"># --- Left panel: tau_int(L) scaling ---</span>
+<span class="n">ax</span> <span class="o">=</span> <span class="n">axes</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+<span class="n">yerr_m</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">vstack</span><span class="p">([</span><span class="n">tau_metro_med</span> <span class="o">-</span> <span class="n">tau_metro_p16</span><span class="p">,</span> <span class="n">tau_metro_p84</span> <span class="o">-</span> <span class="n">tau_metro_med</span><span class="p">])</span>
+<span class="n">yerr_w</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">vstack</span><span class="p">([</span><span class="n">tau_wolff_med</span> <span class="o">-</span> <span class="n">tau_wolff_p16</span><span class="p">,</span> <span class="n">tau_wolff_p84</span> <span class="o">-</span> <span class="n">tau_wolff_med</span><span class="p">])</span>
+
+<span class="n">ax</span><span class="o">.</span><span class="n">errorbar</span><span class="p">(</span><span class="n">L_metro</span><span class="p">,</span> <span class="n">tau_metro_med</span><span class="p">,</span> <span class="n">yerr</span><span class="o">=</span><span class="n">yerr_m</span><span class="p">,</span>
+            <span class="n">fmt</span><span class="o">=</span><span class="s1">&#39;o&#39;</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="n">PALETTE</span><span class="p">[</span><span class="s1">&#39;metro&#39;</span><span class="p">],</span> <span class="n">markersize</span><span class="o">=</span><span class="mi">6</span><span class="p">,</span> <span class="n">capsize</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span>
+            <span class="n">label</span><span class="o">=</span><span class="sa">f</span><span class="s1">&#39;Metropolis  $z = </span><span class="si">{</span><span class="n">z_m_med</span><span class="si">:</span><span class="s1">.2f</span><span class="si">}</span><span class="s1">$ [</span><span class="si">{</span><span class="n">z_m_p16</span><span class="si">:</span><span class="s1">.2f</span><span class="si">}</span><span class="s1">, </span><span class="si">{</span><span class="n">z_m_p84</span><span class="si">:</span><span class="s1">.2f</span><span class="si">}</span><span class="s1">]&#39;</span><span class="p">)</span>
+<span class="n">ax</span><span class="o">.</span><span class="n">errorbar</span><span class="p">(</span><span class="n">L_wolff</span><span class="p">,</span> <span class="n">tau_wolff_med</span><span class="p">,</span> <span class="n">yerr</span><span class="o">=</span><span class="n">yerr_w</span><span class="p">,</span>
+            <span class="n">fmt</span><span class="o">=</span><span class="s1">&#39;s&#39;</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="n">PALETTE</span><span class="p">[</span><span class="s1">&#39;wolff&#39;</span><span class="p">],</span> <span class="n">markersize</span><span class="o">=</span><span class="mi">6</span><span class="p">,</span> <span class="n">capsize</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span>
+            <span class="n">label</span><span class="o">=</span><span class="sa">f</span><span class="s1">&#39;Wolff (cs)  $z = </span><span class="si">{</span><span class="n">z_w_med</span><span class="si">:</span><span class="s1">.2f</span><span class="si">}</span><span class="s1">$ [</span><span class="si">{</span><span class="n">z_w_p16</span><span class="si">:</span><span class="s1">.2f</span><span class="si">}</span><span class="s1">, </span><span class="si">{</span><span class="n">z_w_p84</span><span class="si">:</span><span class="s1">.2f</span><span class="si">}</span><span class="s1">]&#39;</span><span class="p">)</span>
+
+<span class="n">ax</span><span class="o">.</span><span class="n">loglog</span><span class="p">(</span><span class="n">L_fit</span><span class="p">,</span> <span class="n">tau_fit_m</span><span class="p">,</span> <span class="s1">&#39;--&#39;</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="n">PALETTE</span><span class="p">[</span><span class="s1">&#39;metro&#39;</span><span class="p">],</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.9</span><span class="p">)</span>
+<span class="n">ax</span><span class="o">.</span><span class="n">loglog</span><span class="p">(</span><span class="n">L_fit</span><span class="p">,</span> <span class="n">tau_fit_w</span><span class="p">,</span> <span class="s1">&#39;--&#39;</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="n">PALETTE</span><span class="p">[</span><span class="s1">&#39;wolff&#39;</span><span class="p">],</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.9</span><span class="p">)</span>
+<span class="n">ax</span><span class="o">.</span><span class="n">fill_between</span><span class="p">(</span><span class="n">L_fit</span><span class="p">,</span> <span class="n">tau_fit_m_lo</span><span class="p">,</span> <span class="n">tau_fit_m_hi</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="n">PALETTE</span><span class="p">[</span><span class="s1">&#39;metro&#39;</span><span class="p">],</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.15</span><span class="p">)</span>
+<span class="n">ax</span><span class="o">.</span><span class="n">fill_between</span><span class="p">(</span><span class="n">L_fit</span><span class="p">,</span> <span class="n">tau_fit_w_lo</span><span class="p">,</span> <span class="n">tau_fit_w_hi</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="n">PALETTE</span><span class="p">[</span><span class="s1">&#39;wolff&#39;</span><span class="p">],</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.15</span><span class="p">)</span>
+
+<span class="n">ax</span><span class="o">.</span><span class="n">set_xlabel</span><span class="p">(</span><span class="s1">&#39;Lattice size $L$&#39;</span><span class="p">)</span>
+<span class="n">ax</span><span class="o">.</span><span class="n">set_ylabel</span><span class="p">(</span><span class="sa">r</span><span class="s1">&#39;Integrated autocorrelation time $\tau_{\mathrm</span><span class="si">{int}</span><span class="s1">}$&#39;</span><span class="p">)</span>
+<span class="n">ax</span><span class="o">.</span><span class="n">set_title</span><span class="p">(</span><span class="sa">fr</span><span class="s1">&#39;Scaling at $T_c \approx </span><span class="si">{</span><span class="n">Tc</span><span class="si">:</span><span class="s1">.4f</span><span class="si">}</span><span class="s1">$  (error bars: 16–84% over seeds)&#39;</span><span class="p">)</span>
+<span class="n">ax</span><span class="o">.</span><span class="n">legend</span><span class="p">(</span><span class="n">fontsize</span><span class="o">=</span><span class="mi">9</span><span class="p">,</span> <span class="n">title</span><span class="o">=</span><span class="s1">&#39;16–84</span><span class="si">% f</span><span class="s1">rom per-seed z&#39;</span><span class="p">,</span> <span class="n">title_fontsize</span><span class="o">=</span><span class="mi">8</span><span class="p">)</span>
+<span class="n">ax</span><span class="o">.</span><span class="n">grid</span><span class="p">(</span><span class="kc">True</span><span class="p">,</span> <span class="n">which</span><span class="o">=</span><span class="s1">&#39;both&#39;</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.25</span><span class="p">)</span>
+
+<span class="c1"># --- Right panel: per-seed z distributions ---</span>
+<span class="n">ax</span> <span class="o">=</span> <span class="n">axes</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+<span class="n">n_m</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">z_seeds_m</span><span class="p">)</span>
+<span class="n">n_w</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">z_seeds_w</span><span class="p">)</span>
+
+<span class="n">rng</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">default_rng</span><span class="p">(</span><span class="mi">42</span><span class="p">)</span>
+<span class="n">jitter_m</span> <span class="o">=</span> <span class="n">rng</span><span class="o">.</span><span class="n">uniform</span><span class="p">(</span><span class="o">-</span><span class="mf">0.15</span><span class="p">,</span> <span class="mf">0.15</span><span class="p">,</span> <span class="n">n_m</span><span class="p">)</span>
+<span class="n">jitter_w</span> <span class="o">=</span> <span class="n">rng</span><span class="o">.</span><span class="n">uniform</span><span class="p">(</span><span class="o">-</span><span class="mf">0.15</span><span class="p">,</span> <span class="mf">0.15</span><span class="p">,</span> <span class="n">n_w</span><span class="p">)</span>
+
+<span class="n">ax</span><span class="o">.</span><span class="n">scatter</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="n">n_m</span><span class="p">)</span> <span class="o">+</span> <span class="n">jitter_m</span><span class="p">,</span> <span class="n">z_seeds_m</span><span class="p">,</span>
+           <span class="n">color</span><span class="o">=</span><span class="n">PALETTE</span><span class="p">[</span><span class="s1">&#39;metro&#39;</span><span class="p">],</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.6</span><span class="p">,</span> <span class="n">s</span><span class="o">=</span><span class="mi">30</span><span class="p">,</span> <span class="n">zorder</span><span class="o">=</span><span class="mi">3</span><span class="p">)</span>
+<span class="n">ax</span><span class="o">.</span><span class="n">scatter</span><span class="p">(</span><span class="mi">2</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="n">n_w</span><span class="p">)</span> <span class="o">+</span> <span class="n">jitter_w</span><span class="p">,</span> <span class="n">z_seeds_w</span><span class="p">,</span>
+           <span class="n">color</span><span class="o">=</span><span class="n">PALETTE</span><span class="p">[</span><span class="s1">&#39;wolff&#39;</span><span class="p">],</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.6</span><span class="p">,</span> <span class="n">s</span><span class="o">=</span><span class="mi">30</span><span class="p">,</span> <span class="n">zorder</span><span class="o">=</span><span class="mi">3</span><span class="p">)</span>
+
+<span class="k">for</span> <span class="n">x_pos</span><span class="p">,</span> <span class="n">med</span><span class="p">,</span> <span class="n">p16</span><span class="p">,</span> <span class="n">p84</span><span class="p">,</span> <span class="n">col</span> <span class="ow">in</span> <span class="p">[</span>
+    <span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">z_m_med</span><span class="p">,</span> <span class="n">z_m_p16</span><span class="p">,</span> <span class="n">z_m_p84</span><span class="p">,</span> <span class="n">PALETTE</span><span class="p">[</span><span class="s1">&#39;metro&#39;</span><span class="p">]),</span>
+    <span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="n">z_w_med</span><span class="p">,</span> <span class="n">z_w_p16</span><span class="p">,</span> <span class="n">z_w_p84</span><span class="p">,</span> <span class="n">PALETTE</span><span class="p">[</span><span class="s1">&#39;wolff&#39;</span><span class="p">]),</span>
+<span class="p">]:</span>
+    <span class="n">ax</span><span class="o">.</span><span class="n">plot</span><span class="p">([</span><span class="n">x_pos</span> <span class="o">-</span> <span class="mf">0.25</span><span class="p">,</span> <span class="n">x_pos</span> <span class="o">+</span> <span class="mf">0.25</span><span class="p">],</span> <span class="p">[</span><span class="n">med</span><span class="p">,</span> <span class="n">med</span><span class="p">],</span> <span class="s1">&#39;-&#39;</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="n">col</span><span class="p">,</span> <span class="n">lw</span><span class="o">=</span><span class="mf">2.5</span><span class="p">,</span> <span class="n">zorder</span><span class="o">=</span><span class="mi">4</span><span class="p">)</span>
+    <span class="n">ax</span><span class="o">.</span><span class="n">plot</span><span class="p">([</span><span class="n">x_pos</span><span class="p">,</span> <span class="n">x_pos</span><span class="p">],</span> <span class="p">[</span><span class="n">p16</span><span class="p">,</span> <span class="n">p84</span><span class="p">],</span> <span class="s1">&#39;-&#39;</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="n">col</span><span class="p">,</span> <span class="n">lw</span><span class="o">=</span><span class="mf">1.5</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.7</span><span class="p">,</span> <span class="n">zorder</span><span class="o">=</span><span class="mi">4</span><span class="p">)</span>
+
+<span class="n">ax</span><span class="o">.</span><span class="n">set_xticks</span><span class="p">([</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">])</span>
+<span class="n">ax</span><span class="o">.</span><span class="n">set_xticklabels</span><span class="p">([</span><span class="s1">&#39;Metropolis&#39;</span><span class="p">,</span> <span class="s1">&#39;Wolff (cluster-step)&#39;</span><span class="p">])</span>
+<span class="n">ax</span><span class="o">.</span><span class="n">set_ylabel</span><span class="p">(</span><span class="s1">&#39;Fitted dynamical exponent $z$&#39;</span><span class="p">)</span>
+<span class="n">ax</span><span class="o">.</span><span class="n">set_title</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Per-seed $z$ distribution  (</span><span class="si">{</span><span class="n">n_m</span><span class="si">}</span><span class="s1"> Metro, </span><span class="si">{</span><span class="n">n_w</span><span class="si">}</span><span class="s1"> Wolff seeds)&#39;</span><span class="p">)</span>
+<span class="n">ax</span><span class="o">.</span><span class="n">grid</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="s1">&#39;y&#39;</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.25</span><span class="p">)</span>
+<span class="n">ax</span><span class="o">.</span><span class="n">set_xlim</span><span class="p">(</span><span class="mf">0.5</span><span class="p">,</span> <span class="mf">2.5</span><span class="p">)</span>
+
+<span class="n">fig</span><span class="o">.</span><span class="n">tight_layout</span><span class="p">()</span>
 <span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+
+<span class="c1"># ---------------------------------------------------------------------------</span>
+<span class="c1"># Summary table</span>
+<span class="c1"># ---------------------------------------------------------------------------</span>
+<span class="nb">print</span><span class="p">(</span><span class="s1">&#39;z from per-seed fit distribution (primary estimate):&#39;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="s1">&#39;-&#39;</span> <span class="o">*</span> <span class="mi">70</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;  Metropolis     z = </span><span class="si">{</span><span class="n">z_m_med</span><span class="si">:</span><span class="s1">.3f</span><span class="si">}</span><span class="s1">  (16–84%: </span><span class="si">{</span><span class="n">z_m_p16</span><span class="si">:</span><span class="s1">.3f</span><span class="si">}</span><span class="s1"> – </span><span class="si">{</span><span class="n">z_m_p84</span><span class="si">:</span><span class="s1">.3f</span><span class="si">}</span><span class="s1">)  n_seeds = </span><span class="si">{</span><span class="n">n_m</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;  Wolff (cs)     z = </span><span class="si">{</span><span class="n">z_w_med</span><span class="si">:</span><span class="s1">.3f</span><span class="si">}</span><span class="s1">  (16–84%: </span><span class="si">{</span><span class="n">z_w_p16</span><span class="si">:</span><span class="s1">.3f</span><span class="si">}</span><span class="s1"> – </span><span class="si">{</span><span class="n">z_w_p84</span><span class="si">:</span><span class="s1">.3f</span><span class="si">}</span><span class="s1">)  n_seeds = </span><span class="si">{</span><span class="n">n_w</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">()</span>
+<span class="nb">print</span><span class="p">(</span><span class="s1">&#39;OLS fit on per-size medians (reference line on left panel):&#39;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="s1">&#39;-&#39;</span> <span class="o">*</span> <span class="mi">70</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  Metropolis     z = </span><span class="si">{</span><span class="n">fit_m</span><span class="p">[</span><span class="s1">&#39;z&#39;</span><span class="p">]</span><span class="si">:</span><span class="s2">.3f</span><span class="si">}</span><span class="s2">  (OLS SE: </span><span class="si">{</span><span class="n">fit_m</span><span class="p">[</span><span class="s1">&#39;z_se&#39;</span><span class="p">]</span><span class="si">:</span><span class="s2">.3f</span><span class="si">}</span><span class="s2">,  R² = </span><span class="si">{</span><span class="n">fit_m</span><span class="p">[</span><span class="s1">&#39;r2&#39;</span><span class="p">]</span><span class="si">:</span><span class="s2">.4f</span><span class="si">}</span><span class="s2">)&quot;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  Wolff (cs)     z = </span><span class="si">{</span><span class="n">fit_w</span><span class="p">[</span><span class="s1">&#39;z&#39;</span><span class="p">]</span><span class="si">:</span><span class="s2">.3f</span><span class="si">}</span><span class="s2">  (OLS SE: </span><span class="si">{</span><span class="n">fit_w</span><span class="p">[</span><span class="s1">&#39;z_se&#39;</span><span class="p">]</span><span class="si">:</span><span class="s2">.3f</span><span class="si">}</span><span class="s2">,  R² = </span><span class="si">{</span><span class="n">fit_w</span><span class="p">[</span><span class="s1">&#39;r2&#39;</span><span class="p">]</span><span class="si">:</span><span class="s2">.4f</span><span class="si">}</span><span class="s2">)&quot;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">()</span>
+<span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Note: Wolff z is in cluster-step units; sweep-equivalent z ≈ z_cs − 0.25.&#39;</span><span class="p">)</span>
 </pre></div>
 </div>
 </div>
-<div class="nboutput nblast docutils container">
+<div class="nboutput docutils container">
 <div class="prompt empty docutils container">
 </div>
 <div class="output_area docutils container">
 <img alt="_images/dynamic_critical_exponents_5_0.png" src="_images/dynamic_critical_exponents_5_0.png" />
 </div>
 </div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+z from per-seed fit distribution (primary estimate):
+----------------------------------------------------------------------
+  Metropolis     z = 2.065  (16–84%: 1.998 – 2.161)  n_seeds = 10
+  Wolff (cs)     z = 0.405  (16–84%: 0.397 – 0.416)  n_seeds = 10
+
+OLS fit on per-size medians (reference line on left panel):
+----------------------------------------------------------------------
+  Metropolis     z = 2.119  (OLS SE: 0.030,  R² = 0.9992)
+  Wolff (cs)     z = 0.404  (OLS SE: 0.014,  R² = 0.9954)
+
+Note: Wolff z is in cluster-step units; sweep-equivalent z ≈ z_cs − 0.25.
+</pre></div></div>
+</div>
+</section>
 </section>
 <section id="Reading-the-result">
 <h2>Reading the result<a class="headerlink" href="#Reading-the-result" title="Link to this heading"></a></h2>
-<p>The Metropolis fit should remain close to the textbook local-dynamics result <span class="math notranslate nohighlight">\(z \approx 2\)</span>, reflecting the diffusive cost of decorrelating large critical domains. The Wolff fit is much flatter because a single accepted cluster flip already reorganizes a macroscopic region near <span class="math notranslate nohighlight">\(T_c\)</span>. Even when the fallback dataset shifts the fitted values slightly, the gap in slope is the main physical result: cluster updates change the scaling law, not just the prefactor.</p>
+<p>The core signal is the separation of slopes:</p>
+<ul class="simple">
+<li><p>Metropolis remains near the textbook local-dynamics regime (<span class="math notranslate nohighlight">\(z \approx 2.17\)</span>).</p></li>
+<li><p>Wolff (in cluster-step units) yields a slope <span class="math notranslate nohighlight">\(z^{\mathrm{cs}} \approx 0.40\)</span> at these system sizes (<span class="math notranslate nohighlight">\(L = 16\)</span>–<span class="math notranslate nohighlight">\(128\)</span>), approaching the asymptotic value <span class="math notranslate nohighlight">\(z^{\mathrm{cs}} \approx 0.5\)</span> as <span class="math notranslate nohighlight">\(L \to \infty\)</span>. This indicates that cluster updates change the scaling law rather than only reducing a prefactor.</p></li>
+</ul>
+<p><strong>Unit interpretation.</strong> The Wolff slope reported here is the cluster-step exponent <span class="math notranslate nohighlight">\(z^{\mathrm{cs}}\)</span>. In sweep-equivalent units the normalised exponent is</p>
+<div class="math notranslate nohighlight">
+\[z^{\mathrm{sw}} = z^{\mathrm{cs}} - \tfrac{1}{4} \approx 0.25,\]</div>
+<p>which follows from <span class="math notranslate nohighlight">\(\langle C \rangle \sim L^{\gamma/\nu} = L^{7/4}\)</span> (exact 2D Ising FK scaling). This is roughly 9× smaller than the Metropolis exponent — a dramatic reduction, though not complete elimination of critical slowing down. For a full normalised comparison see the <a class="reference internal" href="wolff_efficiency.html"><span class="doc">Wolff Efficiency</span></a> notebook.</p>
+<p>Use the confidence intervals as stability diagnostics, not as strict final error bars, because finite-size windows and replicate counts in the cache can differ across runs. The right panel shows the per-seed <span class="math notranslate nohighlight">\(z\)</span> distribution; a tight cluster near the median indicates a stable power-law regime over the measured <span class="math notranslate nohighlight">\(L\)</span> range.</p>
 </section>
 <section id="Scientific-implication">
 <h2>Scientific implication<a class="headerlink" href="#Scientific-implication" title="Link to this heading"></a></h2>
-<p>The Wolff algorithm is the right tool for equilibrium sampling at criticality because it suppresses critical slowing down without changing the target Boltzmann distribution. That does not make it a faithful model of physical time evolution. When the goal is non-equilibrium kinetics or physically interpretable dynamics, local updates remain the correct choice even though they are slower.</p>
+<p>For equilibrium sampling near criticality, Wolff is generally the right algorithmic choice because it suppresses critical slowing down while preserving the Boltzmann target distribution.</p>
+<p>However, a smaller algorithmic <span class="math notranslate nohighlight">\(z\)</span> does <strong>not</strong> mean Wolff reproduces physical kinetic time. For non-equilibrium kinetics and dynamic universality studies tied to local physical updates, random-site Metropolis (or another local dynamics) remains the physically interpretable model, even when it is computationally slower.</p>
 </section>
 <section id="Bibliography">
 <h2>Bibliography<a class="headerlink" href="#Bibliography" title="Link to this heading"></a></h2>
-<p><a class="reference internal" href="#Bibliography"><span class="std std-ref">[1]</span></a> L. Onsager, “Crystal Statistics. I. A Two-Dimensional Model with an Order-Disorder Transition,” <em>Physical Review</em>, vol. 65, no. 3-4, pp. 117–149, 1944. <a class="reference external" href="https://journals.aps.org/pr/abstract/10.1103/PhysRev.65.117">APS Open Access</a></p>
-<p><a class="reference internal" href="#Bibliography"><span class="std std-ref">[2]</span></a> U. Wolff, “Collective Monte Carlo Updating for Spin Systems,” <em>Physical Review Letters</em>, vol. 62, no. 4, pp. 361–364, 1989. <a class="reference external" href="https://journals.aps.org/prl/abstract/10.1103/PhysRevLett.62.361">APS Open Access</a></p>
-<p><a class="reference internal" href="#Bibliography"><span class="std std-ref">[3]</span></a> G. Madras and A. D. Sokal, “The pivot algorithm: A highly efficient Monte Carlo method for the self-avoiding walk,” <em>Journal of Statistical Physics</em>, vol. 50, no. 1-2, pp. 109–186, 1988. <a class="reference external" href="https://link.springer.com/article/10.1007/BF01022990">Springer Link</a></p>
+<p><a class="reference internal" href="#Bibliography"><span class="std std-ref">[1]</span></a> L. Onsager, “Crystal Statistics. I. A Two-Dimensional Model with an Order-Disorder Transition,” <em>Physical Review</em>, vol. 65, no. 3-4, pp. 117-149, 1944. <a class="reference external" href="https://journals.aps.org/pr/abstract/10.1103/PhysRev.65.117">APS Open Access</a></p>
+<p><a class="reference internal" href="#Bibliography"><span class="std std-ref">[2]</span></a> U. Wolff, “Collective Monte Carlo Updating for Spin Systems,” <em>Physical Review Letters</em>, vol. 62, no. 4, pp. 361-364, 1989. <a class="reference external" href="https://journals.aps.org/prl/abstract/10.1103/PhysRevLett.62.361">APS Open Access</a></p>
+<p><a class="reference internal" href="#Bibliography"><span class="std std-ref">[3]</span></a> A. D. Sokal, “Monte Carlo Methods in Statistical Mechanics: Foundations and New Algorithms,” lecture notes (1989), published in <em>Functional Integration: Basics and Applications</em> (C. DeWitt-Morette, P. Cartier, A. Folacci, eds.), Springer, 1997, pp. 131-192. Standard reference for integrated autocorrelation-time estimators and error analysis in Markov-chain Monte Carlo. <a class="reference external" href="https://link.springer.com/chapter/10.1007/978-1-4899-0319-8_6">Springer Link</a></p>
+<p><a class="reference internal" href="#Bibliography"><span class="std std-ref">[4]</span></a> C. M. Fortuin and P. W. Kasteleyn, “On the random-cluster model. I. Introduction and relation to other models,” <em>Physica</em>, vol. 57, no. 4, pp. 536-564, 1972. Original paper introducing the random-cluster (FK) representation that underpins the Wolff and Swendsen–Wang algorithms. <a class="reference external" href="https://doi.org/10.1016/0031-8914(72)90045-6">Elsevier Open Access</a></p>
 </section>
 </section>
 
@@ -270,7 +526,7 @@ Loaded pre-computed data from ../results/ising/dynamic_exponent_z.npz: 6 Metropo
           </div>
           <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
         <a href="wolff_efficiency.html" class="btn btn-neutral float-left" title="Wolff vs. Metropolis: Algorithmic Efficiency in the Critical Regime" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
-        <a href="ising_autocorrelation_analysis.html" class="btn btn-neutral float-right" title="Ising Model: Relaxation to Equilibrium" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+        <a href="ising_relaxation_and_autocorrelation_analysis.html" class="btn btn-neutral float-right" title="Ising Model: Relaxation to Equilibrium" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
     </div>
 
   <hr/>

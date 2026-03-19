@@ -5,7 +5,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>utils.exceptions &mdash; VibeSpin 0.1.0 documentation</title>
+  <title>utils.cli_helpers &mdash; VibeSpin 0.1.0 documentation</title>
       <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=b86133f3" />
       <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=9edc463e" />
 
@@ -75,7 +75,7 @@
   <ul class="wy-breadcrumbs">
       <li><a href="../../index.html" class="icon icon-home" aria-label="Home"></a></li>
           <li class="breadcrumb-item"><a href="../index.html">Module code</a></li>
-      <li class="breadcrumb-item active">utils.exceptions</li>
+      <li class="breadcrumb-item active">utils.cli_helpers</li>
       <li class="wy-breadcrumbs-aside">
       </li>
   </ul>
@@ -84,29 +84,23 @@
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
            <div itemprop="articleBody">
              
-  <h1>Source code for utils.exceptions</h1><div class="highlight"><pre>
-<span></span><span class="sd">&quot;&quot;&quot;Project-specific exception types for analysis and runtime failures.&quot;&quot;&quot;</span>
+  <h1>Source code for utils.cli_helpers</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;CLI helper utilities shared by script entry points.&quot;&quot;&quot;</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">__future__</span><span class="w"> </span><span class="kn">import</span> <span class="n">annotations</span>
 
-
-<div class="viewcode-block" id="VibeSpinError">
-<a class="viewcode-back" href="../../api/vibespin.utils.html#utils.exceptions.VibeSpinError">[docs]</a>
-<span class="k">class</span><span class="w"> </span><span class="nc">VibeSpinError</span><span class="p">(</span><span class="ne">Exception</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Base class for project-specific exceptions.&quot;&quot;&quot;</span></div>
+<span class="kn">import</span><span class="w"> </span><span class="nn">argparse</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">collections.abc</span><span class="w"> </span><span class="kn">import</span> <span class="n">Callable</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">cast</span>
 
 
-
-<div class="viewcode-block" id="NumericalAnalysisError">
-<a class="viewcode-back" href="../../api/vibespin.utils.html#utils.exceptions.NumericalAnalysisError">[docs]</a>
-<span class="k">class</span><span class="w"> </span><span class="nc">NumericalAnalysisError</span><span class="p">(</span><span class="n">VibeSpinError</span><span class="p">,</span> <span class="ne">RuntimeError</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Base class for mathematically undefined or failed analysis results.&quot;&quot;&quot;</span></div>
-
-
-
-<div class="viewcode-block" id="ZeroVarianceAutocorrelationError">
-<a class="viewcode-back" href="../../api/vibespin.utils.html#utils.exceptions.ZeroVarianceAutocorrelationError">[docs]</a>
-<span class="k">class</span><span class="w"> </span><span class="nc">ZeroVarianceAutocorrelationError</span><span class="p">(</span><span class="n">NumericalAnalysisError</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Raised when autocorrelation is undefined because the series variance is zero.&quot;&quot;&quot;</span></div>
+<div class="viewcode-block" id="parse_args_compat">
+<a class="viewcode-back" href="../../api/vibespin.utils.html#utils.cli_helpers.parse_args_compat">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">parse_args_compat</span><span class="p">(</span><span class="n">parser</span><span class="p">:</span> <span class="n">argparse</span><span class="o">.</span><span class="n">ArgumentParser</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">argparse</span><span class="o">.</span><span class="n">Namespace</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Parse CLI args with compatibility for parser wrappers used by some runners.&quot;&quot;&quot;</span>
+    <span class="n">parse_arguments</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">parser</span><span class="p">,</span> <span class="s1">&#39;parse_arguments&#39;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+    <span class="k">if</span> <span class="nb">callable</span><span class="p">(</span><span class="n">parse_arguments</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">cast</span><span class="p">(</span><span class="n">Callable</span><span class="p">[[],</span> <span class="n">argparse</span><span class="o">.</span><span class="n">Namespace</span><span class="p">],</span> <span class="n">parse_arguments</span><span class="p">)()</span>
+    <span class="k">return</span> <span class="n">parser</span><span class="o">.</span><span class="n">parse_args</span><span class="p">()</span></div>
 
 </pre></div>
 

@@ -78,6 +78,7 @@
 <li class="toctree-l2"><a class="reference internal" href="#directory-map-for-agents">Directory Map for Agents</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#common-operational-workflows">Common Operational Workflows</a><ul>
 <li class="toctree-l3"><a class="reference internal" href="#task-implement-a-new-physical-observable">Task: Implement a New Physical Observable</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#task-add-a-new-analysis-script">Task: Add a New Analysis Script</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#task-investigate-performance-regression">Task: Investigate Performance Regression</a></li>
 </ul>
 </li>
@@ -98,7 +99,7 @@
 <li class="toctree-l1"><a class="reference internal" href="benchmarks.html">Performance Benchmarking for VibeSpin</a></li>
 <li class="toctree-l1"><a class="reference internal" href="wolff_efficiency.html">Wolff vs. Metropolis: Algorithmic Efficiency in the Critical Regime</a></li>
 <li class="toctree-l1"><a class="reference internal" href="dynamic_critical_exponents.html">Dynamical Critical Exponents in the 2D Ising Model</a></li>
-<li class="toctree-l1"><a class="reference internal" href="ising_autocorrelation_analysis.html">Ising Model: Relaxation to Equilibrium</a></li>
+<li class="toctree-l1"><a class="reference internal" href="ising_relaxation_and_autocorrelation_analysis.html">Ising Model: Relaxation to Equilibrium</a></li>
 </ul>
 <p class="caption" role="heading"><span class="caption-text">API Reference:</span></p>
 <ul>
@@ -236,6 +237,7 @@
 </div>
 </li>
 <li><p><strong>Integrity Probes</strong>: Ensure new physical logic is covered by microscopic integrity tests (e.g., in <code class="docutils literal notranslate"><span class="pre">tests/test_algorithm_integrity.py</span></code>) and parameter validation (e.g., in <code class="docutils literal notranslate"><span class="pre">tests/test_model_extremes.py</span></code>).</p></li>
+<li><p><strong>Integration Testing for Scripts</strong>: New analysis scripts must not create separate test files. Instead, add test classes to <code class="docutils literal notranslate"><span class="pre">tests/integration/test_script_infrastructure.py</span></code>, organizing by infrastructure pattern (seed generation, NPZ schema, aggregation). This prevents test sprawl and signals that tests validate reusable concepts, not single-tool behavior. Example: when adding <code class="docutils literal notranslate"><span class="pre">temperature_sweep.py</span></code>, add a <code class="docutils literal notranslate"><span class="pre">TestTemperatureSweepSchema</span></code> class to the same integration file.</p></li>
 <li><p><strong>Static Analysis</strong>: Maintain strict quality standards:</p>
 <div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>ruff<span class="w"> </span>check<span class="w"> </span>.
 mypy<span class="w"> </span>--explicit-package-bases<span class="w"> </span>models/<span class="w"> </span>utils/<span class="w"> </span>scripts/
@@ -326,7 +328,15 @@ mypy<span class="w"> </span>--explicit-package-bases<span class="w"> </span>mode
 <ul class="simple">
 <li><p><code class="docutils literal notranslate"><span class="pre">models/</span></code>: Refactored simulation classes with <code class="docutils literal notranslate"><span class="pre">main()</span></code> entry points.</p></li>
 <li><p><code class="docutils literal notranslate"><span class="pre">utils/</span></code>: Physics and system-level helper functions.</p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">tests/</span></code>: High-coverage test suite including integrity, CLI, and extreme case verification.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">tests/</span></code>: High-coverage test suite organized into five conceptual layers:</p>
+<ul>
+<li><p><strong>Algorithm</strong> (<code class="docutils literal notranslate"><span class="pre">test_algorithm_integrity.py</span></code>): Microscopic validation of Monte Carlo kernels (detailed balance, ergodicity).</p></li>
+<li><p><strong>Model</strong> (<code class="docutils literal notranslate"><span class="pre">test_models.py</span></code>, <code class="docutils literal notranslate"><span class="pre">test_model_extremes.py</span></code>, <code class="docutils literal notranslate"><span class="pre">test_model_cli.py</span></code>): API contracts, CLI behavior, edge cases across all simulation classes.</p></li>
+<li><p><strong>Utility</strong> (<code class="docutils literal notranslate"><span class="pre">test_physics_helpers.py</span></code>, <code class="docutils literal notranslate"><span class="pre">test_system_helpers.py</span></code>): Physics observables, helper functions, and utilities.</p></li>
+<li><p><strong>Style</strong> (<code class="docutils literal notranslate"><span class="pre">test_docstring_style.py</span></code>): Code quality and documentation standards.</p></li>
+<li><p><strong>Integration</strong> (<code class="docutils literal notranslate"><span class="pre">integration/test_script_infrastructure.py</span></code>): Reusable infrastructure patterns for analysis scripts (seed generation, NPZ schemas, aggregation logic). Future scripts add test classes here rather than creating separate test files.</p></li>
+</ul>
+</li>
 <li><p><code class="docutils literal notranslate"><span class="pre">scripts/</span></code>: Physics experiments and equilibrium/kinetics drivers. Subdirectories: <code class="docutils literal notranslate"><span class="pre">ising/</span></code>, <code class="docutils literal notranslate"><span class="pre">xy/</span></code>, <code class="docutils literal notranslate"><span class="pre">clock/</span></code>, <code class="docutils literal notranslate"><span class="pre">benchmarks/</span></code>.</p></li>
 <li><p><code class="docutils literal notranslate"><span class="pre">docs/</span></code>: Sphinx documentation source (<code class="docutils literal notranslate"><span class="pre">docs/source/</span></code>) and HTML build output (<code class="docutils literal notranslate"><span class="pre">docs/_build/html/</span></code>).</p></li>
 <li><p><code class="docutils literal notranslate"><span class="pre">results/</span></code>: Simulation output files organized by model (<code class="docutils literal notranslate"><span class="pre">ising/</span></code>, <code class="docutils literal notranslate"><span class="pre">xy/</span></code>, <code class="docutils literal notranslate"><span class="pre">clock/</span></code>, <code class="docutils literal notranslate"><span class="pre">benchmarks/</span></code>).</p></li>
@@ -342,6 +352,17 @@ mypy<span class="w"> </span>--explicit-package-bases<span class="w"> </span>mode
 <li><p>Add a <code class="docutils literal notranslate"><span class="pre">_get_&lt;name&gt;</span></code> method to the Simulation class.</p></li>
 <li><p>Add a test case in <code class="docutils literal notranslate"><span class="pre">tests/test_physics_helpers.py</span></code> or a specialized test file.</p></li>
 <li><p>Verify the physical limits (e.g., ground state) in <code class="docutils literal notranslate"><span class="pre">tests/test_model_extremes.py</span></code>.</p></li>
+</ol>
+</section>
+<section id="task-add-a-new-analysis-script">
+<h3>Task: Add a New Analysis Script<a class="headerlink" href="#task-add-a-new-analysis-script" title="Link to this heading"></a></h3>
+<ol class="arabic simple">
+<li><p>Create the script in the appropriate subdirectory: <code class="docutils literal notranslate"><span class="pre">scripts/ising/</span></code>, <code class="docutils literal notranslate"><span class="pre">scripts/xy/</span></code>, <code class="docutils literal notranslate"><span class="pre">scripts/clock/</span></code>, or <code class="docutils literal notranslate"><span class="pre">scripts/benchmarks/</span></code>.</p></li>
+<li><p>Implement deterministic seeding and NPZ output following the patterns in <code class="docutils literal notranslate"><span class="pre">scripts/ising/measure_z.py</span></code> (where applicable).</p></li>
+<li><p>Add a <code class="docutils literal notranslate"><span class="pre">main()</span></code> entry point with validation and CLI argument parsing (if applicable).</p></li>
+<li><p>Register the script in <code class="docutils literal notranslate"><span class="pre">SCRIPTS.md</span></code> with a description, arguments, and usage example.</p></li>
+<li><p>Add integration tests to <code class="docutils literal notranslate"><span class="pre">tests/integration/test_script_infrastructure.py</span></code>: create a test class validating your script’s specific infrastructure (seed consistency, output schema, aggregation logic). Do not create a separate test file.</p></li>
+<li><p>Update relevant documentation (<code class="docutils literal notranslate"><span class="pre">PHYSICS.md</span></code>, <code class="docutils literal notranslate"><span class="pre">BIBLIOGRAPHY.md</span></code>) if the script studies new observables or physics.</p></li>
 </ol>
 </section>
 <section id="task-investigate-performance-regression">
