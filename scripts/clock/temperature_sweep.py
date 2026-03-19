@@ -6,6 +6,7 @@ from __future__ import annotations
 
 import argparse
 import logging
+from typing import NamedTuple
 
 import numpy as np
 
@@ -22,12 +23,19 @@ from utils.system_helpers import (
 
 
 def simulate_temperature(
-    params: tuple[float, int, int, float, int, int, int, float, int, bool],
+    params: SweepPoint,
 ) -> tuple[float, float, float, float, float]:
     """
     Worker function to simulate a single temperature point for the Clock model.
     """
-    T, L, Q, A, eq_steps, meas_steps, eq_probe_steps, eq_factor, eq_max_steps, discrete = params
+    T = params.temperature
+    L = params.size
+    Q = params.q
+    A = params.aniso
+    meas_steps = params.meas_steps
+    eq_probe_steps = params.eq_probe_steps
+    eq_max_steps = params.eq_max_steps
+    discrete = params.discrete
     sim_r: ClockSimulation | DiscreteClockSimulation
     sim_o: ClockSimulation | DiscreteClockSimulation
     if discrete:
@@ -53,6 +61,19 @@ def simulate_temperature(
         # Fully ordered windows can have zero variance; mark tau as undefined.
         tau = float('nan')
     return (*thermo, tau)
+
+
+class SweepPoint(NamedTuple):
+    """Typed worker payload for one temperature point in the sweep."""
+
+    temperature: float
+    size: int
+    q: int
+    aniso: float
+    meas_steps: int
+    eq_probe_steps: int
+    eq_max_steps: int
+    discrete: bool
 
 
 def main() -> None:
@@ -98,18 +119,16 @@ def main() -> None:
     variant = 'discrete' if discrete else f'continuous (A={A})'
     logger.info(f'Starting {Q}-state Clock temperature sweep (L={L}, {variant})...')
     # Bundle parameters for parallel sweep
-    sweep_params = [
-        (
-            T,
-            L,
-            Q,
-            A,
-            0,  # placeholder for removed eq_steps
-            args.meas_steps,
-            args.eq_probe_steps,
-            0.0, # placeholder for removed eq_factor
-            args.eq_max_steps,
-            discrete,
+    sweep_params: list[SweepPoint] = [
+        SweepPoint(
+            temperature=T,
+            size=L,
+            q=Q,
+            aniso=A,
+            meas_steps=args.meas_steps,
+            eq_probe_steps=args.eq_probe_steps,
+            eq_max_steps=args.eq_max_steps,
+            discrete=discrete,
         )
         for T in temperatures
     ]
