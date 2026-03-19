@@ -10,7 +10,7 @@ VibeSpin provides a suite of entry-point scripts for conducting physics experime
 - **`correlation_divergence.py`**: Extracts the critical exponent $\nu$ by fitting the correlation length divergence near $T_c$.
 - **`correlation_comparison.py`**: Compares the functional form of $G(r)$ in the ferromagnetic, critical, and paramagnetic phases.
 - **`wolff_efficiency.py`**: Compares the Metropolis checkerboard and Wolff cluster algorithms across the critical regime. Reports integrated autocorrelation time $\tau_{\mathrm{int}}$, independent samples per second (ISS), mean cluster size fraction $\langle C \rangle/N^2$, and susceptibility $\chi(T)$ for both algorithms. Saves results to `results/ising/wolff_efficiency.npz` for re-use by `notebooks/Wolff_Efficiency.ipynb` and a 4-panel summary figure to `results/ising/wolff_efficiency.png`.
-- **`measure_z.py`**: Specifically measures the dynamical critical exponent $z$ at the critical temperature $T_c$. Sweeps lattice sizes $L$ to extract the scaling law $\tau_{\mathrm{int}} \propto L^z$ for both Metropolis and Wolff algorithms. Saves data to `results/ising/dynamic_exponent_z.npz` for use in `notebooks/Dynamic_Critical_Exponents.ipynb`.
+- **`measure_z.py`**: Specifically measures the dynamical critical exponent $z$ at the critical temperature $T_c$. Sweeps lattice sizes $L$ to extract the scaling law $\tau_{\mathrm{int}} \propto L^z$ for both Metropolis and Wolff algorithms. Runs `--n-seeds` independent replicas per (algorithm, $L$) point and saves per-seed sample arrays alongside median and 16–84% percentile summaries to `results/ising/dynamic_exponent_z.npz` for use in `notebooks/Dynamic_Critical_Exponents.ipynb`.
 
 ## 2. XY Model (`scripts/xy/`)
 

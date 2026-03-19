@@ -31,7 +31,7 @@ TC_ISING: float = 2.0 / np.log(1.0 + np.sqrt(2.0))
 
 
 def _measure_tau_point(
-    params: tuple[str, int, int, int, int, int],
+    params: tuple[int, int, str, int, int, int, int, int],
 ) -> dict[str, Any]:
     """
     Worker: measure tau_int for a specific algorithm and lattice size at Tc.
@@ -39,16 +39,18 @@ def _measure_tau_point(
     Parameters
     ----------
     params : tuple
-        ``(update, L, eq_probe_steps, eq_max_steps, meas_steps, seed)`` — update
+        ``(size_idx, seed_idx, update, L, eq_probe_steps, eq_max_steps,
+        meas_steps, seed)`` — grid indices for result aggregation, update
         scheme, lattice size, chunk size for convergence, hard cap on
         equilibration, measurement steps, and RNG seed.
 
     Returns
     -------
     dict
-        Keys: ``update``, ``L``, ``tau_int``, ``wall_time``.
+        Keys: ``size_idx``, ``seed_idx``, ``update``, ``L``, ``tau_int``,
+        ``wall_time``.
     """
-    update, L, eq_probe_steps, eq_max_steps, meas_steps, seed = params
+    size_idx, seed_idx, update, L, eq_probe_steps, eq_max_steps, meas_steps, seed = params
     sim_r = IsingSimulation(size=L, temp=TC_ISING, update=update, init_state='random', seed=seed)
     sim_o = IsingSimulation(size=L, temp=TC_ISING, update=update, init_state='ordered', seed=seed)
 
@@ -66,6 +68,8 @@ def _measure_tau_point(
         tau_int = float('nan')
 
     return {
+        'size_idx': int(size_idx),
+        'seed_idx': int(seed_idx),
         'update': update,
         'L': float(L),
         'tau_int': float(tau_int),
@@ -101,6 +105,10 @@ def main() -> None:
         help='Measurement steps for Wolff (default: 100000)',
     )
     parser.add_argument(
+        '--n-seeds', type=int, default=10,
+        help='Independent seed replicas per (algorithm, L) point (default: 10)',
+    )
+    parser.add_argument(
         '--output-dir', type=str, default='results/ising',
         help='Output directory (default: results/ising)',
     )
@@ -111,47 +119,72 @@ def main() -> None:
     logger = setup_logging(level=log_level)
 
     sizes = sorted(args.sizes)
+    n_seeds = int(args.n_seeds)
     logger.info(
-        'Measuring dynamical exponent z at Tc=%.6f for L in %s.',
-        TC_ISING, sizes,
+        'Measuring dynamical exponent z at Tc=%.6f for L in %s, %d seed replicas.',
+        TC_ISING, sizes, n_seeds,
     )
 
-    sweep_params = []
-    # Metropolis points (use 'random' for physical dynamics)
-    for idx, L in enumerate(sizes):
-        sweep_params.append(
-            ('random', L, args.eq_probe_steps, args.eq_max_steps, args.meas_steps_metro, idx * 2000)
-        )
-
-    # Wolff points
-    for idx, L in enumerate(sizes):
-        seed = (idx + len(sizes)) * 2000
-        sweep_params.append(
-            ('wolff', L, args.eq_probe_steps, args.eq_max_steps, args.meas_steps_wolff, seed)
-        )
+    # Seeds are derived deterministically from (size_idx, seed_idx).
+    # Metropolis uses base = size_idx * 100_000 + seed_idx * 1_000.
+    # Wolff uses base + 50_000 to ensure non-overlapping sequences.
+    sweep_params: list[tuple[int, int, str, int, int, int, int, int]] = []
+    for size_idx, L in enumerate(sizes):
+        for seed_idx in range(n_seeds):
+            base = size_idx * 100_000 + seed_idx * 1_000
+            sweep_params.append((
+                size_idx, seed_idx, 'random', L,
+                args.eq_probe_steps, args.eq_max_steps, args.meas_steps_metro,
+                base,
+            ))
+            sweep_params.append((
+                size_idx, seed_idx, 'wolff', L,
+                args.eq_probe_steps, args.eq_max_steps, args.meas_steps_wolff,
+                base + 50_000,
+            ))
 
     raw: list[dict[str, Any]] = parallel_sweep(
         worker_func=_measure_tau_point, params=sweep_params,
     )
 
-    results_metro = [r for r in raw if r['update'] == 'random']
-    results_wolff = [r for r in raw if r['update'] == 'wolff']
+    n_sizes = len(sizes)
+    tau_metro_samples = np.full((n_sizes, n_seeds), np.nan)
+    tau_wolff_samples = np.full((n_sizes, n_seeds), np.nan)
 
-    L_metro = np.array([r['L'] for r in results_metro])
-    tau_metro = np.array([r['tau_int'] for r in results_metro])
+    for r in raw:
+        i = int(r['size_idx'])
+        s = int(r['seed_idx'])
+        if r['update'] == 'random':
+            tau_metro_samples[i, s] = float(r['tau_int'])
+        else:
+            tau_wolff_samples[i, s] = float(r['tau_int'])
 
-    L_wolff = np.array([r['L'] for r in results_wolff])
-    tau_wolff = np.array([r['tau_int'] for r in results_wolff])
+    def _summary(samples: np.ndarray) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
+        med = np.nanmedian(samples, axis=1)
+        p16 = np.nanpercentile(samples, 16, axis=1)
+        p84 = np.nanpercentile(samples, 84, axis=1)
+        return med, p16, p84
+
+    L_arr = np.asarray(sizes, dtype=float)
+    tau_metro, tau_metro_p16, tau_metro_p84 = _summary(tau_metro_samples)
+    tau_wolff, tau_wolff_p16, tau_wolff_p84 = _summary(tau_wolff_samples)
 
     os.makedirs(args.output_dir, exist_ok=True)
     npz_path = os.path.join(args.output_dir, 'dynamic_exponent_z.npz')
     np.savez(
         npz_path,
-        L_metro=L_metro,
+        L_metro=L_arr,
         tau_metro=tau_metro,
-        L_wolff=L_wolff,
+        tau_metro_p16=tau_metro_p16,
+        tau_metro_p84=tau_metro_p84,
+        tau_metro_samples=tau_metro_samples,
+        L_wolff=L_arr,
         tau_wolff=tau_wolff,
+        tau_wolff_p16=tau_wolff_p16,
+        tau_wolff_p84=tau_wolff_p84,
+        tau_wolff_samples=tau_wolff_samples,
         Tc=TC_ISING,
+        n_seeds=np.int64(n_seeds),
     )
     logger.info('Data saved to %s', npz_path)
 
