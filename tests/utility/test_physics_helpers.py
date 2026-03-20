@@ -15,15 +15,21 @@ from models.ising_model import IsingSimulation
 from models.xy_model import XYSimulation
 from utils.exceptions import ZeroVarianceAutocorrelationError
 from utils.physics_helpers import (
+    UNCERTAINTY_METHOD_BOOTSTRAP,
+    blocking_error,
     calculate_autocorr,
     calculate_entropy,
     calculate_thermodynamics,
     compute_kinetics_metrics,
+    estimate_effective_sample_size,
     estimate_relaxation_time_two_start,
     get_averaged_correlation,
     pair_correlation_x,
     power_fit,
     radial_average_sk,
+    summarize_derived_observable,
+    summarize_primary_observable,
+    summarize_replicate_samples,
 )
 
 
@@ -261,6 +267,91 @@ def test_autocorr_invalid_zero_variance():
     """Should raise the dedicated zero-variance analysis error for constant input."""
     with pytest.raises(ZeroVarianceAutocorrelationError, match='zero variance'):
         calculate_autocorr(time_series=np.ones(100))
+
+
+# ---- uncertainty helpers ----
+
+
+def test_estimate_effective_sample_size_ar1_smaller_than_n():
+    """Correlated AR(1) samples should have N_eff less than raw N."""
+    rng = np.random.default_rng(123)
+    rho = 0.8
+    n = 4000
+    x = np.empty(n)
+    x[0] = 0.0
+    noise = rng.standard_normal(n)
+    for i in range(1, n):
+        x[i] = rho * x[i - 1] + noise[i] * np.sqrt(1.0 - rho**2)
+
+    n_eff = estimate_effective_sample_size(time_series=x)
+    assert np.isfinite(n_eff)
+    assert 1.0 <= n_eff < float(n)
+
+
+def test_blocking_error_iid_agrees_with_naive():
+    """Blocking stderr should stay close to naive stderr for IID noise."""
+    rng = np.random.default_rng(12)
+    x = rng.standard_normal(8192)
+    block = blocking_error(time_series=x)
+    ratio = block['stderr'] / block['stderr_naive']
+    assert 0.7 <= ratio <= 1.5
+
+
+def test_summarize_primary_observable_zero_variance_policy():
+    """Constant series should return zero error and undefined tau diagnostics."""
+    x = np.ones(256)
+    summary = summarize_primary_observable(time_series=x)
+    assert summary['value'] == pytest.approx(1.0)
+    assert summary['err'] == pytest.approx(0.0)
+    assert np.isnan(summary['tau_int'])
+    assert np.isnan(summary['n_eff'])
+
+
+def test_summarize_derived_observable_chi_blocking():
+    """chi summary should produce finite value and non-negative uncertainty."""
+    rng = np.random.default_rng(21)
+    mags = rng.normal(loc=0.0, scale=0.3, size=4096)
+    summary = summarize_derived_observable(
+        magnetization_series=mags,
+        temperature=2.0,
+        L=16,
+        observable='chi',
+    )
+    assert summary['value'] >= 0.0
+    assert summary['err'] >= 0.0
+    assert summary['ci_high'] >= summary['ci_low']
+
+
+def test_summarize_derived_observable_cv_bootstrap():
+    """Cv bootstrap mode should provide finite interval and error."""
+    rng = np.random.default_rng(7)
+    engs = rng.normal(loc=-1.0, scale=0.2, size=4096)
+    summary = summarize_derived_observable(
+        energy_series=engs,
+        temperature=2.5,
+        L=12,
+        observable='cv',
+        method=UNCERTAINTY_METHOD_BOOTSTRAP,
+        bootstrap_resamples=200,
+    )
+    assert summary['value'] >= 0.0
+    assert summary['err'] >= 0.0
+    assert summary['ci_high'] >= summary['ci_low']
+
+
+def test_summarize_replicate_samples_2d_nan_safe():
+    """Replicate summary should be NaN-safe and keep output vectorized."""
+    samples = np.array(
+        [
+            [1.0, 1.2, np.nan, 0.8],
+            [2.0, np.nan, 2.2, 1.8],
+        ]
+    )
+    summary = summarize_replicate_samples(samples=samples)
+    assert isinstance(summary['value'], np.ndarray)
+    assert isinstance(summary['ci_low'], np.ndarray)
+    assert isinstance(summary['ci_high'], np.ndarray)
+    assert summary['samples'] == pytest.approx(4.0)
 
 
 # ---- get_averaged_correlation ----

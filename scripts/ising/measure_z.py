@@ -19,7 +19,12 @@ import numpy as np
 
 from models.ising_model import IsingSimulation
 from utils.exceptions import ZeroVarianceAutocorrelationError
-from utils.physics_helpers import calculate_autocorr
+from utils.physics_helpers import (
+    DEFAULT_CONFIDENCE_LEVEL,
+    UNCERTAINTY_METHOD_BLOCKING,
+    calculate_autocorr,
+    summarize_replicate_samples,
+)
 from utils.system_helpers import (
     convergence_equilibrate,
     parallel_sweep,
@@ -170,6 +175,9 @@ def main() -> None:
     tau_metro, tau_metro_p16, tau_metro_p84 = _summary(tau_metro_samples)
     tau_wolff, tau_wolff_p16, tau_wolff_p84 = _summary(tau_wolff_samples)
 
+    metro_summary = summarize_replicate_samples(samples=tau_metro_samples)
+    wolff_summary = summarize_replicate_samples(samples=tau_wolff_samples)
+
     os.makedirs(args.output_dir, exist_ok=True)
     npz_path = os.path.join(args.output_dir, 'dynamic_exponent_z.npz')
     np.savez(
@@ -186,6 +194,16 @@ def main() -> None:
         tau_wolff_samples=tau_wolff_samples,
         Tc=TC_ISING,
         n_seeds=np.int64(n_seeds),
+        tau_metro_value=metro_summary['value'],
+        tau_metro_err=metro_summary['err'],
+        tau_metro_ci_low=metro_summary['ci_low'],
+        tau_metro_ci_high=metro_summary['ci_high'],
+        tau_wolff_value=wolff_summary['value'],
+        tau_wolff_err=wolff_summary['err'],
+        tau_wolff_ci_low=wolff_summary['ci_low'],
+        tau_wolff_ci_high=wolff_summary['ci_high'],
+        uncertainty_method=UNCERTAINTY_METHOD_BLOCKING,
+        confidence_level=DEFAULT_CONFIDENCE_LEVEL,
     )
     logger.info('Data saved to %s', npz_path)
 

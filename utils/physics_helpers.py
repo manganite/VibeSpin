@@ -5,9 +5,87 @@ from __future__ import annotations
 
 import numpy as np
 from scipy.integrate import cumulative_trapezoid
+from scipy.stats import norm
 
 from models.simulation_base import MonteCarloSimulation
 from utils.exceptions import ZeroVarianceAutocorrelationError
+
+DEFAULT_CONFIDENCE_LEVEL = 0.68
+UNCERTAINTY_METHOD_BLOCKING = 'blocking'
+UNCERTAINTY_METHOD_BOOTSTRAP = 'bootstrap'
+
+UNCERTAINTY_FIELDS = (
+    'value',
+    'err',
+    'ci_low',
+    'ci_high',
+    'tau_int',
+    'n_eff',
+    'samples',
+)
+
+UNCERTAINTY_METADATA_FIELDS = (
+    'uncertainty_method',
+    'confidence_level',
+    'n_seeds',
+    'bootstrap_resamples',
+    'nan_or_undefined_count',
+)
+
+
+def _validate_confidence(*, confidence: float) -> None:
+    if not (0.0 < confidence < 1.0):
+        raise ValueError(f'confidence must satisfy 0 < confidence < 1, got {confidence}')
+
+
+def _as_1d_float_array(*, time_series: np.ndarray, name: str) -> np.ndarray:
+    arr = np.asarray(time_series, dtype=np.float64)
+    if arr.ndim != 1:
+        raise ValueError(f'{name} must be 1-D, got shape {arr.shape}')
+    if arr.size < 2:
+        raise ValueError(f'{name} must contain at least 2 elements, got {arr.size}')
+    return arr
+
+
+def _z_multiplier(*, confidence: float) -> float:
+    """Return Gaussian z-score for two-sided confidence interval."""
+    return float(norm.ppf(0.5 + 0.5 * confidence))
+
+
+def _blocking_block_sizes(*, n: int, min_block_size: int, max_block_size: int) -> list[int]:
+    """Generate increasing block sizes for blocking analysis."""
+    sizes: list[int] = []
+    block = max(2, min_block_size)
+    upper = min(max_block_size, n // 2)
+    while block <= upper:
+        n_blocks = n // block
+        if n_blocks >= 2:
+            sizes.append(block)
+        block *= 2
+    return sizes
+
+
+def _select_blocking_plateau(*, standard_errors: np.ndarray) -> int:
+    """Pick the first stable blocking plateau index."""
+    if standard_errors.size == 1:
+        return 0
+    rel_tol = 0.05
+    for idx in range(1, standard_errors.size):
+        prev = float(standard_errors[idx - 1])
+        cur = float(standard_errors[idx])
+        if prev == 0.0 and cur == 0.0:
+            return idx
+        denom = max(abs(prev), 1e-16)
+        if abs(cur - prev) / denom <= rel_tol:
+            return idx
+    return int(standard_errors.size - 1)
+
+
+def _safe_n_eff_from_tau(*, n_samples: int, tau_int: float) -> float:
+    """Convert integrated autocorrelation time to effective sample size."""
+    if not np.isfinite(tau_int) or tau_int <= 0.0:
+        return float('nan')
+    return float(min(n_samples, max(1.0, n_samples / (2.0 * tau_int))))
 
 
 def calculate_thermodynamics(
@@ -184,6 +262,282 @@ def calculate_autocorr(
 
     C_t: np.ndarray = C_t_full[:window_end + 1]
     return C_t, tau_int
+
+
+def estimate_effective_sample_size(
+    *,
+    time_series: np.ndarray,
+    tau_int: float | None = None,
+) -> float:
+    """Estimate effective sample size from integrated autocorrelation time."""
+    arr = _as_1d_float_array(time_series=time_series, name='time_series')
+    if tau_int is None:
+        _, tau_est = calculate_autocorr(time_series=arr)
+    else:
+        if tau_int <= 0.0:
+            raise ValueError(f'tau_int must be positive when provided, got {tau_int}')
+        tau_est = float(tau_int)
+    return _safe_n_eff_from_tau(n_samples=arr.size, tau_int=tau_est)
+
+
+def blocking_error(
+    *,
+    time_series: np.ndarray,
+    min_block_size: int = 2,
+    max_block_size: int | None = None,
+) -> dict[str, float]:
+    """Estimate standard error using standard blocking/binning analysis."""
+    arr = _as_1d_float_array(time_series=time_series, name='time_series')
+    if min_block_size < 2:
+        raise ValueError(f'min_block_size must be >= 2, got {min_block_size}')
+    if max_block_size is None:
+        max_block_size = arr.size // 2
+    if max_block_size < min_block_size:
+        raise ValueError(
+            f'max_block_size must be >= min_block_size, got {max_block_size} < {min_block_size}'
+        )
+
+    std = float(np.std(arr, ddof=1))
+    naive_stderr = std / np.sqrt(arr.size)
+    if std == 0.0:
+        return {
+            'stderr': 0.0,
+            'stderr_naive': 0.0,
+            'block_size': float(min_block_size),
+            'n_blocks': float(arr.size // min_block_size),
+            'tau_int_from_blocking': float('nan'),
+        }
+
+    block_sizes = _blocking_block_sizes(
+        n=arr.size,
+        min_block_size=min_block_size,
+        max_block_size=max_block_size,
+    )
+    if not block_sizes:
+        return {
+            'stderr': float(naive_stderr),
+            'stderr_naive': float(naive_stderr),
+            'block_size': 1.0,
+            'n_blocks': float(arr.size),
+            'tau_int_from_blocking': 0.5,
+        }
+
+    stderr_values: list[float] = []
+    n_blocks_values: list[float] = []
+    for block in block_sizes:
+        n_blocks = arr.size // block
+        trimmed = arr[:n_blocks * block]
+        block_means = trimmed.reshape(n_blocks, block).mean(axis=1)
+        stderr = float(np.std(block_means, ddof=1) / np.sqrt(n_blocks))
+        stderr_values.append(stderr)
+        n_blocks_values.append(float(n_blocks))
+
+    stderr_arr = np.asarray(stderr_values, dtype=np.float64)
+    selected_idx = _select_blocking_plateau(standard_errors=stderr_arr)
+    selected_stderr = float(stderr_arr[selected_idx])
+
+    tau_block = float('nan')
+    if naive_stderr > 0.0:
+        tau_block = 0.5 * (selected_stderr / naive_stderr) ** 2
+
+    return {
+        'stderr': selected_stderr,
+        'stderr_naive': float(naive_stderr),
+        'block_size': float(block_sizes[selected_idx]),
+        'n_blocks': float(n_blocks_values[selected_idx]),
+        'tau_int_from_blocking': tau_block,
+    }
+
+
+def summarize_primary_observable(
+    *,
+    time_series: np.ndarray,
+    confidence: float = DEFAULT_CONFIDENCE_LEVEL,
+) -> dict[str, float]:
+    """Summarize a primary observable with blocking-based uncertainty."""
+    _validate_confidence(confidence=confidence)
+    arr = _as_1d_float_array(time_series=time_series, name='time_series')
+
+    value = float(np.mean(arr))
+    block = blocking_error(time_series=arr)
+    err = float(block['stderr'])
+    z = _z_multiplier(confidence=confidence)
+
+    try:
+        _, tau_int = calculate_autocorr(time_series=arr)
+    except ZeroVarianceAutocorrelationError:
+        tau_int = float('nan')
+
+    n_eff = _safe_n_eff_from_tau(n_samples=arr.size, tau_int=tau_int)
+
+    return {
+        'value': value,
+        'err': err,
+        'ci_low': float(value - z * err),
+        'ci_high': float(value + z * err),
+        'tau_int': float(tau_int),
+        'n_eff': n_eff,
+        'samples': float(arr.size),
+    }
+
+
+def _derived_point_estimate(
+    *,
+    series: np.ndarray,
+    temperature: float,
+    L: int,
+    observable: str,
+) -> float:
+    """Compute derived thermodynamic point estimates from a time series."""
+    N = float(L * L)
+    variance = float(np.var(series))
+    if observable == 'chi':
+        return float(N * variance / temperature)
+    if observable == 'cv':
+        return float(N * variance / (temperature**2))
+    raise ValueError(f"observable must be one of 'chi' or 'cv', got {observable!r}")
+
+
+def summarize_derived_observable(
+    *,
+    magnetization_series: np.ndarray | None = None,
+    energy_series: np.ndarray | None = None,
+    temperature: float,
+    L: int,
+    observable: str,
+    method: str = UNCERTAINTY_METHOD_BLOCKING,
+    confidence: float = DEFAULT_CONFIDENCE_LEVEL,
+    bootstrap_resamples: int = 0,
+) -> dict[str, float]:
+    """Summarize derived observables (chi, Cv) with uncertainty estimates."""
+    _validate_confidence(confidence=confidence)
+    if temperature <= 0.0:
+        raise ValueError(f'temperature must be positive, got {temperature}')
+    if not isinstance(L, (int, np.integer)) or L < 1:
+        raise ValueError(f'L must be a positive integer, got {L!r}')
+    if method not in {UNCERTAINTY_METHOD_BLOCKING, UNCERTAINTY_METHOD_BOOTSTRAP}:
+        raise ValueError(f'unsupported method {method!r}')
+
+    if observable == 'chi':
+        if magnetization_series is None:
+            raise ValueError("magnetization_series is required for observable='chi'")
+        base = _as_1d_float_array(time_series=magnetization_series, name='magnetization_series')
+    elif observable == 'cv':
+        if energy_series is None:
+            raise ValueError("energy_series is required for observable='cv'")
+        base = _as_1d_float_array(time_series=energy_series, name='energy_series')
+    else:
+        raise ValueError(f"observable must be one of 'chi' or 'cv', got {observable!r}")
+
+    value = _derived_point_estimate(
+        series=base,
+        temperature=temperature,
+        L=L,
+        observable=observable,
+    )
+    if np.std(base, ddof=1) == 0.0:
+        return {
+            'value': value,
+            'err': 0.0,
+            'ci_low': value,
+            'ci_high': value,
+            'tau_int': float('nan'),
+            'n_eff': float('nan'),
+            'samples': float(base.size),
+        }
+
+    block = blocking_error(time_series=base)
+    block_size = int(block['block_size'])
+    n_blocks = base.size // block_size
+    trimmed = base[:n_blocks * block_size]
+    block_reshaped = trimmed.reshape(n_blocks, block_size)
+
+    per_block = np.array(
+        [
+            _derived_point_estimate(
+                series=block_reshaped[idx],
+                temperature=temperature,
+                L=L,
+                observable=observable,
+            )
+            for idx in range(n_blocks)
+        ],
+        dtype=np.float64,
+    )
+
+    if n_blocks < 2:
+        err = float('nan')
+        ci_low = float('nan')
+        ci_high = float('nan')
+    elif method == UNCERTAINTY_METHOD_BLOCKING:
+        err = float(np.std(per_block, ddof=1) / np.sqrt(n_blocks))
+        z = _z_multiplier(confidence=confidence)
+        ci_low = float(value - z * err)
+        ci_high = float(value + z * err)
+    else:
+        if bootstrap_resamples <= 0:
+            raise ValueError('bootstrap_resamples must be > 0 when method is bootstrap')
+        rng = np.random.default_rng(0)
+        boot = np.empty(bootstrap_resamples, dtype=np.float64)
+        for i in range(bootstrap_resamples):
+            sample = rng.choice(per_block, size=n_blocks, replace=True)
+            boot[i] = float(np.mean(sample))
+        alpha = 0.5 * (1.0 - confidence)
+        ci_low = float(np.quantile(boot, alpha))
+        ci_high = float(np.quantile(boot, 1.0 - alpha))
+        err = float(np.std(boot, ddof=1))
+
+    try:
+        _, tau_int = calculate_autocorr(time_series=base)
+    except ZeroVarianceAutocorrelationError:
+        tau_int = float('nan')
+
+    n_eff = _safe_n_eff_from_tau(n_samples=base.size, tau_int=tau_int)
+    return {
+        'value': value,
+        'err': err,
+        'ci_low': ci_low,
+        'ci_high': ci_high,
+        'tau_int': float(tau_int),
+        'n_eff': n_eff,
+        'samples': float(base.size),
+    }
+
+
+def summarize_replicate_samples(
+    *,
+    samples: np.ndarray,
+    confidence: float = DEFAULT_CONFIDENCE_LEVEL,
+) -> dict[str, np.ndarray | float]:
+    """Summarize replicate samples using NaN-safe median and percentile bands."""
+    _validate_confidence(confidence=confidence)
+    arr = np.asarray(samples, dtype=np.float64)
+    if arr.size == 0:
+        raise ValueError('samples must be non-empty')
+
+    alpha = 0.5 * (1.0 - confidence)
+    if arr.ndim == 1:
+        value = float(np.nanmedian(arr))
+        ci_low = float(np.nanquantile(arr, alpha))
+        ci_high = float(np.nanquantile(arr, 1.0 - alpha))
+        return {
+            'value': value,
+            'ci_low': ci_low,
+            'ci_high': ci_high,
+            'samples': float(arr.size),
+            'nan_or_undefined_count': float(np.isnan(arr).sum()),
+        }
+
+    value_arr = np.nanmedian(arr, axis=1)
+    ci_low_arr = np.nanquantile(arr, alpha, axis=1)
+    ci_high_arr = np.nanquantile(arr, 1.0 - alpha, axis=1)
+    return {
+        'value': value_arr,
+        'ci_low': ci_low_arr,
+        'ci_high': ci_high_arr,
+        'samples': float(arr.shape[1]),
+        'nan_or_undefined_count': float(np.isnan(arr).sum()),
+    }
 
 
 def get_averaged_correlation(

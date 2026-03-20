@@ -19,7 +19,7 @@ import os
 import sys
 import tempfile
 from pathlib import Path
-from typing import Any
+from typing import Any, cast
 
 import numpy as np
 
@@ -29,10 +29,19 @@ from scripts.ising.measure_z import (
 )
 
 try:
+    from scripts.clock.temperature_sweep import (
+        _build_uncertainty_bundle as build_clock_uncertainty_bundle,
+    )
     from scripts.clock.temperature_sweep import _SweepPoint as _ClockSweepPoint
     from scripts.clock.temperature_sweep import simulate_temperature as simulate_clock_temperature
+    from scripts.ising.temperature_sweep import (
+        _build_uncertainty_bundle as build_ising_uncertainty_bundle,
+    )
     from scripts.ising.temperature_sweep import _SweepPoint as _IsingSweepPoint
     from scripts.ising.temperature_sweep import simulate_temperature as simulate_ising_temperature
+    from scripts.xy.temperature_sweep import (
+        _build_uncertainty_bundle as build_xy_uncertainty_bundle,
+    )
     from scripts.xy.temperature_sweep import _SweepPoint as _XYSweepPoint
     from scripts.xy.temperature_sweep import simulate_temperature as simulate_xy_temperature
     HAS_TEMPERATURE_SWEEP = True
@@ -448,3 +457,219 @@ class TestTemperatureSweepWorkerPayloads:
         )
         result = simulate_clock_temperature(payload)
         self._assert_valid_thermo_result(result)
+
+
+class TestTemperatureSweepUncertaintySchema:
+    """Validate uncertainty schema helpers and output persistence."""
+
+    def test_build_uncertainty_bundle_shapes(self) -> None:
+        """Ising bundle helper should produce schema-consistent array shapes."""
+        if not HAS_TEMPERATURE_SWEEP:
+            import pytest
+            pytest.skip("Temperature sweep modules not available")
+
+        values = np.array([1.0, 2.0, 3.0], dtype=float)
+        tau = np.array([5.0, np.nan, 2.0], dtype=float)
+        bundle = build_ising_uncertainty_bundle(value=values, tau_int=tau, meas_steps=100)
+
+        value = cast(np.ndarray, bundle['value'])
+        err = cast(np.ndarray, bundle['err'])
+        ci_low = cast(np.ndarray, bundle['ci_low'])
+        ci_high = cast(np.ndarray, bundle['ci_high'])
+        tau_bundle = cast(np.ndarray, bundle['tau_int'])
+        n_eff = cast(np.ndarray, bundle['n_eff'])
+        samples = cast(np.ndarray, bundle['samples'])
+
+        assert value.shape == (3,)
+        assert err.shape == (3,)
+        assert ci_low.shape == (3,)
+        assert ci_high.shape == (3,)
+        assert tau_bundle.shape == (3,)
+        assert n_eff.shape == (3,)
+        assert samples.shape == (3, 1)
+
+    def test_ising_main_writes_uncertainty_npz(self, monkeypatch) -> None:
+        """Ising sweep main should persist additive uncertainty schema keys."""
+        if not HAS_TEMPERATURE_SWEEP:
+            import pytest
+            pytest.skip("Temperature sweep modules not available")
+
+        import scripts.ising.temperature_sweep as ising_module
+
+        def _fake_parallel_sweep(*, worker_func, params, num_processes=None):
+            n = len(list(params))
+            return [(1.0, -1.0, 0.5, 0.2, 3.0)] * n
+
+        monkeypatch.setattr(ising_module, 'parallel_sweep', _fake_parallel_sweep)
+        monkeypatch.setattr(ising_module, 'plot_temperature_sweep', lambda **kwargs: None)
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            monkeypatch.setattr(
+                sys,
+                'argv',
+                [
+                    'ising_temperature_sweep',
+                    '--size', '8',
+                    '--meas-steps', '20',
+                    '--t-points', '2',
+                    '--output-dir', tmpdir,
+                ],
+            )
+            ising_module.main()
+
+            data = np.load(Path(tmpdir) / 'temperature_sweep_data.npz')
+            required = {
+                'avg_m', 'avg_e', 'susc', 'spec_h', 'entropy', 'tau_int',
+                'avg_m_value', 'avg_m_err', 'avg_m_ci_low', 'avg_m_ci_high',
+                'avg_m_tau_int', 'avg_m_n_eff', 'avg_m_samples',
+                'avg_e_value', 'avg_e_err', 'avg_e_ci_low', 'avg_e_ci_high',
+                'susc_value', 'susc_err', 'susc_ci_low', 'susc_ci_high',
+                'spec_h_value', 'spec_h_err', 'spec_h_ci_low', 'spec_h_ci_high',
+                'uncertainty_method', 'confidence_level', 'n_seeds',
+                'bootstrap_resamples', 'nan_or_undefined_count',
+            }
+            assert required.issubset(set(data.files))
+
+
+class TestXYTemperatureSweepUncertaintySchema:
+    """Validate uncertainty schema helpers and output persistence for the XY sweep."""
+
+    def test_build_uncertainty_bundle_shapes(self) -> None:
+        """XY bundle helper should produce schema-consistent array shapes."""
+        if not HAS_TEMPERATURE_SWEEP:
+            import pytest
+            pytest.skip("Temperature sweep modules not available")
+
+        values = np.array([1.0, 2.0, 3.0], dtype=float)
+        tau = np.array([5.0, np.nan, 2.0], dtype=float)
+        bundle = build_xy_uncertainty_bundle(value=values, tau_int=tau, meas_steps=100)
+
+        value = cast(np.ndarray, bundle['value'])
+        err = cast(np.ndarray, bundle['err'])
+        ci_low = cast(np.ndarray, bundle['ci_low'])
+        ci_high = cast(np.ndarray, bundle['ci_high'])
+        tau_bundle = cast(np.ndarray, bundle['tau_int'])
+        n_eff = cast(np.ndarray, bundle['n_eff'])
+        samples = cast(np.ndarray, bundle['samples'])
+
+        assert value.shape == (3,)
+        assert err.shape == (3,)
+        assert ci_low.shape == (3,)
+        assert ci_high.shape == (3,)
+        assert tau_bundle.shape == (3,)
+        assert n_eff.shape == (3,)
+        assert samples.shape == (3, 1)
+
+    def test_xy_main_writes_uncertainty_npz(self, monkeypatch) -> None:
+        """XY sweep main should persist additive uncertainty schema keys."""
+        if not HAS_TEMPERATURE_SWEEP:
+            import pytest
+            pytest.skip("Temperature sweep modules not available")
+
+        import scripts.xy.temperature_sweep as xy_module
+
+        def _fake_parallel_sweep(*, worker_func, params, num_processes=None):
+            n = len(list(params))
+            return [(1.0, -1.0, 0.5, 0.2, 3.0)] * n
+
+        monkeypatch.setattr(xy_module, 'parallel_sweep', _fake_parallel_sweep)
+        monkeypatch.setattr(xy_module, 'plot_temperature_sweep', lambda **kwargs: None)
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            monkeypatch.setattr(
+                sys,
+                'argv',
+                [
+                    'xy_temperature_sweep',
+                    '--size', '8',
+                    '--meas-steps', '20',
+                    '--t-points', '2',
+                    '--output-dir', tmpdir,
+                ],
+            )
+            xy_module.main()
+
+            data = np.load(Path(tmpdir) / 'temperature_sweep_data.npz')
+            required = {
+                'avg_m', 'avg_e', 'susc', 'spec_h', 'entropy', 'tau_int',
+                'avg_m_value', 'avg_m_err', 'avg_m_ci_low', 'avg_m_ci_high',
+                'avg_m_tau_int', 'avg_m_n_eff', 'avg_m_samples',
+                'avg_e_value', 'avg_e_err', 'avg_e_ci_low', 'avg_e_ci_high',
+                'susc_value', 'susc_err', 'susc_ci_low', 'susc_ci_high',
+                'spec_h_value', 'spec_h_err', 'spec_h_ci_low', 'spec_h_ci_high',
+                'uncertainty_method', 'confidence_level', 'n_seeds',
+                'bootstrap_resamples', 'nan_or_undefined_count',
+            }
+            assert required.issubset(set(data.files))
+
+
+class TestClockTemperatureSweepUncertaintySchema:
+    """Validate uncertainty schema helpers and output persistence for the Clock sweep."""
+
+    def test_build_uncertainty_bundle_shapes(self) -> None:
+        """Clock bundle helper should produce schema-consistent array shapes."""
+        if not HAS_TEMPERATURE_SWEEP:
+            import pytest
+            pytest.skip("Temperature sweep modules not available")
+
+        values = np.array([1.0, 2.0, 3.0], dtype=float)
+        tau = np.array([5.0, np.nan, 2.0], dtype=float)
+        bundle = build_clock_uncertainty_bundle(value=values, tau_int=tau, meas_steps=100)
+
+        value = cast(np.ndarray, bundle['value'])
+        err = cast(np.ndarray, bundle['err'])
+        ci_low = cast(np.ndarray, bundle['ci_low'])
+        ci_high = cast(np.ndarray, bundle['ci_high'])
+        tau_bundle = cast(np.ndarray, bundle['tau_int'])
+        n_eff = cast(np.ndarray, bundle['n_eff'])
+        samples = cast(np.ndarray, bundle['samples'])
+
+        assert value.shape == (3,)
+        assert err.shape == (3,)
+        assert ci_low.shape == (3,)
+        assert ci_high.shape == (3,)
+        assert tau_bundle.shape == (3,)
+        assert n_eff.shape == (3,)
+        assert samples.shape == (3, 1)
+
+    def test_clock_main_writes_uncertainty_npz(self, monkeypatch) -> None:
+        """Clock sweep main should persist additive uncertainty schema keys."""
+        if not HAS_TEMPERATURE_SWEEP:
+            import pytest
+            pytest.skip("Temperature sweep modules not available")
+
+        import scripts.clock.temperature_sweep as clock_module
+
+        def _fake_parallel_sweep(*, worker_func, params, num_processes=None):
+            n = len(list(params))
+            return [(1.0, -1.0, 0.5, 0.2, 3.0)] * n
+
+        monkeypatch.setattr(clock_module, 'parallel_sweep', _fake_parallel_sweep)
+        monkeypatch.setattr(clock_module, 'plot_temperature_sweep', lambda **kwargs: None)
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            monkeypatch.setattr(
+                sys,
+                'argv',
+                [
+                    'clock_temperature_sweep',
+                    '--size', '8',
+                    '--meas-steps', '20',
+                    '--t-points', '2',
+                    '--output-dir', tmpdir,
+                ],
+            )
+            clock_module.main()
+
+            data = np.load(Path(tmpdir) / 'temperature_sweep_data.npz')
+            required = {
+                'avg_m', 'avg_e', 'susc', 'spec_h', 'entropy', 'tau_int',
+                'avg_m_value', 'avg_m_err', 'avg_m_ci_low', 'avg_m_ci_high',
+                'avg_m_tau_int', 'avg_m_n_eff', 'avg_m_samples',
+                'avg_e_value', 'avg_e_err', 'avg_e_ci_low', 'avg_e_ci_high',
+                'susc_value', 'susc_err', 'susc_ci_low', 'susc_ci_high',
+                'spec_h_value', 'spec_h_err', 'spec_h_ci_low', 'spec_h_ci_high',
+                'uncertainty_method', 'confidence_level', 'n_seeds',
+                'bootstrap_resamples', 'nan_or_undefined_count',
+            }
+            assert required.issubset(set(data.files))

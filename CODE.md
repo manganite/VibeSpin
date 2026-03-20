@@ -27,6 +27,37 @@ The VibeSpin verification suite is organized into five conceptual layers to ensu
 Development workflows are protected by multi-stage quality gates implemented via pre-commit and pre-push hooks. These hooks run the full suite of static analysis tools, including Ruff for linting and Mypy for type checking. Documentation consistency is also enforced at push time: the system validates markdown links, ensures that API documentation is synchronized with the source, and builds the Sphinx HTML output with all warnings treated as errors. This rigorous pipeline ensures that every contribution maintains the high engineering standards required for reproducible scientific computing.
 
 ## Bibliography
+## Uncertainty Data Contract and Pipeline
+
+Analysis scripts and notebooks in VibeSpin share a standardized uncertainty schema for all serialized observables. This contract is defined in `utils/physics_helpers.py` and enforced by the integration test layer; any script that writes an NPZ file should conform to it.
+
+### Schema Fields
+
+For each observable `<obs>` saved by a temperature-sweep script, the NPZ file contains the following keys. The suffix `<obs>` takes values such as `avg_m`, `avg_e`, `susc`, and `spec_h`.
+
+| Key | Shape | Meaning |
+|-----|-------|---------|
+| `<obs>_value` | `(T,)` | Point estimate (mean across seeds, or single-seed value) |
+| `<obs>_err` | `(T,)` | Autocorrelation-aware standard error; `NaN` for single-seed runs |
+| `<obs>_ci_low` | `(T,)` | Lower confidence-interval bound |
+| `<obs>_ci_high` | `(T,)` | Upper confidence-interval bound |
+| `<obs>_tau_int` | `(T,)` | Integrated autocorrelation time per temperature point |
+| `<obs>_n_eff` | `(T,)` | Effective sample size; `NaN` where `tau_int` is undefined |
+| `<obs>_samples` | `(T, S)` | Raw per-seed samples (S = 1 for single-seed runs) |
+
+Global metadata keys are written once per file: `uncertainty_method` (string, currently `'blocking'`), `confidence_level` (float, default `0.68`), `n_seeds` (int), `bootstrap_resamples` (int, 0 if unused), and `nan_or_undefined_count` (float, count of temperature points with undefined `tau_int`).
+
+Legacy keys (`avg_m`, `avg_e`, `susc`, `spec_h`, `entropy`, `tau_int`, `temperatures`) are preserved alongside the new keys for backward compatibility. Consumers should prefer the standardized keys where available.
+
+### Utility API
+
+The canonical implementation lives in `utils/physics_helpers.py`. The key public functions are as follows. `estimate_effective_sample_size` computes $N_\mathrm{eff} = N / (2\tau_{\mathrm{int}})$ from a time series, optionally accepting a pre-computed `tau_int` to avoid redundant autocorrelation calculation. `blocking_error` applies the plateau-selection blocking method and returns the plateau standard error alongside the estimated `tau_int` and `n_eff`. `summarize_primary_observable` wraps blocking into a single dict conforming to the schema fields above, handling the zero-variance edge case by storing `NaN` for the undefined fields. `summarize_derived_observable` extends this to nonlinear quadratic estimators like susceptibility and specific heat, supporting both the blocking propagation (default) and an optional block-bootstrap. `summarize_replicate_samples` aggregates a 2D `(T, S)` array of per-seed samples into a schema-consistent dict using the inter-seed distribution as the uncertainty source.
+
+### Design Rationale
+
+The schema is written additively: new standardized keys are always appended rather than replacing the legacy layout. This allows existing notebooks and downstream loaders to continue reading the pre-schema keys while new code targets the standardized ones. All constants (`DEFAULT_CONFIDENCE_LEVEL`, `UNCERTAINTY_METHOD_BLOCKING`, `UNCERTAINTY_METHOD_BOOTSTRAP`, `UNCERTAINTY_FIELDS`, `UNCERTAINTY_METADATA_FIELDS`) are defined at module level in `utils/physics_helpers.py` and imported by all scripts, ensuring a single authoritative source for the contract.
+
+## Bibliography
 
 The engineering and algorithmic choices in VibeSpin are grounded in standard practices for scientific computing and statistical physics. For a comprehensive list of all references used in the project, see [BIBLIOGRAPHY.md](./bibliography.md).
 

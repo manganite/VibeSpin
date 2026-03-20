@@ -6,6 +6,7 @@ from __future__ import annotations
 
 import argparse
 import logging
+from pathlib import Path
 from typing import NamedTuple
 
 import numpy as np
@@ -13,7 +14,14 @@ import numpy as np
 from models.ising_model import IsingSimulation
 from utils.cli_helpers import parse_args_compat
 from utils.exceptions import ZeroVarianceAutocorrelationError
-from utils.physics_helpers import calculate_autocorr, calculate_entropy, calculate_thermodynamics
+from utils.physics_helpers import (
+    DEFAULT_CONFIDENCE_LEVEL,
+    UNCERTAINTY_METHOD_BLOCKING,
+    calculate_autocorr,
+    calculate_entropy,
+    calculate_thermodynamics,
+    summarize_replicate_samples,
+)
 from utils.system_helpers import (
     convergence_equilibrate,
     parallel_sweep,
@@ -68,6 +76,30 @@ class _SweepPoint(NamedTuple):
     eq_max_steps: int
 
 
+def _build_uncertainty_bundle(
+    *,
+    value: np.ndarray,
+    tau_int: np.ndarray,
+    meas_steps: int,
+) -> dict[str, np.ndarray | float]:
+    """Build a standardized uncertainty bundle for single-seed temperature sweeps."""
+    summary = summarize_replicate_samples(samples=value[:, None])
+    n_eff = np.where(
+        np.isfinite(tau_int) & (tau_int > 0.0),
+        np.minimum(float(meas_steps), meas_steps / (2.0 * tau_int)),
+        np.nan,
+    )
+    return {
+        'value': np.asarray(summary['value'], dtype=np.float64),
+        'err': np.full_like(value, np.nan, dtype=np.float64),
+        'ci_low': np.asarray(summary['ci_low'], dtype=np.float64),
+        'ci_high': np.asarray(summary['ci_high'], dtype=np.float64),
+        'tau_int': tau_int.astype(np.float64),
+        'n_eff': n_eff.astype(np.float64),
+        'samples': value[:, None].astype(np.float64),
+    }
+
+
 def main() -> None:
     """
     Execute the temperature sweep and generate standardized 4-panel plots.
@@ -116,18 +148,92 @@ def main() -> None:
         worker_func=simulate_temperature, params=sweep_params
     )
     avg_m, avg_e, susc, spec_h, tau_int_vals = zip(*results, strict=True)
+    avg_m_arr = np.asarray(avg_m, dtype=np.float64)
+    avg_e_arr = np.asarray(avg_e, dtype=np.float64)
+    susc_arr = np.asarray(susc, dtype=np.float64)
+    spec_h_arr = np.asarray(spec_h, dtype=np.float64)
+    tau_int_arr = np.asarray(tau_int_vals, dtype=np.float64)
+
     entropy = calculate_entropy(
-        temperatures=temperatures, specific_heat=np.array(spec_h),
+        temperatures=temperatures,
+        specific_heat=spec_h_arr,
+    )
+
+    mag_bundle = _build_uncertainty_bundle(
+        value=avg_m_arr,
+        tau_int=tau_int_arr,
+        meas_steps=args.meas_steps,
+    )
+    eng_bundle = _build_uncertainty_bundle(
+        value=avg_e_arr,
+        tau_int=tau_int_arr,
+        meas_steps=args.meas_steps,
+    )
+    susc_bundle = _build_uncertainty_bundle(
+        value=susc_arr,
+        tau_int=tau_int_arr,
+        meas_steps=args.meas_steps,
+    )
+    cv_bundle = _build_uncertainty_bundle(
+        value=spec_h_arr,
+        tau_int=tau_int_arr,
+        meas_steps=args.meas_steps,
+    )
+
+    output_dir = Path(args.output_dir)
+    output_dir.mkdir(parents=True, exist_ok=True)
+    np.savez(
+        output_dir / 'temperature_sweep_data.npz',
+        temperatures=temperatures,
+        avg_m=avg_m_arr,
+        avg_e=avg_e_arr,
+        susc=susc_arr,
+        spec_h=spec_h_arr,
+        entropy=entropy,
+        tau_int=tau_int_arr,
+        avg_m_value=mag_bundle['value'],
+        avg_m_err=mag_bundle['err'],
+        avg_m_ci_low=mag_bundle['ci_low'],
+        avg_m_ci_high=mag_bundle['ci_high'],
+        avg_m_tau_int=mag_bundle['tau_int'],
+        avg_m_n_eff=mag_bundle['n_eff'],
+        avg_m_samples=mag_bundle['samples'],
+        avg_e_value=eng_bundle['value'],
+        avg_e_err=eng_bundle['err'],
+        avg_e_ci_low=eng_bundle['ci_low'],
+        avg_e_ci_high=eng_bundle['ci_high'],
+        avg_e_tau_int=eng_bundle['tau_int'],
+        avg_e_n_eff=eng_bundle['n_eff'],
+        avg_e_samples=eng_bundle['samples'],
+        susc_value=susc_bundle['value'],
+        susc_err=susc_bundle['err'],
+        susc_ci_low=susc_bundle['ci_low'],
+        susc_ci_high=susc_bundle['ci_high'],
+        susc_tau_int=susc_bundle['tau_int'],
+        susc_n_eff=susc_bundle['n_eff'],
+        susc_samples=susc_bundle['samples'],
+        spec_h_value=cv_bundle['value'],
+        spec_h_err=cv_bundle['err'],
+        spec_h_ci_low=cv_bundle['ci_low'],
+        spec_h_ci_high=cv_bundle['ci_high'],
+        spec_h_tau_int=cv_bundle['tau_int'],
+        spec_h_n_eff=cv_bundle['n_eff'],
+        spec_h_samples=cv_bundle['samples'],
+        uncertainty_method=UNCERTAINTY_METHOD_BLOCKING,
+        confidence_level=DEFAULT_CONFIDENCE_LEVEL,
+        n_seeds=1,
+        bootstrap_resamples=0,
+        nan_or_undefined_count=float(np.isnan(tau_int_arr).sum()),
     )
 
     plot_temperature_sweep(
         temperatures=temperatures,
-        avg_m=avg_m,
-        avg_e=avg_e,
-        susc=susc,
-        spec_h=spec_h,
+        avg_m=avg_m_arr.tolist(),
+        avg_e=avg_e_arr.tolist(),
+        susc=susc_arr.tolist(),
+        spec_h=spec_h_arr.tolist(),
         entropy=entropy,
-        tau_int=tau_int_vals,
+        tau_int=tau_int_arr,
         title=f'2D Ising Model: Temperature Sweep (L={L})',
         filename='temperature_sweep.png',
         directory=args.output_dir,
