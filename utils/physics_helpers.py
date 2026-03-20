@@ -194,6 +194,84 @@ def calculate_entropy(
     return entropy
 
 
+def summarize_entropy_observable(
+    *,
+    temperatures: np.ndarray,
+    specific_heat_samples: np.ndarray,
+    confidence: float = DEFAULT_CONFIDENCE_LEVEL,
+    s_ref: float = 0.0,
+) -> dict[str, np.ndarray]:
+    """Summarize entropy from replicate specific-heat curves.
+
+    Each replicate column is converted to an entropy curve via
+    :func:`calculate_entropy`, then aggregated at each temperature point.
+    For a single finite replicate, uncertainty is reported as NaN.
+    """
+    _validate_confidence(confidence=confidence)
+    temperatures_arr = np.asarray(temperatures, dtype=np.float64)
+    samples_arr = np.asarray(specific_heat_samples, dtype=np.float64)
+
+    if temperatures_arr.ndim != 1:
+        raise ValueError(f'temperatures must be 1-D, got shape {temperatures_arr.shape}')
+    if samples_arr.ndim != 2:
+        raise ValueError(
+            f'specific_heat_samples must be 2-D, got shape {samples_arr.shape}'
+        )
+    if samples_arr.shape[0] != temperatures_arr.size:
+        raise ValueError(
+            'specific_heat_samples first dimension must match temperatures size, '
+            f'got {samples_arr.shape[0]} and {temperatures_arr.size}'
+        )
+    if samples_arr.shape[1] < 1:
+        raise ValueError('specific_heat_samples must contain at least one replicate column')
+
+    n_t, n_rep = samples_arr.shape
+    entropy_samples = np.empty((n_t, n_rep), dtype=np.float64)
+    for j in range(n_rep):
+        entropy_samples[:, j] = calculate_entropy(
+            temperatures=temperatures_arr,
+            specific_heat=samples_arr[:, j],
+            s_ref=s_ref,
+        )
+
+    value = np.empty(n_t, dtype=np.float64)
+    err = np.empty(n_t, dtype=np.float64)
+    ci_low = np.empty(n_t, dtype=np.float64)
+    ci_high = np.empty(n_t, dtype=np.float64)
+    z = _z_multiplier(confidence=confidence)
+
+    for i in range(n_t):
+        row = entropy_samples[i]
+        finite = row[np.isfinite(row)]
+        if finite.size == 0:
+            value[i] = np.nan
+            err[i] = np.nan
+            ci_low[i] = np.nan
+            ci_high[i] = np.nan
+            continue
+
+        mean_i = float(np.mean(finite))
+        value[i] = mean_i
+        if finite.size == 1:
+            err[i] = np.nan
+            ci_low[i] = np.nan
+            ci_high[i] = np.nan
+            continue
+
+        stderr_i = float(np.std(finite, ddof=1) / np.sqrt(finite.size))
+        err[i] = stderr_i
+        ci_low[i] = float(mean_i - z * stderr_i)
+        ci_high[i] = float(mean_i + z * stderr_i)
+
+    return {
+        'value': value,
+        'err': err,
+        'ci_low': ci_low,
+        'ci_high': ci_high,
+        'samples': entropy_samples,
+    }
+
+
 def calculate_autocorr(
     *,
     time_series: np.ndarray,

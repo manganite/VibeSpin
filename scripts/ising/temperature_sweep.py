@@ -16,8 +16,8 @@ from utils.cli_helpers import parse_args_compat
 from utils.physics_helpers import (
     DEFAULT_CONFIDENCE_LEVEL,
     UNCERTAINTY_METHOD_BLOCKING,
-    calculate_entropy,
     summarize_derived_observable,
+    summarize_entropy_observable,
     summarize_primary_observable,
     summarize_seed_ensemble,
 )
@@ -174,6 +174,9 @@ def _build_uncertainty_bundle(
     ci_low = np.empty(t_points, dtype=np.float64)
     ci_high = np.empty(t_points, dtype=np.float64)
     tau_int = np.empty(t_points, dtype=np.float64)
+    tau_int_err = np.empty(t_points, dtype=np.float64)
+    tau_int_ci_low = np.empty(t_points, dtype=np.float64)
+    tau_int_ci_high = np.empty(t_points, dtype=np.float64)
     n_eff = np.empty(t_points, dtype=np.float64)
 
     for i in range(t_points):
@@ -186,7 +189,22 @@ def _build_uncertainty_bundle(
         err[i] = float(agg['err'])
         ci_low[i] = float(agg['ci_low'])
         ci_high[i] = float(agg['ci_high'])
-        tau_int[i] = float(np.nanmedian(tau_by_seed[i]))
+        tau_row = np.asarray(tau_by_seed[i], dtype=np.float64)
+        tau_agg = summarize_seed_ensemble(
+            values=tau_row,
+            within_seed_errors=np.full_like(tau_row, np.nan),
+            confidence=DEFAULT_CONFIDENCE_LEVEL,
+        )
+        tau_int[i] = float(tau_agg['value'])
+        tau_finite_count = int(np.isfinite(tau_row).sum())
+        if tau_finite_count <= 1:
+            tau_int_err[i] = np.nan
+            tau_int_ci_low[i] = np.nan
+            tau_int_ci_high[i] = np.nan
+        else:
+            tau_int_err[i] = float(tau_agg['err'])
+            tau_int_ci_low[i] = float(tau_agg['ci_low'])
+            tau_int_ci_high[i] = float(tau_agg['ci_high'])
         n_eff[i] = float(np.nansum(n_eff_by_seed[i]))
 
     return {
@@ -195,6 +213,9 @@ def _build_uncertainty_bundle(
         'ci_low': ci_low,
         'ci_high': ci_high,
         'tau_int': tau_int,
+        'tau_int_err': tau_int_err,
+        'tau_int_ci_low': tau_int_ci_low,
+        'tau_int_ci_high': tau_int_ci_high,
         'n_eff': n_eff,
         'samples': values_by_seed.astype(np.float64),
     }
@@ -326,8 +347,15 @@ def main() -> None:
     susc_arr = np.asarray(susc_bundle['value'], dtype=np.float64)
     spec_h_arr = np.asarray(cv_bundle['value'], dtype=np.float64)
     tau_int_arr = np.asarray(mag_bundle['tau_int'], dtype=np.float64)
+    tau_int_ci_low_arr = np.asarray(mag_bundle['tau_int_ci_low'], dtype=np.float64)
+    tau_int_ci_high_arr = np.asarray(mag_bundle['tau_int_ci_high'], dtype=np.float64)
 
-    entropy = calculate_entropy(temperatures=temperatures, specific_heat=spec_h_arr)
+    entropy_bundle = summarize_entropy_observable(
+        temperatures=temperatures,
+        specific_heat_samples=np.asarray(cv_bundle['samples'], dtype=np.float64),
+        confidence=DEFAULT_CONFIDENCE_LEVEL,
+    )
+    entropy = np.asarray(entropy_bundle['value'], dtype=np.float64)
 
     output_dir = Path(args.output_dir)
     output_dir.mkdir(parents=True, exist_ok=True)
@@ -340,6 +368,9 @@ def main() -> None:
         spec_h=spec_h_arr,
         entropy=entropy,
         tau_int=tau_int_arr,
+        tau_int_err=np.asarray(mag_bundle['tau_int_err'], dtype=np.float64),
+        tau_int_ci_low=tau_int_ci_low_arr,
+        tau_int_ci_high=tau_int_ci_high_arr,
         avg_m_value=mag_bundle['value'],
         avg_m_err=mag_bundle['err'],
         avg_m_ci_low=mag_bundle['ci_low'],
@@ -368,6 +399,11 @@ def main() -> None:
         spec_h_tau_int=cv_bundle['tau_int'],
         spec_h_n_eff=cv_bundle['n_eff'],
         spec_h_samples=cv_bundle['samples'],
+        entropy_value=entropy_bundle['value'],
+        entropy_err=entropy_bundle['err'],
+        entropy_ci_low=entropy_bundle['ci_low'],
+        entropy_ci_high=entropy_bundle['ci_high'],
+        entropy_samples=entropy_bundle['samples'],
         uncertainty_method=UNCERTAINTY_METHOD_BLOCKING,
         confidence_level=DEFAULT_CONFIDENCE_LEVEL,
         n_seeds=n_seeds,
@@ -386,7 +422,10 @@ def main() -> None:
         susc_err=np.asarray(susc_bundle['err'], dtype=np.float64),
         spec_h_err=np.asarray(cv_bundle['err'], dtype=np.float64),
         entropy=entropy,
+        entropy_err=np.asarray(entropy_bundle['err'], dtype=np.float64),
         tau_int=tau_int_arr,
+        tau_int_ci_low=tau_int_ci_low_arr,
+        tau_int_ci_high=tau_int_ci_high_arr,
         title=f'2D Ising Model: Temperature Sweep (L={L})',
         filename='temperature_sweep.png',
         directory=args.output_dir,

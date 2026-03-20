@@ -28,6 +28,7 @@ from utils.physics_helpers import (
     power_fit,
     radial_average_sk,
     summarize_derived_observable,
+    summarize_entropy_observable,
     summarize_primary_observable,
     summarize_replicate_samples,
     summarize_seed_ensemble,
@@ -207,6 +208,41 @@ def test_entropy_invalid_shape_mismatch():
             temperatures=np.array([1.0, 2.0, 3.0]),
             specific_heat=np.array([1.0, 2.0]),
         )
+
+
+def test_summarize_entropy_observable_multi_replicate_finite_error():
+    """Entropy summary should provide finite uncertainty with >=2 replicates."""
+    temperatures = np.linspace(1.0, 3.0, 5)
+    cv_samples = np.array(
+        [
+            [1.0, 1.2, 0.9],
+            [1.1, 1.3, 1.0],
+            [1.2, 1.4, 1.1],
+            [1.3, 1.5, 1.2],
+            [1.4, 1.6, 1.3],
+        ],
+        dtype=float,
+    )
+    summary = summarize_entropy_observable(
+        temperatures=temperatures,
+        specific_heat_samples=cv_samples,
+    )
+    assert np.asarray(summary['value']).shape == (5,)
+    assert np.asarray(summary['err']).shape == (5,)
+    assert np.all(np.isfinite(np.asarray(summary['err'])))
+
+
+def test_summarize_entropy_observable_single_replicate_has_nan_error():
+    """Single-replicate entropy summary should keep uncertainty undefined."""
+    temperatures = np.linspace(1.0, 2.0, 4)
+    cv_samples = np.array([[1.0], [1.1], [1.2], [1.3]], dtype=float)
+    summary = summarize_entropy_observable(
+        temperatures=temperatures,
+        specific_heat_samples=cv_samples,
+    )
+    assert np.all(np.isnan(np.asarray(summary['err'])))
+    assert np.all(np.isnan(np.asarray(summary['ci_low'])))
+    assert np.all(np.isnan(np.asarray(summary['ci_high'])))
 
 
 # ---- calculate_autocorr ----

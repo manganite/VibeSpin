@@ -279,7 +279,10 @@ def plot_temperature_sweep(
     susc_err: np.ndarray | Sequence[float] | None = None,
     spec_h_err: np.ndarray | Sequence[float] | None = None,
     entropy: np.ndarray | Sequence[float] | None = None,
+    entropy_err: np.ndarray | Sequence[float] | None = None,
     tau_int: np.ndarray | Sequence[float] | None = None,
+    tau_int_ci_low: np.ndarray | Sequence[float] | None = None,
+    tau_int_ci_high: np.ndarray | Sequence[float] | None = None,
 ) -> None:
     """
     Generate and save a standardized temperature sweep plot.
@@ -300,8 +303,11 @@ def plot_temperature_sweep(
         filename: Output filename passed to :func:`save_plot` (e.g. 'temperature_sweep.png').
         directory: Output directory passed to :func:`save_plot` (e.g. 'results/ising').
         entropy: Optional entropy per temperature point.
+        entropy_err: Optional symmetric uncertainty for entropy.
         tau_int: Optional integrated autocorrelation time per temperature point.
             Reveals critical slowing down as a peak near T_c.
+        tau_int_ci_low: Optional lower confidence band for tau_int.
+        tau_int_ci_high: Optional upper confidence band for tau_int.
     """
     use_extra = entropy is not None or tau_int is not None
     if use_extra:
@@ -373,7 +379,18 @@ def plot_temperature_sweep(
 
     if use_extra:
         if entropy is not None:
-            ax5.plot(temperatures, entropy, 'o-', color='purple', markersize=4)
+            if entropy_err is None:
+                ax5.plot(temperatures, entropy, 'o-', color='purple', markersize=4)
+            else:
+                ax5.errorbar(
+                    temperatures,
+                    entropy,
+                    yerr=entropy_err,
+                    fmt='o-',
+                    color='purple',
+                    markersize=4,
+                    capsize=2,
+                )
             ax5.set_ylabel(r'Entropy $S\,/\,k_B$')
             ax5.set_title('Entropy')
             ax5.grid(True)
@@ -382,6 +399,17 @@ def plot_temperature_sweep(
 
         if tau_int is not None:
             ax6.plot(temperatures, tau_int, 'o-', color='saddlebrown', markersize=4)
+            if tau_int_ci_low is not None and tau_int_ci_high is not None:
+                tau_lo = np.asarray(tau_int_ci_low, dtype=np.float64)
+                tau_hi = np.asarray(tau_int_ci_high, dtype=np.float64)
+                ax6.fill_between(
+                    temperatures,
+                    tau_lo,
+                    tau_hi,
+                    color='saddlebrown',
+                    alpha=0.2,
+                    linewidth=0.0,
+                )
             ax6.set_ylabel(r'Integrated Autocorr. Time $\tau_\mathrm{int}$')
             ax6.set_title('Critical Slowing Down')
             ax6.grid(True)

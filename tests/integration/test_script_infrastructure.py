@@ -527,6 +527,9 @@ class TestTemperatureSweepUncertaintySchema:
         ci_low = cast(np.ndarray, bundle['ci_low'])
         ci_high = cast(np.ndarray, bundle['ci_high'])
         tau_bundle = cast(np.ndarray, bundle['tau_int'])
+        tau_bundle_err = cast(np.ndarray, bundle['tau_int_err'])
+        tau_bundle_ci_low = cast(np.ndarray, bundle['tau_int_ci_low'])
+        tau_bundle_ci_high = cast(np.ndarray, bundle['tau_int_ci_high'])
         n_eff = cast(np.ndarray, bundle['n_eff'])
         samples = cast(np.ndarray, bundle['samples'])
 
@@ -535,6 +538,9 @@ class TestTemperatureSweepUncertaintySchema:
         assert ci_low.shape == (3,)
         assert ci_high.shape == (3,)
         assert tau_bundle.shape == (3,)
+        assert tau_bundle_err.shape == (3,)
+        assert tau_bundle_ci_low.shape == (3,)
+        assert tau_bundle_ci_high.shape == (3,)
         assert n_eff.shape == (3,)
         assert samples.shape == (3, 2)
 
@@ -592,11 +598,14 @@ class TestTemperatureSweepUncertaintySchema:
             data = np.load(Path(tmpdir) / 'temperature_sweep_data.npz')
             required = {
                 'avg_m', 'avg_e', 'susc', 'spec_h', 'entropy', 'tau_int',
+                'tau_int_err', 'tau_int_ci_low', 'tau_int_ci_high',
                 'avg_m_value', 'avg_m_err', 'avg_m_ci_low', 'avg_m_ci_high',
                 'avg_m_tau_int', 'avg_m_n_eff', 'avg_m_samples',
                 'avg_e_value', 'avg_e_err', 'avg_e_ci_low', 'avg_e_ci_high',
                 'susc_value', 'susc_err', 'susc_ci_low', 'susc_ci_high',
                 'spec_h_value', 'spec_h_err', 'spec_h_ci_low', 'spec_h_ci_high',
+                'entropy_value', 'entropy_err', 'entropy_ci_low', 'entropy_ci_high',
+                'entropy_samples',
                 'uncertainty_method', 'confidence_level', 'n_seeds',
                 'bootstrap_resamples', 'nan_or_undefined_count',
             }
@@ -628,6 +637,9 @@ class TestXYTemperatureSweepUncertaintySchema:
         ci_low = cast(np.ndarray, bundle['ci_low'])
         ci_high = cast(np.ndarray, bundle['ci_high'])
         tau_bundle = cast(np.ndarray, bundle['tau_int'])
+        tau_bundle_err = cast(np.ndarray, bundle['tau_int_err'])
+        tau_bundle_ci_low = cast(np.ndarray, bundle['tau_int_ci_low'])
+        tau_bundle_ci_high = cast(np.ndarray, bundle['tau_int_ci_high'])
         n_eff = cast(np.ndarray, bundle['n_eff'])
         samples = cast(np.ndarray, bundle['samples'])
 
@@ -636,6 +648,9 @@ class TestXYTemperatureSweepUncertaintySchema:
         assert ci_low.shape == (3,)
         assert ci_high.shape == (3,)
         assert tau_bundle.shape == (3,)
+        assert tau_bundle_err.shape == (3,)
+        assert tau_bundle_ci_low.shape == (3,)
+        assert tau_bundle_ci_high.shape == (3,)
         assert n_eff.shape == (3,)
         assert samples.shape == (3, 2)
 
@@ -693,11 +708,14 @@ class TestXYTemperatureSweepUncertaintySchema:
             data = np.load(Path(tmpdir) / 'temperature_sweep_data.npz')
             required = {
                 'avg_m', 'avg_e', 'susc', 'spec_h', 'entropy', 'tau_int',
+                'tau_int_err', 'tau_int_ci_low', 'tau_int_ci_high',
                 'avg_m_value', 'avg_m_err', 'avg_m_ci_low', 'avg_m_ci_high',
                 'avg_m_tau_int', 'avg_m_n_eff', 'avg_m_samples',
                 'avg_e_value', 'avg_e_err', 'avg_e_ci_low', 'avg_e_ci_high',
                 'susc_value', 'susc_err', 'susc_ci_low', 'susc_ci_high',
                 'spec_h_value', 'spec_h_err', 'spec_h_ci_low', 'spec_h_ci_high',
+                'entropy_value', 'entropy_err', 'entropy_ci_low', 'entropy_ci_high',
+                'entropy_samples',
                 'uncertainty_method', 'confidence_level', 'n_seeds',
                 'bootstrap_resamples', 'nan_or_undefined_count',
             }
@@ -729,6 +747,9 @@ class TestClockTemperatureSweepUncertaintySchema:
         ci_low = cast(np.ndarray, bundle['ci_low'])
         ci_high = cast(np.ndarray, bundle['ci_high'])
         tau_bundle = cast(np.ndarray, bundle['tau_int'])
+        tau_bundle_err = cast(np.ndarray, bundle['tau_int_err'])
+        tau_bundle_ci_low = cast(np.ndarray, bundle['tau_int_ci_low'])
+        tau_bundle_ci_high = cast(np.ndarray, bundle['tau_int_ci_high'])
         n_eff = cast(np.ndarray, bundle['n_eff'])
         samples = cast(np.ndarray, bundle['samples'])
 
@@ -737,6 +758,9 @@ class TestClockTemperatureSweepUncertaintySchema:
         assert ci_low.shape == (3,)
         assert ci_high.shape == (3,)
         assert tau_bundle.shape == (3,)
+        assert tau_bundle_err.shape == (3,)
+        assert tau_bundle_ci_low.shape == (3,)
+        assert tau_bundle_ci_high.shape == (3,)
         assert n_eff.shape == (3,)
         assert samples.shape == (3, 2)
 
@@ -794,11 +818,14 @@ class TestClockTemperatureSweepUncertaintySchema:
             data = np.load(Path(tmpdir) / 'temperature_sweep_data.npz')
             required = {
                 'avg_m', 'avg_e', 'susc', 'spec_h', 'entropy', 'tau_int',
+                'tau_int_err', 'tau_int_ci_low', 'tau_int_ci_high',
                 'avg_m_value', 'avg_m_err', 'avg_m_ci_low', 'avg_m_ci_high',
                 'avg_m_tau_int', 'avg_m_n_eff', 'avg_m_samples',
                 'avg_e_value', 'avg_e_err', 'avg_e_ci_low', 'avg_e_ci_high',
                 'susc_value', 'susc_err', 'susc_ci_low', 'susc_ci_high',
                 'spec_h_value', 'spec_h_err', 'spec_h_ci_low', 'spec_h_ci_high',
+                'entropy_value', 'entropy_err', 'entropy_ci_low', 'entropy_ci_high',
+                'entropy_samples',
                 'uncertainty_method', 'confidence_level', 'n_seeds',
                 'bootstrap_resamples', 'nan_or_undefined_count',
             }
