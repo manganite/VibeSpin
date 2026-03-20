@@ -33,6 +33,7 @@ from utils.system_helpers import (
 _WORKER_CONFIDENCE_LEVEL = DEFAULT_CONFIDENCE_LEVEL
 _WORKER_DERIVED_METHOD = UNCERTAINTY_METHOD_BLOCKING
 _WORKER_DERIVED_BOOTSTRAP_RESAMPLES = 0
+_TC_ISING_THEORY = 2.26918531421
 
 
 def simulate_temperature(
@@ -332,6 +333,13 @@ def main() -> None:
         default=1.0,
         help='Relative width threshold to flag unstable tau intervals',
     )
+    parser.add_argument(
+        '--transition-preset',
+        type=str,
+        default='auto',
+        choices=['auto', 'none', 'theory'],
+        help='Transition overlay preset for plotting',
+    )
     parser.add_argument('--output-dir', type=str, default='results/ising', help='Output directory')
     parser.add_argument('--log-file', type=str, default=None, help='Optional log file path')
     parser.add_argument('--verbose', action='store_true', help='Enable verbose logging')
@@ -604,12 +612,19 @@ def main() -> None:
     t_chi_peak = _peak_temperature(susc_arr)
     t_cv_peak = _peak_temperature(spec_h_arr)
     t_tau_peak = _peak_temperature(tau_int_arr)
-    transition_markers = {
+    peak_transition_markers = {
         r'$T_{\chi}$': t_chi_peak,
         r'$T_{C_v}$': t_cv_peak,
     }
     if np.isfinite(t_tau_peak):
-        transition_markers[r'$T_{\tau}$'] = t_tau_peak
+        peak_transition_markers[r'$T_{\tau}$'] = t_tau_peak
+
+    if args.transition_preset == 'none':
+        transition_markers: dict[str, float] = {}
+    elif args.transition_preset == 'theory':
+        transition_markers = {r'$T_c$': _TC_ISING_THEORY}
+    else:
+        transition_markers = peak_transition_markers
 
     finite_markers = np.asarray(list(transition_markers.values()), dtype=np.float64)
     finite_markers = finite_markers[np.isfinite(finite_markers)]
@@ -645,6 +660,7 @@ def main() -> None:
         quality_summary=quality_summary,
         transition_temperatures=transition_markers,
         transition_window=transition_window,
+        entropy_reference=None,
         min_visible_rel_error=0.01,
         mark_invalid_uncertainty=True,
         title=f'2D Ising Model: Temperature Sweep (L={L})',

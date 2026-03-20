@@ -292,6 +292,7 @@ def plot_temperature_sweep(
     quality_summary: Mapping[str, int | float] | None = None,
     transition_temperatures: dict[str, float] | None = None,
     transition_window: tuple[float, float] | None = None,
+    entropy_reference: tuple[str, float] | None = None,
     annotate_peaks: bool = True,
     min_visible_rel_error: float = 0.01,
     mark_invalid_uncertainty: bool = True,
@@ -338,6 +339,8 @@ def plot_temperature_sweep(
             to temperatures rendered as vertical dashed guide lines.
         transition_window: Optional (low, high) temperature window highlighted
             with a light background band.
+        entropy_reference: Optional ``(label, value)`` rendered as a horizontal
+            reference on the entropy diagnostics panel.
         annotate_peaks: If True, annotate peak temperatures for susceptibility,
             specific heat, and tau_int when present.
         min_visible_rel_error: Minimum relative error bar size used for visibility
@@ -686,6 +689,32 @@ def plot_temperature_sweep(
         ax5.set_title('Entropy')
         ax5.grid(True)
         ax5.set_xlabel('Temperature (T)')
+        if entropy_reference is not None:
+            ref_label, ref_value = entropy_reference
+            if np.isfinite(ref_value):
+                ax5.axhline(
+                    float(ref_value),
+                    linestyle='--',
+                    linewidth=1.0,
+                    color='dimgray',
+                    alpha=0.8,
+                )
+                ax5.text(
+                    0.99,
+                    float(ref_value),
+                    ref_label,
+                    transform=ax5.get_yaxis_transform(),
+                    ha='right',
+                    va='bottom',
+                    fontsize=7,
+                    color='dimgray',
+                    bbox={
+                        'boxstyle': 'round,pad=0.15',
+                        'facecolor': 'white',
+                        'alpha': 0.65,
+                        'edgecolor': 'none',
+                    },
+                )
     else:
         ax5.set_visible(False)
 

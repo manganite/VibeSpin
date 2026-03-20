@@ -604,6 +604,33 @@ def test_plot_temperature_sweep_with_metadata_and_quality_summary(temp_dir):
     plt.close('all')
 
 
+def test_plot_temperature_sweep_with_entropy_reference(temp_dir):
+    """Entropy reference lines should render in diagnostics entropy panel."""
+    temps = np.array([1.0, 1.5, 2.0, 2.5])
+    data = np.array([0.2, 0.4, 0.8, 0.5])
+    entropy = np.array([0.1, 0.2, 0.35, 0.45])
+    with patch('utils.system_helpers.save_plot') as mock_save:
+        plot_temperature_sweep(
+            temperatures=temps,
+            avg_m=data,
+            avg_e=data,
+            susc=data,
+            spec_h=data,
+            entropy=entropy,
+            entropy_reference=(r'$S_{\\mathrm{ref}}=\\ln q$', float(np.log(6.0))),
+            title='Entropy reference',
+            filename='entropy_reference.png',
+            directory=temp_dir,
+        )
+        assert mock_save.call_count == 2
+        mock_save.assert_any_call(filename='entropy_reference.png', directory=temp_dir)
+        mock_save.assert_any_call(
+            filename='entropy_reference_diagnostics.png',
+            directory=temp_dir,
+        )
+    plt.close('all')
+
+
 def test_plot_ordering_kinetics_without_third_metric(temp_dir):
     """Second panel should be disabled cleanly when no third metric is provided."""
     t = np.array([1, 10])
