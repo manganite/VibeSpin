@@ -605,6 +605,34 @@ def main() -> None:
         nan_or_undefined_count=float(np.isnan(tau_int_arr).sum()),
     )
 
+    def _peak_temperature(values: np.ndarray) -> float:
+        valid = np.isfinite(temperatures) & np.isfinite(values)
+        if not np.any(valid):
+            return float('nan')
+        vals = values[valid]
+        temps = temperatures[valid]
+        return float(temps[int(np.argmax(vals))])
+
+    t_chi_peak = _peak_temperature(susc_arr)
+    t_cv_peak = _peak_temperature(spec_h_arr)
+    t_tau_peak = _peak_temperature(tau_int_arr)
+    transition_markers = {
+        r'$T_{\chi}$': t_chi_peak,
+        r'$T_{C_v}$': t_cv_peak,
+    }
+    if np.isfinite(t_tau_peak):
+        transition_markers[r'$T_{\tau}$'] = t_tau_peak
+
+    finite_markers = np.asarray(list(transition_markers.values()), dtype=np.float64)
+    finite_markers = finite_markers[np.isfinite(finite_markers)]
+    transition_window: tuple[float, float] | None = None
+    if finite_markers.size > 0:
+        diffs = np.diff(np.asarray(temperatures, dtype=np.float64))
+        pad = float(np.median(diffs)) if diffs.size > 0 else 0.1
+        lo = float(np.min(finite_markers) - pad)
+        hi = float(np.max(finite_markers) + pad)
+        transition_window = (lo, hi)
+
     plot_temperature_sweep(
         temperatures=temperatures,
         avg_m=avg_m_arr.tolist(),
@@ -624,6 +652,8 @@ def main() -> None:
         tau_int_ci_high=tau_int_ci_high_arr,
         tau_unstable_flag=flags['tau_interval_unstable_flag'],
         diagnostics_note=diagnostics_note,
+        transition_temperatures=transition_markers,
+        transition_window=transition_window,
         min_visible_rel_error=0.01,
         mark_invalid_uncertainty=True,
         title=f'2D {Q}-state Clock Model: Temperature Sweep (L={L}, {variant})',

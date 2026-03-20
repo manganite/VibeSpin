@@ -512,6 +512,35 @@ def test_plot_temperature_sweep_with_entropy_band_saves_diagnostics(temp_dir):
     plt.close('all')
 
 
+def test_plot_temperature_sweep_with_transition_guides(temp_dir):
+    """Transition markers and window overlays should render without affecting output contract."""
+    temps = np.array([1.0, 1.5, 2.0, 2.5])
+    data = np.array([0.2, 0.5, 0.9, 0.6])
+    tau = np.array([1.0, 1.3, 2.5, 1.8])
+    with patch('utils.system_helpers.save_plot') as mock_save:
+        plot_temperature_sweep(
+            temperatures=temps,
+            avg_m=data,
+            avg_e=data,
+            susc=data,
+            spec_h=data,
+            tau_int=tau,
+            transition_temperatures={r'$T_{\\chi}$': 2.0, r'$T_{C_v}$': 1.9},
+            transition_window=(1.8, 2.1),
+            annotate_peaks=True,
+            title='Transition guides',
+            filename='transition_guides.png',
+            directory=temp_dir,
+        )
+        assert mock_save.call_count == 2
+        mock_save.assert_any_call(filename='transition_guides.png', directory=temp_dir)
+        mock_save.assert_any_call(
+            filename='transition_guides_diagnostics.png',
+            directory=temp_dir,
+        )
+    plt.close('all')
+
+
 def test_plot_ordering_kinetics_without_third_metric(temp_dir):
     """Second panel should be disabled cleanly when no third metric is provided."""
     t = np.array([1, 10])

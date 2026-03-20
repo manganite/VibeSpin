@@ -908,7 +908,17 @@ class TestTemperatureSweepPlotPayloads:
         assert 'entropy_ci_high' in captured_plot_kwargs
         assert 'tau_unstable_flag' in captured_plot_kwargs
         assert 'diagnostics_note' in captured_plot_kwargs
+        assert 'transition_temperatures' in captured_plot_kwargs
+        assert 'transition_window' in captured_plot_kwargs
         diagnostics_note = str(captured_plot_kwargs['diagnostics_note'])
         assert 'n_seeds=2' in diagnostics_note
         assert 'undefined tau=' in diagnostics_note
         assert 'unstable tau intervals=' in diagnostics_note
+        transitions = cast(dict[str, float], captured_plot_kwargs['transition_temperatures'])
+        assert r'$T_{\chi}$' in transitions
+        assert r'$T_{C_v}$' in transitions
+        transition_window = cast(
+            tuple[float, float] | None,
+            captured_plot_kwargs['transition_window'],
+        )
+        assert transition_window is not None

@@ -287,6 +287,9 @@ def plot_temperature_sweep(
     tau_int_ci_high: np.ndarray | Sequence[float] | None = None,
     tau_unstable_flag: np.ndarray | Sequence[float] | None = None,
     diagnostics_note: str | None = None,
+    transition_temperatures: dict[str, float] | None = None,
+    transition_window: tuple[float, float] | None = None,
+    annotate_peaks: bool = True,
     min_visible_rel_error: float = 0.01,
     mark_invalid_uncertainty: bool = True,
 ) -> None:
@@ -320,6 +323,12 @@ def plot_temperature_sweep(
             tau_int intervals.
         diagnostics_note: Optional text shown on diagnostics figure summarizing
             uncertainty quality metrics.
+        transition_temperatures: Optional mapping of transition-marker labels
+            to temperatures rendered as vertical dashed guide lines.
+        transition_window: Optional (low, high) temperature window highlighted
+            with a light background band.
+        annotate_peaks: If True, annotate peak temperatures for susceptibility,
+            specific heat, and tau_int when present.
         min_visible_rel_error: Minimum relative error bar size used for visibility
             when finite uncertainties are extremely small.
         mark_invalid_uncertainty: If True, points with non-finite uncertainty are
@@ -365,6 +374,91 @@ def plot_temperature_sweep(
         y_arr = np.asarray(y, dtype=np.float64)
         ax.plot(x_arr[invalid], y_arr[invalid], 'x', color=color, markersize=5, label=label)
         ax.legend(loc='best', fontsize=8)
+
+    def _annotate_peak(
+        *,
+        ax: plt.Axes,
+        x: np.ndarray,
+        y: np.ndarray | Sequence[float],
+        color: str,
+        label: str,
+        text_offset: tuple[float, float] = (6.0, 8.0),
+    ) -> None:
+        if not annotate_peaks:
+            return
+        y_arr = np.asarray(y, dtype=np.float64)
+        valid = np.isfinite(x) & np.isfinite(y_arr)
+        if not np.any(valid):
+            return
+        x_valid = x[valid]
+        y_valid = y_arr[valid]
+        idx = int(np.argmax(y_valid))
+        t_peak = float(x_valid[idx])
+        y_peak = float(y_valid[idx])
+        ax.plot(
+            [t_peak],
+            [y_peak],
+            marker='D',
+            markerfacecolor='none',
+            markeredgecolor=color,
+            markersize=6,
+            zorder=5,
+        )
+        ax.annotate(
+            f'{label} peak: T={t_peak:.3g}',
+            xy=(t_peak, y_peak),
+            xytext=text_offset,
+            textcoords='offset points',
+            fontsize=8,
+            color=color,
+        )
+
+    # Add global transition context guides to all thermodynamics axes.
+    guides_added = False
+    if transition_window is not None:
+        lo, hi = transition_window
+        if np.isfinite(lo) and np.isfinite(hi) and hi > lo:
+            for ax in flat:
+                ax.axvspan(lo, hi, color='gold', alpha=0.1)
+            guides_added = True
+
+    if transition_temperatures:
+        guide_colors = ['gray', 'dimgray', 'slategray', 'black']
+        for idx, (label, t_val) in enumerate(transition_temperatures.items()):
+            if not np.isfinite(t_val):
+                continue
+            color = guide_colors[idx % len(guide_colors)]
+            for ax in flat:
+                ax.axvline(float(t_val), linestyle='--', linewidth=1.0, color=color, alpha=0.7)
+            ax1.text(
+                float(t_val),
+                0.98,
+                label,
+                transform=ax1.get_xaxis_transform(),
+                ha='center',
+                va='top',
+                fontsize=7,
+                color=color,
+                bbox={
+                    'boxstyle': 'round,pad=0.15',
+                    'facecolor': 'white',
+                    'alpha': 0.65,
+                    'edgecolor': 'none',
+                },
+            )
+            guides_added = True
+
+    if guides_added:
+        ax1.text(
+            0.01,
+            0.04,
+            'Transition guides',
+            transform=ax1.transAxes,
+            fontsize=7,
+            color='dimgray',
+            ha='left',
+            va='bottom',
+        )
 
     if avg_m_err is None:
         ax1.plot(temperatures, avg_m, 'o-', markersize=4)
@@ -436,6 +530,7 @@ def plot_temperature_sweep(
     ax3.set_ylabel(r'Susceptibility $\chi$')
     ax3.set_title('Magnetic Susceptibility')
     ax3.grid(True)
+    _annotate_peak(ax=ax3, x=temperatures_arr, y=susc, color='green', label='$\\chi$')
 
     if spec_h_err is None:
         ax4.plot(temperatures_arr, spec_h, 'o-', color='red', markersize=4)
@@ -460,6 +555,7 @@ def plot_temperature_sweep(
     ax4.set_ylabel(r'Specific Heat $C_v$')
     ax4.set_title('Specific Heat')
     ax4.grid(True)
+    _annotate_peak(ax=ax4, x=temperatures_arr, y=spec_h, color='red', label='$C_v$')
 
     for ax in flat:
         if ax.get_visible():
@@ -592,6 +688,14 @@ def plot_temperature_sweep(
         ax6.set_title('Critical Slowing Down')
         ax6.grid(True)
         ax6.set_xlabel('Temperature (T)')
+        _annotate_peak(
+            ax=ax6,
+            x=temperatures_arr,
+            y=tau_arr,
+            color='saddlebrown',
+            label='$\\tau_\\mathrm{int}$',
+            text_offset=(6.0, -12.0),
+        )
     else:
         ax6.set_visible(False)
 
