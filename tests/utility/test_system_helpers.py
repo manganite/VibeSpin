@@ -569,6 +569,41 @@ def test_plot_temperature_sweep_with_low_effective_sample_flags(temp_dir):
     plt.close('all')
 
 
+def test_plot_temperature_sweep_with_metadata_and_quality_summary(temp_dir):
+    """Diagnostics header metadata and quality summary should render safely."""
+    temps = np.array([1.0, 1.5, 2.0, 2.5])
+    data = np.array([0.2, 0.4, 0.8, 0.5])
+    tau = np.array([1.0, 1.2, 1.8, 1.4])
+    with patch('utils.system_helpers.save_plot') as mock_save:
+        plot_temperature_sweep(
+            temperatures=temps,
+            avg_m=data,
+            avg_e=data,
+            susc=data,
+            spec_h=data,
+            tau_int=tau,
+            diagnostics_note='diag note',
+            run_metadata_note='L=32, n_seeds=8, conf=0.68',
+            quality_summary={
+                'total_points': 4,
+                'well_conditioned_count': 2,
+                'low_effective_count': 1,
+                'unstable_interval_count': 1,
+                'undefined_count': 0,
+            },
+            title='Metadata summary',
+            filename='metadata_summary.png',
+            directory=temp_dir,
+        )
+        assert mock_save.call_count == 2
+        mock_save.assert_any_call(filename='metadata_summary.png', directory=temp_dir)
+        mock_save.assert_any_call(
+            filename='metadata_summary_diagnostics.png',
+            directory=temp_dir,
+        )
+    plt.close('all')
+
+
 def test_plot_ordering_kinetics_without_third_metric(temp_dir):
     """Second panel should be disabled cleanly when no third metric is provided."""
     t = np.array([1, 10])

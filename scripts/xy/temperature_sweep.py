@@ -498,10 +498,32 @@ def main() -> None:
 
     unstable_count = int(np.sum(flags['tau_interval_unstable_flag']))
     undefined_count = int(np.sum(flags['undefined_autocorr_flag']))
+    low_effective_count = int(np.sum(flags['low_effective_sample_flag']))
+    bad_mask = (
+        np.asarray(flags['undefined_autocorr_flag'], dtype=np.float64) > 0.0
+    ) | (
+        np.asarray(flags['tau_interval_unstable_flag'], dtype=np.float64) > 0.0
+    ) | (
+        np.asarray(flags['low_effective_sample_flag'], dtype=np.float64) > 0.0
+    )
+    total_points = int(temperatures.size)
+    well_conditioned_count = int(total_points - np.sum(bad_mask))
     diagnostics_note = (
         f'n_seeds={n_seeds}, undefined tau={undefined_count}/{temperatures.size}, '
         f'unstable tau intervals={unstable_count}/{temperatures.size}'
     )
+    run_metadata_note = (
+        f'L={L}, n_seeds={n_seeds}, conf={float(args.confidence_level):.2f}, '
+        f'method={UNCERTAINTY_METHOD_BLOCKING}, entropy={args.entropy_uncertainty_method}, '
+        f'strict={args.strict_uncertainty}'
+    )
+    quality_summary: dict[str, int | float] = {
+        'total_points': total_points,
+        'well_conditioned_count': well_conditioned_count,
+        'low_effective_count': low_effective_count,
+        'unstable_interval_count': unstable_count,
+        'undefined_count': undefined_count,
+    }
 
     undefined_fraction = float(np.mean(flags['undefined_autocorr_flag']))
     if args.strict_uncertainty and undefined_fraction > float(args.max_undefined_fraction):
@@ -616,6 +638,8 @@ def main() -> None:
         tau_unstable_flag=flags['tau_interval_unstable_flag'],
         low_effective_sample_flag=flags['low_effective_sample_flag'],
         diagnostics_note=diagnostics_note,
+        run_metadata_note=run_metadata_note,
+        quality_summary=quality_summary,
         transition_temperatures=transition_markers,
         transition_window=transition_window,
         min_visible_rel_error=0.01,

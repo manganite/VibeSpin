@@ -7,7 +7,7 @@ import logging
 import os
 import sys
 import warnings
-from collections.abc import Callable, Iterable, Sequence, Sized
+from collections.abc import Callable, Iterable, Mapping, Sequence, Sized
 from multiprocessing import Pool
 from typing import Any, Protocol
 
@@ -288,6 +288,8 @@ def plot_temperature_sweep(
     tau_unstable_flag: np.ndarray | Sequence[float] | None = None,
     low_effective_sample_flag: np.ndarray | Sequence[float] | None = None,
     diagnostics_note: str | None = None,
+    run_metadata_note: str | None = None,
+    quality_summary: Mapping[str, int | float] | None = None,
     transition_temperatures: dict[str, float] | None = None,
     transition_window: tuple[float, float] | None = None,
     annotate_peaks: bool = True,
@@ -326,6 +328,12 @@ def plot_temperature_sweep(
             points with low effective sample size.
         diagnostics_note: Optional text shown on diagnostics figure summarizing
             uncertainty quality metrics.
+        run_metadata_note: Optional concise metadata line for the diagnostics
+            header (for example lattice size, seeds, confidence level, method).
+        quality_summary: Optional dictionary containing quality counts. Expected
+            keys are ``total_points``, ``well_conditioned_count``,
+            ``low_effective_count``, ``unstable_interval_count``, and
+            ``undefined_count``.
         transition_temperatures: Optional mapping of transition-marker labels
             to temperatures rendered as vertical dashed guide lines.
         transition_window: Optional (low, high) temperature window highlighted
@@ -607,6 +615,26 @@ def plot_temperature_sweep(
     diag_fig.suptitle(f'{title} Diagnostics', y=0.99)
     if diagnostics_note:
         diag_fig.text(0.02, 0.94, diagnostics_note, ha='left', va='top', fontsize=8, wrap=True)
+    if run_metadata_note:
+        diag_fig.text(0.02, 0.915, run_metadata_note, ha='left', va='top', fontsize=7, wrap=True)
+    if quality_summary is not None:
+        total = int(quality_summary.get('total_points', 0))
+        if total > 0:
+            well = int(quality_summary.get('well_conditioned_count', 0))
+            low_eff = int(quality_summary.get('low_effective_count', 0))
+            unstable_count = int(quality_summary.get('unstable_interval_count', 0))
+            undefined = int(quality_summary.get('undefined_count', 0))
+
+            def _pct(v: int) -> float:
+                return 100.0 * float(v) / float(total)
+
+            quality_text = (
+                f'quality: well={well}/{total} ({_pct(well):.1f}%), '
+                f'low Neff={low_eff}/{total} ({_pct(low_eff):.1f}%), '
+                f'unstable={unstable_count}/{total} ({_pct(unstable_count):.1f}%), '
+                f'undefined={undefined}/{total} ({_pct(undefined):.1f}%)'
+            )
+            diag_fig.text(0.02, 0.89, quality_text, ha='left', va='top', fontsize=7, wrap=True)
 
     if entropy is not None:
         entropy_arr = np.asarray(entropy, dtype=np.float64)
@@ -702,8 +730,8 @@ def plot_temperature_sweep(
                 )
                 ax6.legend(loc='best', fontsize=8)
         if tau_unstable_flag is not None:
-            unstable = np.asarray(tau_unstable_flag, dtype=np.float64) > 0.0
-            unstable_points = unstable & np.isfinite(tau_arr)
+            unstable_mask = np.asarray(tau_unstable_flag, dtype=np.float64) > 0.0
+            unstable_points = unstable_mask & np.isfinite(tau_arr)
             if np.any(unstable_points):
                 ax6.plot(
                     temperatures_arr[unstable_points],

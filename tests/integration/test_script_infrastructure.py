@@ -909,6 +909,8 @@ class TestTemperatureSweepPlotPayloads:
         assert 'tau_unstable_flag' in captured_plot_kwargs
         assert 'low_effective_sample_flag' in captured_plot_kwargs
         assert 'diagnostics_note' in captured_plot_kwargs
+        assert 'run_metadata_note' in captured_plot_kwargs
+        assert 'quality_summary' in captured_plot_kwargs
         assert 'transition_temperatures' in captured_plot_kwargs
         assert 'transition_window' in captured_plot_kwargs
         diagnostics_note = str(captured_plot_kwargs['diagnostics_note'])
@@ -918,6 +920,9 @@ class TestTemperatureSweepPlotPayloads:
         transitions = cast(dict[str, float], captured_plot_kwargs['transition_temperatures'])
         assert r'$T_{\chi}$' in transitions
         assert r'$T_{C_v}$' in transitions
+        quality_summary = cast(dict[str, int | float], captured_plot_kwargs['quality_summary'])
+        assert int(quality_summary['total_points']) == 2
+        assert int(quality_summary['well_conditioned_count']) >= 0
         transition_window = cast(
             tuple[float, float] | None,
             captured_plot_kwargs['transition_window'],
