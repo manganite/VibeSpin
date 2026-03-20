@@ -540,6 +540,74 @@ def summarize_replicate_samples(
     }
 
 
+def summarize_seed_ensemble(
+    *,
+    values: np.ndarray,
+    within_seed_errors: np.ndarray,
+    confidence: float = DEFAULT_CONFIDENCE_LEVEL,
+) -> dict[str, float]:
+    """Aggregate per-seed estimates into one mean with hierarchical uncertainty.
+
+    The total variance combines between-seed and within-seed components:
+    Var(mean) = Var_between / n_seeds + mean(Var_within) / n_seeds.
+    """
+    _validate_confidence(confidence=confidence)
+    values_arr = np.asarray(values, dtype=np.float64)
+    errs_arr = np.asarray(within_seed_errors, dtype=np.float64)
+    if values_arr.ndim != 1:
+        raise ValueError(f'values must be 1-D, got shape {values_arr.shape}')
+    if errs_arr.ndim != 1:
+        raise ValueError(f'within_seed_errors must be 1-D, got shape {errs_arr.shape}')
+    if values_arr.size != errs_arr.size:
+        raise ValueError(
+            'values and within_seed_errors must have matching lengths, '
+            f'got {values_arr.size} and {errs_arr.size}'
+        )
+    if values_arr.size == 0:
+        raise ValueError('values must be non-empty')
+
+    finite_values = np.isfinite(values_arr)
+    if not np.any(finite_values):
+        return {
+            'value': float('nan'),
+            'err': float('nan'),
+            'ci_low': float('nan'),
+            'ci_high': float('nan'),
+            'between_seed_component': float('nan'),
+            'within_seed_component': float('nan'),
+            'samples': 0.0,
+            'nan_or_undefined_count': float(values_arr.size),
+        }
+
+    v = values_arr[finite_values]
+    e = errs_arr[finite_values]
+    n = v.size
+    value = float(np.mean(v))
+
+    between_component = 0.0
+    if n > 1:
+        between_component = float(np.var(v, ddof=1) / n)
+
+    finite_errs = np.isfinite(e)
+    within_component = 0.0
+    if np.any(finite_errs):
+        within_component = float(np.mean(e[finite_errs] ** 2) / n)
+
+    total_err = float(np.sqrt(max(0.0, between_component + within_component)))
+    z = _z_multiplier(confidence=confidence)
+
+    return {
+        'value': value,
+        'err': total_err,
+        'ci_low': float(value - z * total_err),
+        'ci_high': float(value + z * total_err),
+        'between_seed_component': float(np.sqrt(max(0.0, between_component))),
+        'within_seed_component': float(np.sqrt(max(0.0, within_component))),
+        'samples': float(n),
+        'nan_or_undefined_count': float(values_arr.size - n),
+    }
+
+
 def get_averaged_correlation(
     *, sim: MonteCarloSimulation, total_steps: int, sample_interval: int
 ) -> tuple[np.ndarray, np.ndarray]:

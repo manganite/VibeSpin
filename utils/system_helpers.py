@@ -274,6 +274,10 @@ def plot_temperature_sweep(
     title: str,
     filename: str,
     directory: str,
+    avg_m_err: np.ndarray | Sequence[float] | None = None,
+    avg_e_err: np.ndarray | Sequence[float] | None = None,
+    susc_err: np.ndarray | Sequence[float] | None = None,
+    spec_h_err: np.ndarray | Sequence[float] | None = None,
     entropy: np.ndarray | Sequence[float] | None = None,
     tau_int: np.ndarray | Sequence[float] | None = None,
 ) -> None:
@@ -311,22 +315,58 @@ def plot_temperature_sweep(
 
     fig.suptitle(title)
 
-    ax1.plot(temperatures, avg_m, 'o-', markersize=4)
+    if avg_m_err is None:
+        ax1.plot(temperatures, avg_m, 'o-', markersize=4)
+    else:
+        ax1.errorbar(temperatures, avg_m, yerr=avg_m_err, fmt='o-', markersize=4, capsize=2)
     ax1.set_ylabel('Average Magnetization |M|')
     ax1.set_title('Magnetization')
     ax1.grid(True)
 
-    ax2.plot(temperatures, avg_e, 'o-', color='orange', markersize=4)
+    if avg_e_err is None:
+        ax2.plot(temperatures, avg_e, 'o-', color='orange', markersize=4)
+    else:
+        ax2.errorbar(
+            temperatures,
+            avg_e,
+            yerr=avg_e_err,
+            fmt='o-',
+            color='orange',
+            markersize=4,
+            capsize=2,
+        )
     ax2.set_ylabel('Average Energy')
     ax2.set_title('Energy')
     ax2.grid(True)
 
-    ax3.plot(temperatures, susc, 'o-', color='green', markersize=4)
+    if susc_err is None:
+        ax3.plot(temperatures, susc, 'o-', color='green', markersize=4)
+    else:
+        ax3.errorbar(
+            temperatures,
+            susc,
+            yerr=susc_err,
+            fmt='o-',
+            color='green',
+            markersize=4,
+            capsize=2,
+        )
     ax3.set_ylabel(r'Susceptibility $\chi$')
     ax3.set_title('Magnetic Susceptibility')
     ax3.grid(True)
 
-    ax4.plot(temperatures, spec_h, 'o-', color='red', markersize=4)
+    if spec_h_err is None:
+        ax4.plot(temperatures, spec_h, 'o-', color='red', markersize=4)
+    else:
+        ax4.errorbar(
+            temperatures,
+            spec_h,
+            yerr=spec_h_err,
+            fmt='o-',
+            color='red',
+            markersize=4,
+            capsize=2,
+        )
     ax4.set_ylabel(r'Specific Heat $C_v$')
     ax4.set_title('Specific Heat')
     ax4.grid(True)

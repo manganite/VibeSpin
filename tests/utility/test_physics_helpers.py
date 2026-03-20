@@ -30,6 +30,7 @@ from utils.physics_helpers import (
     summarize_derived_observable,
     summarize_primary_observable,
     summarize_replicate_samples,
+    summarize_seed_ensemble,
 )
 
 
@@ -352,6 +353,28 @@ def test_summarize_replicate_samples_2d_nan_safe():
     assert isinstance(summary['ci_low'], np.ndarray)
     assert isinstance(summary['ci_high'], np.ndarray)
     assert summary['samples'] == pytest.approx(4.0)
+
+
+def test_summarize_seed_ensemble_single_seed_matches_within_seed_error():
+    """With one seed, hierarchical error should equal within-seed error."""
+    summary = summarize_seed_ensemble(
+        values=np.array([1.5]),
+        within_seed_errors=np.array([0.2]),
+    )
+    assert summary['value'] == pytest.approx(1.5)
+    assert summary['err'] == pytest.approx(0.2)
+    assert summary['samples'] == pytest.approx(1.0)
+
+
+def test_summarize_seed_ensemble_multi_seed_has_between_component():
+    """Multi-seed aggregation should include between-seed spread in total error."""
+    summary = summarize_seed_ensemble(
+        values=np.array([1.0, 1.5, 2.0]),
+        within_seed_errors=np.array([0.1, 0.1, 0.1]),
+    )
+    assert summary['value'] == pytest.approx(1.5)
+    assert summary['between_seed_component'] > 0.0
+    assert summary['err'] >= summary['within_seed_component']
 
 
 # ---- get_averaged_correlation ----

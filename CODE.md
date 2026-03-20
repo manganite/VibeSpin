@@ -26,7 +26,6 @@ The VibeSpin verification suite is organized into five conceptual layers to ensu
 
 Development workflows are protected by multi-stage quality gates implemented via pre-commit and pre-push hooks. These hooks run the full suite of static analysis tools, including Ruff for linting and Mypy for type checking. Documentation consistency is also enforced at push time: the system validates markdown links, ensures that API documentation is synchronized with the source, and builds the Sphinx HTML output with all warnings treated as errors. This rigorous pipeline ensures that every contribution maintains the high engineering standards required for reproducible scientific computing.
 
-## Bibliography
 ## Uncertainty Data Contract and Pipeline
 
 Analysis scripts and notebooks in VibeSpin share a standardized uncertainty schema for all serialized observables. This contract is defined in `utils/physics_helpers.py` and enforced by the integration test layer; any script that writes an NPZ file should conform to it.
@@ -38,7 +37,7 @@ For each observable `<obs>` saved by a temperature-sweep script, the NPZ file co
 | Key | Shape | Meaning |
 |-----|-------|---------|
 | `<obs>_value` | `(T,)` | Point estimate (mean across seeds, or single-seed value) |
-| `<obs>_err` | `(T,)` | Autocorrelation-aware standard error; `NaN` for single-seed runs |
+| `<obs>_err` | `(T,)` | Total standard error (single-seed blocking error for `n_seeds=1`; hierarchical within+between-seed error for `n_seeds>1`) |
 | `<obs>_ci_low` | `(T,)` | Lower confidence-interval bound |
 | `<obs>_ci_high` | `(T,)` | Upper confidence-interval bound |
 | `<obs>_tau_int` | `(T,)` | Integrated autocorrelation time per temperature point |
@@ -51,7 +50,7 @@ Legacy keys (`avg_m`, `avg_e`, `susc`, `spec_h`, `entropy`, `tau_int`, `temperat
 
 ### Utility API
 
-The canonical implementation lives in `utils/physics_helpers.py`. The key public functions are as follows. `estimate_effective_sample_size` computes $N_\mathrm{eff} = N / (2\tau_{\mathrm{int}})$ from a time series, optionally accepting a pre-computed `tau_int` to avoid redundant autocorrelation calculation. `blocking_error` applies the plateau-selection blocking method and returns the plateau standard error alongside the estimated `tau_int` and `n_eff`. `summarize_primary_observable` wraps blocking into a single dict conforming to the schema fields above, handling the zero-variance edge case by storing `NaN` for the undefined fields. `summarize_derived_observable` extends this to nonlinear quadratic estimators like susceptibility and specific heat, supporting both the blocking propagation (default) and an optional block-bootstrap. `summarize_replicate_samples` aggregates a 2D `(T, S)` array of per-seed samples into a schema-consistent dict using the inter-seed distribution as the uncertainty source.
+The canonical implementation lives in `utils/physics_helpers.py`. The key public functions are as follows. `estimate_effective_sample_size` computes $N_\mathrm{eff} = N / (2\tau_{\mathrm{int}})$ from a time series, optionally accepting a pre-computed `tau_int` to avoid redundant autocorrelation calculation. `blocking_error` applies the plateau-selection blocking method and returns the plateau standard error alongside the estimated `tau_int` and `n_eff`. `summarize_primary_observable` wraps blocking into a single dict conforming to the schema fields above, handling the zero-variance edge case by storing `NaN` for the undefined fields. `summarize_derived_observable` extends this to nonlinear quadratic estimators like susceptibility and specific heat, supporting both the blocking propagation (default) and an optional block-bootstrap. `summarize_seed_ensemble` combines per-seed point estimates and within-seed errors into a hierarchical total uncertainty for multi-seed sweeps. `summarize_replicate_samples` remains available for percentile-style sample summaries where needed.
 
 ### Design Rationale
 

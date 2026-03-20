@@ -324,7 +324,29 @@ class TestTemperatureSweepMainPayloads:
         def _fake_parallel_sweep(*, worker_func, params, num_processes=None):
             params_list = list(params)
             captured['params'] = params_list
-            return [(1.0, 2.0, 3.0, 4.0, 5.0)] * len(params_list)
+            return [
+                {
+                    'temperature_index': float(p.temperature_index),
+                    'seed_index': float(p.seed_index),
+                    'avg_m_value': 1.0,
+                    'avg_m_err': 0.1,
+                    'avg_m_tau_int': 3.0,
+                    'avg_m_n_eff': 10.0,
+                    'avg_e_value': -1.0,
+                    'avg_e_err': 0.1,
+                    'avg_e_tau_int': 3.0,
+                    'avg_e_n_eff': 10.0,
+                    'susc_value': 0.5,
+                    'susc_err': 0.05,
+                    'susc_tau_int': 3.0,
+                    'susc_n_eff': 10.0,
+                    'spec_h_value': 0.2,
+                    'spec_h_err': 0.03,
+                    'spec_h_tau_int': 3.0,
+                    'spec_h_n_eff': 10.0,
+                }
+                for p in params_list
+            ]
 
         monkeypatch.setattr(module, 'parallel_sweep', _fake_parallel_sweep)
         monkeypatch.setattr(module, 'plot_temperature_sweep', lambda **kwargs: None)
@@ -353,7 +375,16 @@ class TestTemperatureSweepMainPayloads:
         self._capture_sweep_params(
             monkeypatch,
             ising_module,
-            ('temperature', 'size', 'meas_steps', 'eq_probe_steps', 'eq_max_steps'),
+            (
+                'temperature',
+                'size',
+                'meas_steps',
+                'eq_probe_steps',
+                'eq_max_steps',
+                'temperature_index',
+                'seed_index',
+                'seed',
+            ),
             ['ising_temperature_sweep', '--size', '8', '--meas-steps', '20', '--t-points', '2'],
         )
 
@@ -368,7 +399,16 @@ class TestTemperatureSweepMainPayloads:
         self._capture_sweep_params(
             monkeypatch,
             xy_module,
-            ('temperature', 'size', 'meas_steps', 'eq_probe_steps', 'eq_max_steps'),
+            (
+                'temperature',
+                'size',
+                'meas_steps',
+                'eq_probe_steps',
+                'eq_max_steps',
+                'temperature_index',
+                'seed_index',
+                'seed',
+            ),
             ['xy_temperature_sweep', '--size', '8', '--meas-steps', '20', '--t-points', '2'],
         )
 
@@ -392,6 +432,9 @@ class TestTemperatureSweepMainPayloads:
                 'eq_probe_steps',
                 'eq_max_steps',
                 'discrete',
+                'temperature_index',
+                'seed_index',
+                'seed',
             ),
             ['clock_temperature_sweep', '--size', '8', '--meas-steps', '20', '--t-points', '2'],
         )
@@ -468,9 +511,16 @@ class TestTemperatureSweepUncertaintySchema:
             import pytest
             pytest.skip("Temperature sweep modules not available")
 
-        values = np.array([1.0, 2.0, 3.0], dtype=float)
-        tau = np.array([5.0, np.nan, 2.0], dtype=float)
-        bundle = build_ising_uncertainty_bundle(value=values, tau_int=tau, meas_steps=100)
+        values = np.array([[1.0, 1.2], [2.0, 2.2], [3.0, 3.3]], dtype=float)
+        errs = np.array([[0.1, 0.1], [0.2, 0.2], [0.3, 0.4]], dtype=float)
+        tau = np.array([[5.0, 4.5], [np.nan, 3.0], [2.0, 2.5]], dtype=float)
+        n_eff = np.array([[10.0, 12.0], [8.0, 9.0], [15.0, 16.0]], dtype=float)
+        bundle = build_ising_uncertainty_bundle(
+            values_by_seed=values,
+            errors_by_seed=errs,
+            tau_by_seed=tau,
+            n_eff_by_seed=n_eff,
+        )
 
         value = cast(np.ndarray, bundle['value'])
         err = cast(np.ndarray, bundle['err'])
@@ -486,7 +536,7 @@ class TestTemperatureSweepUncertaintySchema:
         assert ci_high.shape == (3,)
         assert tau_bundle.shape == (3,)
         assert n_eff.shape == (3,)
-        assert samples.shape == (3, 1)
+        assert samples.shape == (3, 2)
 
     def test_ising_main_writes_uncertainty_npz(self, monkeypatch) -> None:
         """Ising sweep main should persist additive uncertainty schema keys."""
@@ -497,8 +547,30 @@ class TestTemperatureSweepUncertaintySchema:
         import scripts.ising.temperature_sweep as ising_module
 
         def _fake_parallel_sweep(*, worker_func, params, num_processes=None):
-            n = len(list(params))
-            return [(1.0, -1.0, 0.5, 0.2, 3.0)] * n
+            params_list = list(params)
+            return [
+                {
+                    'temperature_index': float(p.temperature_index),
+                    'seed_index': float(p.seed_index),
+                    'avg_m_value': 1.0,
+                    'avg_m_err': 0.1,
+                    'avg_m_tau_int': 3.0,
+                    'avg_m_n_eff': 10.0,
+                    'avg_e_value': -1.0,
+                    'avg_e_err': 0.1,
+                    'avg_e_tau_int': 3.0,
+                    'avg_e_n_eff': 10.0,
+                    'susc_value': 0.5,
+                    'susc_err': 0.05,
+                    'susc_tau_int': 3.0,
+                    'susc_n_eff': 10.0,
+                    'spec_h_value': 0.2,
+                    'spec_h_err': 0.03,
+                    'spec_h_tau_int': 3.0,
+                    'spec_h_n_eff': 10.0,
+                }
+                for p in params_list
+            ]
 
         monkeypatch.setattr(ising_module, 'parallel_sweep', _fake_parallel_sweep)
         monkeypatch.setattr(ising_module, 'plot_temperature_sweep', lambda **kwargs: None)
@@ -540,9 +612,16 @@ class TestXYTemperatureSweepUncertaintySchema:
             import pytest
             pytest.skip("Temperature sweep modules not available")
 
-        values = np.array([1.0, 2.0, 3.0], dtype=float)
-        tau = np.array([5.0, np.nan, 2.0], dtype=float)
-        bundle = build_xy_uncertainty_bundle(value=values, tau_int=tau, meas_steps=100)
+        values = np.array([[1.0, 1.2], [2.0, 2.2], [3.0, 3.3]], dtype=float)
+        errs = np.array([[0.1, 0.1], [0.2, 0.2], [0.3, 0.4]], dtype=float)
+        tau = np.array([[5.0, 4.5], [np.nan, 3.0], [2.0, 2.5]], dtype=float)
+        n_eff = np.array([[10.0, 12.0], [8.0, 9.0], [15.0, 16.0]], dtype=float)
+        bundle = build_xy_uncertainty_bundle(
+            values_by_seed=values,
+            errors_by_seed=errs,
+            tau_by_seed=tau,
+            n_eff_by_seed=n_eff,
+        )
 
         value = cast(np.ndarray, bundle['value'])
         err = cast(np.ndarray, bundle['err'])
@@ -558,7 +637,7 @@ class TestXYTemperatureSweepUncertaintySchema:
         assert ci_high.shape == (3,)
         assert tau_bundle.shape == (3,)
         assert n_eff.shape == (3,)
-        assert samples.shape == (3, 1)
+        assert samples.shape == (3, 2)
 
     def test_xy_main_writes_uncertainty_npz(self, monkeypatch) -> None:
         """XY sweep main should persist additive uncertainty schema keys."""
@@ -569,8 +648,30 @@ class TestXYTemperatureSweepUncertaintySchema:
         import scripts.xy.temperature_sweep as xy_module
 
         def _fake_parallel_sweep(*, worker_func, params, num_processes=None):
-            n = len(list(params))
-            return [(1.0, -1.0, 0.5, 0.2, 3.0)] * n
+            params_list = list(params)
+            return [
+                {
+                    'temperature_index': float(p.temperature_index),
+                    'seed_index': float(p.seed_index),
+                    'avg_m_value': 1.0,
+                    'avg_m_err': 0.1,
+                    'avg_m_tau_int': 3.0,
+                    'avg_m_n_eff': 10.0,
+                    'avg_e_value': -1.0,
+                    'avg_e_err': 0.1,
+                    'avg_e_tau_int': 3.0,
+                    'avg_e_n_eff': 10.0,
+                    'susc_value': 0.5,
+                    'susc_err': 0.05,
+                    'susc_tau_int': 3.0,
+                    'susc_n_eff': 10.0,
+                    'spec_h_value': 0.2,
+                    'spec_h_err': 0.03,
+                    'spec_h_tau_int': 3.0,
+                    'spec_h_n_eff': 10.0,
+                }
+                for p in params_list
+            ]
 
         monkeypatch.setattr(xy_module, 'parallel_sweep', _fake_parallel_sweep)
         monkeypatch.setattr(xy_module, 'plot_temperature_sweep', lambda **kwargs: None)
@@ -612,9 +713,16 @@ class TestClockTemperatureSweepUncertaintySchema:
             import pytest
             pytest.skip("Temperature sweep modules not available")
 
-        values = np.array([1.0, 2.0, 3.0], dtype=float)
-        tau = np.array([5.0, np.nan, 2.0], dtype=float)
-        bundle = build_clock_uncertainty_bundle(value=values, tau_int=tau, meas_steps=100)
+        values = np.array([[1.0, 1.2], [2.0, 2.2], [3.0, 3.3]], dtype=float)
+        errs = np.array([[0.1, 0.1], [0.2, 0.2], [0.3, 0.4]], dtype=float)
+        tau = np.array([[5.0, 4.5], [np.nan, 3.0], [2.0, 2.5]], dtype=float)
+        n_eff = np.array([[10.0, 12.0], [8.0, 9.0], [15.0, 16.0]], dtype=float)
+        bundle = build_clock_uncertainty_bundle(
+            values_by_seed=values,
+            errors_by_seed=errs,
+            tau_by_seed=tau,
+            n_eff_by_seed=n_eff,
+        )
 
         value = cast(np.ndarray, bundle['value'])
         err = cast(np.ndarray, bundle['err'])
@@ -630,7 +738,7 @@ class TestClockTemperatureSweepUncertaintySchema:
         assert ci_high.shape == (3,)
         assert tau_bundle.shape == (3,)
         assert n_eff.shape == (3,)
-        assert samples.shape == (3, 1)
+        assert samples.shape == (3, 2)
 
     def test_clock_main_writes_uncertainty_npz(self, monkeypatch) -> None:
         """Clock sweep main should persist additive uncertainty schema keys."""
@@ -641,8 +749,30 @@ class TestClockTemperatureSweepUncertaintySchema:
         import scripts.clock.temperature_sweep as clock_module
 
         def _fake_parallel_sweep(*, worker_func, params, num_processes=None):
-            n = len(list(params))
-            return [(1.0, -1.0, 0.5, 0.2, 3.0)] * n
+            params_list = list(params)
+            return [
+                {
+                    'temperature_index': float(p.temperature_index),
+                    'seed_index': float(p.seed_index),
+                    'avg_m_value': 1.0,
+                    'avg_m_err': 0.1,
+                    'avg_m_tau_int': 3.0,
+                    'avg_m_n_eff': 10.0,
+                    'avg_e_value': -1.0,
+                    'avg_e_err': 0.1,
+                    'avg_e_tau_int': 3.0,
+                    'avg_e_n_eff': 10.0,
+                    'susc_value': 0.5,
+                    'susc_err': 0.05,
+                    'susc_tau_int': 3.0,
+                    'susc_n_eff': 10.0,
+                    'spec_h_value': 0.2,
+                    'spec_h_err': 0.03,
+                    'spec_h_tau_int': 3.0,
+                    'spec_h_n_eff': 10.0,
+                }
+                for p in params_list
+            ]
 
         monkeypatch.setattr(clock_module, 'parallel_sweep', _fake_parallel_sweep)
         monkeypatch.setattr(clock_module, 'plot_temperature_sweep', lambda **kwargs: None)
