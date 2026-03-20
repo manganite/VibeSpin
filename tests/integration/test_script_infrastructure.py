@@ -520,6 +520,7 @@ class TestTemperatureSweepUncertaintySchema:
             errors_by_seed=errs,
             tau_by_seed=tau,
             n_eff_by_seed=n_eff,
+            confidence=0.68,
         )
 
         value = cast(np.ndarray, bundle['value'])
@@ -599,6 +600,8 @@ class TestTemperatureSweepUncertaintySchema:
             required = {
                 'avg_m', 'avg_e', 'susc', 'spec_h', 'entropy', 'tau_int',
                 'tau_int_err', 'tau_int_ci_low', 'tau_int_ci_high',
+                'undefined_autocorr_flag', 'low_effective_sample_flag',
+                'tau_interval_unstable_flag',
                 'avg_m_value', 'avg_m_err', 'avg_m_ci_low', 'avg_m_ci_high',
                 'avg_m_tau_int', 'avg_m_n_eff', 'avg_m_samples',
                 'avg_e_value', 'avg_e_err', 'avg_e_ci_low', 'avg_e_ci_high',
@@ -606,6 +609,7 @@ class TestTemperatureSweepUncertaintySchema:
                 'spec_h_value', 'spec_h_err', 'spec_h_ci_low', 'spec_h_ci_high',
                 'entropy_value', 'entropy_err', 'entropy_ci_low', 'entropy_ci_high',
                 'entropy_samples',
+                'entropy_uncertainty_method',
                 'uncertainty_method', 'confidence_level', 'n_seeds',
                 'bootstrap_resamples', 'nan_or_undefined_count',
             }
@@ -630,6 +634,7 @@ class TestXYTemperatureSweepUncertaintySchema:
             errors_by_seed=errs,
             tau_by_seed=tau,
             n_eff_by_seed=n_eff,
+            confidence=0.68,
         )
 
         value = cast(np.ndarray, bundle['value'])
@@ -709,6 +714,8 @@ class TestXYTemperatureSweepUncertaintySchema:
             required = {
                 'avg_m', 'avg_e', 'susc', 'spec_h', 'entropy', 'tau_int',
                 'tau_int_err', 'tau_int_ci_low', 'tau_int_ci_high',
+                'undefined_autocorr_flag', 'low_effective_sample_flag',
+                'tau_interval_unstable_flag',
                 'avg_m_value', 'avg_m_err', 'avg_m_ci_low', 'avg_m_ci_high',
                 'avg_m_tau_int', 'avg_m_n_eff', 'avg_m_samples',
                 'avg_e_value', 'avg_e_err', 'avg_e_ci_low', 'avg_e_ci_high',
@@ -716,6 +723,7 @@ class TestXYTemperatureSweepUncertaintySchema:
                 'spec_h_value', 'spec_h_err', 'spec_h_ci_low', 'spec_h_ci_high',
                 'entropy_value', 'entropy_err', 'entropy_ci_low', 'entropy_ci_high',
                 'entropy_samples',
+                'entropy_uncertainty_method',
                 'uncertainty_method', 'confidence_level', 'n_seeds',
                 'bootstrap_resamples', 'nan_or_undefined_count',
             }
@@ -740,6 +748,7 @@ class TestClockTemperatureSweepUncertaintySchema:
             errors_by_seed=errs,
             tau_by_seed=tau,
             n_eff_by_seed=n_eff,
+            confidence=0.68,
         )
 
         value = cast(np.ndarray, bundle['value'])
@@ -819,6 +828,8 @@ class TestClockTemperatureSweepUncertaintySchema:
             required = {
                 'avg_m', 'avg_e', 'susc', 'spec_h', 'entropy', 'tau_int',
                 'tau_int_err', 'tau_int_ci_low', 'tau_int_ci_high',
+                'undefined_autocorr_flag', 'low_effective_sample_flag',
+                'tau_interval_unstable_flag',
                 'avg_m_value', 'avg_m_err', 'avg_m_ci_low', 'avg_m_ci_high',
                 'avg_m_tau_int', 'avg_m_n_eff', 'avg_m_samples',
                 'avg_e_value', 'avg_e_err', 'avg_e_ci_low', 'avg_e_ci_high',
@@ -826,6 +837,7 @@ class TestClockTemperatureSweepUncertaintySchema:
                 'spec_h_value', 'spec_h_err', 'spec_h_ci_low', 'spec_h_ci_high',
                 'entropy_value', 'entropy_err', 'entropy_ci_low', 'entropy_ci_high',
                 'entropy_samples',
+                'entropy_uncertainty_method',
                 'uncertainty_method', 'confidence_level', 'n_seeds',
                 'bootstrap_resamples', 'nan_or_undefined_count',
             }

@@ -27,6 +27,7 @@ from utils.physics_helpers import (
     pair_correlation_x,
     power_fit,
     radial_average_sk,
+    summarize_asymmetric_replicate_uncertainty,
     summarize_derived_observable,
     summarize_entropy_observable,
     summarize_primary_observable,
@@ -243,6 +244,55 @@ def test_summarize_entropy_observable_single_replicate_has_nan_error():
     assert np.all(np.isnan(np.asarray(summary['err'])))
     assert np.all(np.isnan(np.asarray(summary['ci_low'])))
     assert np.all(np.isnan(np.asarray(summary['ci_high'])))
+
+
+def test_summarize_entropy_observable_bootstrap_returns_finite_intervals():
+    """Bootstrap entropy summary should provide finite intervals with >=2 replicates."""
+    temperatures = np.linspace(1.0, 3.0, 8)
+    rng = np.random.default_rng(0)
+    cv_samples = 1.0 + 0.1 * rng.normal(size=(8, 6))
+    summary = summarize_entropy_observable(
+        temperatures=temperatures,
+        specific_heat_samples=cv_samples,
+        method=UNCERTAINTY_METHOD_BOOTSTRAP,
+        bootstrap_resamples=200,
+        rng_seed=1,
+    )
+    assert np.all(np.isfinite(np.asarray(summary['ci_low'])))
+    assert np.all(np.isfinite(np.asarray(summary['ci_high'])))
+
+
+def test_summarize_entropy_observable_more_replicates_reduces_mean_err():
+    """Average entropy uncertainty should shrink with more replicate curves."""
+    temperatures = np.linspace(1.0, 3.0, 12)
+    rng = np.random.default_rng(42)
+    full_samples = 1.0 + 0.15 * rng.normal(size=(12, 16))
+
+    small = summarize_entropy_observable(
+        temperatures=temperatures,
+        specific_heat_samples=full_samples[:, :4],
+        method=UNCERTAINTY_METHOD_BOOTSTRAP,
+        bootstrap_resamples=200,
+        rng_seed=7,
+    )
+    large = summarize_entropy_observable(
+        temperatures=temperatures,
+        specific_heat_samples=full_samples,
+        method=UNCERTAINTY_METHOD_BOOTSTRAP,
+        bootstrap_resamples=200,
+        rng_seed=7,
+    )
+    err_small = np.nanmean(np.asarray(small['err']))
+    err_large = np.nanmean(np.asarray(large['err']))
+    assert err_large < err_small
+
+
+def test_summarize_asymmetric_replicate_uncertainty_is_asymmetric_for_skewed_data():
+    """Asymmetric replicate summary should produce unequal lower and upper errors."""
+    samples = np.array([1.0, 1.1, 1.2, 1.5, 3.0], dtype=float)
+    summary = summarize_asymmetric_replicate_uncertainty(samples=samples)
+    assert summary['ci_high'] > summary['value'] > summary['ci_low']
+    assert summary['err_high'] > summary['err_low']
 
 
 # ---- calculate_autocorr ----

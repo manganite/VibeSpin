@@ -200,14 +200,22 @@ def summarize_entropy_observable(
     specific_heat_samples: np.ndarray,
     confidence: float = DEFAULT_CONFIDENCE_LEVEL,
     s_ref: float = 0.0,
+    method: str = UNCERTAINTY_METHOD_BOOTSTRAP,
+    bootstrap_resamples: int = 400,
+    rng_seed: int = 0,
 ) -> dict[str, np.ndarray]:
     """Summarize entropy from replicate specific-heat curves.
 
     Each replicate column is converted to an entropy curve via
-    :func:`calculate_entropy`, then aggregated at each temperature point.
+    :func:`calculate_entropy`, then uncertainty is computed either via
+    replicate spread (blocking-like) or bootstrap over replicate curves.
     For a single finite replicate, uncertainty is reported as NaN.
     """
     _validate_confidence(confidence=confidence)
+    if method not in {UNCERTAINTY_METHOD_BLOCKING, UNCERTAINTY_METHOD_BOOTSTRAP}:
+        raise ValueError(f'unsupported method {method!r}')
+    if method == UNCERTAINTY_METHOD_BOOTSTRAP and bootstrap_resamples <= 0:
+        raise ValueError('bootstrap_resamples must be > 0 when method is bootstrap')
     temperatures_arr = np.asarray(temperatures, dtype=np.float64)
     samples_arr = np.asarray(specific_heat_samples, dtype=np.float64)
 
@@ -238,7 +246,39 @@ def summarize_entropy_observable(
     err = np.empty(n_t, dtype=np.float64)
     ci_low = np.empty(n_t, dtype=np.float64)
     ci_high = np.empty(n_t, dtype=np.float64)
+    alpha = 0.5 * (1.0 - confidence)
     z = _z_multiplier(confidence=confidence)
+
+    if method == UNCERTAINTY_METHOD_BOOTSTRAP:
+        if n_rep < 2:
+            value[:] = np.nanmean(entropy_samples, axis=1)
+            err[:] = np.nan
+            ci_low[:] = np.nan
+            ci_high[:] = np.nan
+            return {
+                'value': value,
+                'err': err,
+                'ci_low': ci_low,
+                'ci_high': ci_high,
+                'samples': entropy_samples,
+            }
+        rng = np.random.default_rng(rng_seed)
+        boot_curves = np.empty((n_t, bootstrap_resamples), dtype=np.float64)
+        for b in range(bootstrap_resamples):
+            idx = rng.choice(n_rep, size=n_rep, replace=True)
+            boot_curves[:, b] = np.nanmean(entropy_samples[:, idx], axis=1)
+
+        value[:] = np.nanmean(entropy_samples, axis=1)
+        err[:] = np.nanstd(boot_curves, axis=1, ddof=1)
+        ci_low[:] = np.nanquantile(boot_curves, alpha, axis=1)
+        ci_high[:] = np.nanquantile(boot_curves, 1.0 - alpha, axis=1)
+        return {
+            'value': value,
+            'err': err,
+            'ci_low': ci_low,
+            'ci_high': ci_high,
+            'samples': entropy_samples,
+        }
 
     for i in range(n_t):
         row = entropy_samples[i]
@@ -269,6 +309,62 @@ def summarize_entropy_observable(
         'ci_low': ci_low,
         'ci_high': ci_high,
         'samples': entropy_samples,
+    }
+
+
+def summarize_asymmetric_replicate_uncertainty(
+    *,
+    samples: np.ndarray,
+    confidence: float = DEFAULT_CONFIDENCE_LEVEL,
+) -> dict[str, float]:
+    """Summarize 1-D replicate samples with asymmetric percentile intervals."""
+    _validate_confidence(confidence=confidence)
+    arr = np.asarray(samples, dtype=np.float64)
+    if arr.ndim != 1:
+        raise ValueError(f'samples must be 1-D, got shape {arr.shape}')
+    if arr.size == 0:
+        raise ValueError('samples must be non-empty')
+
+    finite = arr[np.isfinite(arr)]
+    if finite.size == 0:
+        return {
+            'value': float('nan'),
+            'ci_low': float('nan'),
+            'ci_high': float('nan'),
+            'err': float('nan'),
+            'err_low': float('nan'),
+            'err_high': float('nan'),
+            'samples': 0.0,
+            'nan_or_undefined_count': float(arr.size),
+        }
+
+    alpha = 0.5 * (1.0 - confidence)
+    value = float(np.nanmedian(finite))
+    if finite.size == 1:
+        return {
+            'value': value,
+            'ci_low': float('nan'),
+            'ci_high': float('nan'),
+            'err': float('nan'),
+            'err_low': float('nan'),
+            'err_high': float('nan'),
+            'samples': 1.0,
+            'nan_or_undefined_count': float(arr.size - 1),
+        }
+
+    ci_low = float(np.nanquantile(finite, alpha))
+    ci_high = float(np.nanquantile(finite, 1.0 - alpha))
+    err_low = float(max(0.0, value - ci_low))
+    err_high = float(max(0.0, ci_high - value))
+    return {
+        'value': value,
+        'ci_low': ci_low,
+        'ci_high': ci_high,
+        'err': float(max(err_low, err_high)),
+        'err_low': err_low,
+        'err_high': err_high,
+        'samples': float(finite.size),
+        'nan_or_undefined_count': float(arr.size - finite.size),
     }
 
 

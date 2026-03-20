@@ -283,6 +283,8 @@ def plot_temperature_sweep(
     tau_int: np.ndarray | Sequence[float] | None = None,
     tau_int_ci_low: np.ndarray | Sequence[float] | None = None,
     tau_int_ci_high: np.ndarray | Sequence[float] | None = None,
+    min_visible_rel_error: float = 0.01,
+    mark_invalid_uncertainty: bool = True,
 ) -> None:
     """
     Generate and save a standardized temperature sweep plot.
@@ -308,6 +310,10 @@ def plot_temperature_sweep(
             Reveals critical slowing down as a peak near T_c.
         tau_int_ci_low: Optional lower confidence band for tau_int.
         tau_int_ci_high: Optional upper confidence band for tau_int.
+        min_visible_rel_error: Minimum relative error bar size used for visibility
+            when finite uncertainties are extremely small.
+        mark_invalid_uncertainty: If True, points with non-finite uncertainty are
+            marked with ``x`` markers and a legend label.
     """
     use_extra = entropy is not None or tau_int is not None
     if use_extra:
@@ -321,10 +327,57 @@ def plot_temperature_sweep(
 
     fig.suptitle(title)
 
+    def _visible_yerr(
+        y: np.ndarray | Sequence[float],
+        yerr: np.ndarray | Sequence[float],
+    ) -> np.ndarray:
+        y_arr = np.asarray(y, dtype=np.float64)
+        e_arr = np.asarray(yerr, dtype=np.float64)
+        min_abs = np.maximum(1e-12, min_visible_rel_error * np.maximum(np.abs(y_arr), 1e-12))
+        out = np.array(e_arr, copy=True)
+        finite = np.isfinite(out)
+        out[finite] = np.maximum(out[finite], min_abs[finite])
+        return out
+
+    def _mark_invalid(
+        *,
+        ax: plt.Axes,
+        x: np.ndarray | Sequence[float],
+        y: np.ndarray | Sequence[float],
+        yerr: np.ndarray | Sequence[float],
+        color: str,
+        label: str,
+    ) -> None:
+        if not mark_invalid_uncertainty:
+            return
+        e_arr = np.asarray(yerr, dtype=np.float64)
+        invalid = ~np.isfinite(e_arr)
+        if not np.any(invalid):
+            return
+        x_arr = np.asarray(x, dtype=np.float64)
+        y_arr = np.asarray(y, dtype=np.float64)
+        ax.plot(x_arr[invalid], y_arr[invalid], 'x', color=color, markersize=5, label=label)
+        ax.legend(loc='best', fontsize=8)
+
     if avg_m_err is None:
         ax1.plot(temperatures, avg_m, 'o-', markersize=4)
     else:
-        ax1.errorbar(temperatures, avg_m, yerr=avg_m_err, fmt='o-', markersize=4, capsize=2)
+        ax1.errorbar(
+            temperatures,
+            avg_m,
+            yerr=_visible_yerr(avg_m, avg_m_err),
+            fmt='o-',
+            markersize=4,
+            capsize=2,
+        )
+        _mark_invalid(
+            ax=ax1,
+            x=temperatures,
+            y=avg_m,
+            yerr=avg_m_err,
+            color='C0',
+            label='uncertainty unavailable',
+        )
     ax1.set_ylabel('Average Magnetization |M|')
     ax1.set_title('Magnetization')
     ax1.grid(True)
@@ -335,11 +388,19 @@ def plot_temperature_sweep(
         ax2.errorbar(
             temperatures,
             avg_e,
-            yerr=avg_e_err,
+            yerr=_visible_yerr(avg_e, avg_e_err),
             fmt='o-',
             color='orange',
             markersize=4,
             capsize=2,
+        )
+        _mark_invalid(
+            ax=ax2,
+            x=temperatures,
+            y=avg_e,
+            yerr=avg_e_err,
+            color='orange',
+            label='uncertainty unavailable',
         )
     ax2.set_ylabel('Average Energy')
     ax2.set_title('Energy')
@@ -351,11 +412,19 @@ def plot_temperature_sweep(
         ax3.errorbar(
             temperatures,
             susc,
-            yerr=susc_err,
+            yerr=_visible_yerr(susc, susc_err),
             fmt='o-',
             color='green',
             markersize=4,
             capsize=2,
+        )
+        _mark_invalid(
+            ax=ax3,
+            x=temperatures,
+            y=susc,
+            yerr=susc_err,
+            color='green',
+            label='uncertainty unavailable',
         )
     ax3.set_ylabel(r'Susceptibility $\chi$')
     ax3.set_title('Magnetic Susceptibility')
@@ -367,11 +436,19 @@ def plot_temperature_sweep(
         ax4.errorbar(
             temperatures,
             spec_h,
-            yerr=spec_h_err,
+            yerr=_visible_yerr(spec_h, spec_h_err),
             fmt='o-',
             color='red',
             markersize=4,
             capsize=2,
+        )
+        _mark_invalid(
+            ax=ax4,
+            x=temperatures,
+            y=spec_h,
+            yerr=spec_h_err,
+            color='red',
+            label='uncertainty unavailable',
         )
     ax4.set_ylabel(r'Specific Heat $C_v$')
     ax4.set_title('Specific Heat')
@@ -385,11 +462,19 @@ def plot_temperature_sweep(
                 ax5.errorbar(
                     temperatures,
                     entropy,
-                    yerr=entropy_err,
+                    yerr=_visible_yerr(entropy, entropy_err),
                     fmt='o-',
                     color='purple',
                     markersize=4,
                     capsize=2,
+                )
+                _mark_invalid(
+                    ax=ax5,
+                    x=temperatures,
+                    y=entropy,
+                    yerr=entropy_err,
+                    color='purple',
+                    label='uncertainty unavailable',
                 )
             ax5.set_ylabel(r'Entropy $S\,/\,k_B$')
             ax5.set_title('Entropy')
