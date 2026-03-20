@@ -12,22 +12,16 @@ The implementation is optimized for speed, scalability, and physical repeatabili
 VibeSpin enforces strict development policies for physical correctness, code quality, reproducibility, and documentation. All edits must follow the **Scope Discipline**: never change, rewrite, or delete code/text unrelated to the current task. See [AGENTS.md](./agents.md) for the full list of mandatory development policies.
 
 ## Bibliography
-All scientific references used in VibeSpin are listed in [BIBLIOGRAPHY.md](./bibliography.md). Reference policy and link validation are enforced as described in AGENTS.md.
+All references used in VibeSpin are listed in [BIBLIOGRAPHY.md](./bibliography.md). Reference policy and link validation are enforced as described in AGENTS.md.
 
-### Scientific Background and References
+### Background and References
 The Ising model [[1]](#Bibliography), XY model [[2]](#Bibliography), and q-state Clock model [[3]](#Bibliography) are canonical systems in statistical physics for studying phase transitions, critical phenomena, and topological defects. Monte Carlo methods, especially the Metropolis-Hastings algorithm [[4]](#Bibliography), are standard for simulating these models. The Wolff cluster algorithm [[5]](#Bibliography) is highly effective near criticality, reducing autocorrelation times by exploiting collective spin updates. For a comprehensive introduction to these models and algorithms, see the references below.
 
-## Scope and methods
+## Scope and Methods
 
-VibeSpin supports three update schemes: **Checkerboard Updates** (optimized for equilibrium throughput and SIMD vectorization), **Random Site Selection** (mandatory for non-equilibrium kinetics and aging studies), and the **Wolff Cluster Algorithm** (highly efficient near critical temperatures due to vanishing critical slowing down). 
+VibeSpin supports three update schemes tailored to specific physical regimes. **Checkerboard Updates** maximize equilibrium throughput via SIMD vectorization and multi-core execution. **Random Site Selection** is mandatory for non-equilibrium kinetics and aging studies, where preserving the stochastic trajectory is essential for physical validity. The **Wolff Cluster Algorithm** provides high efficiency near critical temperatures by mitigating critical slowing down through collective spin updates.
 
-For further details on the physical and algorithmic background, see the Physics and Algorithm Guide and the references below.
-
-### Physical Analysis
-- **Thermodynamics**: Magnetization magnitude $|M|$, total energy $E$, susceptibility $\chi$, and specific heat $C_v$.
-- **Spatial Diagnostics**: Radially averaged spin-spin correlation functions $G(r)$ and 2D structure factor $S(k)$ mapping.
-- **Topological Analysis**: Directed phase-wrapping for vorticity maps, vortex density tracking, and helicity modulus calculations.
-- **Kinetics**: Integrated autocorrelation time $\tau_{\text{int}}$ and phase-ordering growth law extraction.
+The framework provides a comprehensive suite of diagnostics for physical analysis. Thermodynamic measurements include magnetization magnitude, total energy, susceptibility, and specific heat. Spatial correlations are analyzed through radially averaged spin-spin correlation functions and 2D structure factor mapping. For topological systems, the engine supports directed phase-wrapping for vorticity maps, vortex density tracking, and helicity modulus calculations. Kinetics studies utilize integrated autocorrelation times and phase-ordering growth law extraction to quantify the temporal evolution of the system.
 
 ## Installation
 
@@ -67,19 +61,16 @@ tail -n 200 /tmp/jupyter.log
 
 ## Benchmarking & Performance
 
-VibeSpin includes a comprehensive performance analysis suite. The benchmark tool measures throughput (sweeps/s), identifies hardware-bound scaling regimes (ns/site), and quantifies the overhead of thermodynamic vs. topological measurements.
+VibeSpin includes a comprehensive performance analysis suite that measures throughput and identifies hardware-bound scaling regimes. The benchmark tool quantifies simulation efficiency in terms of sweeps per second and nanoseconds per site, while also isolating the overhead of thermodynamic and topological measurements from the pure simulation time. This granularity allows for deep algorithmic profiling across different lattice sizes and update schemes.
 
 ```bash
 # Run a scaling benchmark across multiple lattice sizes
-python benchmark.py --sizes 128 256 512 1024 --sweeps 100
+python scripts/benchmarks/throughput.py --sizes 128 256 512 1024 --sweeps 100
 ```
 
-Key performance features include:
-- **Parallel Numba**: Checkerboard updates can be distributed across multiple CPU cores using `parallel=True`.
-- **Discrete Representation**: The discrete Clock model replaces trigonometric evaluations with integer lookups, providing up to a ~2.5x speedup over continuous variants.
-- **Pure Metrics**: Benchmarking isolates **Pure Simulation Time** from measurement overhead, allowing for deep algorithmic profiling.
+Key engineering features ensure high performance across all models. Checkerboard updates are distributed across multiple CPU cores using Numba parallelization. For q-state clock models, the discrete representation replaces trigonometric evaluations with integer lookups, providing up to a ~2.5x speedup over continuous variants. Benchmarking results consistently isolate the simulation kernel performance, enabling a clear understanding of numerical cost in various regimes.
 
-## Typical usage
+## Typical Usage
 
 Launch an equilibrium temperature sweep for the XY model:
 
@@ -113,14 +104,11 @@ Measure the dynamical critical exponent $z$ at $T_c$:
 python scripts/ising/measure_z.py --sizes 16 32 48 64 96 128 --n-seeds 10
 ```
 
-## Development guidance
+## Development Guidance
 
 VibeSpin maintains rigorous engineering and physical standards. All update algorithms must strictly satisfy **detailed balance** and **ergodicity** — whether via the Metropolis-Hastings acceptance rule (for single-spin updates) or the Fortuin-Kasteleyn bond construction (for Wolff cluster updates).
 
-### Kernel Constraints
-- Simulation kernels must use `@njit(cache=True, fastmath=True)` and minimize memory allocation.
-- Periodic boundaries must use `idx_next` and `idx_prev` arrays (no `%` or `np.mod` in inner loops).
-- Models must sync Numba's internal RNG using `_seed_numba(seed)`.
+Performance-critical kernels are implemented with Numba JIT compilation to minimize execution time and memory allocation. These kernels utilize `@njit(cache=True, fastmath=True)` and avoid expensive modulo operations by using precomputed neighbor index arrays. To maintain reproducibility, models synchronize Numba's internal random number generator with the project seed.
 
 ### Verification Suite
 Before proposing changes, ensure all verification checks pass:
@@ -176,7 +164,7 @@ For deeper insights, refer to the source guides:
 - {doc}`Dynamic Critical Exponents <dynamic_critical_exponents>`: Scaling analysis of autocorrelation times at criticality.
 - {doc}`Ising Relaxation and Autocorrelation Analysis <ising_relaxation_and_autocorrelation_analysis>`: Comparative analysis of equilibration and autocorrelation across update schemes.
 
-## Project context
+## Project Context
 
 VibeSpin was developed using AI-assisted scientific coding workflows. The framework demonstrates how high-level physical design and validation can be accelerated through iterative modeling, benchmarking, and automated testing.
 
