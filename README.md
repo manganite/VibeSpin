@@ -169,6 +169,7 @@ If this still fails, check that the selected interpreter is the project virtual 
 
 For deeper insights, refer to the source guides:
 - {doc}`Physics and Algorithm Guide <physics>`: Detailed explanation of physical models, observables, and algorithm prerequisites.
+- {doc}`Architecture and Developer Guide <code>`: Technical blueprint, engineering rationale, and testing strategy.
 - {doc}`Scripts Catalog <scripts>`: Comprehensive catalog of entry-point scripts.
 - {doc}`Agent Instruction Guide <agents>`: Mandatory technical constraints for AI Agents.
 - {doc}`Performance Benchmarks <benchmarks>`: Detailed scaling analysis.

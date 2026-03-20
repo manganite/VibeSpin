@@ -8,7 +8,7 @@ This document provides mandatory procedural context and technical constraints fo
 - **Primary Priorities**: Preserve physical correctness, maximize simulation throughput, maintain reproducibility, and keep changes tightly scoped to the user request.
 - **Non-Goals Unless Requested**: Avoid unrelated refactors, broad API redesigns, and speculative architecture changes.
 - **Runtime Assumptions**: Performance-critical kernels use Numba JIT; quality gates rely on tests, linting, and type checking.
-- **Fast Orientation**: Core implementation in `models/`, helpers in `utils/`, experiments in `scripts/`, and validation in `tests/`.
+- **Fast Orientation**: Core implementation in `models/`, helpers in `utils/`, experiments in `scripts/`, and validation in `tests/`. For a detailed technical blueprint and engineering rationale, refer to **`CODE.md`**.
 
 ## Agent Role
 
@@ -116,6 +116,7 @@ Optimize for four outcomes: correct statistical-physics behavior, high simulatio
 ### 6. Documentation & Knowledge Management
 - **Docstring Compliance**: All new classes, methods, and kernels MUST include **NumPy-style docstrings**. This is mandatory for automated Sphinx API generation (`sphinx-apidoc`).
 - **Theory Updates**: When introducing new physical models or observables, you MUST update **`PHYSICS.md`** with the relevant Hamiltonian definitions, phase behavior, and mathematical formulations.
+- **Architecture Updates**: When introducing significant changes to the simulation engine, kernel design, or technical design patterns, you MUST update **`CODE.md`** to reflect the new architecture and engineering rationale.
 - **Scripts Catalog**: Any new entry-point script added to `scripts/` MUST be registered in **`SCRIPTS.md`** with a brief description of its purpose and usage.
 - **Performance Re-profiling**: If a change significantly impacts simulation throughput or analysis overhead, you MUST re-run the benchmark tool (`scripts/benchmarks/throughput.py`) and update the **`Performance_Benchmarks.ipynb`** summary results.
 - **Notebook Location**: All Jupyter notebooks live in `notebooks/`. When referencing a notebook by path, use `notebooks/<name>.ipynb`.
@@ -142,6 +143,7 @@ The workspace root contains the following key files and directories.
 **Root-level files:**
 - `README.md`: Project overview and quickstart.
 - `PHYSICS.md`: Hamiltonian definitions, phase behavior, and mathematical formulations.
+- `CODE.md`: Architecture guide, technical blueprint, and engineering rationale.
 - `BIBLIOGRAPHY.md`: Central repository for all scientific references used in the project.
 - `SCRIPTS.md`: Catalog of entry-point scripts with usage descriptions.
 - `AGENTS.md`: This agent instruction guide.
