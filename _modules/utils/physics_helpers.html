@@ -93,9 +93,87 @@
 
 <span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">scipy.integrate</span><span class="w"> </span><span class="kn">import</span> <span class="n">cumulative_trapezoid</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">scipy.stats</span><span class="w"> </span><span class="kn">import</span> <span class="n">norm</span>
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">models.simulation_base</span><span class="w"> </span><span class="kn">import</span> <span class="n">MonteCarloSimulation</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">utils.exceptions</span><span class="w"> </span><span class="kn">import</span> <span class="n">ZeroVarianceAutocorrelationError</span>
+
+<span class="n">DEFAULT_CONFIDENCE_LEVEL</span> <span class="o">=</span> <span class="mf">0.68</span>
+<span class="n">UNCERTAINTY_METHOD_BLOCKING</span> <span class="o">=</span> <span class="s1">&#39;blocking&#39;</span>
+<span class="n">UNCERTAINTY_METHOD_BOOTSTRAP</span> <span class="o">=</span> <span class="s1">&#39;bootstrap&#39;</span>
+
+<span class="n">UNCERTAINTY_FIELDS</span> <span class="o">=</span> <span class="p">(</span>
+    <span class="s1">&#39;value&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;err&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;ci_low&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;ci_high&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;tau_int&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;n_eff&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;samples&#39;</span><span class="p">,</span>
+<span class="p">)</span>
+
+<span class="n">UNCERTAINTY_METADATA_FIELDS</span> <span class="o">=</span> <span class="p">(</span>
+    <span class="s1">&#39;uncertainty_method&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;confidence_level&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;n_seeds&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;bootstrap_resamples&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;nan_or_undefined_count&#39;</span><span class="p">,</span>
+<span class="p">)</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_validate_confidence</span><span class="p">(</span><span class="o">*</span><span class="p">,</span> <span class="n">confidence</span><span class="p">:</span> <span class="nb">float</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="p">(</span><span class="mf">0.0</span> <span class="o">&lt;</span> <span class="n">confidence</span> <span class="o">&lt;</span> <span class="mf">1.0</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;confidence must satisfy 0 &lt; confidence &lt; 1, got </span><span class="si">{</span><span class="n">confidence</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_as_1d_float_array</span><span class="p">(</span><span class="o">*</span><span class="p">,</span> <span class="n">time_series</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">name</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
+    <span class="n">arr</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">time_series</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">arr</span><span class="o">.</span><span class="n">ndim</span> <span class="o">!=</span> <span class="mi">1</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s1"> must be 1-D, got shape </span><span class="si">{</span><span class="n">arr</span><span class="o">.</span><span class="n">shape</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">arr</span><span class="o">.</span><span class="n">size</span> <span class="o">&lt;</span> <span class="mi">2</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s1"> must contain at least 2 elements, got </span><span class="si">{</span><span class="n">arr</span><span class="o">.</span><span class="n">size</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">arr</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_z_multiplier</span><span class="p">(</span><span class="o">*</span><span class="p">,</span> <span class="n">confidence</span><span class="p">:</span> <span class="nb">float</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Return Gaussian z-score for two-sided confidence interval.&quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="nb">float</span><span class="p">(</span><span class="n">norm</span><span class="o">.</span><span class="n">ppf</span><span class="p">(</span><span class="mf">0.5</span> <span class="o">+</span> <span class="mf">0.5</span> <span class="o">*</span> <span class="n">confidence</span><span class="p">))</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_blocking_block_sizes</span><span class="p">(</span><span class="o">*</span><span class="p">,</span> <span class="n">n</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">min_block_size</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">max_block_size</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="nb">int</span><span class="p">]:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Generate increasing block sizes for blocking analysis.&quot;&quot;&quot;</span>
+    <span class="n">sizes</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">block</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="n">min_block_size</span><span class="p">)</span>
+    <span class="n">upper</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="n">max_block_size</span><span class="p">,</span> <span class="n">n</span> <span class="o">//</span> <span class="mi">2</span><span class="p">)</span>
+    <span class="k">while</span> <span class="n">block</span> <span class="o">&lt;=</span> <span class="n">upper</span><span class="p">:</span>
+        <span class="n">n_blocks</span> <span class="o">=</span> <span class="n">n</span> <span class="o">//</span> <span class="n">block</span>
+        <span class="k">if</span> <span class="n">n_blocks</span> <span class="o">&gt;=</span> <span class="mi">2</span><span class="p">:</span>
+            <span class="n">sizes</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">block</span><span class="p">)</span>
+        <span class="n">block</span> <span class="o">*=</span> <span class="mi">2</span>
+    <span class="k">return</span> <span class="n">sizes</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_select_blocking_plateau</span><span class="p">(</span><span class="o">*</span><span class="p">,</span> <span class="n">standard_errors</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Pick the first stable blocking plateau index.&quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">standard_errors</span><span class="o">.</span><span class="n">size</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+        <span class="k">return</span> <span class="mi">0</span>
+    <span class="n">rel_tol</span> <span class="o">=</span> <span class="mf">0.05</span>
+    <span class="k">for</span> <span class="n">idx</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">standard_errors</span><span class="o">.</span><span class="n">size</span><span class="p">):</span>
+        <span class="n">prev</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">standard_errors</span><span class="p">[</span><span class="n">idx</span> <span class="o">-</span> <span class="mi">1</span><span class="p">])</span>
+        <span class="n">cur</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">standard_errors</span><span class="p">[</span><span class="n">idx</span><span class="p">])</span>
+        <span class="k">if</span> <span class="n">prev</span> <span class="o">==</span> <span class="mf">0.0</span> <span class="ow">and</span> <span class="n">cur</span> <span class="o">==</span> <span class="mf">0.0</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">idx</span>
+        <span class="n">denom</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="nb">abs</span><span class="p">(</span><span class="n">prev</span><span class="p">),</span> <span class="mf">1e-16</span><span class="p">)</span>
+        <span class="k">if</span> <span class="nb">abs</span><span class="p">(</span><span class="n">cur</span> <span class="o">-</span> <span class="n">prev</span><span class="p">)</span> <span class="o">/</span> <span class="n">denom</span> <span class="o">&lt;=</span> <span class="n">rel_tol</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">idx</span>
+    <span class="k">return</span> <span class="nb">int</span><span class="p">(</span><span class="n">standard_errors</span><span class="o">.</span><span class="n">size</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_safe_n_eff_from_tau</span><span class="p">(</span><span class="o">*</span><span class="p">,</span> <span class="n">n_samples</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">tau_int</span><span class="p">:</span> <span class="nb">float</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Convert integrated autocorrelation time to effective sample size.&quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">np</span><span class="o">.</span><span class="n">isfinite</span><span class="p">(</span><span class="n">tau_int</span><span class="p">)</span> <span class="ow">or</span> <span class="n">tau_int</span> <span class="o">&lt;=</span> <span class="mf">0.0</span><span class="p">:</span>
+        <span class="k">return</span> <span class="nb">float</span><span class="p">(</span><span class="s1">&#39;nan&#39;</span><span class="p">)</span>
+    <span class="k">return</span> <span class="nb">float</span><span class="p">(</span><span class="nb">min</span><span class="p">(</span><span class="n">n_samples</span><span class="p">,</span> <span class="nb">max</span><span class="p">(</span><span class="mf">1.0</span><span class="p">,</span> <span class="n">n_samples</span> <span class="o">/</span> <span class="p">(</span><span class="mf">2.0</span> <span class="o">*</span> <span class="n">tau_int</span><span class="p">))))</span>
 
 
 <div class="viewcode-block" id="calculate_thermodynamics">
@@ -280,6 +358,297 @@
 
     <span class="n">C_t</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span> <span class="o">=</span> <span class="n">C_t_full</span><span class="p">[:</span><span class="n">window_end</span> <span class="o">+</span> <span class="mi">1</span><span class="p">]</span>
     <span class="k">return</span> <span class="n">C_t</span><span class="p">,</span> <span class="n">tau_int</span></div>
+
+
+
+<div class="viewcode-block" id="estimate_effective_sample_size">
+<a class="viewcode-back" href="../../api/vibespin.utils.html#utils.physics_helpers.estimate_effective_sample_size">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">estimate_effective_sample_size</span><span class="p">(</span>
+    <span class="o">*</span><span class="p">,</span>
+    <span class="n">time_series</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
+    <span class="n">tau_int</span><span class="p">:</span> <span class="nb">float</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Estimate effective sample size from integrated autocorrelation time.&quot;&quot;&quot;</span>
+    <span class="n">arr</span> <span class="o">=</span> <span class="n">_as_1d_float_array</span><span class="p">(</span><span class="n">time_series</span><span class="o">=</span><span class="n">time_series</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s1">&#39;time_series&#39;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">tau_int</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">_</span><span class="p">,</span> <span class="n">tau_est</span> <span class="o">=</span> <span class="n">calculate_autocorr</span><span class="p">(</span><span class="n">time_series</span><span class="o">=</span><span class="n">arr</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">tau_int</span> <span class="o">&lt;=</span> <span class="mf">0.0</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;tau_int must be positive when provided, got </span><span class="si">{</span><span class="n">tau_int</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
+        <span class="n">tau_est</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">tau_int</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">_safe_n_eff_from_tau</span><span class="p">(</span><span class="n">n_samples</span><span class="o">=</span><span class="n">arr</span><span class="o">.</span><span class="n">size</span><span class="p">,</span> <span class="n">tau_int</span><span class="o">=</span><span class="n">tau_est</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="blocking_error">
+<a class="viewcode-back" href="../../api/vibespin.utils.html#utils.physics_helpers.blocking_error">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">blocking_error</span><span class="p">(</span>
+    <span class="o">*</span><span class="p">,</span>
+    <span class="n">time_series</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
+    <span class="n">min_block_size</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">2</span><span class="p">,</span>
+    <span class="n">max_block_size</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">float</span><span class="p">]:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Estimate standard error using standard blocking/binning analysis.&quot;&quot;&quot;</span>
+    <span class="n">arr</span> <span class="o">=</span> <span class="n">_as_1d_float_array</span><span class="p">(</span><span class="n">time_series</span><span class="o">=</span><span class="n">time_series</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s1">&#39;time_series&#39;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">min_block_size</span> <span class="o">&lt;</span> <span class="mi">2</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;min_block_size must be &gt;= 2, got </span><span class="si">{</span><span class="n">min_block_size</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">max_block_size</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">max_block_size</span> <span class="o">=</span> <span class="n">arr</span><span class="o">.</span><span class="n">size</span> <span class="o">//</span> <span class="mi">2</span>
+    <span class="k">if</span> <span class="n">max_block_size</span> <span class="o">&lt;</span> <span class="n">min_block_size</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+            <span class="sa">f</span><span class="s1">&#39;max_block_size must be &gt;= min_block_size, got </span><span class="si">{</span><span class="n">max_block_size</span><span class="si">}</span><span class="s1"> &lt; </span><span class="si">{</span><span class="n">min_block_size</span><span class="si">}</span><span class="s1">&#39;</span>
+        <span class="p">)</span>
+
+    <span class="n">std</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">std</span><span class="p">(</span><span class="n">arr</span><span class="p">,</span> <span class="n">ddof</span><span class="o">=</span><span class="mi">1</span><span class="p">))</span>
+    <span class="n">naive_stderr</span> <span class="o">=</span> <span class="n">std</span> <span class="o">/</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">arr</span><span class="o">.</span><span class="n">size</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">std</span> <span class="o">==</span> <span class="mf">0.0</span><span class="p">:</span>
+        <span class="k">return</span> <span class="p">{</span>
+            <span class="s1">&#39;stderr&#39;</span><span class="p">:</span> <span class="mf">0.0</span><span class="p">,</span>
+            <span class="s1">&#39;stderr_naive&#39;</span><span class="p">:</span> <span class="mf">0.0</span><span class="p">,</span>
+            <span class="s1">&#39;block_size&#39;</span><span class="p">:</span> <span class="nb">float</span><span class="p">(</span><span class="n">min_block_size</span><span class="p">),</span>
+            <span class="s1">&#39;n_blocks&#39;</span><span class="p">:</span> <span class="nb">float</span><span class="p">(</span><span class="n">arr</span><span class="o">.</span><span class="n">size</span> <span class="o">//</span> <span class="n">min_block_size</span><span class="p">),</span>
+            <span class="s1">&#39;tau_int_from_blocking&#39;</span><span class="p">:</span> <span class="nb">float</span><span class="p">(</span><span class="s1">&#39;nan&#39;</span><span class="p">),</span>
+        <span class="p">}</span>
+
+    <span class="n">block_sizes</span> <span class="o">=</span> <span class="n">_blocking_block_sizes</span><span class="p">(</span>
+        <span class="n">n</span><span class="o">=</span><span class="n">arr</span><span class="o">.</span><span class="n">size</span><span class="p">,</span>
+        <span class="n">min_block_size</span><span class="o">=</span><span class="n">min_block_size</span><span class="p">,</span>
+        <span class="n">max_block_size</span><span class="o">=</span><span class="n">max_block_size</span><span class="p">,</span>
+    <span class="p">)</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">block_sizes</span><span class="p">:</span>
+        <span class="k">return</span> <span class="p">{</span>
+            <span class="s1">&#39;stderr&#39;</span><span class="p">:</span> <span class="nb">float</span><span class="p">(</span><span class="n">naive_stderr</span><span class="p">),</span>
+            <span class="s1">&#39;stderr_naive&#39;</span><span class="p">:</span> <span class="nb">float</span><span class="p">(</span><span class="n">naive_stderr</span><span class="p">),</span>
+            <span class="s1">&#39;block_size&#39;</span><span class="p">:</span> <span class="mf">1.0</span><span class="p">,</span>
+            <span class="s1">&#39;n_blocks&#39;</span><span class="p">:</span> <span class="nb">float</span><span class="p">(</span><span class="n">arr</span><span class="o">.</span><span class="n">size</span><span class="p">),</span>
+            <span class="s1">&#39;tau_int_from_blocking&#39;</span><span class="p">:</span> <span class="mf">0.5</span><span class="p">,</span>
+        <span class="p">}</span>
+
+    <span class="n">stderr_values</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">n_blocks_values</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">block</span> <span class="ow">in</span> <span class="n">block_sizes</span><span class="p">:</span>
+        <span class="n">n_blocks</span> <span class="o">=</span> <span class="n">arr</span><span class="o">.</span><span class="n">size</span> <span class="o">//</span> <span class="n">block</span>
+        <span class="n">trimmed</span> <span class="o">=</span> <span class="n">arr</span><span class="p">[:</span><span class="n">n_blocks</span> <span class="o">*</span> <span class="n">block</span><span class="p">]</span>
+        <span class="n">block_means</span> <span class="o">=</span> <span class="n">trimmed</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">n_blocks</span><span class="p">,</span> <span class="n">block</span><span class="p">)</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+        <span class="n">stderr</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">std</span><span class="p">(</span><span class="n">block_means</span><span class="p">,</span> <span class="n">ddof</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span> <span class="o">/</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">n_blocks</span><span class="p">))</span>
+        <span class="n">stderr_values</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">stderr</span><span class="p">)</span>
+        <span class="n">n_blocks_values</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="nb">float</span><span class="p">(</span><span class="n">n_blocks</span><span class="p">))</span>
+
+    <span class="n">stderr_arr</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">stderr_values</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">)</span>
+    <span class="n">selected_idx</span> <span class="o">=</span> <span class="n">_select_blocking_plateau</span><span class="p">(</span><span class="n">standard_errors</span><span class="o">=</span><span class="n">stderr_arr</span><span class="p">)</span>
+    <span class="n">selected_stderr</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">stderr_arr</span><span class="p">[</span><span class="n">selected_idx</span><span class="p">])</span>
+
+    <span class="n">tau_block</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="s1">&#39;nan&#39;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">naive_stderr</span> <span class="o">&gt;</span> <span class="mf">0.0</span><span class="p">:</span>
+        <span class="n">tau_block</span> <span class="o">=</span> <span class="mf">0.5</span> <span class="o">*</span> <span class="p">(</span><span class="n">selected_stderr</span> <span class="o">/</span> <span class="n">naive_stderr</span><span class="p">)</span> <span class="o">**</span> <span class="mi">2</span>
+
+    <span class="k">return</span> <span class="p">{</span>
+        <span class="s1">&#39;stderr&#39;</span><span class="p">:</span> <span class="n">selected_stderr</span><span class="p">,</span>
+        <span class="s1">&#39;stderr_naive&#39;</span><span class="p">:</span> <span class="nb">float</span><span class="p">(</span><span class="n">naive_stderr</span><span class="p">),</span>
+        <span class="s1">&#39;block_size&#39;</span><span class="p">:</span> <span class="nb">float</span><span class="p">(</span><span class="n">block_sizes</span><span class="p">[</span><span class="n">selected_idx</span><span class="p">]),</span>
+        <span class="s1">&#39;n_blocks&#39;</span><span class="p">:</span> <span class="nb">float</span><span class="p">(</span><span class="n">n_blocks_values</span><span class="p">[</span><span class="n">selected_idx</span><span class="p">]),</span>
+        <span class="s1">&#39;tau_int_from_blocking&#39;</span><span class="p">:</span> <span class="n">tau_block</span><span class="p">,</span>
+    <span class="p">}</span></div>
+
+
+
+<div class="viewcode-block" id="summarize_primary_observable">
+<a class="viewcode-back" href="../../api/vibespin.utils.html#utils.physics_helpers.summarize_primary_observable">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">summarize_primary_observable</span><span class="p">(</span>
+    <span class="o">*</span><span class="p">,</span>
+    <span class="n">time_series</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
+    <span class="n">confidence</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="n">DEFAULT_CONFIDENCE_LEVEL</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">float</span><span class="p">]:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Summarize a primary observable with blocking-based uncertainty.&quot;&quot;&quot;</span>
+    <span class="n">_validate_confidence</span><span class="p">(</span><span class="n">confidence</span><span class="o">=</span><span class="n">confidence</span><span class="p">)</span>
+    <span class="n">arr</span> <span class="o">=</span> <span class="n">_as_1d_float_array</span><span class="p">(</span><span class="n">time_series</span><span class="o">=</span><span class="n">time_series</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s1">&#39;time_series&#39;</span><span class="p">)</span>
+
+    <span class="n">value</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">arr</span><span class="p">))</span>
+    <span class="n">block</span> <span class="o">=</span> <span class="n">blocking_error</span><span class="p">(</span><span class="n">time_series</span><span class="o">=</span><span class="n">arr</span><span class="p">)</span>
+    <span class="n">err</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">block</span><span class="p">[</span><span class="s1">&#39;stderr&#39;</span><span class="p">])</span>
+    <span class="n">z</span> <span class="o">=</span> <span class="n">_z_multiplier</span><span class="p">(</span><span class="n">confidence</span><span class="o">=</span><span class="n">confidence</span><span class="p">)</span>
+
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">_</span><span class="p">,</span> <span class="n">tau_int</span> <span class="o">=</span> <span class="n">calculate_autocorr</span><span class="p">(</span><span class="n">time_series</span><span class="o">=</span><span class="n">arr</span><span class="p">)</span>
+    <span class="k">except</span> <span class="n">ZeroVarianceAutocorrelationError</span><span class="p">:</span>
+        <span class="n">tau_int</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="s1">&#39;nan&#39;</span><span class="p">)</span>
+
+    <span class="n">n_eff</span> <span class="o">=</span> <span class="n">_safe_n_eff_from_tau</span><span class="p">(</span><span class="n">n_samples</span><span class="o">=</span><span class="n">arr</span><span class="o">.</span><span class="n">size</span><span class="p">,</span> <span class="n">tau_int</span><span class="o">=</span><span class="n">tau_int</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="p">{</span>
+        <span class="s1">&#39;value&#39;</span><span class="p">:</span> <span class="n">value</span><span class="p">,</span>
+        <span class="s1">&#39;err&#39;</span><span class="p">:</span> <span class="n">err</span><span class="p">,</span>
+        <span class="s1">&#39;ci_low&#39;</span><span class="p">:</span> <span class="nb">float</span><span class="p">(</span><span class="n">value</span> <span class="o">-</span> <span class="n">z</span> <span class="o">*</span> <span class="n">err</span><span class="p">),</span>
+        <span class="s1">&#39;ci_high&#39;</span><span class="p">:</span> <span class="nb">float</span><span class="p">(</span><span class="n">value</span> <span class="o">+</span> <span class="n">z</span> <span class="o">*</span> <span class="n">err</span><span class="p">),</span>
+        <span class="s1">&#39;tau_int&#39;</span><span class="p">:</span> <span class="nb">float</span><span class="p">(</span><span class="n">tau_int</span><span class="p">),</span>
+        <span class="s1">&#39;n_eff&#39;</span><span class="p">:</span> <span class="n">n_eff</span><span class="p">,</span>
+        <span class="s1">&#39;samples&#39;</span><span class="p">:</span> <span class="nb">float</span><span class="p">(</span><span class="n">arr</span><span class="o">.</span><span class="n">size</span><span class="p">),</span>
+    <span class="p">}</span></div>
+
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_derived_point_estimate</span><span class="p">(</span>
+    <span class="o">*</span><span class="p">,</span>
+    <span class="n">series</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
+    <span class="n">temperature</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
+    <span class="n">L</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+    <span class="n">observable</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Compute derived thermodynamic point estimates from a time series.&quot;&quot;&quot;</span>
+    <span class="n">N</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">L</span> <span class="o">*</span> <span class="n">L</span><span class="p">)</span>
+    <span class="n">variance</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">var</span><span class="p">(</span><span class="n">series</span><span class="p">))</span>
+    <span class="k">if</span> <span class="n">observable</span> <span class="o">==</span> <span class="s1">&#39;chi&#39;</span><span class="p">:</span>
+        <span class="k">return</span> <span class="nb">float</span><span class="p">(</span><span class="n">N</span> <span class="o">*</span> <span class="n">variance</span> <span class="o">/</span> <span class="n">temperature</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">observable</span> <span class="o">==</span> <span class="s1">&#39;cv&#39;</span><span class="p">:</span>
+        <span class="k">return</span> <span class="nb">float</span><span class="p">(</span><span class="n">N</span> <span class="o">*</span> <span class="n">variance</span> <span class="o">/</span> <span class="p">(</span><span class="n">temperature</span><span class="o">**</span><span class="mi">2</span><span class="p">))</span>
+    <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;observable must be one of &#39;chi&#39; or &#39;cv&#39;, got </span><span class="si">{</span><span class="n">observable</span><span class="si">!r}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+
+<div class="viewcode-block" id="summarize_derived_observable">
+<a class="viewcode-back" href="../../api/vibespin.utils.html#utils.physics_helpers.summarize_derived_observable">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">summarize_derived_observable</span><span class="p">(</span>
+    <span class="o">*</span><span class="p">,</span>
+    <span class="n">magnetization_series</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">energy_series</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">temperature</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
+    <span class="n">L</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+    <span class="n">observable</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+    <span class="n">method</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">UNCERTAINTY_METHOD_BLOCKING</span><span class="p">,</span>
+    <span class="n">confidence</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="n">DEFAULT_CONFIDENCE_LEVEL</span><span class="p">,</span>
+    <span class="n">bootstrap_resamples</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">float</span><span class="p">]:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Summarize derived observables (chi, Cv) with uncertainty estimates.&quot;&quot;&quot;</span>
+    <span class="n">_validate_confidence</span><span class="p">(</span><span class="n">confidence</span><span class="o">=</span><span class="n">confidence</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">temperature</span> <span class="o">&lt;=</span> <span class="mf">0.0</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;temperature must be positive, got </span><span class="si">{</span><span class="n">temperature</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">L</span><span class="p">,</span> <span class="p">(</span><span class="nb">int</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">integer</span><span class="p">))</span> <span class="ow">or</span> <span class="n">L</span> <span class="o">&lt;</span> <span class="mi">1</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;L must be a positive integer, got </span><span class="si">{</span><span class="n">L</span><span class="si">!r}</span><span class="s1">&#39;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">method</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">{</span><span class="n">UNCERTAINTY_METHOD_BLOCKING</span><span class="p">,</span> <span class="n">UNCERTAINTY_METHOD_BOOTSTRAP</span><span class="p">}:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;unsupported method </span><span class="si">{</span><span class="n">method</span><span class="si">!r}</span><span class="s1">&#39;</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">observable</span> <span class="o">==</span> <span class="s1">&#39;chi&#39;</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">magnetization_series</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;magnetization_series is required for observable=&#39;chi&#39;&quot;</span><span class="p">)</span>
+        <span class="n">base</span> <span class="o">=</span> <span class="n">_as_1d_float_array</span><span class="p">(</span><span class="n">time_series</span><span class="o">=</span><span class="n">magnetization_series</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s1">&#39;magnetization_series&#39;</span><span class="p">)</span>
+    <span class="k">elif</span> <span class="n">observable</span> <span class="o">==</span> <span class="s1">&#39;cv&#39;</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">energy_series</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;energy_series is required for observable=&#39;cv&#39;&quot;</span><span class="p">)</span>
+        <span class="n">base</span> <span class="o">=</span> <span class="n">_as_1d_float_array</span><span class="p">(</span><span class="n">time_series</span><span class="o">=</span><span class="n">energy_series</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s1">&#39;energy_series&#39;</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;observable must be one of &#39;chi&#39; or &#39;cv&#39;, got </span><span class="si">{</span><span class="n">observable</span><span class="si">!r}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+    <span class="n">value</span> <span class="o">=</span> <span class="n">_derived_point_estimate</span><span class="p">(</span>
+        <span class="n">series</span><span class="o">=</span><span class="n">base</span><span class="p">,</span>
+        <span class="n">temperature</span><span class="o">=</span><span class="n">temperature</span><span class="p">,</span>
+        <span class="n">L</span><span class="o">=</span><span class="n">L</span><span class="p">,</span>
+        <span class="n">observable</span><span class="o">=</span><span class="n">observable</span><span class="p">,</span>
+    <span class="p">)</span>
+    <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">std</span><span class="p">(</span><span class="n">base</span><span class="p">,</span> <span class="n">ddof</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span> <span class="o">==</span> <span class="mf">0.0</span><span class="p">:</span>
+        <span class="k">return</span> <span class="p">{</span>
+            <span class="s1">&#39;value&#39;</span><span class="p">:</span> <span class="n">value</span><span class="p">,</span>
+            <span class="s1">&#39;err&#39;</span><span class="p">:</span> <span class="mf">0.0</span><span class="p">,</span>
+            <span class="s1">&#39;ci_low&#39;</span><span class="p">:</span> <span class="n">value</span><span class="p">,</span>
+            <span class="s1">&#39;ci_high&#39;</span><span class="p">:</span> <span class="n">value</span><span class="p">,</span>
+            <span class="s1">&#39;tau_int&#39;</span><span class="p">:</span> <span class="nb">float</span><span class="p">(</span><span class="s1">&#39;nan&#39;</span><span class="p">),</span>
+            <span class="s1">&#39;n_eff&#39;</span><span class="p">:</span> <span class="nb">float</span><span class="p">(</span><span class="s1">&#39;nan&#39;</span><span class="p">),</span>
+            <span class="s1">&#39;samples&#39;</span><span class="p">:</span> <span class="nb">float</span><span class="p">(</span><span class="n">base</span><span class="o">.</span><span class="n">size</span><span class="p">),</span>
+        <span class="p">}</span>
+
+    <span class="n">block</span> <span class="o">=</span> <span class="n">blocking_error</span><span class="p">(</span><span class="n">time_series</span><span class="o">=</span><span class="n">base</span><span class="p">)</span>
+    <span class="n">block_size</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">block</span><span class="p">[</span><span class="s1">&#39;block_size&#39;</span><span class="p">])</span>
+    <span class="n">n_blocks</span> <span class="o">=</span> <span class="n">base</span><span class="o">.</span><span class="n">size</span> <span class="o">//</span> <span class="n">block_size</span>
+    <span class="n">trimmed</span> <span class="o">=</span> <span class="n">base</span><span class="p">[:</span><span class="n">n_blocks</span> <span class="o">*</span> <span class="n">block_size</span><span class="p">]</span>
+    <span class="n">block_reshaped</span> <span class="o">=</span> <span class="n">trimmed</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">n_blocks</span><span class="p">,</span> <span class="n">block_size</span><span class="p">)</span>
+
+    <span class="n">per_block</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span>
+        <span class="p">[</span>
+            <span class="n">_derived_point_estimate</span><span class="p">(</span>
+                <span class="n">series</span><span class="o">=</span><span class="n">block_reshaped</span><span class="p">[</span><span class="n">idx</span><span class="p">],</span>
+                <span class="n">temperature</span><span class="o">=</span><span class="n">temperature</span><span class="p">,</span>
+                <span class="n">L</span><span class="o">=</span><span class="n">L</span><span class="p">,</span>
+                <span class="n">observable</span><span class="o">=</span><span class="n">observable</span><span class="p">,</span>
+            <span class="p">)</span>
+            <span class="k">for</span> <span class="n">idx</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n_blocks</span><span class="p">)</span>
+        <span class="p">],</span>
+        <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">,</span>
+    <span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">n_blocks</span> <span class="o">&lt;</span> <span class="mi">2</span><span class="p">:</span>
+        <span class="n">err</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="s1">&#39;nan&#39;</span><span class="p">)</span>
+        <span class="n">ci_low</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="s1">&#39;nan&#39;</span><span class="p">)</span>
+        <span class="n">ci_high</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="s1">&#39;nan&#39;</span><span class="p">)</span>
+    <span class="k">elif</span> <span class="n">method</span> <span class="o">==</span> <span class="n">UNCERTAINTY_METHOD_BLOCKING</span><span class="p">:</span>
+        <span class="n">err</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">std</span><span class="p">(</span><span class="n">per_block</span><span class="p">,</span> <span class="n">ddof</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span> <span class="o">/</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">n_blocks</span><span class="p">))</span>
+        <span class="n">z</span> <span class="o">=</span> <span class="n">_z_multiplier</span><span class="p">(</span><span class="n">confidence</span><span class="o">=</span><span class="n">confidence</span><span class="p">)</span>
+        <span class="n">ci_low</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">value</span> <span class="o">-</span> <span class="n">z</span> <span class="o">*</span> <span class="n">err</span><span class="p">)</span>
+        <span class="n">ci_high</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">value</span> <span class="o">+</span> <span class="n">z</span> <span class="o">*</span> <span class="n">err</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">bootstrap_resamples</span> <span class="o">&lt;=</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;bootstrap_resamples must be &gt; 0 when method is bootstrap&#39;</span><span class="p">)</span>
+        <span class="n">rng</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">default_rng</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+        <span class="n">boot</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">empty</span><span class="p">(</span><span class="n">bootstrap_resamples</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">bootstrap_resamples</span><span class="p">):</span>
+            <span class="n">sample</span> <span class="o">=</span> <span class="n">rng</span><span class="o">.</span><span class="n">choice</span><span class="p">(</span><span class="n">per_block</span><span class="p">,</span> <span class="n">size</span><span class="o">=</span><span class="n">n_blocks</span><span class="p">,</span> <span class="n">replace</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+            <span class="n">boot</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">sample</span><span class="p">))</span>
+        <span class="n">alpha</span> <span class="o">=</span> <span class="mf">0.5</span> <span class="o">*</span> <span class="p">(</span><span class="mf">1.0</span> <span class="o">-</span> <span class="n">confidence</span><span class="p">)</span>
+        <span class="n">ci_low</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">quantile</span><span class="p">(</span><span class="n">boot</span><span class="p">,</span> <span class="n">alpha</span><span class="p">))</span>
+        <span class="n">ci_high</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">quantile</span><span class="p">(</span><span class="n">boot</span><span class="p">,</span> <span class="mf">1.0</span> <span class="o">-</span> <span class="n">alpha</span><span class="p">))</span>
+        <span class="n">err</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">std</span><span class="p">(</span><span class="n">boot</span><span class="p">,</span> <span class="n">ddof</span><span class="o">=</span><span class="mi">1</span><span class="p">))</span>
+
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">_</span><span class="p">,</span> <span class="n">tau_int</span> <span class="o">=</span> <span class="n">calculate_autocorr</span><span class="p">(</span><span class="n">time_series</span><span class="o">=</span><span class="n">base</span><span class="p">)</span>
+    <span class="k">except</span> <span class="n">ZeroVarianceAutocorrelationError</span><span class="p">:</span>
+        <span class="n">tau_int</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="s1">&#39;nan&#39;</span><span class="p">)</span>
+
+    <span class="n">n_eff</span> <span class="o">=</span> <span class="n">_safe_n_eff_from_tau</span><span class="p">(</span><span class="n">n_samples</span><span class="o">=</span><span class="n">base</span><span class="o">.</span><span class="n">size</span><span class="p">,</span> <span class="n">tau_int</span><span class="o">=</span><span class="n">tau_int</span><span class="p">)</span>
+    <span class="k">return</span> <span class="p">{</span>
+        <span class="s1">&#39;value&#39;</span><span class="p">:</span> <span class="n">value</span><span class="p">,</span>
+        <span class="s1">&#39;err&#39;</span><span class="p">:</span> <span class="n">err</span><span class="p">,</span>
+        <span class="s1">&#39;ci_low&#39;</span><span class="p">:</span> <span class="n">ci_low</span><span class="p">,</span>
+        <span class="s1">&#39;ci_high&#39;</span><span class="p">:</span> <span class="n">ci_high</span><span class="p">,</span>
+        <span class="s1">&#39;tau_int&#39;</span><span class="p">:</span> <span class="nb">float</span><span class="p">(</span><span class="n">tau_int</span><span class="p">),</span>
+        <span class="s1">&#39;n_eff&#39;</span><span class="p">:</span> <span class="n">n_eff</span><span class="p">,</span>
+        <span class="s1">&#39;samples&#39;</span><span class="p">:</span> <span class="nb">float</span><span class="p">(</span><span class="n">base</span><span class="o">.</span><span class="n">size</span><span class="p">),</span>
+    <span class="p">}</span></div>
+
+
+
+<div class="viewcode-block" id="summarize_replicate_samples">
+<a class="viewcode-back" href="../../api/vibespin.utils.html#utils.physics_helpers.summarize_replicate_samples">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">summarize_replicate_samples</span><span class="p">(</span>
+    <span class="o">*</span><span class="p">,</span>
+    <span class="n">samples</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
+    <span class="n">confidence</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="n">DEFAULT_CONFIDENCE_LEVEL</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span> <span class="o">|</span> <span class="nb">float</span><span class="p">]:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Summarize replicate samples using NaN-safe median and percentile bands.&quot;&quot;&quot;</span>
+    <span class="n">_validate_confidence</span><span class="p">(</span><span class="n">confidence</span><span class="o">=</span><span class="n">confidence</span><span class="p">)</span>
+    <span class="n">arr</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">samples</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">arr</span><span class="o">.</span><span class="n">size</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;samples must be non-empty&#39;</span><span class="p">)</span>
+
+    <span class="n">alpha</span> <span class="o">=</span> <span class="mf">0.5</span> <span class="o">*</span> <span class="p">(</span><span class="mf">1.0</span> <span class="o">-</span> <span class="n">confidence</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">arr</span><span class="o">.</span><span class="n">ndim</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+        <span class="n">value</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">nanmedian</span><span class="p">(</span><span class="n">arr</span><span class="p">))</span>
+        <span class="n">ci_low</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">nanquantile</span><span class="p">(</span><span class="n">arr</span><span class="p">,</span> <span class="n">alpha</span><span class="p">))</span>
+        <span class="n">ci_high</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">nanquantile</span><span class="p">(</span><span class="n">arr</span><span class="p">,</span> <span class="mf">1.0</span> <span class="o">-</span> <span class="n">alpha</span><span class="p">))</span>
+        <span class="k">return</span> <span class="p">{</span>
+            <span class="s1">&#39;value&#39;</span><span class="p">:</span> <span class="n">value</span><span class="p">,</span>
+            <span class="s1">&#39;ci_low&#39;</span><span class="p">:</span> <span class="n">ci_low</span><span class="p">,</span>
+            <span class="s1">&#39;ci_high&#39;</span><span class="p">:</span> <span class="n">ci_high</span><span class="p">,</span>
+            <span class="s1">&#39;samples&#39;</span><span class="p">:</span> <span class="nb">float</span><span class="p">(</span><span class="n">arr</span><span class="o">.</span><span class="n">size</span><span class="p">),</span>
+            <span class="s1">&#39;nan_or_undefined_count&#39;</span><span class="p">:</span> <span class="nb">float</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">isnan</span><span class="p">(</span><span class="n">arr</span><span class="p">)</span><span class="o">.</span><span class="n">sum</span><span class="p">()),</span>
+        <span class="p">}</span>
+
+    <span class="n">value_arr</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">nanmedian</span><span class="p">(</span><span class="n">arr</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+    <span class="n">ci_low_arr</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">nanquantile</span><span class="p">(</span><span class="n">arr</span><span class="p">,</span> <span class="n">alpha</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+    <span class="n">ci_high_arr</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">nanquantile</span><span class="p">(</span><span class="n">arr</span><span class="p">,</span> <span class="mf">1.0</span> <span class="o">-</span> <span class="n">alpha</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+    <span class="k">return</span> <span class="p">{</span>
+        <span class="s1">&#39;value&#39;</span><span class="p">:</span> <span class="n">value_arr</span><span class="p">,</span>
+        <span class="s1">&#39;ci_low&#39;</span><span class="p">:</span> <span class="n">ci_low_arr</span><span class="p">,</span>
+        <span class="s1">&#39;ci_high&#39;</span><span class="p">:</span> <span class="n">ci_high_arr</span><span class="p">,</span>
+        <span class="s1">&#39;samples&#39;</span><span class="p">:</span> <span class="nb">float</span><span class="p">(</span><span class="n">arr</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]),</span>
+        <span class="s1">&#39;nan_or_undefined_count&#39;</span><span class="p">:</span> <span class="nb">float</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">isnan</span><span class="p">(</span><span class="n">arr</span><span class="p">)</span><span class="o">.</span><span class="n">sum</span><span class="p">()),</span>
+    <span class="p">}</span></div>
 
 
 

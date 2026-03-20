@@ -17,6 +17,9 @@
       <script src="_static/doctools.js?v=fd6eb6e6"></script>
       <script src="_static/sphinx_highlight.js?v=6ffebe34"></script>
       <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+      <script>window.MathJax = {"options": {"processHtmlClass": "tex2jax_process|mathjax_process|math|output_area"}}</script>
+      <script>window.MathJax = {"tex": {"inlineMath": [["$", "$"], ["\\(", "\\)"]], "processEscapes": true}, "options": {"ignoreHtmlClass": "tex2jax_ignore|mathjax_ignore|document", "processHtmlClass": "tex2jax_process|mathjax_process|math|output_area"}}</script>
+      <script defer="defer" src="https://cdn.jsdelivr.net/npm/mathjax@4/tex-mml-chtml.js"></script>
     <script src="_static/js/theme.js"></script>
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
@@ -53,6 +56,13 @@
 <li class="toctree-l2"><a class="reference internal" href="#error-handling-and-type-safety">Error Handling and Type Safety</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#testing-strategy-and-quality-gates">Testing Strategy and Quality Gates</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#bibliography">Bibliography</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#uncertainty-data-contract-and-pipeline">Uncertainty Data Contract and Pipeline</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#schema-fields">Schema Fields</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#utility-api">Utility API</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#design-rationale">Design Rationale</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#id1">Bibliography</a></li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="scripts.html">Scripts Catalog: VibeSpin</a></li>
@@ -120,6 +130,65 @@
 </section>
 <section id="bibliography">
 <h2>Bibliography<a class="headerlink" href="#bibliography" title="Link to this heading"></a></h2>
+</section>
+<section id="uncertainty-data-contract-and-pipeline">
+<h2>Uncertainty Data Contract and Pipeline<a class="headerlink" href="#uncertainty-data-contract-and-pipeline" title="Link to this heading"></a></h2>
+<p>Analysis scripts and notebooks in VibeSpin share a standardized uncertainty schema for all serialized observables. This contract is defined in <code class="docutils literal notranslate"><span class="pre">utils/physics_helpers.py</span></code> and enforced by the integration test layer; any script that writes an NPZ file should conform to it.</p>
+<section id="schema-fields">
+<h3>Schema Fields<a class="headerlink" href="#schema-fields" title="Link to this heading"></a></h3>
+<p>For each observable <code class="docutils literal notranslate"><span class="pre">&lt;obs&gt;</span></code> saved by a temperature-sweep script, the NPZ file contains the following keys. The suffix <code class="docutils literal notranslate"><span class="pre">&lt;obs&gt;</span></code> takes values such as <code class="docutils literal notranslate"><span class="pre">avg_m</span></code>, <code class="docutils literal notranslate"><span class="pre">avg_e</span></code>, <code class="docutils literal notranslate"><span class="pre">susc</span></code>, and <code class="docutils literal notranslate"><span class="pre">spec_h</span></code>.</p>
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>Key</p></th>
+<th class="head"><p>Shape</p></th>
+<th class="head"><p>Meaning</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">&lt;obs&gt;_value</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">(T,)</span></code></p></td>
+<td><p>Point estimate (mean across seeds, or single-seed value)</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">&lt;obs&gt;_err</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">(T,)</span></code></p></td>
+<td><p>Autocorrelation-aware standard error; <code class="docutils literal notranslate"><span class="pre">NaN</span></code> for single-seed runs</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">&lt;obs&gt;_ci_low</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">(T,)</span></code></p></td>
+<td><p>Lower confidence-interval bound</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">&lt;obs&gt;_ci_high</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">(T,)</span></code></p></td>
+<td><p>Upper confidence-interval bound</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">&lt;obs&gt;_tau_int</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">(T,)</span></code></p></td>
+<td><p>Integrated autocorrelation time per temperature point</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">&lt;obs&gt;_n_eff</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">(T,)</span></code></p></td>
+<td><p>Effective sample size; <code class="docutils literal notranslate"><span class="pre">NaN</span></code> where <code class="docutils literal notranslate"><span class="pre">tau_int</span></code> is undefined</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">&lt;obs&gt;_samples</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">(T,</span> <span class="pre">S)</span></code></p></td>
+<td><p>Raw per-seed samples (S = 1 for single-seed runs)</p></td>
+</tr>
+</tbody>
+</table>
+<p>Global metadata keys are written once per file: <code class="docutils literal notranslate"><span class="pre">uncertainty_method</span></code> (string, currently <code class="docutils literal notranslate"><span class="pre">'blocking'</span></code>), <code class="docutils literal notranslate"><span class="pre">confidence_level</span></code> (float, default <code class="docutils literal notranslate"><span class="pre">0.68</span></code>), <code class="docutils literal notranslate"><span class="pre">n_seeds</span></code> (int), <code class="docutils literal notranslate"><span class="pre">bootstrap_resamples</span></code> (int, 0 if unused), and <code class="docutils literal notranslate"><span class="pre">nan_or_undefined_count</span></code> (float, count of temperature points with undefined <code class="docutils literal notranslate"><span class="pre">tau_int</span></code>).</p>
+<p>Legacy keys (<code class="docutils literal notranslate"><span class="pre">avg_m</span></code>, <code class="docutils literal notranslate"><span class="pre">avg_e</span></code>, <code class="docutils literal notranslate"><span class="pre">susc</span></code>, <code class="docutils literal notranslate"><span class="pre">spec_h</span></code>, <code class="docutils literal notranslate"><span class="pre">entropy</span></code>, <code class="docutils literal notranslate"><span class="pre">tau_int</span></code>, <code class="docutils literal notranslate"><span class="pre">temperatures</span></code>) are preserved alongside the new keys for backward compatibility. Consumers should prefer the standardized keys where available.</p>
+</section>
+<section id="utility-api">
+<h3>Utility API<a class="headerlink" href="#utility-api" title="Link to this heading"></a></h3>
+<p>The canonical implementation lives in <code class="docutils literal notranslate"><span class="pre">utils/physics_helpers.py</span></code>. The key public functions are as follows. <code class="docutils literal notranslate"><span class="pre">estimate_effective_sample_size</span></code> computes <span class="math notranslate nohighlight">\(N_\mathrm{eff} = N / (2\tau_{\mathrm{int}})\)</span> from a time series, optionally accepting a pre-computed <code class="docutils literal notranslate"><span class="pre">tau_int</span></code> to avoid redundant autocorrelation calculation. <code class="docutils literal notranslate"><span class="pre">blocking_error</span></code> applies the plateau-selection blocking method and returns the plateau standard error alongside the estimated <code class="docutils literal notranslate"><span class="pre">tau_int</span></code> and <code class="docutils literal notranslate"><span class="pre">n_eff</span></code>. <code class="docutils literal notranslate"><span class="pre">summarize_primary_observable</span></code> wraps blocking into a single dict conforming to the schema fields above, handling the zero-variance edge case by storing <code class="docutils literal notranslate"><span class="pre">NaN</span></code> for the undefined fields. <code class="docutils literal notranslate"><span class="pre">summarize_derived_observable</span></code> extends this to nonlinear quadratic estimators like susceptibility and specific heat, supporting both the blocking propagation (default) and an optional block-bootstrap. <code class="docutils literal notranslate"><span class="pre">summarize_replicate_samples</span></code> aggregates a 2D <code class="docutils literal notranslate"><span class="pre">(T,</span> <span class="pre">S)</span></code> array of per-seed samples into a schema-consistent dict using the inter-seed distribution as the uncertainty source.</p>
+</section>
+<section id="design-rationale">
+<h3>Design Rationale<a class="headerlink" href="#design-rationale" title="Link to this heading"></a></h3>
+<p>The schema is written additively: new standardized keys are always appended rather than replacing the legacy layout. This allows existing notebooks and downstream loaders to continue reading the pre-schema keys while new code targets the standardized ones. All constants (<code class="docutils literal notranslate"><span class="pre">DEFAULT_CONFIDENCE_LEVEL</span></code>, <code class="docutils literal notranslate"><span class="pre">UNCERTAINTY_METHOD_BLOCKING</span></code>, <code class="docutils literal notranslate"><span class="pre">UNCERTAINTY_METHOD_BOOTSTRAP</span></code>, <code class="docutils literal notranslate"><span class="pre">UNCERTAINTY_FIELDS</span></code>, <code class="docutils literal notranslate"><span class="pre">UNCERTAINTY_METADATA_FIELDS</span></code>) are defined at module level in <code class="docutils literal notranslate"><span class="pre">utils/physics_helpers.py</span></code> and imported by all scripts, ensuring a single authoritative source for the contract.</p>
+</section>
+</section>
+<section id="id1">
+<h2>Bibliography<a class="headerlink" href="#id1" title="Link to this heading"></a></h2>
 <p>The engineering and algorithmic choices in VibeSpin are grounded in standard practices for scientific computing and statistical physics. For a comprehensive list of all references used in the project, see <span class="xref myst">BIBLIOGRAPHY.md</span>.</p>
 <p><a class="reference internal" href="#bibliography"><span class="std std-ref">[1]</span></a> W. K. Hastings, “Monte Carlo sampling methods using Markov chains and their applications,” <em>Biometrika</em>, vol. 57, no. 1, pp. 97–109, 1970. <a class="reference external" href="https://academic.oup.com/biomet/article/57/1/97/252073">Oxford Academic Open Access</a></p>
 <p><a class="reference internal" href="#bibliography"><span class="std std-ref">[2]</span></a> M. E. J. Newman and G. T. Barkema, “Monte Carlo Methods in Statistical Physics,” Oxford University Press, 1999. <a class="reference external" href="https://arxiv.org/abs/0905.1629">Lecture Notes Summary (H. G. Katzgraber)</a></p>

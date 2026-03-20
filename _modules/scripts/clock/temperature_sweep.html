@@ -94,6 +94,7 @@
 
 <span class="kn">import</span><span class="w"> </span><span class="nn">argparse</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">logging</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pathlib</span><span class="w"> </span><span class="kn">import</span> <span class="n">Path</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">NamedTuple</span>
 
 <span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
@@ -101,7 +102,14 @@
 <span class="kn">from</span><span class="w"> </span><span class="nn">models.clock_model</span><span class="w"> </span><span class="kn">import</span> <span class="n">ClockSimulation</span><span class="p">,</span> <span class="n">DiscreteClockSimulation</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">utils.cli_helpers</span><span class="w"> </span><span class="kn">import</span> <span class="n">parse_args_compat</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">utils.exceptions</span><span class="w"> </span><span class="kn">import</span> <span class="n">ZeroVarianceAutocorrelationError</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">utils.physics_helpers</span><span class="w"> </span><span class="kn">import</span> <span class="n">calculate_autocorr</span><span class="p">,</span> <span class="n">calculate_entropy</span><span class="p">,</span> <span class="n">calculate_thermodynamics</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">utils.physics_helpers</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
+    <span class="n">DEFAULT_CONFIDENCE_LEVEL</span><span class="p">,</span>
+    <span class="n">UNCERTAINTY_METHOD_BLOCKING</span><span class="p">,</span>
+    <span class="n">calculate_autocorr</span><span class="p">,</span>
+    <span class="n">calculate_entropy</span><span class="p">,</span>
+    <span class="n">calculate_thermodynamics</span><span class="p">,</span>
+    <span class="n">summarize_replicate_samples</span><span class="p">,</span>
+<span class="p">)</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">utils.system_helpers</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
     <span class="n">convergence_equilibrate</span><span class="p">,</span>
     <span class="n">parallel_sweep</span><span class="p">,</span>
@@ -167,6 +175,30 @@
     <span class="n">discrete</span><span class="p">:</span> <span class="nb">bool</span>
 
 
+<span class="k">def</span><span class="w"> </span><span class="nf">_build_uncertainty_bundle</span><span class="p">(</span>
+    <span class="o">*</span><span class="p">,</span>
+    <span class="n">value</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
+    <span class="n">tau_int</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
+    <span class="n">meas_steps</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span> <span class="o">|</span> <span class="nb">float</span><span class="p">]:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Build a standardized uncertainty bundle for single-seed temperature sweeps.&quot;&quot;&quot;</span>
+    <span class="n">summary</span> <span class="o">=</span> <span class="n">summarize_replicate_samples</span><span class="p">(</span><span class="n">samples</span><span class="o">=</span><span class="n">value</span><span class="p">[:,</span> <span class="kc">None</span><span class="p">])</span>
+    <span class="n">n_eff</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span>
+        <span class="n">np</span><span class="o">.</span><span class="n">isfinite</span><span class="p">(</span><span class="n">tau_int</span><span class="p">)</span> <span class="o">&amp;</span> <span class="p">(</span><span class="n">tau_int</span> <span class="o">&gt;</span> <span class="mf">0.0</span><span class="p">),</span>
+        <span class="n">np</span><span class="o">.</span><span class="n">minimum</span><span class="p">(</span><span class="nb">float</span><span class="p">(</span><span class="n">meas_steps</span><span class="p">),</span> <span class="n">meas_steps</span> <span class="o">/</span> <span class="p">(</span><span class="mf">2.0</span> <span class="o">*</span> <span class="n">tau_int</span><span class="p">)),</span>
+        <span class="n">np</span><span class="o">.</span><span class="n">nan</span><span class="p">,</span>
+    <span class="p">)</span>
+    <span class="k">return</span> <span class="p">{</span>
+        <span class="s1">&#39;value&#39;</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">summary</span><span class="p">[</span><span class="s1">&#39;value&#39;</span><span class="p">],</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">),</span>
+        <span class="s1">&#39;err&#39;</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">full_like</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">nan</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">),</span>
+        <span class="s1">&#39;ci_low&#39;</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">summary</span><span class="p">[</span><span class="s1">&#39;ci_low&#39;</span><span class="p">],</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">),</span>
+        <span class="s1">&#39;ci_high&#39;</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">summary</span><span class="p">[</span><span class="s1">&#39;ci_high&#39;</span><span class="p">],</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">),</span>
+        <span class="s1">&#39;tau_int&#39;</span><span class="p">:</span> <span class="n">tau_int</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">),</span>
+        <span class="s1">&#39;n_eff&#39;</span><span class="p">:</span> <span class="n">n_eff</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">),</span>
+        <span class="s1">&#39;samples&#39;</span><span class="p">:</span> <span class="n">value</span><span class="p">[:,</span> <span class="kc">None</span><span class="p">]</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">),</span>
+    <span class="p">}</span>
+
+
 <div class="viewcode-block" id="main">
 <a class="viewcode-back" href="../../../api/vibespin.scripts.clock.html#scripts.clock.temperature_sweep.main">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">main</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
@@ -230,19 +262,84 @@
         <span class="n">worker_func</span><span class="o">=</span><span class="n">simulate_temperature</span><span class="p">,</span> <span class="n">params</span><span class="o">=</span><span class="n">sweep_params</span>
     <span class="p">)</span>
     <span class="n">avg_m</span><span class="p">,</span> <span class="n">avg_e</span><span class="p">,</span> <span class="n">susc</span><span class="p">,</span> <span class="n">spec_h</span><span class="p">,</span> <span class="n">tau_int_vals</span> <span class="o">=</span> <span class="nb">zip</span><span class="p">(</span><span class="o">*</span><span class="n">results</span><span class="p">,</span> <span class="n">strict</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="n">avg_m_arr</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">avg_m</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">)</span>
+    <span class="n">avg_e_arr</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">avg_e</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">)</span>
+    <span class="n">susc_arr</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">susc</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">)</span>
+    <span class="n">spec_h_arr</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">spec_h</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">)</span>
+    <span class="n">tau_int_arr</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">tau_int_vals</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">)</span>
+
     <span class="n">entropy</span> <span class="o">=</span> <span class="n">calculate_entropy</span><span class="p">(</span>
-        <span class="n">temperatures</span><span class="o">=</span><span class="n">temperatures</span><span class="p">,</span> <span class="n">specific_heat</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">spec_h</span><span class="p">),</span>
+        <span class="n">temperatures</span><span class="o">=</span><span class="n">temperatures</span><span class="p">,</span> <span class="n">specific_heat</span><span class="o">=</span><span class="n">spec_h_arr</span><span class="p">,</span>
         <span class="n">s_ref</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">Q</span><span class="p">),</span>
+    <span class="p">)</span>
+
+    <span class="n">mag_bundle</span> <span class="o">=</span> <span class="n">_build_uncertainty_bundle</span><span class="p">(</span>
+        <span class="n">value</span><span class="o">=</span><span class="n">avg_m_arr</span><span class="p">,</span> <span class="n">tau_int</span><span class="o">=</span><span class="n">tau_int_arr</span><span class="p">,</span> <span class="n">meas_steps</span><span class="o">=</span><span class="n">args</span><span class="o">.</span><span class="n">meas_steps</span><span class="p">,</span>
+    <span class="p">)</span>
+    <span class="n">eng_bundle</span> <span class="o">=</span> <span class="n">_build_uncertainty_bundle</span><span class="p">(</span>
+        <span class="n">value</span><span class="o">=</span><span class="n">avg_e_arr</span><span class="p">,</span> <span class="n">tau_int</span><span class="o">=</span><span class="n">tau_int_arr</span><span class="p">,</span> <span class="n">meas_steps</span><span class="o">=</span><span class="n">args</span><span class="o">.</span><span class="n">meas_steps</span><span class="p">,</span>
+    <span class="p">)</span>
+    <span class="n">susc_bundle</span> <span class="o">=</span> <span class="n">_build_uncertainty_bundle</span><span class="p">(</span>
+        <span class="n">value</span><span class="o">=</span><span class="n">susc_arr</span><span class="p">,</span> <span class="n">tau_int</span><span class="o">=</span><span class="n">tau_int_arr</span><span class="p">,</span> <span class="n">meas_steps</span><span class="o">=</span><span class="n">args</span><span class="o">.</span><span class="n">meas_steps</span><span class="p">,</span>
+    <span class="p">)</span>
+    <span class="n">cv_bundle</span> <span class="o">=</span> <span class="n">_build_uncertainty_bundle</span><span class="p">(</span>
+        <span class="n">value</span><span class="o">=</span><span class="n">spec_h_arr</span><span class="p">,</span> <span class="n">tau_int</span><span class="o">=</span><span class="n">tau_int_arr</span><span class="p">,</span> <span class="n">meas_steps</span><span class="o">=</span><span class="n">args</span><span class="o">.</span><span class="n">meas_steps</span><span class="p">,</span>
+    <span class="p">)</span>
+
+    <span class="n">output_dir</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="n">args</span><span class="o">.</span><span class="n">output_dir</span><span class="p">)</span>
+    <span class="n">output_dir</span><span class="o">.</span><span class="n">mkdir</span><span class="p">(</span><span class="n">parents</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">exist_ok</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="n">np</span><span class="o">.</span><span class="n">savez</span><span class="p">(</span>
+        <span class="n">output_dir</span> <span class="o">/</span> <span class="s1">&#39;temperature_sweep_data.npz&#39;</span><span class="p">,</span>
+        <span class="n">temperatures</span><span class="o">=</span><span class="n">temperatures</span><span class="p">,</span>
+        <span class="n">avg_m</span><span class="o">=</span><span class="n">avg_m_arr</span><span class="p">,</span>
+        <span class="n">avg_e</span><span class="o">=</span><span class="n">avg_e_arr</span><span class="p">,</span>
+        <span class="n">susc</span><span class="o">=</span><span class="n">susc_arr</span><span class="p">,</span>
+        <span class="n">spec_h</span><span class="o">=</span><span class="n">spec_h_arr</span><span class="p">,</span>
+        <span class="n">entropy</span><span class="o">=</span><span class="n">entropy</span><span class="p">,</span>
+        <span class="n">tau_int</span><span class="o">=</span><span class="n">tau_int_arr</span><span class="p">,</span>
+        <span class="n">avg_m_value</span><span class="o">=</span><span class="n">mag_bundle</span><span class="p">[</span><span class="s1">&#39;value&#39;</span><span class="p">],</span>
+        <span class="n">avg_m_err</span><span class="o">=</span><span class="n">mag_bundle</span><span class="p">[</span><span class="s1">&#39;err&#39;</span><span class="p">],</span>
+        <span class="n">avg_m_ci_low</span><span class="o">=</span><span class="n">mag_bundle</span><span class="p">[</span><span class="s1">&#39;ci_low&#39;</span><span class="p">],</span>
+        <span class="n">avg_m_ci_high</span><span class="o">=</span><span class="n">mag_bundle</span><span class="p">[</span><span class="s1">&#39;ci_high&#39;</span><span class="p">],</span>
+        <span class="n">avg_m_tau_int</span><span class="o">=</span><span class="n">mag_bundle</span><span class="p">[</span><span class="s1">&#39;tau_int&#39;</span><span class="p">],</span>
+        <span class="n">avg_m_n_eff</span><span class="o">=</span><span class="n">mag_bundle</span><span class="p">[</span><span class="s1">&#39;n_eff&#39;</span><span class="p">],</span>
+        <span class="n">avg_m_samples</span><span class="o">=</span><span class="n">mag_bundle</span><span class="p">[</span><span class="s1">&#39;samples&#39;</span><span class="p">],</span>
+        <span class="n">avg_e_value</span><span class="o">=</span><span class="n">eng_bundle</span><span class="p">[</span><span class="s1">&#39;value&#39;</span><span class="p">],</span>
+        <span class="n">avg_e_err</span><span class="o">=</span><span class="n">eng_bundle</span><span class="p">[</span><span class="s1">&#39;err&#39;</span><span class="p">],</span>
+        <span class="n">avg_e_ci_low</span><span class="o">=</span><span class="n">eng_bundle</span><span class="p">[</span><span class="s1">&#39;ci_low&#39;</span><span class="p">],</span>
+        <span class="n">avg_e_ci_high</span><span class="o">=</span><span class="n">eng_bundle</span><span class="p">[</span><span class="s1">&#39;ci_high&#39;</span><span class="p">],</span>
+        <span class="n">avg_e_tau_int</span><span class="o">=</span><span class="n">eng_bundle</span><span class="p">[</span><span class="s1">&#39;tau_int&#39;</span><span class="p">],</span>
+        <span class="n">avg_e_n_eff</span><span class="o">=</span><span class="n">eng_bundle</span><span class="p">[</span><span class="s1">&#39;n_eff&#39;</span><span class="p">],</span>
+        <span class="n">avg_e_samples</span><span class="o">=</span><span class="n">eng_bundle</span><span class="p">[</span><span class="s1">&#39;samples&#39;</span><span class="p">],</span>
+        <span class="n">susc_value</span><span class="o">=</span><span class="n">susc_bundle</span><span class="p">[</span><span class="s1">&#39;value&#39;</span><span class="p">],</span>
+        <span class="n">susc_err</span><span class="o">=</span><span class="n">susc_bundle</span><span class="p">[</span><span class="s1">&#39;err&#39;</span><span class="p">],</span>
+        <span class="n">susc_ci_low</span><span class="o">=</span><span class="n">susc_bundle</span><span class="p">[</span><span class="s1">&#39;ci_low&#39;</span><span class="p">],</span>
+        <span class="n">susc_ci_high</span><span class="o">=</span><span class="n">susc_bundle</span><span class="p">[</span><span class="s1">&#39;ci_high&#39;</span><span class="p">],</span>
+        <span class="n">susc_tau_int</span><span class="o">=</span><span class="n">susc_bundle</span><span class="p">[</span><span class="s1">&#39;tau_int&#39;</span><span class="p">],</span>
+        <span class="n">susc_n_eff</span><span class="o">=</span><span class="n">susc_bundle</span><span class="p">[</span><span class="s1">&#39;n_eff&#39;</span><span class="p">],</span>
+        <span class="n">susc_samples</span><span class="o">=</span><span class="n">susc_bundle</span><span class="p">[</span><span class="s1">&#39;samples&#39;</span><span class="p">],</span>
+        <span class="n">spec_h_value</span><span class="o">=</span><span class="n">cv_bundle</span><span class="p">[</span><span class="s1">&#39;value&#39;</span><span class="p">],</span>
+        <span class="n">spec_h_err</span><span class="o">=</span><span class="n">cv_bundle</span><span class="p">[</span><span class="s1">&#39;err&#39;</span><span class="p">],</span>
+        <span class="n">spec_h_ci_low</span><span class="o">=</span><span class="n">cv_bundle</span><span class="p">[</span><span class="s1">&#39;ci_low&#39;</span><span class="p">],</span>
+        <span class="n">spec_h_ci_high</span><span class="o">=</span><span class="n">cv_bundle</span><span class="p">[</span><span class="s1">&#39;ci_high&#39;</span><span class="p">],</span>
+        <span class="n">spec_h_tau_int</span><span class="o">=</span><span class="n">cv_bundle</span><span class="p">[</span><span class="s1">&#39;tau_int&#39;</span><span class="p">],</span>
+        <span class="n">spec_h_n_eff</span><span class="o">=</span><span class="n">cv_bundle</span><span class="p">[</span><span class="s1">&#39;n_eff&#39;</span><span class="p">],</span>
+        <span class="n">spec_h_samples</span><span class="o">=</span><span class="n">cv_bundle</span><span class="p">[</span><span class="s1">&#39;samples&#39;</span><span class="p">],</span>
+        <span class="n">uncertainty_method</span><span class="o">=</span><span class="n">UNCERTAINTY_METHOD_BLOCKING</span><span class="p">,</span>
+        <span class="n">confidence_level</span><span class="o">=</span><span class="n">DEFAULT_CONFIDENCE_LEVEL</span><span class="p">,</span>
+        <span class="n">n_seeds</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
+        <span class="n">bootstrap_resamples</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
+        <span class="n">nan_or_undefined_count</span><span class="o">=</span><span class="nb">float</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">isnan</span><span class="p">(</span><span class="n">tau_int_arr</span><span class="p">)</span><span class="o">.</span><span class="n">sum</span><span class="p">()),</span>
     <span class="p">)</span>
 
     <span class="n">plot_temperature_sweep</span><span class="p">(</span>
         <span class="n">temperatures</span><span class="o">=</span><span class="n">temperatures</span><span class="p">,</span>
-        <span class="n">avg_m</span><span class="o">=</span><span class="n">avg_m</span><span class="p">,</span>
-        <span class="n">avg_e</span><span class="o">=</span><span class="n">avg_e</span><span class="p">,</span>
-        <span class="n">susc</span><span class="o">=</span><span class="n">susc</span><span class="p">,</span>
-        <span class="n">spec_h</span><span class="o">=</span><span class="n">spec_h</span><span class="p">,</span>
+        <span class="n">avg_m</span><span class="o">=</span><span class="n">avg_m_arr</span><span class="o">.</span><span class="n">tolist</span><span class="p">(),</span>
+        <span class="n">avg_e</span><span class="o">=</span><span class="n">avg_e_arr</span><span class="o">.</span><span class="n">tolist</span><span class="p">(),</span>
+        <span class="n">susc</span><span class="o">=</span><span class="n">susc_arr</span><span class="o">.</span><span class="n">tolist</span><span class="p">(),</span>
+        <span class="n">spec_h</span><span class="o">=</span><span class="n">spec_h_arr</span><span class="o">.</span><span class="n">tolist</span><span class="p">(),</span>
         <span class="n">entropy</span><span class="o">=</span><span class="n">entropy</span><span class="p">,</span>
-        <span class="n">tau_int</span><span class="o">=</span><span class="n">tau_int_vals</span><span class="p">,</span>
+        <span class="n">tau_int</span><span class="o">=</span><span class="n">tau_int_arr</span><span class="p">,</span>
         <span class="n">title</span><span class="o">=</span><span class="sa">f</span><span class="s1">&#39;2D </span><span class="si">{</span><span class="n">Q</span><span class="si">}</span><span class="s1">-state Clock Model: Temperature Sweep (L=</span><span class="si">{</span><span class="n">L</span><span class="si">}</span><span class="s1">, </span><span class="si">{</span><span class="n">variant</span><span class="si">}</span><span class="s1">)&#39;</span><span class="p">,</span>
         <span class="n">filename</span><span class="o">=</span><span class="s1">&#39;temperature_sweep.png&#39;</span><span class="p">,</span>
         <span class="n">directory</span><span class="o">=</span><span class="n">args</span><span class="o">.</span><span class="n">output_dir</span><span class="p">,</span>
