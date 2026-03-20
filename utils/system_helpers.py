@@ -617,7 +617,7 @@ def plot_temperature_sweep(
     diag_flat = np.ravel(diag_axes)
     ax5, ax6 = diag_flat
     suptitle_obj = diag_fig.suptitle(f'{title} Diagnostics', y=0.99)
-    diag_fig.subplots_adjust(top=0.76)
+    diag_fig.subplots_adjust(top=0.68)
 
     # Anchor note text below the rendered title to avoid header/title overlap.
     diag_fig.canvas.draw()
@@ -821,7 +821,7 @@ def plot_temperature_sweep(
     else:
         ax6.set_visible(False)
 
-    save_plot(filename=diagnostics_filename, directory=directory)
+    save_plot(filename=diagnostics_filename, directory=directory, tight_layout=False)
 
 
 def plot_ordering_kinetics(

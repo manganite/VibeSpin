@@ -426,7 +426,11 @@ def test_plot_temperature_sweep_with_entropy_only(temp_dir):
         )
         assert mock_save.call_count == 2
         mock_save.assert_any_call(filename='entropy_only.png', directory=temp_dir)
-        mock_save.assert_any_call(filename='entropy_only_diagnostics.png', directory=temp_dir)
+        mock_save.assert_any_call(
+            filename='entropy_only_diagnostics.png',
+            directory=temp_dir,
+            tight_layout=False,
+        )
     plt.close('all')
 
 
@@ -449,7 +453,11 @@ def test_plot_temperature_sweep_with_tau_only(temp_dir):
         )
         assert mock_save.call_count == 2
         mock_save.assert_any_call(filename='tau_only.png', directory=temp_dir)
-        mock_save.assert_any_call(filename='tau_only_diagnostics.png', directory=temp_dir)
+        mock_save.assert_any_call(
+            filename='tau_only_diagnostics.png',
+            directory=temp_dir,
+            tight_layout=False,
+        )
     plt.close('all')
 
 
@@ -481,6 +489,7 @@ def test_plot_temperature_sweep_with_tau_invalid_band(temp_dir):
         mock_save.assert_any_call(
             filename='tau_invalid_band_diagnostics.png',
             directory=temp_dir,
+            tight_layout=False,
         )
     plt.close('all')
 
@@ -508,7 +517,11 @@ def test_plot_temperature_sweep_with_entropy_band_saves_diagnostics(temp_dir):
         )
         assert mock_save.call_count == 2
         mock_save.assert_any_call(filename='entropy_band.png', directory=temp_dir)
-        mock_save.assert_any_call(filename='entropy_band_diagnostics.png', directory=temp_dir)
+        mock_save.assert_any_call(
+            filename='entropy_band_diagnostics.png',
+            directory=temp_dir,
+            tight_layout=False,
+        )
     plt.close('all')
 
 
@@ -537,6 +550,7 @@ def test_plot_temperature_sweep_with_transition_guides(temp_dir):
         mock_save.assert_any_call(
             filename='transition_guides_diagnostics.png',
             directory=temp_dir,
+            tight_layout=False,
         )
     plt.close('all')
 
@@ -565,6 +579,7 @@ def test_plot_temperature_sweep_with_low_effective_sample_flags(temp_dir):
         mock_save.assert_any_call(
             filename='low_effective_samples_diagnostics.png',
             directory=temp_dir,
+            tight_layout=False,
         )
     plt.close('all')
 
@@ -600,6 +615,7 @@ def test_plot_temperature_sweep_with_metadata_and_quality_summary(temp_dir):
         mock_save.assert_any_call(
             filename='metadata_summary_diagnostics.png',
             directory=temp_dir,
+            tight_layout=False,
         )
     plt.close('all')
 
@@ -627,6 +643,7 @@ def test_plot_temperature_sweep_with_entropy_reference(temp_dir):
         mock_save.assert_any_call(
             filename='entropy_reference_diagnostics.png',
             directory=temp_dir,
+            tight_layout=False,
         )
     plt.close('all')
 
