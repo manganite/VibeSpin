@@ -476,9 +476,9 @@ def plot_temperature_sweep(
     diag_fig, diag_axes = plt.subplots(1, 2, figsize=(12, 5.5))
     diag_flat = np.ravel(diag_axes)
     ax5, ax6 = diag_flat
-    diag_fig.suptitle(f'{title} Diagnostics')
+    diag_fig.suptitle(f'{title} Diagnostics', y=0.99)
     if diagnostics_note:
-        diag_fig.text(0.5, 0.965, diagnostics_note, ha='center', va='top', fontsize=9)
+        diag_fig.text(0.02, 0.94, diagnostics_note, ha='left', va='top', fontsize=8, wrap=True)
 
     if entropy is not None:
         entropy_arr = np.asarray(entropy, dtype=np.float64)
