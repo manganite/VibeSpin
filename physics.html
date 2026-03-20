@@ -80,6 +80,7 @@
 <li class="toctree-l3"><a class="reference internal" href="#blocking-analysis">Blocking Analysis</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#effective-sample-size">Effective Sample Size</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#confidence-intervals-and-conventions">Confidence Intervals and Conventions</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#single-seed-and-multi-seed-aggregation">Single-Seed and Multi-Seed Aggregation</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#regime-caveats">Regime Caveats</a></li>
 </ul>
 </li>
@@ -261,6 +262,10 @@ See also the <a class="reference external" href="https://en.wikipedia.org/wiki/W
 <h3>Confidence Intervals and Conventions<a class="headerlink" href="#confidence-intervals-and-conventions" title="Link to this heading"></a></h3>
 <p>VibeSpin reports uncertainty intervals at a default confidence level of 68%, the one-sigma Gaussian equivalent. Under this convention the interval <span class="math notranslate nohighlight">\([\bar{x} - \sigma_{\bar{x}},\, \bar{x} + \sigma_{\bar{x}}]\)</span> contains the true mean with probability 0.68 for large samples from a normal distribution. This matches the standard physics convention of quoting a single symmetric error bar and is set by the constant <code class="docutils literal notranslate"><span class="pre">DEFAULT_CONFIDENCE_LEVEL</span> <span class="pre">=</span> <span class="pre">0.68</span></code> in <code class="docutils literal notranslate"><span class="pre">utils/physics_helpers.py</span></code>.</p>
 <p>When a time series has zero variance (a fully ordered configuration, for example), <span class="math notranslate nohighlight">\(\tau_{\mathrm{int}}\)</span> is undefined. VibeSpin handles this explicitly: the <code class="docutils literal notranslate"><span class="pre">ZeroVarianceAutocorrelationError</span></code> exception is caught and the corresponding fields (<code class="docutils literal notranslate"><span class="pre">err</span></code>, <code class="docutils literal notranslate"><span class="pre">tau_int</span></code>, <code class="docutils literal notranslate"><span class="pre">n_eff</span></code>) are stored as <code class="docutils literal notranslate"><span class="pre">NaN</span></code> rather than silently defaulting to zero or propagating exceptions into the aggregation layer.</p>
+</section>
+<section id="single-seed-and-multi-seed-aggregation">
+<h3>Single-Seed and Multi-Seed Aggregation<a class="headerlink" href="#single-seed-and-multi-seed-aggregation" title="Link to this heading"></a></h3>
+<p>For a single seed at fixed temperature, VibeSpin estimates uncertainty directly from the measured trajectory via blocking. This gives a statistically valid error bar even with one seed, provided the time series is long enough to resolve a blocking plateau. For multi-seed sweeps, VibeSpin uses a hierarchical combination: the final uncertainty on the mean includes both the between-seed spread of point estimates and the average within-seed blocking uncertainty. This avoids underestimating errors in regimes where seed-to-seed variability is large and avoids overestimating them when between-seed spread is small but each trajectory remains autocorrelated.</p>
 </section>
 <section id="regime-caveats">
 <h3>Regime Caveats<a class="headerlink" href="#regime-caveats" title="Link to this heading"></a></h3>

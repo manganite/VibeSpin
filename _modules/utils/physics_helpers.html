@@ -652,6 +652,77 @@
 
 
 
+<div class="viewcode-block" id="summarize_seed_ensemble">
+<a class="viewcode-back" href="../../api/vibespin.utils.html#utils.physics_helpers.summarize_seed_ensemble">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">summarize_seed_ensemble</span><span class="p">(</span>
+    <span class="o">*</span><span class="p">,</span>
+    <span class="n">values</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
+    <span class="n">within_seed_errors</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
+    <span class="n">confidence</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="n">DEFAULT_CONFIDENCE_LEVEL</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">float</span><span class="p">]:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Aggregate per-seed estimates into one mean with hierarchical uncertainty.</span>
+
+<span class="sd">    The total variance combines between-seed and within-seed components:</span>
+<span class="sd">    Var(mean) = Var_between / n_seeds + mean(Var_within) / n_seeds.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">_validate_confidence</span><span class="p">(</span><span class="n">confidence</span><span class="o">=</span><span class="n">confidence</span><span class="p">)</span>
+    <span class="n">values_arr</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">values</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">)</span>
+    <span class="n">errs_arr</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">within_seed_errors</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">values_arr</span><span class="o">.</span><span class="n">ndim</span> <span class="o">!=</span> <span class="mi">1</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;values must be 1-D, got shape </span><span class="si">{</span><span class="n">values_arr</span><span class="o">.</span><span class="n">shape</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">errs_arr</span><span class="o">.</span><span class="n">ndim</span> <span class="o">!=</span> <span class="mi">1</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;within_seed_errors must be 1-D, got shape </span><span class="si">{</span><span class="n">errs_arr</span><span class="o">.</span><span class="n">shape</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">values_arr</span><span class="o">.</span><span class="n">size</span> <span class="o">!=</span> <span class="n">errs_arr</span><span class="o">.</span><span class="n">size</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+            <span class="s1">&#39;values and within_seed_errors must have matching lengths, &#39;</span>
+            <span class="sa">f</span><span class="s1">&#39;got </span><span class="si">{</span><span class="n">values_arr</span><span class="o">.</span><span class="n">size</span><span class="si">}</span><span class="s1"> and </span><span class="si">{</span><span class="n">errs_arr</span><span class="o">.</span><span class="n">size</span><span class="si">}</span><span class="s1">&#39;</span>
+        <span class="p">)</span>
+    <span class="k">if</span> <span class="n">values_arr</span><span class="o">.</span><span class="n">size</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;values must be non-empty&#39;</span><span class="p">)</span>
+
+    <span class="n">finite_values</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">isfinite</span><span class="p">(</span><span class="n">values_arr</span><span class="p">)</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">np</span><span class="o">.</span><span class="n">any</span><span class="p">(</span><span class="n">finite_values</span><span class="p">):</span>
+        <span class="k">return</span> <span class="p">{</span>
+            <span class="s1">&#39;value&#39;</span><span class="p">:</span> <span class="nb">float</span><span class="p">(</span><span class="s1">&#39;nan&#39;</span><span class="p">),</span>
+            <span class="s1">&#39;err&#39;</span><span class="p">:</span> <span class="nb">float</span><span class="p">(</span><span class="s1">&#39;nan&#39;</span><span class="p">),</span>
+            <span class="s1">&#39;ci_low&#39;</span><span class="p">:</span> <span class="nb">float</span><span class="p">(</span><span class="s1">&#39;nan&#39;</span><span class="p">),</span>
+            <span class="s1">&#39;ci_high&#39;</span><span class="p">:</span> <span class="nb">float</span><span class="p">(</span><span class="s1">&#39;nan&#39;</span><span class="p">),</span>
+            <span class="s1">&#39;between_seed_component&#39;</span><span class="p">:</span> <span class="nb">float</span><span class="p">(</span><span class="s1">&#39;nan&#39;</span><span class="p">),</span>
+            <span class="s1">&#39;within_seed_component&#39;</span><span class="p">:</span> <span class="nb">float</span><span class="p">(</span><span class="s1">&#39;nan&#39;</span><span class="p">),</span>
+            <span class="s1">&#39;samples&#39;</span><span class="p">:</span> <span class="mf">0.0</span><span class="p">,</span>
+            <span class="s1">&#39;nan_or_undefined_count&#39;</span><span class="p">:</span> <span class="nb">float</span><span class="p">(</span><span class="n">values_arr</span><span class="o">.</span><span class="n">size</span><span class="p">),</span>
+        <span class="p">}</span>
+
+    <span class="n">v</span> <span class="o">=</span> <span class="n">values_arr</span><span class="p">[</span><span class="n">finite_values</span><span class="p">]</span>
+    <span class="n">e</span> <span class="o">=</span> <span class="n">errs_arr</span><span class="p">[</span><span class="n">finite_values</span><span class="p">]</span>
+    <span class="n">n</span> <span class="o">=</span> <span class="n">v</span><span class="o">.</span><span class="n">size</span>
+    <span class="n">value</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">v</span><span class="p">))</span>
+
+    <span class="n">between_component</span> <span class="o">=</span> <span class="mf">0.0</span>
+    <span class="k">if</span> <span class="n">n</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
+        <span class="n">between_component</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">var</span><span class="p">(</span><span class="n">v</span><span class="p">,</span> <span class="n">ddof</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span> <span class="o">/</span> <span class="n">n</span><span class="p">)</span>
+
+    <span class="n">finite_errs</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">isfinite</span><span class="p">(</span><span class="n">e</span><span class="p">)</span>
+    <span class="n">within_component</span> <span class="o">=</span> <span class="mf">0.0</span>
+    <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">any</span><span class="p">(</span><span class="n">finite_errs</span><span class="p">):</span>
+        <span class="n">within_component</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">e</span><span class="p">[</span><span class="n">finite_errs</span><span class="p">]</span> <span class="o">**</span> <span class="mi">2</span><span class="p">)</span> <span class="o">/</span> <span class="n">n</span><span class="p">)</span>
+
+    <span class="n">total_err</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="nb">max</span><span class="p">(</span><span class="mf">0.0</span><span class="p">,</span> <span class="n">between_component</span> <span class="o">+</span> <span class="n">within_component</span><span class="p">)))</span>
+    <span class="n">z</span> <span class="o">=</span> <span class="n">_z_multiplier</span><span class="p">(</span><span class="n">confidence</span><span class="o">=</span><span class="n">confidence</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="p">{</span>
+        <span class="s1">&#39;value&#39;</span><span class="p">:</span> <span class="n">value</span><span class="p">,</span>
+        <span class="s1">&#39;err&#39;</span><span class="p">:</span> <span class="n">total_err</span><span class="p">,</span>
+        <span class="s1">&#39;ci_low&#39;</span><span class="p">:</span> <span class="nb">float</span><span class="p">(</span><span class="n">value</span> <span class="o">-</span> <span class="n">z</span> <span class="o">*</span> <span class="n">total_err</span><span class="p">),</span>
+        <span class="s1">&#39;ci_high&#39;</span><span class="p">:</span> <span class="nb">float</span><span class="p">(</span><span class="n">value</span> <span class="o">+</span> <span class="n">z</span> <span class="o">*</span> <span class="n">total_err</span><span class="p">),</span>
+        <span class="s1">&#39;between_seed_component&#39;</span><span class="p">:</span> <span class="nb">float</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="nb">max</span><span class="p">(</span><span class="mf">0.0</span><span class="p">,</span> <span class="n">between_component</span><span class="p">))),</span>
+        <span class="s1">&#39;within_seed_component&#39;</span><span class="p">:</span> <span class="nb">float</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="nb">max</span><span class="p">(</span><span class="mf">0.0</span><span class="p">,</span> <span class="n">within_component</span><span class="p">))),</span>
+        <span class="s1">&#39;samples&#39;</span><span class="p">:</span> <span class="nb">float</span><span class="p">(</span><span class="n">n</span><span class="p">),</span>
+        <span class="s1">&#39;nan_or_undefined_count&#39;</span><span class="p">:</span> <span class="nb">float</span><span class="p">(</span><span class="n">values_arr</span><span class="o">.</span><span class="n">size</span> <span class="o">-</span> <span class="n">n</span><span class="p">),</span>
+    <span class="p">}</span></div>
+
+
+
 <div class="viewcode-block" id="get_averaged_correlation">
 <a class="viewcode-back" href="../../api/vibespin.utils.html#utils.physics_helpers.get_averaged_correlation">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">get_averaged_correlation</span><span class="p">(</span>

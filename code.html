@@ -55,14 +55,13 @@
 <li class="toctree-l2"><a class="reference internal" href="#performance-engineering-with-numba">Performance Engineering with Numba</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#error-handling-and-type-safety">Error Handling and Type Safety</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#testing-strategy-and-quality-gates">Testing Strategy and Quality Gates</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#bibliography">Bibliography</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#uncertainty-data-contract-and-pipeline">Uncertainty Data Contract and Pipeline</a><ul>
 <li class="toctree-l3"><a class="reference internal" href="#schema-fields">Schema Fields</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#utility-api">Utility API</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#design-rationale">Design Rationale</a></li>
 </ul>
 </li>
-<li class="toctree-l2"><a class="reference internal" href="#id1">Bibliography</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#bibliography">Bibliography</a></li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="scripts.html">Scripts Catalog: VibeSpin</a></li>
@@ -128,9 +127,6 @@
 <p>The VibeSpin verification suite is organized into five conceptual layers to ensure both code quality and physical correctness. Microscopic integrity tests in the algorithm layer validate the fundamental properties of the Monte Carlo kernels, including detailed balance and ergodicity <a class="reference internal" href="#bibliography"><span class="std std-ref">[1]</span></a>. The model layer focuses on API contracts, edge cases at extreme temperatures, and CLI behavior. Utility tests cover physics observables and system helpers. A dedicated style layer enforces documentation standards and docstring compliance. Finally, the integration layer uses reusable infrastructure patterns to verify script behavior, output schemas, and deterministic reproducibility.</p>
 <p>Development workflows are protected by multi-stage quality gates implemented via pre-commit and pre-push hooks. These hooks run the full suite of static analysis tools, including Ruff for linting and Mypy for type checking. Documentation consistency is also enforced at push time: the system validates markdown links, ensures that API documentation is synchronized with the source, and builds the Sphinx HTML output with all warnings treated as errors. This rigorous pipeline ensures that every contribution maintains the high engineering standards required for reproducible scientific computing.</p>
 </section>
-<section id="bibliography">
-<h2>Bibliography<a class="headerlink" href="#bibliography" title="Link to this heading"></a></h2>
-</section>
 <section id="uncertainty-data-contract-and-pipeline">
 <h2>Uncertainty Data Contract and Pipeline<a class="headerlink" href="#uncertainty-data-contract-and-pipeline" title="Link to this heading"></a></h2>
 <p>Analysis scripts and notebooks in VibeSpin share a standardized uncertainty schema for all serialized observables. This contract is defined in <code class="docutils literal notranslate"><span class="pre">utils/physics_helpers.py</span></code> and enforced by the integration test layer; any script that writes an NPZ file should conform to it.</p>
@@ -151,7 +147,7 @@
 </tr>
 <tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">&lt;obs&gt;_err</span></code></p></td>
 <td><p><code class="docutils literal notranslate"><span class="pre">(T,)</span></code></p></td>
-<td><p>Autocorrelation-aware standard error; <code class="docutils literal notranslate"><span class="pre">NaN</span></code> for single-seed runs</p></td>
+<td><p>Total standard error (single-seed blocking error for <code class="docutils literal notranslate"><span class="pre">n_seeds=1</span></code>; hierarchical within+between-seed error for <code class="docutils literal notranslate"><span class="pre">n_seeds&gt;1</span></code>)</p></td>
 </tr>
 <tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">&lt;obs&gt;_ci_low</span></code></p></td>
 <td><p><code class="docutils literal notranslate"><span class="pre">(T,)</span></code></p></td>
@@ -180,15 +176,15 @@
 </section>
 <section id="utility-api">
 <h3>Utility API<a class="headerlink" href="#utility-api" title="Link to this heading"></a></h3>
-<p>The canonical implementation lives in <code class="docutils literal notranslate"><span class="pre">utils/physics_helpers.py</span></code>. The key public functions are as follows. <code class="docutils literal notranslate"><span class="pre">estimate_effective_sample_size</span></code> computes <span class="math notranslate nohighlight">\(N_\mathrm{eff} = N / (2\tau_{\mathrm{int}})\)</span> from a time series, optionally accepting a pre-computed <code class="docutils literal notranslate"><span class="pre">tau_int</span></code> to avoid redundant autocorrelation calculation. <code class="docutils literal notranslate"><span class="pre">blocking_error</span></code> applies the plateau-selection blocking method and returns the plateau standard error alongside the estimated <code class="docutils literal notranslate"><span class="pre">tau_int</span></code> and <code class="docutils literal notranslate"><span class="pre">n_eff</span></code>. <code class="docutils literal notranslate"><span class="pre">summarize_primary_observable</span></code> wraps blocking into a single dict conforming to the schema fields above, handling the zero-variance edge case by storing <code class="docutils literal notranslate"><span class="pre">NaN</span></code> for the undefined fields. <code class="docutils literal notranslate"><span class="pre">summarize_derived_observable</span></code> extends this to nonlinear quadratic estimators like susceptibility and specific heat, supporting both the blocking propagation (default) and an optional block-bootstrap. <code class="docutils literal notranslate"><span class="pre">summarize_replicate_samples</span></code> aggregates a 2D <code class="docutils literal notranslate"><span class="pre">(T,</span> <span class="pre">S)</span></code> array of per-seed samples into a schema-consistent dict using the inter-seed distribution as the uncertainty source.</p>
+<p>The canonical implementation lives in <code class="docutils literal notranslate"><span class="pre">utils/physics_helpers.py</span></code>. The key public functions are as follows. <code class="docutils literal notranslate"><span class="pre">estimate_effective_sample_size</span></code> computes <span class="math notranslate nohighlight">\(N_\mathrm{eff} = N / (2\tau_{\mathrm{int}})\)</span> from a time series, optionally accepting a pre-computed <code class="docutils literal notranslate"><span class="pre">tau_int</span></code> to avoid redundant autocorrelation calculation. <code class="docutils literal notranslate"><span class="pre">blocking_error</span></code> applies the plateau-selection blocking method and returns the plateau standard error alongside the estimated <code class="docutils literal notranslate"><span class="pre">tau_int</span></code> and <code class="docutils literal notranslate"><span class="pre">n_eff</span></code>. <code class="docutils literal notranslate"><span class="pre">summarize_primary_observable</span></code> wraps blocking into a single dict conforming to the schema fields above, handling the zero-variance edge case by storing <code class="docutils literal notranslate"><span class="pre">NaN</span></code> for the undefined fields. <code class="docutils literal notranslate"><span class="pre">summarize_derived_observable</span></code> extends this to nonlinear quadratic estimators like susceptibility and specific heat, supporting both the blocking propagation (default) and an optional block-bootstrap. <code class="docutils literal notranslate"><span class="pre">summarize_seed_ensemble</span></code> combines per-seed point estimates and within-seed errors into a hierarchical total uncertainty for multi-seed sweeps. <code class="docutils literal notranslate"><span class="pre">summarize_replicate_samples</span></code> remains available for percentile-style sample summaries where needed.</p>
 </section>
 <section id="design-rationale">
 <h3>Design Rationale<a class="headerlink" href="#design-rationale" title="Link to this heading"></a></h3>
 <p>The schema is written additively: new standardized keys are always appended rather than replacing the legacy layout. This allows existing notebooks and downstream loaders to continue reading the pre-schema keys while new code targets the standardized ones. All constants (<code class="docutils literal notranslate"><span class="pre">DEFAULT_CONFIDENCE_LEVEL</span></code>, <code class="docutils literal notranslate"><span class="pre">UNCERTAINTY_METHOD_BLOCKING</span></code>, <code class="docutils literal notranslate"><span class="pre">UNCERTAINTY_METHOD_BOOTSTRAP</span></code>, <code class="docutils literal notranslate"><span class="pre">UNCERTAINTY_FIELDS</span></code>, <code class="docutils literal notranslate"><span class="pre">UNCERTAINTY_METADATA_FIELDS</span></code>) are defined at module level in <code class="docutils literal notranslate"><span class="pre">utils/physics_helpers.py</span></code> and imported by all scripts, ensuring a single authoritative source for the contract.</p>
 </section>
 </section>
-<section id="id1">
-<h2>Bibliography<a class="headerlink" href="#id1" title="Link to this heading"></a></h2>
+<section id="bibliography">
+<h2>Bibliography<a class="headerlink" href="#bibliography" title="Link to this heading"></a></h2>
 <p>The engineering and algorithmic choices in VibeSpin are grounded in standard practices for scientific computing and statistical physics. For a comprehensive list of all references used in the project, see <span class="xref myst">BIBLIOGRAPHY.md</span>.</p>
 <p><a class="reference internal" href="#bibliography"><span class="std std-ref">[1]</span></a> W. K. Hastings, “Monte Carlo sampling methods using Markov chains and their applications,” <em>Biometrika</em>, vol. 57, no. 1, pp. 97–109, 1970. <a class="reference external" href="https://academic.oup.com/biomet/article/57/1/97/252073">Oxford Academic Open Access</a></p>
 <p><a class="reference internal" href="#bibliography"><span class="std std-ref">[2]</span></a> M. E. J. Newman and G. T. Barkema, “Monte Carlo Methods in Statistical Physics,” Oxford University Press, 1999. <a class="reference external" href="https://arxiv.org/abs/0905.1629">Lecture Notes Summary (H. G. Katzgraber)</a></p>

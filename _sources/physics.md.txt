@@ -166,6 +166,10 @@ VibeSpin reports uncertainty intervals at a default confidence level of 68%, the
 
 When a time series has zero variance (a fully ordered configuration, for example), $\tau_{\mathrm{int}}$ is undefined. VibeSpin handles this explicitly: the `ZeroVarianceAutocorrelationError` exception is caught and the corresponding fields (`err`, `tau_int`, `n_eff`) are stored as `NaN` rather than silently defaulting to zero or propagating exceptions into the aggregation layer.
 
+### Single-Seed and Multi-Seed Aggregation
+
+For a single seed at fixed temperature, VibeSpin estimates uncertainty directly from the measured trajectory via blocking. This gives a statistically valid error bar even with one seed, provided the time series is long enough to resolve a blocking plateau. For multi-seed sweeps, VibeSpin uses a hierarchical combination: the final uncertainty on the mean includes both the between-seed spread of point estimates and the average within-seed blocking uncertainty. This avoids underestimating errors in regimes where seed-to-seed variability is large and avoids overestimating them when between-seed spread is small but each trajectory remains autocorrelated.
+
 ### Regime Caveats
 
 In the deep ordered phase (low $T$), configurations can be nearly frozen and $\tau_{\mathrm{int}}$ may approach zero from below as the estimator, in which case $N_\mathrm{eff}$ is set to `NaN` to flag the ill-conditioned estimate rather than reporting an artificially inflated value. Near a continuous phase transition, $\tau_{\mathrm{int}} \propto L^z$ grows rapidly with system size, and the Wolff cluster algorithm is strongly preferred to reduce $z$ from roughly 2.2 to roughly 0.25 and restore statistical efficiency. For derived observables like susceptibility $\chi$ and specific heat $C_v$, which are nonlinear functions of the measured time series (and are therefore not simply the mean of an ergodic chain), VibeSpin supports both an autocorrelation-aware blocking estimator (the default) and an optional block-bootstrap propagation of the block-mean distribution.
