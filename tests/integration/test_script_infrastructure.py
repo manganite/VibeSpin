@@ -907,6 +907,7 @@ class TestTemperatureSweepPlotPayloads:
         assert 'entropy_ci_low' in captured_plot_kwargs
         assert 'entropy_ci_high' in captured_plot_kwargs
         assert 'tau_unstable_flag' in captured_plot_kwargs
+        assert 'low_effective_sample_flag' in captured_plot_kwargs
         assert 'diagnostics_note' in captured_plot_kwargs
         assert 'transition_temperatures' in captured_plot_kwargs
         assert 'transition_window' in captured_plot_kwargs

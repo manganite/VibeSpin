@@ -614,6 +614,7 @@ def main() -> None:
         tau_int_ci_low=tau_int_ci_low_arr,
         tau_int_ci_high=tau_int_ci_high_arr,
         tau_unstable_flag=flags['tau_interval_unstable_flag'],
+        low_effective_sample_flag=flags['low_effective_sample_flag'],
         diagnostics_note=diagnostics_note,
         transition_temperatures=transition_markers,
         transition_window=transition_window,

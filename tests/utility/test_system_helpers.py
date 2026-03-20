@@ -541,6 +541,34 @@ def test_plot_temperature_sweep_with_transition_guides(temp_dir):
     plt.close('all')
 
 
+def test_plot_temperature_sweep_with_low_effective_sample_flags(temp_dir):
+    """Low-effective-sample flags should be rendered as reliability markers."""
+    temps = np.array([1.0, 1.5, 2.0, 2.5])
+    data = np.array([0.2, 0.4, 0.8, 0.5])
+    low_eff = np.array([0.0, 1.0, 0.0, 1.0])
+    tau = np.array([1.0, 1.2, 1.8, 1.4])
+    with patch('utils.system_helpers.save_plot') as mock_save:
+        plot_temperature_sweep(
+            temperatures=temps,
+            avg_m=data,
+            avg_e=data,
+            susc=data,
+            spec_h=data,
+            tau_int=tau,
+            low_effective_sample_flag=low_eff,
+            title='Low effective samples',
+            filename='low_effective_samples.png',
+            directory=temp_dir,
+        )
+        assert mock_save.call_count == 2
+        mock_save.assert_any_call(filename='low_effective_samples.png', directory=temp_dir)
+        mock_save.assert_any_call(
+            filename='low_effective_samples_diagnostics.png',
+            directory=temp_dir,
+        )
+    plt.close('all')
+
+
 def test_plot_ordering_kinetics_without_third_metric(temp_dir):
     """Second panel should be disabled cleanly when no third metric is provided."""
     t = np.array([1, 10])

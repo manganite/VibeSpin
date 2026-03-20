@@ -286,6 +286,7 @@ def plot_temperature_sweep(
     tau_int_ci_low: np.ndarray | Sequence[float] | None = None,
     tau_int_ci_high: np.ndarray | Sequence[float] | None = None,
     tau_unstable_flag: np.ndarray | Sequence[float] | None = None,
+    low_effective_sample_flag: np.ndarray | Sequence[float] | None = None,
     diagnostics_note: str | None = None,
     transition_temperatures: dict[str, float] | None = None,
     transition_window: tuple[float, float] | None = None,
@@ -321,6 +322,8 @@ def plot_temperature_sweep(
         tau_int_ci_high: Optional upper confidence band for tau_int.
         tau_unstable_flag: Optional per-temperature mask flagging unstable
             tau_int intervals.
+        low_effective_sample_flag: Optional per-temperature mask identifying
+            points with low effective sample size.
         diagnostics_note: Optional text shown on diagnostics figure summarizing
             uncertainty quality metrics.
         transition_temperatures: Optional mapping of transition-marker labels
@@ -373,6 +376,31 @@ def plot_temperature_sweep(
         x_arr = np.asarray(x, dtype=np.float64)
         y_arr = np.asarray(y, dtype=np.float64)
         ax.plot(x_arr[invalid], y_arr[invalid], 'x', color=color, markersize=5, label=label)
+        ax.legend(loc='best', fontsize=8)
+
+    def _mark_low_effective_samples(
+        *,
+        ax: plt.Axes,
+        x: np.ndarray,
+        y: np.ndarray | Sequence[float],
+    ) -> None:
+        if low_effective_sample_flag is None:
+            return
+        low_eff = np.asarray(low_effective_sample_flag, dtype=np.float64) > 0.0
+        y_arr = np.asarray(y, dtype=np.float64)
+        mask = low_eff & np.isfinite(x) & np.isfinite(y_arr)
+        if not np.any(mask):
+            return
+        ax.plot(
+            x[mask],
+            y_arr[mask],
+            'o',
+            markerfacecolor='none',
+            markeredgecolor='darkorange',
+            markersize=7,
+            linewidth=1.0,
+            label='low effective samples',
+        )
         ax.legend(loc='best', fontsize=8)
 
     def _annotate_peak(
@@ -482,6 +510,7 @@ def plot_temperature_sweep(
     ax1.set_ylabel('Average Magnetization |M|')
     ax1.set_title('Magnetization')
     ax1.grid(True)
+    _mark_low_effective_samples(ax=ax1, x=temperatures_arr, y=avg_m)
 
     if avg_e_err is None:
         ax2.plot(temperatures_arr, avg_e, 'o-', color='orange', markersize=4)
@@ -506,6 +535,7 @@ def plot_temperature_sweep(
     ax2.set_ylabel('Average Energy')
     ax2.set_title('Energy')
     ax2.grid(True)
+    _mark_low_effective_samples(ax=ax2, x=temperatures_arr, y=avg_e)
 
     if susc_err is None:
         ax3.plot(temperatures_arr, susc, 'o-', color='green', markersize=4)
@@ -531,6 +561,7 @@ def plot_temperature_sweep(
     ax3.set_title('Magnetic Susceptibility')
     ax3.grid(True)
     _annotate_peak(ax=ax3, x=temperatures_arr, y=susc, color='green', label='$\\chi$')
+    _mark_low_effective_samples(ax=ax3, x=temperatures_arr, y=susc)
 
     if spec_h_err is None:
         ax4.plot(temperatures_arr, spec_h, 'o-', color='red', markersize=4)
@@ -556,6 +587,7 @@ def plot_temperature_sweep(
     ax4.set_title('Specific Heat')
     ax4.grid(True)
     _annotate_peak(ax=ax4, x=temperatures_arr, y=spec_h, color='red', label='$C_v$')
+    _mark_low_effective_samples(ax=ax4, x=temperatures_arr, y=spec_h)
 
     for ax in flat:
         if ax.get_visible():
@@ -696,6 +728,7 @@ def plot_temperature_sweep(
             label='$\\tau_\\mathrm{int}$',
             text_offset=(6.0, -12.0),
         )
+        _mark_low_effective_samples(ax=ax6, x=temperatures_arr, y=tau_arr)
     else:
         ax6.set_visible(False)
 
