@@ -8,6 +8,7 @@ Welcome to the VibeSpin documentation. VibeSpin is a high-performance Python fra
 
 introduction
 physics
+code
 scripts
 agents
 bibliography

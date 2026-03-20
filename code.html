@@ -1,0 +1,161 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="./">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Developer and Architecture Guide &mdash; VibeSpin 0.1.0 documentation</title>
+      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=9edc463e" />
+
+  
+      <script src="_static/jquery.js?v=5d32c60e"></script>
+      <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="_static/documentation_options.js?v=01f34227"></script>
+      <script src="_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="_static/sphinx_highlight.js?v=6ffebe34"></script>
+      <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Scripts Catalog: VibeSpin" href="scripts.html" />
+    <link rel="prev" title="Physics and Algorithm Guide: VibeSpin" href="physics.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="index.html" class="icon icon-home">
+            VibeSpin
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">User Guides:</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="introduction.html">VibeSpin</a></li>
+<li class="toctree-l1"><a class="reference internal" href="physics.html">Physics and Algorithm Guide: VibeSpin</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Developer and Architecture Guide</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#software-architecture">Software Architecture</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#performance-engineering-with-numba">Performance Engineering with Numba</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#error-handling-and-type-safety">Error Handling and Type Safety</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#testing-strategy-and-quality-gates">Testing Strategy and Quality Gates</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#bibliography">Bibliography</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="scripts.html">Scripts Catalog: VibeSpin</a></li>
+<li class="toctree-l1"><a class="reference internal" href="agents.html">Agent Instruction Guide: VibeSpin</a></li>
+<li class="toctree-l1"><a class="reference internal" href="bibliography.html">Project Bibliography: VibeSpin</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Research &amp; Analysis:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="benchmarks.html">Performance Benchmarking for VibeSpin</a></li>
+<li class="toctree-l1"><a class="reference internal" href="wolff_efficiency.html">Wolff vs. Metropolis: Algorithmic Efficiency in the Critical Regime</a></li>
+<li class="toctree-l1"><a class="reference internal" href="dynamic_critical_exponents.html">Dynamical Critical Exponents in the 2D Ising Model</a></li>
+<li class="toctree-l1"><a class="reference internal" href="ising_relaxation_and_autocorrelation_analysis.html">Ising Model: Relaxation to Equilibrium</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">API Reference:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="api/modules.html">vibespin</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">VibeSpin</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">Developer and Architecture Guide</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="_sources/code.md.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section class="tex2jax_ignore mathjax_ignore" id="developer-and-architecture-guide">
+<h1>Developer and Architecture Guide<a class="headerlink" href="#developer-and-architecture-guide" title="Link to this heading"></a></h1>
+<p>This guide describes the software architecture, design patterns, and engineering principles of the VibeSpin framework. It serves as a technical blueprint for developers and researchers extending the simulation engine or implementing new analysis workflows.</p>
+<section id="software-architecture">
+<h2>Software Architecture<a class="headerlink" href="#software-architecture" title="Link to this heading"></a></h2>
+<p>The VibeSpin engine follows a strict separation between high-level state management and performance-critical numerical kernels. The system architecture centers on a three-tier hierarchy that organizes code by its proximity to the simulation loop. At the foundation, Numba-accelerated kernels handle the microscopic spin updates and observable calculations. These kernels are stateless functions designed for maximum JIT compatibility. Above the kernels, specialized simulation classes manage the lattice state, handle parameter validation, and provide a stable API for experimentation. The top layer consists of analysis scripts and Jupyter notebooks that drive the simulations and aggregate results for physical interpretation.</p>
+<p>The class hierarchy begins with the <code class="docutils literal notranslate"><span class="pre">MonteCarloSimulation</span></code> abstract base class located in <code class="docutils literal notranslate"><span class="pre">models/simulation_base.py</span></code>. This base class defines the interface for all models and implements shared infrastructure for periodic boundaries, radial distance binning, and Fourier-based spatial analysis. Specialized implementations like <code class="docutils literal notranslate"><span class="pre">IsingSimulation</span></code>, <code class="docutils literal notranslate"><span class="pre">XYSimulation</span></code>, and <code class="docutils literal notranslate"><span class="pre">ClockSimulation</span></code> inherit from this base and provide model-specific logic. Each simulation class encapsulates its own lattice data and configuration while delegating the inner loops to JIT-compiled functions. This design ensures that the high-level API remains expressive and easy to test without sacrificing the execution speed required for large-scale Monte Carlo sampling.</p>
+</section>
+<section id="performance-engineering-with-numba">
+<h2>Performance Engineering with Numba<a class="headerlink" href="#performance-engineering-with-numba" title="Link to this heading"></a></h2>
+<p>High simulation throughput is achieved through the aggressive use of Numba JIT compilation. Every performance-critical loop in VibeSpin is decorated with <code class="docutils literal notranslate"><span class="pre">&#64;njit(cache=True,</span> <span class="pre">fastmath=True)</span></code> to ensure that Python overhead is eliminated during the simulation. These kernels operate directly on NumPy arrays and avoid high-level Python abstractions that would trigger object-mode fallback. To maximize hardware utilization, checkerboard kernels utilize <code class="docutils literal notranslate"><span class="pre">parallel=True</span></code> and <code class="docutils literal notranslate"><span class="pre">prange</span></code> to distribute sublattice updates across multiple CPU cores. This parallelism is restricted to equilibrium regimes where the independent update of non-neighboring sites is physically valid and numerically efficient.</p>
+<p>Numerical efficiency in the inner loops also relies on the elimination of expensive operations like the modulo operator for periodic boundary conditions. The simulation engine instead uses pre-calculated index arrays named <code class="docutils literal notranslate"><span class="pre">idx_next</span></code> and <code class="docutils literal notranslate"><span class="pre">idx_prev</span></code> to resolve neighbor positions. This approach replaces arithmetic divisions with fast memory lookups, which significantly reduces the computational cost per spin flip. When a simulation is initialized with a random seed, the engine synchronizes the Python random state with Numba’s internal generator using the <code class="docutils literal notranslate"><span class="pre">_seed_numba</span></code> helper. This guarantee of determinism is essential for reproducing trajectories and debugging rare stochastic failures in complex energy landscapes.</p>
+</section>
+<section id="error-handling-and-type-safety">
+<h2>Error Handling and Type Safety<a class="headerlink" href="#error-handling-and-type-safety" title="Link to this heading"></a></h2>
+<p>The framework maintains a rigorous approach to type safety and error reporting to support scientific reliability. Every source file employs <code class="docutils literal notranslate"><span class="pre">from</span> <span class="pre">__future__</span> <span class="pre">import</span> <span class="pre">annotations</span></code> and uses comprehensive type hints to enable static analysis with Mypy. Public methods in the simulation classes use keyword-only arguments to prevent parameter ambiguity, which is particularly useful when configuring models with many physical constants. This strict interface design reduces the likelihood of silent failures or misconfiguration during automated parameter sweeps.</p>
+<p>Errors are managed through a three-tier exception hierarchy defined in <code class="docutils literal notranslate"><span class="pre">utils/exceptions.py</span></code>. General configuration issues or invalid user inputs trigger standard <code class="docutils literal notranslate"><span class="pre">ValueError</span></code> exceptions. Physical or mathematical failures during data processing, such as an undefined autocorrelation time due to zero variance, raise specialized <code class="docutils literal notranslate"><span class="pre">NumericalAnalysisError</span></code> subclasses. Internal logic violations or impossible states result in a <code class="docutils literal notranslate"><span class="pre">RuntimeError</span></code>. This granular approach to error handling allows analysis scripts to catch and handle known failure modes gracefully while ensuring that fundamental bugs are immediately visible to the developer.</p>
+</section>
+<section id="testing-strategy-and-quality-gates">
+<h2>Testing Strategy and Quality Gates<a class="headerlink" href="#testing-strategy-and-quality-gates" title="Link to this heading"></a></h2>
+<p>The VibeSpin verification suite is organized into five conceptual layers to ensure both code quality and physical correctness. Microscopic integrity tests in the algorithm layer validate the fundamental properties of the Monte Carlo kernels, including detailed balance and ergodicity <a class="reference internal" href="#bibliography"><span class="std std-ref">[1]</span></a>. The model layer focuses on API contracts, edge cases at extreme temperatures, and CLI behavior. Utility tests cover physics observables and system helpers. A dedicated style layer enforces documentation standards and docstring compliance. Finally, the integration layer uses reusable infrastructure patterns to verify script behavior, output schemas, and deterministic reproducibility.</p>
+<p>Development workflows are protected by multi-stage quality gates implemented via pre-commit and pre-push hooks. These hooks run the full suite of static analysis tools, including Ruff for linting and Mypy for type checking. Documentation consistency is also enforced at push time: the system validates markdown links, ensures that API documentation is synchronized with the source, and builds the Sphinx HTML output with all warnings treated as errors. This rigorous pipeline ensures that every contribution maintains the high engineering standards required for reproducible scientific computing.</p>
+</section>
+<section id="bibliography">
+<h2>Bibliography<a class="headerlink" href="#bibliography" title="Link to this heading"></a></h2>
+<p>The engineering and algorithmic choices in VibeSpin are grounded in standard practices for scientific computing and statistical physics. For a comprehensive list of all references used in the project, see <span class="xref myst">BIBLIOGRAPHY.md</span>.</p>
+<p><a class="reference internal" href="#bibliography"><span class="std std-ref">[1]</span></a> W. K. Hastings, “Monte Carlo sampling methods using Markov chains and their applications,” <em>Biometrika</em>, vol. 57, no. 1, pp. 97–109, 1970. <a class="reference external" href="https://academic.oup.com/biomet/article/57/1/97/252073">Oxford Academic Open Access</a></p>
+<p><a class="reference internal" href="#bibliography"><span class="std std-ref">[2]</span></a> M. E. J. Newman and G. T. Barkema, “Monte Carlo Methods in Statistical Physics,” Oxford University Press, 1999. <a class="reference external" href="https://arxiv.org/abs/0905.1629">Lecture Notes Summary (H. G. Katzgraber)</a></p>
+<p><a class="reference internal" href="#bibliography"><span class="std std-ref">[3]</span></a> Numba Documentation: <a class="reference external" href="https://numba.readthedocs.io/en/stable/user/parallel.html">Parallel Acceleration</a></p>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="physics.html" class="btn btn-neutral float-left" title="Physics and Algorithm Guide: VibeSpin" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="scripts.html" class="btn btn-neutral float-right" title="Scripts Catalog: VibeSpin" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2026, Thomas Lottermoser.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>
