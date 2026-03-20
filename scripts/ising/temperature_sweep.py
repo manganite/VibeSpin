@@ -499,6 +499,13 @@ def main() -> None:
         max_tau_relative_width=float(args.max_tau_relative_width),
     )
 
+    unstable_count = int(np.sum(flags['tau_interval_unstable_flag']))
+    undefined_count = int(np.sum(flags['undefined_autocorr_flag']))
+    diagnostics_note = (
+        f'n_seeds={n_seeds}, undefined tau={undefined_count}/{temperatures.size}, '
+        f'unstable tau intervals={unstable_count}/{temperatures.size}'
+    )
+
     undefined_fraction = float(np.mean(flags['undefined_autocorr_flag']))
     if args.strict_uncertainty and undefined_fraction > float(args.max_undefined_fraction):
         raise RuntimeError(
@@ -576,9 +583,13 @@ def main() -> None:
         spec_h_err=np.asarray(cv_bundle['err'], dtype=np.float64),
         entropy=entropy,
         entropy_err=np.asarray(entropy_bundle['err'], dtype=np.float64),
+        entropy_ci_low=np.asarray(entropy_bundle['ci_low'], dtype=np.float64),
+        entropy_ci_high=np.asarray(entropy_bundle['ci_high'], dtype=np.float64),
         tau_int=tau_int_arr,
         tau_int_ci_low=tau_int_ci_low_arr,
         tau_int_ci_high=tau_int_ci_high_arr,
+        tau_unstable_flag=flags['tau_interval_unstable_flag'],
+        diagnostics_note=diagnostics_note,
         min_visible_rel_error=0.01,
         mark_invalid_uncertainty=True,
         title=f'2D Ising Model: Temperature Sweep (L={L})',

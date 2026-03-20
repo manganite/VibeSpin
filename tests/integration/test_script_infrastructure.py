@@ -842,3 +842,73 @@ class TestClockTemperatureSweepUncertaintySchema:
                 'bootstrap_resamples', 'nan_or_undefined_count',
             }
             assert required.issubset(set(data.files))
+
+
+class TestTemperatureSweepPlotPayloads:
+    """Validate plotting payload fields emitted by temperature-sweep scripts."""
+
+    def test_ising_main_passes_diagnostics_plot_payload(self, monkeypatch) -> None:
+        """Ising sweep main should forward diagnostics arrays and note to plotting."""
+        if not HAS_TEMPERATURE_SWEEP:
+            import pytest
+            pytest.skip("Temperature sweep modules not available")
+
+        import scripts.ising.temperature_sweep as ising_module
+
+        captured_plot_kwargs: dict[str, Any] = {}
+
+        def _fake_parallel_sweep(*, worker_func, params, num_processes=None):
+            params_list = list(params)
+            return [
+                {
+                    'temperature_index': float(p.temperature_index),
+                    'seed_index': float(p.seed_index),
+                    'avg_m_value': 1.0,
+                    'avg_m_err': 0.1,
+                    'avg_m_tau_int': 3.0,
+                    'avg_m_n_eff': 10.0,
+                    'avg_e_value': -1.0,
+                    'avg_e_err': 0.1,
+                    'avg_e_tau_int': 3.0,
+                    'avg_e_n_eff': 10.0,
+                    'susc_value': 0.5,
+                    'susc_err': 0.05,
+                    'susc_tau_int': 3.0,
+                    'susc_n_eff': 10.0,
+                    'spec_h_value': 0.2,
+                    'spec_h_err': 0.03,
+                    'spec_h_tau_int': 3.0,
+                    'spec_h_n_eff': 10.0,
+                }
+                for p in params_list
+            ]
+
+        def _capture_plot_kwargs(**kwargs):
+            captured_plot_kwargs.update(kwargs)
+
+        monkeypatch.setattr(ising_module, 'parallel_sweep', _fake_parallel_sweep)
+        monkeypatch.setattr(ising_module, 'plot_temperature_sweep', _capture_plot_kwargs)
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            monkeypatch.setattr(
+                sys,
+                'argv',
+                [
+                    'ising_temperature_sweep',
+                    '--size', '8',
+                    '--meas-steps', '20',
+                    '--t-points', '2',
+                    '--n-seeds', '2',
+                    '--output-dir', tmpdir,
+                ],
+            )
+            ising_module.main()
+
+        assert 'entropy_ci_low' in captured_plot_kwargs
+        assert 'entropy_ci_high' in captured_plot_kwargs
+        assert 'tau_unstable_flag' in captured_plot_kwargs
+        assert 'diagnostics_note' in captured_plot_kwargs
+        diagnostics_note = str(captured_plot_kwargs['diagnostics_note'])
+        assert 'n_seeds=2' in diagnostics_note
+        assert 'undefined tau=' in diagnostics_note
+        assert 'unstable tau intervals=' in diagnostics_note

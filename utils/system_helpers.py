@@ -280,9 +280,13 @@ def plot_temperature_sweep(
     spec_h_err: np.ndarray | Sequence[float] | None = None,
     entropy: np.ndarray | Sequence[float] | None = None,
     entropy_err: np.ndarray | Sequence[float] | None = None,
+    entropy_ci_low: np.ndarray | Sequence[float] | None = None,
+    entropy_ci_high: np.ndarray | Sequence[float] | None = None,
     tau_int: np.ndarray | Sequence[float] | None = None,
     tau_int_ci_low: np.ndarray | Sequence[float] | None = None,
     tau_int_ci_high: np.ndarray | Sequence[float] | None = None,
+    tau_unstable_flag: np.ndarray | Sequence[float] | None = None,
+    diagnostics_note: str | None = None,
     min_visible_rel_error: float = 0.01,
     mark_invalid_uncertainty: bool = True,
 ) -> None:
@@ -290,9 +294,9 @@ def plot_temperature_sweep(
     Generate and save a standardized temperature sweep plot.
 
     Displays magnetization, energy, susceptibility, and specific heat as
-    functions of temperature. When *entropy* or *tau_int* are provided the
-    layout expands to 3×2; otherwise the classic 2×2 is used.
-    Saves the figure via :func:`save_plot`.
+    functions of temperature in a dedicated thermodynamics figure. When
+    *entropy* or *tau_int* are provided a companion diagnostics figure is
+    saved alongside the main figure.
 
     Parameters
     ----------
@@ -306,24 +310,27 @@ def plot_temperature_sweep(
         directory: Output directory passed to :func:`save_plot` (e.g. 'results/ising').
         entropy: Optional entropy per temperature point.
         entropy_err: Optional symmetric uncertainty for entropy.
+        entropy_ci_low: Optional lower confidence band for entropy.
+        entropy_ci_high: Optional upper confidence band for entropy.
         tau_int: Optional integrated autocorrelation time per temperature point.
             Reveals critical slowing down as a peak near T_c.
         tau_int_ci_low: Optional lower confidence band for tau_int.
         tau_int_ci_high: Optional upper confidence band for tau_int.
+        tau_unstable_flag: Optional per-temperature mask flagging unstable
+            tau_int intervals.
+        diagnostics_note: Optional text shown on diagnostics figure summarizing
+            uncertainty quality metrics.
         min_visible_rel_error: Minimum relative error bar size used for visibility
             when finite uncertainties are extremely small.
         mark_invalid_uncertainty: If True, points with non-finite uncertainty are
             marked with ``x`` markers and a legend label.
     """
+    temperatures_arr = np.asarray(temperatures, dtype=np.float64)
     use_extra = entropy is not None or tau_int is not None
-    if use_extra:
-        fig, axes = plt.subplots(3, 2, figsize=(12, 14))
-        flat = axes.flatten()
-        ax1, ax2, ax3, ax4, ax5, ax6 = flat
-    else:
-        fig, axes = plt.subplots(2, 2, figsize=(12, 10))
-        flat = axes.flatten()
-        ax1, ax2, ax3, ax4 = flat
+
+    fig, axes = plt.subplots(2, 2, figsize=(12, 10))
+    flat = axes.flatten()
+    ax1, ax2, ax3, ax4 = flat
 
     fig.suptitle(title)
 
@@ -363,7 +370,7 @@ def plot_temperature_sweep(
         ax1.plot(temperatures, avg_m, 'o-', markersize=4)
     else:
         ax1.errorbar(
-            temperatures,
+            temperatures_arr,
             avg_m,
             yerr=_visible_yerr(avg_m, avg_m_err),
             fmt='o-',
@@ -372,7 +379,7 @@ def plot_temperature_sweep(
         )
         _mark_invalid(
             ax=ax1,
-            x=temperatures,
+            x=temperatures_arr,
             y=avg_m,
             yerr=avg_m_err,
             color='C0',
@@ -383,10 +390,10 @@ def plot_temperature_sweep(
     ax1.grid(True)
 
     if avg_e_err is None:
-        ax2.plot(temperatures, avg_e, 'o-', color='orange', markersize=4)
+        ax2.plot(temperatures_arr, avg_e, 'o-', color='orange', markersize=4)
     else:
         ax2.errorbar(
-            temperatures,
+            temperatures_arr,
             avg_e,
             yerr=_visible_yerr(avg_e, avg_e_err),
             fmt='o-',
@@ -396,7 +403,7 @@ def plot_temperature_sweep(
         )
         _mark_invalid(
             ax=ax2,
-            x=temperatures,
+            x=temperatures_arr,
             y=avg_e,
             yerr=avg_e_err,
             color='orange',
@@ -407,10 +414,10 @@ def plot_temperature_sweep(
     ax2.grid(True)
 
     if susc_err is None:
-        ax3.plot(temperatures, susc, 'o-', color='green', markersize=4)
+        ax3.plot(temperatures_arr, susc, 'o-', color='green', markersize=4)
     else:
         ax3.errorbar(
-            temperatures,
+            temperatures_arr,
             susc,
             yerr=_visible_yerr(susc, susc_err),
             fmt='o-',
@@ -420,7 +427,7 @@ def plot_temperature_sweep(
         )
         _mark_invalid(
             ax=ax3,
-            x=temperatures,
+            x=temperatures_arr,
             y=susc,
             yerr=susc_err,
             color='green',
@@ -431,10 +438,10 @@ def plot_temperature_sweep(
     ax3.grid(True)
 
     if spec_h_err is None:
-        ax4.plot(temperatures, spec_h, 'o-', color='red', markersize=4)
+        ax4.plot(temperatures_arr, spec_h, 'o-', color='red', markersize=4)
     else:
         ax4.errorbar(
-            temperatures,
+            temperatures_arr,
             spec_h,
             yerr=_visible_yerr(spec_h, spec_h_err),
             fmt='o-',
@@ -444,7 +451,7 @@ def plot_temperature_sweep(
         )
         _mark_invalid(
             ax=ax4,
-            x=temperatures,
+            x=temperatures_arr,
             y=spec_h,
             yerr=spec_h_err,
             color='red',
@@ -454,86 +461,141 @@ def plot_temperature_sweep(
     ax4.set_title('Specific Heat')
     ax4.grid(True)
 
-    if use_extra:
-        if entropy is not None:
-            if entropy_err is None:
-                ax5.plot(temperatures, entropy, 'o-', color='purple', markersize=4)
-            else:
-                ax5.errorbar(
-                    temperatures,
-                    entropy,
-                    yerr=_visible_yerr(entropy, entropy_err),
-                    fmt='o-',
-                    color='purple',
-                    markersize=4,
-                    capsize=2,
-                )
-                _mark_invalid(
-                    ax=ax5,
-                    x=temperatures,
-                    y=entropy,
-                    yerr=entropy_err,
-                    color='purple',
-                    label='uncertainty unavailable',
-                )
-            ax5.set_ylabel(r'Entropy $S\,/\,k_B$')
-            ax5.set_title('Entropy')
-            ax5.grid(True)
-        else:
-            ax5.set_visible(False)
+    for ax in flat:
+        if ax.get_visible():
+            ax.set_xlabel('Temperature (T)')
 
-        if tau_int is not None:
-            tau_arr = np.asarray(tau_int, dtype=np.float64)
-            temp_arr = np.asarray(temperatures, dtype=np.float64)
-            ax6.plot(temp_arr, tau_arr, 'o-', color='saddlebrown', markersize=4)
-            if tau_int_ci_low is not None and tau_int_ci_high is not None:
-                tau_lo = np.asarray(tau_int_ci_low, dtype=np.float64)
-                tau_hi = np.asarray(tau_int_ci_high, dtype=np.float64)
-                band_valid = np.isfinite(tau_arr) & np.isfinite(tau_lo) & np.isfinite(tau_hi)
-                if np.any(band_valid):
-                    ax6.fill_between(
-                        temp_arr[band_valid],
-                        tau_lo[band_valid],
-                        tau_hi[band_valid],
-                        color='saddlebrown',
-                        alpha=0.2,
-                        linewidth=0.0,
+    save_plot(filename=filename, directory=directory)
+
+    if not use_extra:
+        return
+
+    stem, ext = os.path.splitext(filename)
+    diagnostics_filename = f'{stem}_diagnostics{ext or ".png"}'
+
+    diag_fig, diag_axes = plt.subplots(1, 2, figsize=(12, 5.5))
+    diag_flat = np.ravel(diag_axes)
+    ax5, ax6 = diag_flat
+    diag_fig.suptitle(f'{title} Diagnostics')
+    if diagnostics_note:
+        diag_fig.text(0.5, 0.965, diagnostics_note, ha='center', va='top', fontsize=9)
+
+    if entropy is not None:
+        entropy_arr = np.asarray(entropy, dtype=np.float64)
+        ax5.plot(temperatures_arr, entropy_arr, 'o-', color='purple', markersize=4)
+        if entropy_ci_low is not None and entropy_ci_high is not None:
+            ent_lo = np.asarray(entropy_ci_low, dtype=np.float64)
+            ent_hi = np.asarray(entropy_ci_high, dtype=np.float64)
+            ent_valid = np.isfinite(entropy_arr) & np.isfinite(ent_lo) & np.isfinite(ent_hi)
+            if np.any(ent_valid):
+                ax5.fill_between(
+                    temperatures_arr[ent_valid],
+                    ent_lo[ent_valid],
+                    ent_hi[ent_valid],
+                    color='purple',
+                    alpha=0.18,
+                    linewidth=0.0,
+                )
+            if mark_invalid_uncertainty:
+                invalid_entropy = np.isfinite(entropy_arr) & ~ent_valid
+                if np.any(invalid_entropy):
+                    ax5.plot(
+                        temperatures_arr[invalid_entropy],
+                        entropy_arr[invalid_entropy],
+                        'x',
+                        color='purple',
+                        markersize=5,
+                        label='uncertainty unavailable',
                     )
-                if mark_invalid_uncertainty:
-                    invalid_band = np.isfinite(tau_arr) & ~band_valid
-                    if np.any(invalid_band):
-                        ax6.plot(
-                            temp_arr[invalid_band],
-                            tau_arr[invalid_band],
-                            'x',
-                            color='saddlebrown',
-                            markersize=5,
-                            label='uncertainty unavailable',
-                        )
-                        ax6.legend(loc='best', fontsize=8)
-            elif mark_invalid_uncertainty:
-                finite_tau = np.isfinite(tau_arr)
-                if np.any(finite_tau):
+                    ax5.legend(loc='best', fontsize=8)
+        elif entropy_err is not None:
+            ax5.errorbar(
+                temperatures_arr,
+                entropy_arr,
+                yerr=_visible_yerr(entropy_arr, entropy_err),
+                fmt='none',
+                ecolor='purple',
+                alpha=0.6,
+                capsize=2,
+            )
+            _mark_invalid(
+                ax=ax5,
+                x=temperatures_arr,
+                y=entropy_arr,
+                yerr=entropy_err,
+                color='purple',
+                label='uncertainty unavailable',
+            )
+        ax5.set_ylabel(r'Entropy $S\,/\,k_B$')
+        ax5.set_title('Entropy')
+        ax5.grid(True)
+        ax5.set_xlabel('Temperature (T)')
+    else:
+        ax5.set_visible(False)
+
+    if tau_int is not None:
+        tau_arr = np.asarray(tau_int, dtype=np.float64)
+        ax6.plot(temperatures_arr, tau_arr, 'o-', color='saddlebrown', markersize=4)
+        if tau_int_ci_low is not None and tau_int_ci_high is not None:
+            tau_lo = np.asarray(tau_int_ci_low, dtype=np.float64)
+            tau_hi = np.asarray(tau_int_ci_high, dtype=np.float64)
+            band_valid = np.isfinite(tau_arr) & np.isfinite(tau_lo) & np.isfinite(tau_hi)
+            if np.any(band_valid):
+                ax6.fill_between(
+                    temperatures_arr[band_valid],
+                    tau_lo[band_valid],
+                    tau_hi[band_valid],
+                    color='saddlebrown',
+                    alpha=0.22,
+                    linewidth=0.0,
+                )
+            if mark_invalid_uncertainty:
+                invalid_band = np.isfinite(tau_arr) & ~band_valid
+                if np.any(invalid_band):
                     ax6.plot(
-                        temp_arr[finite_tau],
-                        tau_arr[finite_tau],
+                        temperatures_arr[invalid_band],
+                        tau_arr[invalid_band],
                         'x',
                         color='saddlebrown',
                         markersize=5,
                         label='uncertainty unavailable',
                     )
                     ax6.legend(loc='best', fontsize=8)
-            ax6.set_ylabel(r'Integrated Autocorr. Time $\tau_\mathrm{int}$')
-            ax6.set_title('Critical Slowing Down')
-            ax6.grid(True)
-        else:
-            ax6.set_visible(False)
+        elif mark_invalid_uncertainty:
+            finite_tau = np.isfinite(tau_arr)
+            if np.any(finite_tau):
+                ax6.plot(
+                    temperatures_arr[finite_tau],
+                    tau_arr[finite_tau],
+                    'x',
+                    color='saddlebrown',
+                    markersize=5,
+                    label='uncertainty unavailable',
+                )
+                ax6.legend(loc='best', fontsize=8)
+        if tau_unstable_flag is not None:
+            unstable = np.asarray(tau_unstable_flag, dtype=np.float64) > 0.0
+            unstable_points = unstable & np.isfinite(tau_arr)
+            if np.any(unstable_points):
+                ax6.plot(
+                    temperatures_arr[unstable_points],
+                    tau_arr[unstable_points],
+                    'o',
+                    markerfacecolor='none',
+                    markeredgecolor='darkorange',
+                    markersize=7,
+                    linewidth=1.0,
+                    label='unstable interval',
+                )
+                ax6.legend(loc='best', fontsize=8)
+        ax6.set_ylabel(r'Integrated Autocorr. Time $\tau_\mathrm{int}$')
+        ax6.set_title('Critical Slowing Down')
+        ax6.grid(True)
+        ax6.set_xlabel('Temperature (T)')
+    else:
+        ax6.set_visible(False)
 
-    for ax in flat:
-        if ax.get_visible():
-            ax.set_xlabel('Temperature (T)')
-
-    save_plot(filename=filename, directory=directory)
+    save_plot(filename=diagnostics_filename, directory=directory)
 
 
 def plot_ordering_kinetics(

@@ -424,7 +424,9 @@ def test_plot_temperature_sweep_with_entropy_only(temp_dir):
             filename='entropy_only.png',
             directory=temp_dir,
         )
-        mock_save.assert_called_once()
+        assert mock_save.call_count == 2
+        mock_save.assert_any_call(filename='entropy_only.png', directory=temp_dir)
+        mock_save.assert_any_call(filename='entropy_only_diagnostics.png', directory=temp_dir)
     plt.close('all')
 
 
@@ -445,7 +447,9 @@ def test_plot_temperature_sweep_with_tau_only(temp_dir):
             filename='tau_only.png',
             directory=temp_dir,
         )
-        mock_save.assert_called_once()
+        assert mock_save.call_count == 2
+        mock_save.assert_any_call(filename='tau_only.png', directory=temp_dir)
+        mock_save.assert_any_call(filename='tau_only_diagnostics.png', directory=temp_dir)
     plt.close('all')
 
 
@@ -472,7 +476,39 @@ def test_plot_temperature_sweep_with_tau_invalid_band(temp_dir):
             directory=temp_dir,
             mark_invalid_uncertainty=True,
         )
-        mock_save.assert_called_once()
+        assert mock_save.call_count == 2
+        mock_save.assert_any_call(filename='tau_invalid_band.png', directory=temp_dir)
+        mock_save.assert_any_call(
+            filename='tau_invalid_band_diagnostics.png',
+            directory=temp_dir,
+        )
+    plt.close('all')
+
+
+def test_plot_temperature_sweep_with_entropy_band_saves_diagnostics(temp_dir):
+    """Entropy confidence bands should be rendered in the companion diagnostics figure."""
+    temps = np.array([1.0, 2.0, 3.0])
+    data = np.array([0.5, 0.6, 0.7])
+    entropy = np.array([0.1, 0.2, 0.35])
+    entropy_lo = np.array([0.08, 0.16, 0.3])
+    entropy_hi = np.array([0.13, 0.24, 0.4])
+    with patch('utils.system_helpers.save_plot') as mock_save:
+        plot_temperature_sweep(
+            temperatures=temps,
+            avg_m=data,
+            avg_e=data,
+            susc=data,
+            spec_h=data,
+            entropy=entropy,
+            entropy_ci_low=entropy_lo,
+            entropy_ci_high=entropy_hi,
+            title='Entropy band',
+            filename='entropy_band.png',
+            directory=temp_dir,
+        )
+        assert mock_save.call_count == 2
+        mock_save.assert_any_call(filename='entropy_band.png', directory=temp_dir)
+        mock_save.assert_any_call(filename='entropy_band_diagnostics.png', directory=temp_dir)
     plt.close('all')
 
 
