@@ -104,6 +104,8 @@
 <span class="kn">from</span><span class="w"> </span><span class="nn">utils.physics_helpers</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
     <span class="n">DEFAULT_CONFIDENCE_LEVEL</span><span class="p">,</span>
     <span class="n">UNCERTAINTY_METHOD_BLOCKING</span><span class="p">,</span>
+    <span class="n">UNCERTAINTY_METHOD_BOOTSTRAP</span><span class="p">,</span>
+    <span class="n">summarize_asymmetric_replicate_uncertainty</span><span class="p">,</span>
     <span class="n">summarize_derived_observable</span><span class="p">,</span>
     <span class="n">summarize_entropy_observable</span><span class="p">,</span>
     <span class="n">summarize_primary_observable</span><span class="p">,</span>
@@ -115,6 +117,10 @@
     <span class="n">plot_temperature_sweep</span><span class="p">,</span>
     <span class="n">setup_logging</span><span class="p">,</span>
 <span class="p">)</span>
+
+<span class="n">_WORKER_CONFIDENCE_LEVEL</span> <span class="o">=</span> <span class="n">DEFAULT_CONFIDENCE_LEVEL</span>
+<span class="n">_WORKER_DERIVED_METHOD</span> <span class="o">=</span> <span class="n">UNCERTAINTY_METHOD_BLOCKING</span>
+<span class="n">_WORKER_DERIVED_BOOTSTRAP_RESAMPLES</span> <span class="o">=</span> <span class="mi">0</span>
 
 
 <div class="viewcode-block" id="simulate_temperature">
@@ -231,19 +237,31 @@
     <span class="n">mags</span><span class="p">,</span> <span class="n">engs</span> <span class="o">=</span> <span class="n">sim_r</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="n">n_steps</span><span class="o">=</span><span class="n">params</span><span class="o">.</span><span class="n">meas_steps</span><span class="p">)</span>
     <span class="n">mags_arr</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">mags</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">)</span>
     <span class="n">engs_arr</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">engs</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">)</span>
-    <span class="n">mag</span> <span class="o">=</span> <span class="n">summarize_primary_observable</span><span class="p">(</span><span class="n">time_series</span><span class="o">=</span><span class="n">mags_arr</span><span class="p">)</span>
-    <span class="n">eng</span> <span class="o">=</span> <span class="n">summarize_primary_observable</span><span class="p">(</span><span class="n">time_series</span><span class="o">=</span><span class="n">engs_arr</span><span class="p">)</span>
+    <span class="n">mag</span> <span class="o">=</span> <span class="n">summarize_primary_observable</span><span class="p">(</span>
+        <span class="n">time_series</span><span class="o">=</span><span class="n">mags_arr</span><span class="p">,</span>
+        <span class="n">confidence</span><span class="o">=</span><span class="n">_WORKER_CONFIDENCE_LEVEL</span><span class="p">,</span>
+    <span class="p">)</span>
+    <span class="n">eng</span> <span class="o">=</span> <span class="n">summarize_primary_observable</span><span class="p">(</span>
+        <span class="n">time_series</span><span class="o">=</span><span class="n">engs_arr</span><span class="p">,</span>
+        <span class="n">confidence</span><span class="o">=</span><span class="n">_WORKER_CONFIDENCE_LEVEL</span><span class="p">,</span>
+    <span class="p">)</span>
     <span class="n">chi</span> <span class="o">=</span> <span class="n">summarize_derived_observable</span><span class="p">(</span>
         <span class="n">magnetization_series</span><span class="o">=</span><span class="n">mags_arr</span><span class="p">,</span>
         <span class="n">temperature</span><span class="o">=</span><span class="n">T</span><span class="p">,</span>
         <span class="n">L</span><span class="o">=</span><span class="n">L</span><span class="p">,</span>
         <span class="n">observable</span><span class="o">=</span><span class="s1">&#39;chi&#39;</span><span class="p">,</span>
+        <span class="n">method</span><span class="o">=</span><span class="n">_WORKER_DERIVED_METHOD</span><span class="p">,</span>
+        <span class="n">confidence</span><span class="o">=</span><span class="n">_WORKER_CONFIDENCE_LEVEL</span><span class="p">,</span>
+        <span class="n">bootstrap_resamples</span><span class="o">=</span><span class="n">_WORKER_DERIVED_BOOTSTRAP_RESAMPLES</span><span class="p">,</span>
     <span class="p">)</span>
     <span class="n">cv</span> <span class="o">=</span> <span class="n">summarize_derived_observable</span><span class="p">(</span>
         <span class="n">energy_series</span><span class="o">=</span><span class="n">engs_arr</span><span class="p">,</span>
         <span class="n">temperature</span><span class="o">=</span><span class="n">T</span><span class="p">,</span>
         <span class="n">L</span><span class="o">=</span><span class="n">L</span><span class="p">,</span>
         <span class="n">observable</span><span class="o">=</span><span class="s1">&#39;cv&#39;</span><span class="p">,</span>
+        <span class="n">method</span><span class="o">=</span><span class="n">_WORKER_DERIVED_METHOD</span><span class="p">,</span>
+        <span class="n">confidence</span><span class="o">=</span><span class="n">_WORKER_CONFIDENCE_LEVEL</span><span class="p">,</span>
+        <span class="n">bootstrap_resamples</span><span class="o">=</span><span class="n">_WORKER_DERIVED_BOOTSTRAP_RESAMPLES</span><span class="p">,</span>
     <span class="p">)</span>
 
     <span class="k">return</span> <span class="p">{</span>
@@ -274,6 +292,7 @@
     <span class="n">errors_by_seed</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
     <span class="n">tau_by_seed</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
     <span class="n">n_eff_by_seed</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
+    <span class="n">confidence</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span> <span class="o">|</span> <span class="nb">float</span><span class="p">]:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Build a standardized uncertainty bundle for one observable across seeds.&quot;&quot;&quot;</span>
     <span class="n">t_points</span> <span class="o">=</span> <span class="n">values_by_seed</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
@@ -291,28 +310,21 @@
         <span class="n">agg</span> <span class="o">=</span> <span class="n">summarize_seed_ensemble</span><span class="p">(</span>
             <span class="n">values</span><span class="o">=</span><span class="n">values_by_seed</span><span class="p">[</span><span class="n">i</span><span class="p">],</span>
             <span class="n">within_seed_errors</span><span class="o">=</span><span class="n">errors_by_seed</span><span class="p">[</span><span class="n">i</span><span class="p">],</span>
-            <span class="n">confidence</span><span class="o">=</span><span class="n">DEFAULT_CONFIDENCE_LEVEL</span><span class="p">,</span>
+            <span class="n">confidence</span><span class="o">=</span><span class="n">confidence</span><span class="p">,</span>
         <span class="p">)</span>
         <span class="n">value</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">agg</span><span class="p">[</span><span class="s1">&#39;value&#39;</span><span class="p">])</span>
         <span class="n">err</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">agg</span><span class="p">[</span><span class="s1">&#39;err&#39;</span><span class="p">])</span>
         <span class="n">ci_low</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">agg</span><span class="p">[</span><span class="s1">&#39;ci_low&#39;</span><span class="p">])</span>
         <span class="n">ci_high</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">agg</span><span class="p">[</span><span class="s1">&#39;ci_high&#39;</span><span class="p">])</span>
         <span class="n">tau_row</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">tau_by_seed</span><span class="p">[</span><span class="n">i</span><span class="p">],</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">)</span>
-        <span class="n">tau_agg</span> <span class="o">=</span> <span class="n">summarize_seed_ensemble</span><span class="p">(</span>
-            <span class="n">values</span><span class="o">=</span><span class="n">tau_row</span><span class="p">,</span>
-            <span class="n">within_seed_errors</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">full_like</span><span class="p">(</span><span class="n">tau_row</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">nan</span><span class="p">),</span>
-            <span class="n">confidence</span><span class="o">=</span><span class="n">DEFAULT_CONFIDENCE_LEVEL</span><span class="p">,</span>
+        <span class="n">tau_agg</span> <span class="o">=</span> <span class="n">summarize_asymmetric_replicate_uncertainty</span><span class="p">(</span>
+            <span class="n">samples</span><span class="o">=</span><span class="n">tau_row</span><span class="p">,</span>
+            <span class="n">confidence</span><span class="o">=</span><span class="n">confidence</span><span class="p">,</span>
         <span class="p">)</span>
         <span class="n">tau_int</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">tau_agg</span><span class="p">[</span><span class="s1">&#39;value&#39;</span><span class="p">])</span>
-        <span class="n">tau_finite_count</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">isfinite</span><span class="p">(</span><span class="n">tau_row</span><span class="p">)</span><span class="o">.</span><span class="n">sum</span><span class="p">())</span>
-        <span class="k">if</span> <span class="n">tau_finite_count</span> <span class="o">&lt;=</span> <span class="mi">1</span><span class="p">:</span>
-            <span class="n">tau_int_err</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">nan</span>
-            <span class="n">tau_int_ci_low</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">nan</span>
-            <span class="n">tau_int_ci_high</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">nan</span>
-        <span class="k">else</span><span class="p">:</span>
-            <span class="n">tau_int_err</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">tau_agg</span><span class="p">[</span><span class="s1">&#39;err&#39;</span><span class="p">])</span>
-            <span class="n">tau_int_ci_low</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">tau_agg</span><span class="p">[</span><span class="s1">&#39;ci_low&#39;</span><span class="p">])</span>
-            <span class="n">tau_int_ci_high</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">tau_agg</span><span class="p">[</span><span class="s1">&#39;ci_high&#39;</span><span class="p">])</span>
+        <span class="n">tau_int_err</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">tau_agg</span><span class="p">[</span><span class="s1">&#39;err&#39;</span><span class="p">])</span>
+        <span class="n">tau_int_ci_low</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">tau_agg</span><span class="p">[</span><span class="s1">&#39;ci_low&#39;</span><span class="p">])</span>
+        <span class="n">tau_int_ci_high</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">tau_agg</span><span class="p">[</span><span class="s1">&#39;ci_high&#39;</span><span class="p">])</span>
         <span class="n">n_eff</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">nansum</span><span class="p">(</span><span class="n">n_eff_by_seed</span><span class="p">[</span><span class="n">i</span><span class="p">]))</span>
 
     <span class="k">return</span> <span class="p">{</span>
@@ -326,6 +338,31 @@
         <span class="s1">&#39;tau_int_ci_high&#39;</span><span class="p">:</span> <span class="n">tau_int_ci_high</span><span class="p">,</span>
         <span class="s1">&#39;n_eff&#39;</span><span class="p">:</span> <span class="n">n_eff</span><span class="p">,</span>
         <span class="s1">&#39;samples&#39;</span><span class="p">:</span> <span class="n">values_by_seed</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">),</span>
+    <span class="p">}</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_build_quality_flags</span><span class="p">(</span>
+    <span class="o">*</span><span class="p">,</span>
+    <span class="n">tau_int</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
+    <span class="n">tau_int_ci_low</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
+    <span class="n">tau_int_ci_high</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
+    <span class="n">n_eff</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
+    <span class="n">min_effective_samples</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
+    <span class="n">max_tau_relative_width</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">]:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Build per-temperature diagnostics for uncertainty quality.&quot;&quot;&quot;</span>
+    <span class="n">undefined_autocorr</span> <span class="o">=</span> <span class="o">~</span><span class="n">np</span><span class="o">.</span><span class="n">isfinite</span><span class="p">(</span><span class="n">tau_int</span><span class="p">)</span>
+    <span class="n">low_effective_sample</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">isfinite</span><span class="p">(</span><span class="n">n_eff</span><span class="p">)</span> <span class="o">&amp;</span> <span class="p">(</span><span class="n">n_eff</span> <span class="o">&lt;</span> <span class="n">min_effective_samples</span><span class="p">)</span>
+
+    <span class="n">tau_span</span> <span class="o">=</span> <span class="n">tau_int_ci_high</span> <span class="o">-</span> <span class="n">tau_int_ci_low</span>
+    <span class="n">denom</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">maximum</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">tau_int</span><span class="p">),</span> <span class="mf">1e-12</span><span class="p">)</span>
+    <span class="n">rel_width</span> <span class="o">=</span> <span class="n">tau_span</span> <span class="o">/</span> <span class="n">denom</span>
+    <span class="n">tau_interval_unstable</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">isfinite</span><span class="p">(</span><span class="n">rel_width</span><span class="p">)</span> <span class="o">&amp;</span> <span class="p">(</span><span class="n">rel_width</span> <span class="o">&gt;</span> <span class="n">max_tau_relative_width</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="p">{</span>
+        <span class="s1">&#39;undefined_autocorr_flag&#39;</span><span class="p">:</span> <span class="n">undefined_autocorr</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">uint8</span><span class="p">),</span>
+        <span class="s1">&#39;low_effective_sample_flag&#39;</span><span class="p">:</span> <span class="n">low_effective_sample</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">uint8</span><span class="p">),</span>
+        <span class="s1">&#39;tau_interval_unstable_flag&#39;</span><span class="p">:</span> <span class="n">tau_interval_unstable</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">uint8</span><span class="p">),</span>
     <span class="p">}</span>
 
 
@@ -356,11 +393,99 @@
     <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;--t-max&#39;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">float</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="mf">2.0</span><span class="p">,</span> <span class="n">help</span><span class="o">=</span><span class="s1">&#39;Maximum temperature&#39;</span><span class="p">)</span>
     <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;--t-points&#39;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">int</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="mi">40</span><span class="p">,</span> <span class="n">help</span><span class="o">=</span><span class="s1">&#39;Number of temperature points&#39;</span><span class="p">)</span>
     <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;--n-seeds&#39;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">int</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">help</span><span class="o">=</span><span class="s1">&#39;Independent seed replicas&#39;</span><span class="p">)</span>
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span>
+        <span class="s1">&#39;--derived-uncertainty-method&#39;</span><span class="p">,</span>
+        <span class="nb">type</span><span class="o">=</span><span class="nb">str</span><span class="p">,</span>
+        <span class="n">default</span><span class="o">=</span><span class="n">UNCERTAINTY_METHOD_BLOCKING</span><span class="p">,</span>
+        <span class="n">choices</span><span class="o">=</span><span class="p">[</span><span class="n">UNCERTAINTY_METHOD_BLOCKING</span><span class="p">,</span> <span class="n">UNCERTAINTY_METHOD_BOOTSTRAP</span><span class="p">],</span>
+        <span class="n">help</span><span class="o">=</span><span class="s1">&#39;Uncertainty method for susceptibility and specific heat&#39;</span><span class="p">,</span>
+    <span class="p">)</span>
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span>
+        <span class="s1">&#39;--derived-bootstrap-resamples&#39;</span><span class="p">,</span>
+        <span class="nb">type</span><span class="o">=</span><span class="nb">int</span><span class="p">,</span>
+        <span class="n">default</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
+        <span class="n">help</span><span class="o">=</span><span class="s1">&#39;Bootstrap resamples used when derived-uncertainty-method=bootstrap&#39;</span><span class="p">,</span>
+    <span class="p">)</span>
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span>
+        <span class="s1">&#39;--confidence-level&#39;</span><span class="p">,</span>
+        <span class="nb">type</span><span class="o">=</span><span class="nb">float</span><span class="p">,</span>
+        <span class="n">default</span><span class="o">=</span><span class="n">DEFAULT_CONFIDENCE_LEVEL</span><span class="p">,</span>
+        <span class="n">help</span><span class="o">=</span><span class="s1">&#39;Two-sided confidence level for uncertainty intervals (0 &lt; c &lt; 1)&#39;</span><span class="p">,</span>
+    <span class="p">)</span>
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span>
+        <span class="s1">&#39;--entropy-uncertainty-method&#39;</span><span class="p">,</span>
+        <span class="nb">type</span><span class="o">=</span><span class="nb">str</span><span class="p">,</span>
+        <span class="n">default</span><span class="o">=</span><span class="n">UNCERTAINTY_METHOD_BOOTSTRAP</span><span class="p">,</span>
+        <span class="n">choices</span><span class="o">=</span><span class="p">[</span><span class="n">UNCERTAINTY_METHOD_BLOCKING</span><span class="p">,</span> <span class="n">UNCERTAINTY_METHOD_BOOTSTRAP</span><span class="p">],</span>
+        <span class="n">help</span><span class="o">=</span><span class="s1">&#39;Uncertainty method for entropy curves&#39;</span><span class="p">,</span>
+    <span class="p">)</span>
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span>
+        <span class="s1">&#39;--entropy-bootstrap-resamples&#39;</span><span class="p">,</span>
+        <span class="nb">type</span><span class="o">=</span><span class="nb">int</span><span class="p">,</span>
+        <span class="n">default</span><span class="o">=</span><span class="mi">400</span><span class="p">,</span>
+        <span class="n">help</span><span class="o">=</span><span class="s1">&#39;Bootstrap resamples used when entropy-uncertainty-method=bootstrap&#39;</span><span class="p">,</span>
+    <span class="p">)</span>
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span>
+        <span class="s1">&#39;--strict-uncertainty&#39;</span><span class="p">,</span>
+        <span class="n">action</span><span class="o">=</span><span class="s1">&#39;store_true&#39;</span><span class="p">,</span>
+        <span class="n">help</span><span class="o">=</span><span class="s1">&#39;Fail if undefined autocorrelation points exceed the allowed fraction&#39;</span><span class="p">,</span>
+    <span class="p">)</span>
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span>
+        <span class="s1">&#39;--max-undefined-fraction&#39;</span><span class="p">,</span>
+        <span class="nb">type</span><span class="o">=</span><span class="nb">float</span><span class="p">,</span>
+        <span class="n">default</span><span class="o">=</span><span class="mf">0.25</span><span class="p">,</span>
+        <span class="n">help</span><span class="o">=</span><span class="s1">&#39;Maximum allowed fraction of undefined tau_int points in strict mode&#39;</span><span class="p">,</span>
+    <span class="p">)</span>
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span>
+        <span class="s1">&#39;--min-effective-samples&#39;</span><span class="p">,</span>
+        <span class="nb">type</span><span class="o">=</span><span class="nb">float</span><span class="p">,</span>
+        <span class="n">default</span><span class="o">=</span><span class="mf">20.0</span><span class="p">,</span>
+        <span class="n">help</span><span class="o">=</span><span class="s1">&#39;Threshold used to flag low effective sample size points&#39;</span><span class="p">,</span>
+    <span class="p">)</span>
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span>
+        <span class="s1">&#39;--max-tau-relative-width&#39;</span><span class="p">,</span>
+        <span class="nb">type</span><span class="o">=</span><span class="nb">float</span><span class="p">,</span>
+        <span class="n">default</span><span class="o">=</span><span class="mf">1.0</span><span class="p">,</span>
+        <span class="n">help</span><span class="o">=</span><span class="s1">&#39;Relative width threshold to flag unstable tau intervals&#39;</span><span class="p">,</span>
+    <span class="p">)</span>
     <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;--output-dir&#39;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">str</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="s1">&#39;results/clock&#39;</span><span class="p">,</span> <span class="n">help</span><span class="o">=</span><span class="s1">&#39;Output directory&#39;</span><span class="p">)</span>
     <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;--log-file&#39;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">str</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">help</span><span class="o">=</span><span class="s1">&#39;Optional log file path&#39;</span><span class="p">)</span>
     <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;--verbose&#39;</span><span class="p">,</span> <span class="n">action</span><span class="o">=</span><span class="s1">&#39;store_true&#39;</span><span class="p">,</span> <span class="n">help</span><span class="o">=</span><span class="s1">&#39;Enable verbose logging&#39;</span><span class="p">)</span>
 
     <span class="n">args</span> <span class="o">=</span> <span class="n">parse_args_compat</span><span class="p">(</span><span class="n">parser</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="ow">not</span> <span class="p">(</span><span class="mf">0.0</span> <span class="o">&lt;</span> <span class="nb">float</span><span class="p">(</span><span class="n">args</span><span class="o">.</span><span class="n">confidence_level</span><span class="p">)</span> <span class="o">&lt;</span> <span class="mf">1.0</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+            <span class="sa">f</span><span class="s1">&#39;confidence-level must satisfy 0 &lt; c &lt; 1, got </span><span class="si">{</span><span class="n">args</span><span class="o">.</span><span class="n">confidence_level</span><span class="si">}</span><span class="s1">&#39;</span>
+        <span class="p">)</span>
+    <span class="k">if</span> <span class="n">args</span><span class="o">.</span><span class="n">max_undefined_fraction</span> <span class="o">&lt;</span> <span class="mf">0.0</span> <span class="ow">or</span> <span class="n">args</span><span class="o">.</span><span class="n">max_undefined_fraction</span> <span class="o">&gt;</span> <span class="mf">1.0</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+            <span class="s1">&#39;max-undefined-fraction must satisfy 0 &lt;= f &lt;= 1, &#39;</span>
+            <span class="sa">f</span><span class="s1">&#39;got </span><span class="si">{</span><span class="n">args</span><span class="o">.</span><span class="n">max_undefined_fraction</span><span class="si">}</span><span class="s1">&#39;</span>
+        <span class="p">)</span>
+    <span class="k">if</span> <span class="n">args</span><span class="o">.</span><span class="n">min_effective_samples</span> <span class="o">&lt;</span> <span class="mf">0.0</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+            <span class="sa">f</span><span class="s1">&#39;min-effective-samples must be &gt;= 0, got </span><span class="si">{</span><span class="n">args</span><span class="o">.</span><span class="n">min_effective_samples</span><span class="si">}</span><span class="s1">&#39;</span>
+        <span class="p">)</span>
+    <span class="k">if</span> <span class="n">args</span><span class="o">.</span><span class="n">max_tau_relative_width</span> <span class="o">&lt;</span> <span class="mf">0.0</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+            <span class="sa">f</span><span class="s1">&#39;max-tau-relative-width must be &gt;= 0, got </span><span class="si">{</span><span class="n">args</span><span class="o">.</span><span class="n">max_tau_relative_width</span><span class="si">}</span><span class="s1">&#39;</span>
+        <span class="p">)</span>
+    <span class="k">if</span> <span class="p">(</span>
+        <span class="n">args</span><span class="o">.</span><span class="n">derived_uncertainty_method</span> <span class="o">==</span> <span class="n">UNCERTAINTY_METHOD_BOOTSTRAP</span>
+        <span class="ow">and</span> <span class="n">args</span><span class="o">.</span><span class="n">derived_bootstrap_resamples</span> <span class="o">&lt;=</span> <span class="mi">0</span>
+    <span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+            <span class="s1">&#39;derived-bootstrap-resamples must be &gt; 0 when &#39;</span>
+            <span class="s1">&#39;derived-uncertainty-method=bootstrap&#39;</span>
+        <span class="p">)</span>
+
+    <span class="k">global</span> <span class="n">_WORKER_CONFIDENCE_LEVEL</span>
+    <span class="k">global</span> <span class="n">_WORKER_DERIVED_METHOD</span>
+    <span class="k">global</span> <span class="n">_WORKER_DERIVED_BOOTSTRAP_RESAMPLES</span>
+    <span class="n">_WORKER_CONFIDENCE_LEVEL</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">args</span><span class="o">.</span><span class="n">confidence_level</span><span class="p">)</span>
+    <span class="n">_WORKER_DERIVED_METHOD</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">args</span><span class="o">.</span><span class="n">derived_uncertainty_method</span><span class="p">)</span>
+    <span class="n">_WORKER_DERIVED_BOOTSTRAP_RESAMPLES</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">args</span><span class="o">.</span><span class="n">derived_bootstrap_resamples</span><span class="p">)</span>
 
     <span class="c1"># Configure logging</span>
     <span class="n">log_level</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">DEBUG</span> <span class="k">if</span> <span class="n">args</span><span class="o">.</span><span class="n">verbose</span> <span class="k">else</span> <span class="n">logging</span><span class="o">.</span><span class="n">INFO</span>
@@ -448,24 +573,28 @@
         <span class="n">errors_by_seed</span><span class="o">=</span><span class="n">avg_m_errors</span><span class="p">,</span>
         <span class="n">tau_by_seed</span><span class="o">=</span><span class="n">avg_m_tau</span><span class="p">,</span>
         <span class="n">n_eff_by_seed</span><span class="o">=</span><span class="n">avg_m_n_eff</span><span class="p">,</span>
+        <span class="n">confidence</span><span class="o">=</span><span class="nb">float</span><span class="p">(</span><span class="n">args</span><span class="o">.</span><span class="n">confidence_level</span><span class="p">),</span>
     <span class="p">)</span>
     <span class="n">eng_bundle</span> <span class="o">=</span> <span class="n">_build_uncertainty_bundle</span><span class="p">(</span>
         <span class="n">values_by_seed</span><span class="o">=</span><span class="n">avg_e_values</span><span class="p">,</span>
         <span class="n">errors_by_seed</span><span class="o">=</span><span class="n">avg_e_errors</span><span class="p">,</span>
         <span class="n">tau_by_seed</span><span class="o">=</span><span class="n">avg_e_tau</span><span class="p">,</span>
         <span class="n">n_eff_by_seed</span><span class="o">=</span><span class="n">avg_e_n_eff</span><span class="p">,</span>
+        <span class="n">confidence</span><span class="o">=</span><span class="nb">float</span><span class="p">(</span><span class="n">args</span><span class="o">.</span><span class="n">confidence_level</span><span class="p">),</span>
     <span class="p">)</span>
     <span class="n">susc_bundle</span> <span class="o">=</span> <span class="n">_build_uncertainty_bundle</span><span class="p">(</span>
         <span class="n">values_by_seed</span><span class="o">=</span><span class="n">susc_values</span><span class="p">,</span>
         <span class="n">errors_by_seed</span><span class="o">=</span><span class="n">susc_errors</span><span class="p">,</span>
         <span class="n">tau_by_seed</span><span class="o">=</span><span class="n">susc_tau</span><span class="p">,</span>
         <span class="n">n_eff_by_seed</span><span class="o">=</span><span class="n">susc_n_eff</span><span class="p">,</span>
+        <span class="n">confidence</span><span class="o">=</span><span class="nb">float</span><span class="p">(</span><span class="n">args</span><span class="o">.</span><span class="n">confidence_level</span><span class="p">),</span>
     <span class="p">)</span>
     <span class="n">cv_bundle</span> <span class="o">=</span> <span class="n">_build_uncertainty_bundle</span><span class="p">(</span>
         <span class="n">values_by_seed</span><span class="o">=</span><span class="n">spec_h_values</span><span class="p">,</span>
         <span class="n">errors_by_seed</span><span class="o">=</span><span class="n">spec_h_errors</span><span class="p">,</span>
         <span class="n">tau_by_seed</span><span class="o">=</span><span class="n">spec_h_tau</span><span class="p">,</span>
         <span class="n">n_eff_by_seed</span><span class="o">=</span><span class="n">spec_h_n_eff</span><span class="p">,</span>
+        <span class="n">confidence</span><span class="o">=</span><span class="nb">float</span><span class="p">(</span><span class="n">args</span><span class="o">.</span><span class="n">confidence_level</span><span class="p">),</span>
     <span class="p">)</span>
 
     <span class="n">avg_m_arr</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">mag_bundle</span><span class="p">[</span><span class="s1">&#39;value&#39;</span><span class="p">],</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">)</span>
@@ -479,10 +608,29 @@
     <span class="n">entropy_bundle</span> <span class="o">=</span> <span class="n">summarize_entropy_observable</span><span class="p">(</span>
         <span class="n">temperatures</span><span class="o">=</span><span class="n">temperatures</span><span class="p">,</span>
         <span class="n">specific_heat_samples</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">cv_bundle</span><span class="p">[</span><span class="s1">&#39;samples&#39;</span><span class="p">],</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">),</span>
-        <span class="n">confidence</span><span class="o">=</span><span class="n">DEFAULT_CONFIDENCE_LEVEL</span><span class="p">,</span>
+        <span class="n">confidence</span><span class="o">=</span><span class="nb">float</span><span class="p">(</span><span class="n">args</span><span class="o">.</span><span class="n">confidence_level</span><span class="p">),</span>
+        <span class="n">method</span><span class="o">=</span><span class="nb">str</span><span class="p">(</span><span class="n">args</span><span class="o">.</span><span class="n">entropy_uncertainty_method</span><span class="p">),</span>
+        <span class="n">bootstrap_resamples</span><span class="o">=</span><span class="nb">int</span><span class="p">(</span><span class="n">args</span><span class="o">.</span><span class="n">entropy_bootstrap_resamples</span><span class="p">),</span>
+        <span class="n">rng_seed</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
         <span class="n">s_ref</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">Q</span><span class="p">),</span>
     <span class="p">)</span>
     <span class="n">entropy</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">entropy_bundle</span><span class="p">[</span><span class="s1">&#39;value&#39;</span><span class="p">],</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">)</span>
+
+    <span class="n">flags</span> <span class="o">=</span> <span class="n">_build_quality_flags</span><span class="p">(</span>
+        <span class="n">tau_int</span><span class="o">=</span><span class="n">tau_int_arr</span><span class="p">,</span>
+        <span class="n">tau_int_ci_low</span><span class="o">=</span><span class="n">tau_int_ci_low_arr</span><span class="p">,</span>
+        <span class="n">tau_int_ci_high</span><span class="o">=</span><span class="n">tau_int_ci_high_arr</span><span class="p">,</span>
+        <span class="n">n_eff</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">mag_bundle</span><span class="p">[</span><span class="s1">&#39;n_eff&#39;</span><span class="p">],</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">),</span>
+        <span class="n">min_effective_samples</span><span class="o">=</span><span class="nb">float</span><span class="p">(</span><span class="n">args</span><span class="o">.</span><span class="n">min_effective_samples</span><span class="p">),</span>
+        <span class="n">max_tau_relative_width</span><span class="o">=</span><span class="nb">float</span><span class="p">(</span><span class="n">args</span><span class="o">.</span><span class="n">max_tau_relative_width</span><span class="p">),</span>
+    <span class="p">)</span>
+
+    <span class="n">undefined_fraction</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">flags</span><span class="p">[</span><span class="s1">&#39;undefined_autocorr_flag&#39;</span><span class="p">]))</span>
+    <span class="k">if</span> <span class="n">args</span><span class="o">.</span><span class="n">strict_uncertainty</span> <span class="ow">and</span> <span class="n">undefined_fraction</span> <span class="o">&gt;</span> <span class="nb">float</span><span class="p">(</span><span class="n">args</span><span class="o">.</span><span class="n">max_undefined_fraction</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span>
+            <span class="s1">&#39;strict uncertainty check failed: undefined tau_int fraction &#39;</span>
+            <span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">undefined_fraction</span><span class="si">:</span><span class="s1">.3f</span><span class="si">}</span><span class="s1"> exceeds </span><span class="si">{</span><span class="n">args</span><span class="o">.</span><span class="n">max_undefined_fraction</span><span class="si">:</span><span class="s1">.3f</span><span class="si">}</span><span class="s1">&#39;</span>
+        <span class="p">)</span>
 
     <span class="n">output_dir</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="n">args</span><span class="o">.</span><span class="n">output_dir</span><span class="p">)</span>
     <span class="n">output_dir</span><span class="o">.</span><span class="n">mkdir</span><span class="p">(</span><span class="n">parents</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">exist_ok</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
@@ -531,10 +679,14 @@
         <span class="n">entropy_ci_low</span><span class="o">=</span><span class="n">entropy_bundle</span><span class="p">[</span><span class="s1">&#39;ci_low&#39;</span><span class="p">],</span>
         <span class="n">entropy_ci_high</span><span class="o">=</span><span class="n">entropy_bundle</span><span class="p">[</span><span class="s1">&#39;ci_high&#39;</span><span class="p">],</span>
         <span class="n">entropy_samples</span><span class="o">=</span><span class="n">entropy_bundle</span><span class="p">[</span><span class="s1">&#39;samples&#39;</span><span class="p">],</span>
+        <span class="n">entropy_uncertainty_method</span><span class="o">=</span><span class="nb">str</span><span class="p">(</span><span class="n">args</span><span class="o">.</span><span class="n">entropy_uncertainty_method</span><span class="p">),</span>
+        <span class="n">undefined_autocorr_flag</span><span class="o">=</span><span class="n">flags</span><span class="p">[</span><span class="s1">&#39;undefined_autocorr_flag&#39;</span><span class="p">],</span>
+        <span class="n">low_effective_sample_flag</span><span class="o">=</span><span class="n">flags</span><span class="p">[</span><span class="s1">&#39;low_effective_sample_flag&#39;</span><span class="p">],</span>
+        <span class="n">tau_interval_unstable_flag</span><span class="o">=</span><span class="n">flags</span><span class="p">[</span><span class="s1">&#39;tau_interval_unstable_flag&#39;</span><span class="p">],</span>
         <span class="n">uncertainty_method</span><span class="o">=</span><span class="n">UNCERTAINTY_METHOD_BLOCKING</span><span class="p">,</span>
-        <span class="n">confidence_level</span><span class="o">=</span><span class="n">DEFAULT_CONFIDENCE_LEVEL</span><span class="p">,</span>
+        <span class="n">confidence_level</span><span class="o">=</span><span class="nb">float</span><span class="p">(</span><span class="n">args</span><span class="o">.</span><span class="n">confidence_level</span><span class="p">),</span>
         <span class="n">n_seeds</span><span class="o">=</span><span class="n">n_seeds</span><span class="p">,</span>
-        <span class="n">bootstrap_resamples</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
+        <span class="n">bootstrap_resamples</span><span class="o">=</span><span class="nb">float</span><span class="p">(</span><span class="n">args</span><span class="o">.</span><span class="n">entropy_bootstrap_resamples</span><span class="p">),</span>
         <span class="n">nan_or_undefined_count</span><span class="o">=</span><span class="nb">float</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">isnan</span><span class="p">(</span><span class="n">tau_int_arr</span><span class="p">)</span><span class="o">.</span><span class="n">sum</span><span class="p">()),</span>
     <span class="p">)</span>
 
@@ -553,6 +705,8 @@
         <span class="n">tau_int</span><span class="o">=</span><span class="n">tau_int_arr</span><span class="p">,</span>
         <span class="n">tau_int_ci_low</span><span class="o">=</span><span class="n">tau_int_ci_low_arr</span><span class="p">,</span>
         <span class="n">tau_int_ci_high</span><span class="o">=</span><span class="n">tau_int_ci_high_arr</span><span class="p">,</span>
+        <span class="n">min_visible_rel_error</span><span class="o">=</span><span class="mf">0.01</span><span class="p">,</span>
+        <span class="n">mark_invalid_uncertainty</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
         <span class="n">title</span><span class="o">=</span><span class="sa">f</span><span class="s1">&#39;2D </span><span class="si">{</span><span class="n">Q</span><span class="si">}</span><span class="s1">-state Clock Model: Temperature Sweep (L=</span><span class="si">{</span><span class="n">L</span><span class="si">}</span><span class="s1">, </span><span class="si">{</span><span class="n">variant</span><span class="si">}</span><span class="s1">)&#39;</span><span class="p">,</span>
         <span class="n">filename</span><span class="o">=</span><span class="s1">&#39;temperature_sweep.png&#39;</span><span class="p">,</span>
         <span class="n">directory</span><span class="o">=</span><span class="n">args</span><span class="o">.</span><span class="n">output_dir</span><span class="p">,</span>

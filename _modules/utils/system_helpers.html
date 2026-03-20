@@ -391,6 +391,8 @@
     <span class="n">tau_int</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span> <span class="o">|</span> <span class="n">Sequence</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">tau_int_ci_low</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span> <span class="o">|</span> <span class="n">Sequence</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">tau_int_ci_high</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span> <span class="o">|</span> <span class="n">Sequence</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">min_visible_rel_error</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.01</span><span class="p">,</span>
+    <span class="n">mark_invalid_uncertainty</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Generate and save a standardized temperature sweep plot.</span>
@@ -416,6 +418,10 @@
 <span class="sd">            Reveals critical slowing down as a peak near T_c.</span>
 <span class="sd">        tau_int_ci_low: Optional lower confidence band for tau_int.</span>
 <span class="sd">        tau_int_ci_high: Optional upper confidence band for tau_int.</span>
+<span class="sd">        min_visible_rel_error: Minimum relative error bar size used for visibility</span>
+<span class="sd">            when finite uncertainties are extremely small.</span>
+<span class="sd">        mark_invalid_uncertainty: If True, points with non-finite uncertainty are</span>
+<span class="sd">            marked with ``x`` markers and a legend label.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="n">use_extra</span> <span class="o">=</span> <span class="n">entropy</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">or</span> <span class="n">tau_int</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
     <span class="k">if</span> <span class="n">use_extra</span><span class="p">:</span>
@@ -429,10 +435,57 @@
 
     <span class="n">fig</span><span class="o">.</span><span class="n">suptitle</span><span class="p">(</span><span class="n">title</span><span class="p">)</span>
 
+    <span class="k">def</span><span class="w"> </span><span class="nf">_visible_yerr</span><span class="p">(</span>
+        <span class="n">y</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span> <span class="o">|</span> <span class="n">Sequence</span><span class="p">[</span><span class="nb">float</span><span class="p">],</span>
+        <span class="n">yerr</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span> <span class="o">|</span> <span class="n">Sequence</span><span class="p">[</span><span class="nb">float</span><span class="p">],</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
+        <span class="n">y_arr</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">y</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">)</span>
+        <span class="n">e_arr</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">yerr</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">)</span>
+        <span class="n">min_abs</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">maximum</span><span class="p">(</span><span class="mf">1e-12</span><span class="p">,</span> <span class="n">min_visible_rel_error</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">maximum</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">y_arr</span><span class="p">),</span> <span class="mf">1e-12</span><span class="p">))</span>
+        <span class="n">out</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">e_arr</span><span class="p">,</span> <span class="n">copy</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        <span class="n">finite</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">isfinite</span><span class="p">(</span><span class="n">out</span><span class="p">)</span>
+        <span class="n">out</span><span class="p">[</span><span class="n">finite</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">maximum</span><span class="p">(</span><span class="n">out</span><span class="p">[</span><span class="n">finite</span><span class="p">],</span> <span class="n">min_abs</span><span class="p">[</span><span class="n">finite</span><span class="p">])</span>
+        <span class="k">return</span> <span class="n">out</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_mark_invalid</span><span class="p">(</span>
+        <span class="o">*</span><span class="p">,</span>
+        <span class="n">ax</span><span class="p">:</span> <span class="n">plt</span><span class="o">.</span><span class="n">Axes</span><span class="p">,</span>
+        <span class="n">x</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span> <span class="o">|</span> <span class="n">Sequence</span><span class="p">[</span><span class="nb">float</span><span class="p">],</span>
+        <span class="n">y</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span> <span class="o">|</span> <span class="n">Sequence</span><span class="p">[</span><span class="nb">float</span><span class="p">],</span>
+        <span class="n">yerr</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span> <span class="o">|</span> <span class="n">Sequence</span><span class="p">[</span><span class="nb">float</span><span class="p">],</span>
+        <span class="n">color</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+        <span class="n">label</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">mark_invalid_uncertainty</span><span class="p">:</span>
+            <span class="k">return</span>
+        <span class="n">e_arr</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">yerr</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">)</span>
+        <span class="n">invalid</span> <span class="o">=</span> <span class="o">~</span><span class="n">np</span><span class="o">.</span><span class="n">isfinite</span><span class="p">(</span><span class="n">e_arr</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">np</span><span class="o">.</span><span class="n">any</span><span class="p">(</span><span class="n">invalid</span><span class="p">):</span>
+            <span class="k">return</span>
+        <span class="n">x_arr</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">)</span>
+        <span class="n">y_arr</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">y</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">)</span>
+        <span class="n">ax</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">x_arr</span><span class="p">[</span><span class="n">invalid</span><span class="p">],</span> <span class="n">y_arr</span><span class="p">[</span><span class="n">invalid</span><span class="p">],</span> <span class="s1">&#39;x&#39;</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="n">color</span><span class="p">,</span> <span class="n">markersize</span><span class="o">=</span><span class="mi">5</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="n">label</span><span class="p">)</span>
+        <span class="n">ax</span><span class="o">.</span><span class="n">legend</span><span class="p">(</span><span class="n">loc</span><span class="o">=</span><span class="s1">&#39;best&#39;</span><span class="p">,</span> <span class="n">fontsize</span><span class="o">=</span><span class="mi">8</span><span class="p">)</span>
+
     <span class="k">if</span> <span class="n">avg_m_err</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
         <span class="n">ax1</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">temperatures</span><span class="p">,</span> <span class="n">avg_m</span><span class="p">,</span> <span class="s1">&#39;o-&#39;</span><span class="p">,</span> <span class="n">markersize</span><span class="o">=</span><span class="mi">4</span><span class="p">)</span>
     <span class="k">else</span><span class="p">:</span>
-        <span class="n">ax1</span><span class="o">.</span><span class="n">errorbar</span><span class="p">(</span><span class="n">temperatures</span><span class="p">,</span> <span class="n">avg_m</span><span class="p">,</span> <span class="n">yerr</span><span class="o">=</span><span class="n">avg_m_err</span><span class="p">,</span> <span class="n">fmt</span><span class="o">=</span><span class="s1">&#39;o-&#39;</span><span class="p">,</span> <span class="n">markersize</span><span class="o">=</span><span class="mi">4</span><span class="p">,</span> <span class="n">capsize</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
+        <span class="n">ax1</span><span class="o">.</span><span class="n">errorbar</span><span class="p">(</span>
+            <span class="n">temperatures</span><span class="p">,</span>
+            <span class="n">avg_m</span><span class="p">,</span>
+            <span class="n">yerr</span><span class="o">=</span><span class="n">_visible_yerr</span><span class="p">(</span><span class="n">avg_m</span><span class="p">,</span> <span class="n">avg_m_err</span><span class="p">),</span>
+            <span class="n">fmt</span><span class="o">=</span><span class="s1">&#39;o-&#39;</span><span class="p">,</span>
+            <span class="n">markersize</span><span class="o">=</span><span class="mi">4</span><span class="p">,</span>
+            <span class="n">capsize</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span>
+        <span class="p">)</span>
+        <span class="n">_mark_invalid</span><span class="p">(</span>
+            <span class="n">ax</span><span class="o">=</span><span class="n">ax1</span><span class="p">,</span>
+            <span class="n">x</span><span class="o">=</span><span class="n">temperatures</span><span class="p">,</span>
+            <span class="n">y</span><span class="o">=</span><span class="n">avg_m</span><span class="p">,</span>
+            <span class="n">yerr</span><span class="o">=</span><span class="n">avg_m_err</span><span class="p">,</span>
+            <span class="n">color</span><span class="o">=</span><span class="s1">&#39;C0&#39;</span><span class="p">,</span>
+            <span class="n">label</span><span class="o">=</span><span class="s1">&#39;uncertainty unavailable&#39;</span><span class="p">,</span>
+        <span class="p">)</span>
     <span class="n">ax1</span><span class="o">.</span><span class="n">set_ylabel</span><span class="p">(</span><span class="s1">&#39;Average Magnetization |M|&#39;</span><span class="p">)</span>
     <span class="n">ax1</span><span class="o">.</span><span class="n">set_title</span><span class="p">(</span><span class="s1">&#39;Magnetization&#39;</span><span class="p">)</span>
     <span class="n">ax1</span><span class="o">.</span><span class="n">grid</span><span class="p">(</span><span class="kc">True</span><span class="p">)</span>
@@ -443,11 +496,19 @@
         <span class="n">ax2</span><span class="o">.</span><span class="n">errorbar</span><span class="p">(</span>
             <span class="n">temperatures</span><span class="p">,</span>
             <span class="n">avg_e</span><span class="p">,</span>
-            <span class="n">yerr</span><span class="o">=</span><span class="n">avg_e_err</span><span class="p">,</span>
+            <span class="n">yerr</span><span class="o">=</span><span class="n">_visible_yerr</span><span class="p">(</span><span class="n">avg_e</span><span class="p">,</span> <span class="n">avg_e_err</span><span class="p">),</span>
             <span class="n">fmt</span><span class="o">=</span><span class="s1">&#39;o-&#39;</span><span class="p">,</span>
             <span class="n">color</span><span class="o">=</span><span class="s1">&#39;orange&#39;</span><span class="p">,</span>
             <span class="n">markersize</span><span class="o">=</span><span class="mi">4</span><span class="p">,</span>
             <span class="n">capsize</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span>
+        <span class="p">)</span>
+        <span class="n">_mark_invalid</span><span class="p">(</span>
+            <span class="n">ax</span><span class="o">=</span><span class="n">ax2</span><span class="p">,</span>
+            <span class="n">x</span><span class="o">=</span><span class="n">temperatures</span><span class="p">,</span>
+            <span class="n">y</span><span class="o">=</span><span class="n">avg_e</span><span class="p">,</span>
+            <span class="n">yerr</span><span class="o">=</span><span class="n">avg_e_err</span><span class="p">,</span>
+            <span class="n">color</span><span class="o">=</span><span class="s1">&#39;orange&#39;</span><span class="p">,</span>
+            <span class="n">label</span><span class="o">=</span><span class="s1">&#39;uncertainty unavailable&#39;</span><span class="p">,</span>
         <span class="p">)</span>
     <span class="n">ax2</span><span class="o">.</span><span class="n">set_ylabel</span><span class="p">(</span><span class="s1">&#39;Average Energy&#39;</span><span class="p">)</span>
     <span class="n">ax2</span><span class="o">.</span><span class="n">set_title</span><span class="p">(</span><span class="s1">&#39;Energy&#39;</span><span class="p">)</span>
@@ -459,11 +520,19 @@
         <span class="n">ax3</span><span class="o">.</span><span class="n">errorbar</span><span class="p">(</span>
             <span class="n">temperatures</span><span class="p">,</span>
             <span class="n">susc</span><span class="p">,</span>
-            <span class="n">yerr</span><span class="o">=</span><span class="n">susc_err</span><span class="p">,</span>
+            <span class="n">yerr</span><span class="o">=</span><span class="n">_visible_yerr</span><span class="p">(</span><span class="n">susc</span><span class="p">,</span> <span class="n">susc_err</span><span class="p">),</span>
             <span class="n">fmt</span><span class="o">=</span><span class="s1">&#39;o-&#39;</span><span class="p">,</span>
             <span class="n">color</span><span class="o">=</span><span class="s1">&#39;green&#39;</span><span class="p">,</span>
             <span class="n">markersize</span><span class="o">=</span><span class="mi">4</span><span class="p">,</span>
             <span class="n">capsize</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span>
+        <span class="p">)</span>
+        <span class="n">_mark_invalid</span><span class="p">(</span>
+            <span class="n">ax</span><span class="o">=</span><span class="n">ax3</span><span class="p">,</span>
+            <span class="n">x</span><span class="o">=</span><span class="n">temperatures</span><span class="p">,</span>
+            <span class="n">y</span><span class="o">=</span><span class="n">susc</span><span class="p">,</span>
+            <span class="n">yerr</span><span class="o">=</span><span class="n">susc_err</span><span class="p">,</span>
+            <span class="n">color</span><span class="o">=</span><span class="s1">&#39;green&#39;</span><span class="p">,</span>
+            <span class="n">label</span><span class="o">=</span><span class="s1">&#39;uncertainty unavailable&#39;</span><span class="p">,</span>
         <span class="p">)</span>
     <span class="n">ax3</span><span class="o">.</span><span class="n">set_ylabel</span><span class="p">(</span><span class="sa">r</span><span class="s1">&#39;Susceptibility $\chi$&#39;</span><span class="p">)</span>
     <span class="n">ax3</span><span class="o">.</span><span class="n">set_title</span><span class="p">(</span><span class="s1">&#39;Magnetic Susceptibility&#39;</span><span class="p">)</span>
@@ -475,11 +544,19 @@
         <span class="n">ax4</span><span class="o">.</span><span class="n">errorbar</span><span class="p">(</span>
             <span class="n">temperatures</span><span class="p">,</span>
             <span class="n">spec_h</span><span class="p">,</span>
-            <span class="n">yerr</span><span class="o">=</span><span class="n">spec_h_err</span><span class="p">,</span>
+            <span class="n">yerr</span><span class="o">=</span><span class="n">_visible_yerr</span><span class="p">(</span><span class="n">spec_h</span><span class="p">,</span> <span class="n">spec_h_err</span><span class="p">),</span>
             <span class="n">fmt</span><span class="o">=</span><span class="s1">&#39;o-&#39;</span><span class="p">,</span>
             <span class="n">color</span><span class="o">=</span><span class="s1">&#39;red&#39;</span><span class="p">,</span>
             <span class="n">markersize</span><span class="o">=</span><span class="mi">4</span><span class="p">,</span>
             <span class="n">capsize</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span>
+        <span class="p">)</span>
+        <span class="n">_mark_invalid</span><span class="p">(</span>
+            <span class="n">ax</span><span class="o">=</span><span class="n">ax4</span><span class="p">,</span>
+            <span class="n">x</span><span class="o">=</span><span class="n">temperatures</span><span class="p">,</span>
+            <span class="n">y</span><span class="o">=</span><span class="n">spec_h</span><span class="p">,</span>
+            <span class="n">yerr</span><span class="o">=</span><span class="n">spec_h_err</span><span class="p">,</span>
+            <span class="n">color</span><span class="o">=</span><span class="s1">&#39;red&#39;</span><span class="p">,</span>
+            <span class="n">label</span><span class="o">=</span><span class="s1">&#39;uncertainty unavailable&#39;</span><span class="p">,</span>
         <span class="p">)</span>
     <span class="n">ax4</span><span class="o">.</span><span class="n">set_ylabel</span><span class="p">(</span><span class="sa">r</span><span class="s1">&#39;Specific Heat $C_v$&#39;</span><span class="p">)</span>
     <span class="n">ax4</span><span class="o">.</span><span class="n">set_title</span><span class="p">(</span><span class="s1">&#39;Specific Heat&#39;</span><span class="p">)</span>
@@ -493,11 +570,19 @@
                 <span class="n">ax5</span><span class="o">.</span><span class="n">errorbar</span><span class="p">(</span>
                     <span class="n">temperatures</span><span class="p">,</span>
                     <span class="n">entropy</span><span class="p">,</span>
-                    <span class="n">yerr</span><span class="o">=</span><span class="n">entropy_err</span><span class="p">,</span>
+                    <span class="n">yerr</span><span class="o">=</span><span class="n">_visible_yerr</span><span class="p">(</span><span class="n">entropy</span><span class="p">,</span> <span class="n">entropy_err</span><span class="p">),</span>
                     <span class="n">fmt</span><span class="o">=</span><span class="s1">&#39;o-&#39;</span><span class="p">,</span>
                     <span class="n">color</span><span class="o">=</span><span class="s1">&#39;purple&#39;</span><span class="p">,</span>
                     <span class="n">markersize</span><span class="o">=</span><span class="mi">4</span><span class="p">,</span>
                     <span class="n">capsize</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span>
+                <span class="p">)</span>
+                <span class="n">_mark_invalid</span><span class="p">(</span>
+                    <span class="n">ax</span><span class="o">=</span><span class="n">ax5</span><span class="p">,</span>
+                    <span class="n">x</span><span class="o">=</span><span class="n">temperatures</span><span class="p">,</span>
+                    <span class="n">y</span><span class="o">=</span><span class="n">entropy</span><span class="p">,</span>
+                    <span class="n">yerr</span><span class="o">=</span><span class="n">entropy_err</span><span class="p">,</span>
+                    <span class="n">color</span><span class="o">=</span><span class="s1">&#39;purple&#39;</span><span class="p">,</span>
+                    <span class="n">label</span><span class="o">=</span><span class="s1">&#39;uncertainty unavailable&#39;</span><span class="p">,</span>
                 <span class="p">)</span>
             <span class="n">ax5</span><span class="o">.</span><span class="n">set_ylabel</span><span class="p">(</span><span class="sa">r</span><span class="s1">&#39;Entropy $S\,/\,k_B$&#39;</span><span class="p">)</span>
             <span class="n">ax5</span><span class="o">.</span><span class="n">set_title</span><span class="p">(</span><span class="s1">&#39;Entropy&#39;</span><span class="p">)</span>
