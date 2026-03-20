@@ -557,7 +557,7 @@ def main() -> None:
         uncertainty_method=UNCERTAINTY_METHOD_BLOCKING,
         confidence_level=float(args.confidence_level),
         n_seeds=n_seeds,
-        bootstrap_resamples=float(args.entropy_bootstrap_resamples),
+        bootstrap_resamples=int(args.entropy_bootstrap_resamples),
         nan_or_undefined_count=float(np.isnan(tau_int_arr).sum()),
     )
 
