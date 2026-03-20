@@ -42,7 +42,7 @@ repos:
 
       - id: pytest-docstring-style
         name: pytest docstring style guard
-        entry: .venv/bin/pytest -q tests/test_docstring_style.py
+        entry: .venv/bin/pytest -q tests/style/test_docstring_style.py
         language: system
         pass_filenames: false
         stages: [pre-commit]

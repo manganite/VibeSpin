@@ -77,8 +77,8 @@ Optimize for four outcomes: correct statistical-physics behavior, high simulatio
   ```bash
   pytest
   ```
-- **Integrity Probes**: Ensure new physical logic is covered by microscopic integrity tests (e.g., in `tests/test_algorithm_integrity.py`) and parameter validation (e.g., in `tests/test_model_extremes.py`).
-- **Integration Testing for Scripts**: New analysis scripts must not create separate test files. Instead, add test classes to `tests/integration/test_script_infrastructure.py`, organizing by infrastructure pattern (seed generation, NPZ schema, aggregation). This prevents test sprawl and signals that tests validate reusable concepts, not single-tool behavior. Example: when adding `temperature_sweep.py`, add a `TestTemperatureSweepSchema` class to the same integration file.
+- **Integrity Probes**: Ensure new physical logic is covered by microscopic integrity tests (e.g., in `tests/algorithm/test_algorithm_integrity.py`) and parameter validation (e.g., in `tests/model/test_model_extremes.py`).
+- **Integration Testing for Scripts**: New analysis scripts must not create separate test files. Instead, add test classes to `tests/integration/test_script_infrastructure.py`, organizing by infrastructure pattern (seed generation, NPZ schema, typed payloads, aggregation). This prevents test sprawl and signals that tests validate reusable concepts, not single-tool behavior. Example: when adding `temperature_sweep.py`, add a `TestTemperatureSweepSchema` class to the same integration file.
 - **Static Analysis**: Maintain strict quality standards:
   ```bash
   ruff check .
@@ -151,12 +151,12 @@ The workspace root contains the following key files and directories.
 **Directories:**
 - `models/`: Refactored simulation classes with `main()` entry points.
 - `utils/`: Physics and system-level helper functions.
-- `tests/`: High-coverage test suite organized into five conceptual layers:
-  - **Algorithm** (`test_algorithm_integrity.py`): Microscopic validation of Monte Carlo kernels (detailed balance, ergodicity).
-  - **Model** (`test_models.py`, `test_model_extremes.py`, `test_model_cli.py`): API contracts, CLI behavior, edge cases across all simulation classes.
-  - **Utility** (`test_physics_helpers.py`, `test_system_helpers.py`): Physics observables, helper functions, and utilities.
-  - **Style** (`test_docstring_style.py`): Code quality and documentation standards.
-  - **Integration** (`integration/test_script_infrastructure.py`): Reusable infrastructure patterns for analysis scripts (seed generation, NPZ schemas, aggregation logic). Future scripts add test classes here rather than creating separate test files.
+- `tests/`: High-coverage test suite organized into five conceptual layers, distributed across subfolders that mirror the architecture:
+  - **Algorithm** (`algorithm/test_algorithm_integrity.py`): Microscopic validation of Monte Carlo kernels (detailed balance, ergodicity).
+  - **Model** (`model/test_models.py`, `model/test_model_extremes.py`, `model/test_model_cli.py`, `model/test_model_control_paths.py`, `model/test_simulation_base.py`): API contracts, CLI behavior, edge cases, control flow, and base simulation infrastructure across all simulation classes.
+  - **Utility** (`utility/test_physics_helpers.py`, `utility/test_system_helpers.py`, `utility/test_cli_helpers.py`): Physics observables, system helpers, and CLI utilities.
+  - **Style** (`style/test_docstring_style.py`): Code quality and documentation standards.
+  - **Integration** (`integration/test_script_infrastructure.py`, `integration/test_reproducibility.py`): Reusable infrastructure patterns for analysis scripts (deterministic seeding, reproducibility, NPZ schemas, typed payloads, aggregation logic). New scripts add test classes here rather than creating separate test files.
 - `scripts/`: Physics experiments and equilibrium/kinetics drivers. Subdirectories: `ising/`, `xy/`, `clock/`, `benchmarks/`.
 - `docs/`: Sphinx documentation source (`docs/source/`) and HTML build output (`docs/_build/html/`).
 - `results/`: Simulation output files organized by model (`ising/`, `xy/`, `clock/`, `benchmarks/`).
@@ -167,15 +167,15 @@ The workspace root contains the following key files and directories.
 ### Task: Implement a New Physical Observable
 1. Add the `@njit` kernel to `models/simulation_base.py` or the specific model.
 2. Add a `_get_<name>` method to the Simulation class.
-3. Add a test case in `tests/test_physics_helpers.py` or a specialized test file.
-4. Verify the physical limits (e.g., ground state) in `tests/test_model_extremes.py`.
+3. Add a test case in `tests/utility/test_physics_helpers.py` or `tests/utility/test_system_helpers.py` as appropriate.
+4. Verify the physical limits (e.g., ground state) in `tests/model/test_model_extremes.py`.
 
 ### Task: Add a New Analysis Script
 1. Create the script in the appropriate subdirectory: `scripts/ising/`, `scripts/xy/`, `scripts/clock/`, or `scripts/benchmarks/`.
 2. Implement deterministic seeding and NPZ output following the patterns in `scripts/ising/measure_z.py` (where applicable).
 3. Add a `main()` entry point with validation and CLI argument parsing (if applicable).
 4. Register the script in `SCRIPTS.md` with a description, arguments, and usage example.
-5. Add integration tests to `tests/integration/test_script_infrastructure.py`: create a test class validating your script's specific infrastructure (seed consistency, output schema, aggregation logic). Do not create a separate test file.
+5. Add integration tests to `tests/integration/test_script_infrastructure.py`: create a test class validating your script's specific infrastructure (seed consistency, output schema, typed payloads, aggregation logic). Do not create a separate test file.
 6. Update relevant documentation (`PHYSICS.md`, `BIBLIOGRAPHY.md`) if the script studies new observables or physics.
 
 ### Task: Investigate Performance Regression

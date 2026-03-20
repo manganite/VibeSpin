@@ -6,15 +6,20 @@ Tests reusable infrastructure components used by multiple analysis scripts:
 - NPZ output schema and shapes (multi-algorithm aggregation formats)
 - Multi-seed aggregation logic (per-seed sample arrays, percentiles)
 - Fallback demo mode execution (lightweight standalone testing)
+- Temperature-sweep typed payloads (main() construction and worker contracts)
 
-Current coverage: measure_z.py (Wolff/Metropolis scaling analysis)
-Future extensions: temperature_sweep.py, wolff_efficiency.py, ordering_kinetics.py, etc.
+Current coverage:
+  - measure_z.py: Wolff/Metropolis scaling analysis
+  - temperature_sweep.py: Ising, XY, Clock models with typed SweepPoint payloads
+Future extensions: wolff_efficiency.py, ordering_kinetics.py, etc.
 """
 from __future__ import annotations
 
 import os
+import sys
 import tempfile
 from pathlib import Path
+from typing import Any
 
 import numpy as np
 
@@ -22,6 +27,17 @@ from scripts.ising.measure_z import (
     TC_ISING,
     _measure_tau_point,
 )
+
+try:
+    from scripts.clock.temperature_sweep import _SweepPoint as _ClockSweepPoint
+    from scripts.clock.temperature_sweep import simulate_temperature as simulate_clock_temperature
+    from scripts.ising.temperature_sweep import _SweepPoint as _IsingSweepPoint
+    from scripts.ising.temperature_sweep import simulate_temperature as simulate_ising_temperature
+    from scripts.xy.temperature_sweep import _SweepPoint as _XYSweepPoint
+    from scripts.xy.temperature_sweep import simulate_temperature as simulate_xy_temperature
+    HAS_TEMPERATURE_SWEEP = True
+except ImportError:
+    HAS_TEMPERATURE_SWEEP = False
 
 
 class TestDeterministicSeeds:
@@ -281,3 +297,154 @@ class TestFallbackMode:
         except Exception:
             # If zero-variance error or other issues, still pass (expected)
             pass
+
+
+class TestTemperatureSweepMainPayloads:
+    """Validate typed payload construction in temperature-sweep main entry points."""
+
+    def _capture_sweep_params(
+        self,
+        monkeypatch,
+        module: Any,
+        expected_fields: tuple[str, ...],
+        argv: list[str],
+    ) -> None:
+        """Run a sweep main() with patched dependencies and assert typed payload construction."""
+        captured: dict[str, list[Any]] = {}
+
+        def _fake_parallel_sweep(*, worker_func, params, num_processes=None):
+            params_list = list(params)
+            captured['params'] = params_list
+            return [(1.0, 2.0, 3.0, 4.0, 5.0)] * len(params_list)
+
+        monkeypatch.setattr(module, 'parallel_sweep', _fake_parallel_sweep)
+        monkeypatch.setattr(module, 'plot_temperature_sweep', lambda **kwargs: None)
+        monkeypatch.setattr(sys, 'argv', argv)
+
+        module.main()
+
+        assert 'params' in captured
+        assert len(captured['params']) == 2
+        for payload in captured['params']:
+            # Payload should be a named tuple-like object with stable field names.
+            assert isinstance(payload, tuple)
+            assert hasattr(payload, '_fields')
+            assert tuple(payload._fields) == expected_fields
+            for field in expected_fields:
+                assert hasattr(payload, field)
+
+    def test_ising_main_builds_typed_sweep_payloads(self, monkeypatch) -> None:
+        """Ising temperature sweep main should build Ising SweepPoint payloads."""
+        if not HAS_TEMPERATURE_SWEEP:
+            import pytest
+            pytest.skip("Temperature sweep modules not available")
+
+        import scripts.ising.temperature_sweep as ising_module
+
+        self._capture_sweep_params(
+            monkeypatch,
+            ising_module,
+            ('temperature', 'size', 'meas_steps', 'eq_probe_steps', 'eq_max_steps'),
+            ['ising_temperature_sweep', '--size', '8', '--meas-steps', '20', '--t-points', '2'],
+        )
+
+    def test_xy_main_builds_typed_sweep_payloads(self, monkeypatch) -> None:
+        """XY temperature sweep main should build XY SweepPoint payloads."""
+        if not HAS_TEMPERATURE_SWEEP:
+            import pytest
+            pytest.skip("Temperature sweep modules not available")
+
+        import scripts.xy.temperature_sweep as xy_module
+
+        self._capture_sweep_params(
+            monkeypatch,
+            xy_module,
+            ('temperature', 'size', 'meas_steps', 'eq_probe_steps', 'eq_max_steps'),
+            ['xy_temperature_sweep', '--size', '8', '--meas-steps', '20', '--t-points', '2'],
+        )
+
+    def test_clock_main_builds_typed_sweep_payloads(self, monkeypatch) -> None:
+        """Clock temperature sweep main should build Clock SweepPoint payloads."""
+        if not HAS_TEMPERATURE_SWEEP:
+            import pytest
+            pytest.skip("Temperature sweep modules not available")
+
+        import scripts.clock.temperature_sweep as clock_module
+
+        self._capture_sweep_params(
+            monkeypatch,
+            clock_module,
+            (
+                'temperature',
+                'size',
+                'q',
+                'aniso',
+                'meas_steps',
+                'eq_probe_steps',
+                'eq_max_steps',
+                'discrete',
+            ),
+            ['clock_temperature_sweep', '--size', '8', '--meas-steps', '20', '--t-points', '2'],
+        )
+
+
+class TestTemperatureSweepWorkerPayloads:
+    """Validate typed temperature-sweep worker payload contracts."""
+
+    def _assert_valid_thermo_result(self, result: tuple[float, float, float, float, float]) -> None:
+        """Validate common return shape and finite/NaN-safe numeric outputs."""
+        assert len(result) == 5
+        for value in result:
+            assert isinstance(value, (float, np.floating))
+            assert np.isfinite(value) or np.isnan(value)
+
+    def test_ising_worker_accepts_typed_payload(self) -> None:
+        """Ising worker should accept SweepPoint payload and return 5-value thermodynamics."""
+        if not HAS_TEMPERATURE_SWEEP:
+            import pytest
+            pytest.skip("Temperature sweep modules not available")
+
+        payload = _IsingSweepPoint(
+            temperature=2.0,
+            size=8,
+            meas_steps=40,
+            eq_probe_steps=10,
+            eq_max_steps=40,
+        )
+        result = simulate_ising_temperature(payload)
+        self._assert_valid_thermo_result(result)
+
+    def test_xy_worker_accepts_typed_payload(self) -> None:
+        """XY worker should accept SweepPoint payload and return 5-value thermodynamics."""
+        if not HAS_TEMPERATURE_SWEEP:
+            import pytest
+            pytest.skip("Temperature sweep modules not available")
+
+        payload = _XYSweepPoint(
+            temperature=0.9,
+            size=8,
+            meas_steps=40,
+            eq_probe_steps=10,
+            eq_max_steps=40,
+        )
+        result = simulate_xy_temperature(payload)
+        self._assert_valid_thermo_result(result)
+
+    def test_clock_worker_accepts_typed_payload(self) -> None:
+        """Clock worker should accept SweepPoint payload and return 5-value thermodynamics."""
+        if not HAS_TEMPERATURE_SWEEP:
+            import pytest
+            pytest.skip("Temperature sweep modules not available")
+
+        payload = _ClockSweepPoint(
+            temperature=0.8,
+            size=8,
+            q=6,
+            aniso=0.1,
+            meas_steps=40,
+            eq_probe_steps=10,
+            eq_max_steps=40,
+            discrete=False,
+        )
+        result = simulate_clock_temperature(payload)
+        self._assert_valid_thermo_result(result)
