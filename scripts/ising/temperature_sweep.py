@@ -612,19 +612,23 @@ def main() -> None:
     t_chi_peak = _peak_temperature(susc_arr)
     t_cv_peak = _peak_temperature(spec_h_arr)
     t_tau_peak = _peak_temperature(tau_int_arr)
-    peak_transition_markers = {
-        r'$T_{\chi}$': t_chi_peak,
-        r'$T_{C_v}$': t_cv_peak,
-    }
-    if np.isfinite(t_tau_peak):
-        peak_transition_markers[r'$T_{\tau}$'] = t_tau_peak
+
+    auto_marker: dict[str, float] = {}
+    if np.isfinite(t_chi_peak):
+        auto_marker[r'$T_{\chi}$'] = t_chi_peak
+    elif np.isfinite(t_cv_peak):
+        auto_marker[r'$T_{C_v}$'] = t_cv_peak
+    elif np.isfinite(t_tau_peak):
+        auto_marker[r'$T_{\tau}$'] = t_tau_peak
+    else:
+        auto_marker[r'$T_c$'] = _TC_ISING_THEORY
 
     if args.transition_preset == 'none':
         transition_markers: dict[str, float] = {}
     elif args.transition_preset == 'theory':
         transition_markers = {r'$T_c$': _TC_ISING_THEORY}
     else:
-        transition_markers = peak_transition_markers
+        transition_markers = auto_marker
 
     finite_markers = np.asarray(list(transition_markers.values()), dtype=np.float64)
     finite_markers = finite_markers[np.isfinite(finite_markers)]

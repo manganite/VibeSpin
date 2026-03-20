@@ -919,8 +919,13 @@ class TestTemperatureSweepPlotPayloads:
         assert 'undefined tau=' in diagnostics_note
         assert 'unstable tau intervals=' in diagnostics_note
         transitions = cast(dict[str, float], captured_plot_kwargs['transition_temperatures'])
-        assert r'$T_{\chi}$' in transitions
-        assert r'$T_{C_v}$' in transitions
+        assert len(transitions) == 1
+        assert (
+            r'$T_{\chi}$' in transitions
+            or r'$T_{C_v}$' in transitions
+            or r'$T_{\tau}$' in transitions
+            or r'$T_c$' in transitions
+        )
         quality_summary = cast(dict[str, int | float], captured_plot_kwargs['quality_summary'])
         assert int(quality_summary['total_points']) == 2
         assert int(quality_summary['well_conditioned_count']) >= 0
