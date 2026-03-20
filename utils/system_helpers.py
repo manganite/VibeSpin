@@ -6,6 +6,7 @@ from __future__ import annotations
 import logging
 import os
 import sys
+import textwrap
 import warnings
 from collections.abc import Callable, Iterable, Mapping, Sequence, Sized
 from multiprocessing import Pool
@@ -615,11 +616,41 @@ def plot_temperature_sweep(
     diag_fig, diag_axes = plt.subplots(1, 2, figsize=(12, 5.5))
     diag_flat = np.ravel(diag_axes)
     ax5, ax6 = diag_flat
-    diag_fig.suptitle(f'{title} Diagnostics', y=0.99)
+    suptitle_obj = diag_fig.suptitle(f'{title} Diagnostics', y=0.99)
+    diag_fig.subplots_adjust(top=0.76)
+
+    # Anchor note text below the rendered title to avoid header/title overlap.
+    diag_fig.canvas.draw()
+    renderer_getter = getattr(diag_fig.canvas, 'get_renderer', None)
+    if callable(renderer_getter):
+        title_bbox = suptitle_obj.get_window_extent(renderer=renderer_getter())
+    else:
+        title_bbox = suptitle_obj.get_window_extent()
+    title_y0 = diag_fig.transFigure.inverted().transform((title_bbox.x0, title_bbox.y0))[1]
+    header_y = max(0.80, title_y0 - 0.01)
+
     if diagnostics_note:
-        diag_fig.text(0.02, 0.94, diagnostics_note, ha='left', va='top', fontsize=8, wrap=True)
+        diagnostics_wrapped = textwrap.fill(diagnostics_note, width=140)
+        diag_fig.text(
+            0.02,
+            header_y,
+            diagnostics_wrapped,
+            ha='left',
+            va='top',
+            fontsize=8,
+        )
+        header_y -= 0.045
     if run_metadata_note:
-        diag_fig.text(0.02, 0.915, run_metadata_note, ha='left', va='top', fontsize=7, wrap=True)
+        metadata_wrapped = textwrap.fill(run_metadata_note, width=155)
+        diag_fig.text(
+            0.02,
+            header_y,
+            metadata_wrapped,
+            ha='left',
+            va='top',
+            fontsize=7,
+        )
+        header_y -= 0.040
     if quality_summary is not None:
         total = int(quality_summary.get('total_points', 0))
         if total > 0:
@@ -637,7 +668,8 @@ def plot_temperature_sweep(
                 f'unstable={unstable_count}/{total} ({_pct(unstable_count):.1f}%), '
                 f'undefined={undefined}/{total} ({_pct(undefined):.1f}%)'
             )
-            diag_fig.text(0.02, 0.89, quality_text, ha='left', va='top', fontsize=7, wrap=True)
+            quality_wrapped = textwrap.fill(quality_text, width=155)
+            diag_fig.text(0.02, header_y, quality_wrapped, ha='left', va='top', fontsize=7)
 
     if entropy is not None:
         entropy_arr = np.asarray(entropy, dtype=np.float64)
