@@ -479,6 +479,7 @@ def main() -> None:
     entropy_bundle = summarize_entropy_observable(
         temperatures=temperatures,
         specific_heat_samples=np.asarray(cv_bundle['samples'], dtype=np.float64),
+        specific_heat_err=np.asarray(cv_bundle['err'], dtype=np.float64),
         confidence=float(args.confidence_level),
         method=str(args.entropy_uncertainty_method),
         bootstrap_resamples=int(args.entropy_bootstrap_resamples),

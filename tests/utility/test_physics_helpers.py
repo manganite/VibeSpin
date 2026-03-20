@@ -246,6 +246,22 @@ def test_summarize_entropy_observable_single_replicate_has_nan_error():
     assert np.all(np.isnan(np.asarray(summary['ci_high'])))
 
 
+def test_summarize_entropy_observable_single_replicate_with_cv_err_is_finite():
+    """Single-replicate entropy can propagate finite uncertainty from Cv errors."""
+    temperatures = np.linspace(1.0, 2.0, 4)
+    cv_samples = np.array([[1.0], [1.1], [1.2], [1.3]], dtype=float)
+    cv_err = np.array([0.05, 0.05, 0.05, 0.05], dtype=float)
+    summary = summarize_entropy_observable(
+        temperatures=temperatures,
+        specific_heat_samples=cv_samples,
+        specific_heat_err=cv_err,
+        method=UNCERTAINTY_METHOD_BOOTSTRAP,
+    )
+    assert np.all(np.isfinite(np.asarray(summary['err'])))
+    assert np.all(np.isfinite(np.asarray(summary['ci_low'])))
+    assert np.all(np.isfinite(np.asarray(summary['ci_high'])))
+
+
 def test_summarize_entropy_observable_bootstrap_returns_finite_intervals():
     """Bootstrap entropy summary should provide finite intervals with >=2 replicates."""
     temperatures = np.linspace(1.0, 3.0, 8)

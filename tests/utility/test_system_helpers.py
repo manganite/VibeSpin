@@ -449,6 +449,33 @@ def test_plot_temperature_sweep_with_tau_only(temp_dir):
     plt.close('all')
 
 
+def test_plot_temperature_sweep_with_tau_invalid_band(temp_dir):
+    """Tau panel should tolerate and mark invalid CI points without crashing."""
+    temps = np.array([1.0, 2.0, 3.0])
+    data = np.array([0.5, 0.6, 0.7])
+    tau = np.array([2.0, 2.5, 3.0])
+    tau_lo = np.array([1.5, np.nan, 2.4])
+    tau_hi = np.array([2.7, np.nan, 3.7])
+    with patch('utils.system_helpers.save_plot') as mock_save:
+        plot_temperature_sweep(
+            temperatures=temps,
+            avg_m=data,
+            avg_e=data,
+            susc=data,
+            spec_h=data,
+            entropy=None,
+            tau_int=tau,
+            tau_int_ci_low=tau_lo,
+            tau_int_ci_high=tau_hi,
+            title='Tau invalid band',
+            filename='tau_invalid_band.png',
+            directory=temp_dir,
+            mark_invalid_uncertainty=True,
+        )
+        mock_save.assert_called_once()
+    plt.close('all')
+
+
 def test_plot_ordering_kinetics_without_third_metric(temp_dir):
     """Second panel should be disabled cleanly when no third metric is provided."""
     t = np.array([1, 10])

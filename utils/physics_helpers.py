@@ -194,12 +194,58 @@ def calculate_entropy(
     return entropy
 
 
+def _propagate_entropy_uncertainty_from_cv_errors(
+    *,
+    temperatures: np.ndarray,
+    specific_heat_err: np.ndarray,
+) -> np.ndarray:
+    """Propagate pointwise specific-heat errors into entropy uncertainty.
+
+    Uses independent-error propagation through the trapezoidal integration used
+    in :func:`calculate_entropy` for S(T).
+    """
+    t = np.asarray(temperatures, dtype=np.float64)
+    cv_err = np.asarray(specific_heat_err, dtype=np.float64)
+    if t.ndim != 1:
+        raise ValueError(f'temperatures must be 1-D, got shape {t.shape}')
+    if cv_err.shape != t.shape:
+        raise ValueError(
+            'specific_heat_err must match temperatures shape, '
+            f'got {cv_err.shape} and {t.shape}'
+        )
+
+    sort_idx = np.argsort(t)
+    t_sorted = t[sort_idx]
+    cv_err_sorted = cv_err[sort_idx]
+    sigma_f = cv_err_sorted / t_sorted
+    dt = np.diff(t_sorted)
+    seg_var = 0.25 * (dt * dt) * (sigma_f[:-1] * sigma_f[:-1] + sigma_f[1:] * sigma_f[1:])
+
+    n_t = t_sorted.size
+    var_sorted = np.zeros(n_t, dtype=np.float64)
+    running = 0.0
+    running_finite = True
+    for i in range(n_t - 2, -1, -1):
+        if running_finite and np.isfinite(seg_var[i]):
+            running += float(seg_var[i])
+            var_sorted[i] = running
+        else:
+            running_finite = False
+            var_sorted[i] = np.nan
+
+    err_sorted = np.sqrt(var_sorted)
+    err = np.empty_like(err_sorted)
+    err[sort_idx] = err_sorted
+    return err
+
+
 def summarize_entropy_observable(
     *,
     temperatures: np.ndarray,
     specific_heat_samples: np.ndarray,
     confidence: float = DEFAULT_CONFIDENCE_LEVEL,
     s_ref: float = 0.0,
+    specific_heat_err: np.ndarray | None = None,
     method: str = UNCERTAINTY_METHOD_BOOTSTRAP,
     bootstrap_resamples: int = 400,
     rng_seed: int = 0,
@@ -209,7 +255,9 @@ def summarize_entropy_observable(
     Each replicate column is converted to an entropy curve via
     :func:`calculate_entropy`, then uncertainty is computed either via
     replicate spread (blocking-like) or bootstrap over replicate curves.
-    For a single finite replicate, uncertainty is reported as NaN.
+    For a single finite replicate, uncertainty is reported as NaN unless
+    ``specific_heat_err`` is provided, in which case entropy uncertainty is
+    propagated from pointwise specific-heat errors.
     """
     _validate_confidence(confidence=confidence)
     if method not in {UNCERTAINTY_METHOD_BLOCKING, UNCERTAINTY_METHOD_BOOTSTRAP}:
@@ -248,6 +296,22 @@ def summarize_entropy_observable(
     ci_high = np.empty(n_t, dtype=np.float64)
     alpha = 0.5 * (1.0 - confidence)
     z = _z_multiplier(confidence=confidence)
+
+    if n_rep < 2 and specific_heat_err is not None:
+        value[:] = np.nanmean(entropy_samples, axis=1)
+        err[:] = _propagate_entropy_uncertainty_from_cv_errors(
+            temperatures=temperatures_arr,
+            specific_heat_err=np.asarray(specific_heat_err, dtype=np.float64),
+        )
+        ci_low[:] = value - z * err
+        ci_high[:] = value + z * err
+        return {
+            'value': value,
+            'err': err,
+            'ci_low': ci_low,
+            'ci_high': ci_high,
+            'samples': entropy_samples,
+        }
 
     if method == UNCERTAINTY_METHOD_BOOTSTRAP:
         if n_rep < 2:

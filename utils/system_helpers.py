@@ -483,18 +483,46 @@ def plot_temperature_sweep(
             ax5.set_visible(False)
 
         if tau_int is not None:
-            ax6.plot(temperatures, tau_int, 'o-', color='saddlebrown', markersize=4)
+            tau_arr = np.asarray(tau_int, dtype=np.float64)
+            temp_arr = np.asarray(temperatures, dtype=np.float64)
+            ax6.plot(temp_arr, tau_arr, 'o-', color='saddlebrown', markersize=4)
             if tau_int_ci_low is not None and tau_int_ci_high is not None:
                 tau_lo = np.asarray(tau_int_ci_low, dtype=np.float64)
                 tau_hi = np.asarray(tau_int_ci_high, dtype=np.float64)
-                ax6.fill_between(
-                    temperatures,
-                    tau_lo,
-                    tau_hi,
-                    color='saddlebrown',
-                    alpha=0.2,
-                    linewidth=0.0,
-                )
+                band_valid = np.isfinite(tau_arr) & np.isfinite(tau_lo) & np.isfinite(tau_hi)
+                if np.any(band_valid):
+                    ax6.fill_between(
+                        temp_arr[band_valid],
+                        tau_lo[band_valid],
+                        tau_hi[band_valid],
+                        color='saddlebrown',
+                        alpha=0.2,
+                        linewidth=0.0,
+                    )
+                if mark_invalid_uncertainty:
+                    invalid_band = np.isfinite(tau_arr) & ~band_valid
+                    if np.any(invalid_band):
+                        ax6.plot(
+                            temp_arr[invalid_band],
+                            tau_arr[invalid_band],
+                            'x',
+                            color='saddlebrown',
+                            markersize=5,
+                            label='uncertainty unavailable',
+                        )
+                        ax6.legend(loc='best', fontsize=8)
+            elif mark_invalid_uncertainty:
+                finite_tau = np.isfinite(tau_arr)
+                if np.any(finite_tau):
+                    ax6.plot(
+                        temp_arr[finite_tau],
+                        tau_arr[finite_tau],
+                        'x',
+                        color='saddlebrown',
+                        markersize=5,
+                        label='uncertainty unavailable',
+                    )
+                    ax6.legend(loc='best', fontsize=8)
             ax6.set_ylabel(r'Integrated Autocorr. Time $\tau_\mathrm{int}$')
             ax6.set_title('Critical Slowing Down')
             ax6.grid(True)
