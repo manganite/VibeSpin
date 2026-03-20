@@ -121,6 +121,7 @@
 <span class="n">_WORKER_CONFIDENCE_LEVEL</span> <span class="o">=</span> <span class="n">DEFAULT_CONFIDENCE_LEVEL</span>
 <span class="n">_WORKER_DERIVED_METHOD</span> <span class="o">=</span> <span class="n">UNCERTAINTY_METHOD_BLOCKING</span>
 <span class="n">_WORKER_DERIVED_BOOTSTRAP_RESAMPLES</span> <span class="o">=</span> <span class="mi">0</span>
+<span class="n">_TC_ISING_THEORY</span> <span class="o">=</span> <span class="mf">2.26918531421</span>
 
 
 <div class="viewcode-block" id="simulate_temperature">
@@ -425,6 +426,13 @@
         <span class="n">default</span><span class="o">=</span><span class="mf">1.0</span><span class="p">,</span>
         <span class="n">help</span><span class="o">=</span><span class="s1">&#39;Relative width threshold to flag unstable tau intervals&#39;</span><span class="p">,</span>
     <span class="p">)</span>
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span>
+        <span class="s1">&#39;--transition-preset&#39;</span><span class="p">,</span>
+        <span class="nb">type</span><span class="o">=</span><span class="nb">str</span><span class="p">,</span>
+        <span class="n">default</span><span class="o">=</span><span class="s1">&#39;auto&#39;</span><span class="p">,</span>
+        <span class="n">choices</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;auto&#39;</span><span class="p">,</span> <span class="s1">&#39;none&#39;</span><span class="p">,</span> <span class="s1">&#39;theory&#39;</span><span class="p">],</span>
+        <span class="n">help</span><span class="o">=</span><span class="s1">&#39;Transition overlay preset for plotting&#39;</span><span class="p">,</span>
+    <span class="p">)</span>
     <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;--output-dir&#39;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">str</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="s1">&#39;results/ising&#39;</span><span class="p">,</span> <span class="n">help</span><span class="o">=</span><span class="s1">&#39;Output directory&#39;</span><span class="p">)</span>
     <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;--log-file&#39;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">str</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">help</span><span class="o">=</span><span class="s1">&#39;Optional log file path&#39;</span><span class="p">)</span>
     <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;--verbose&#39;</span><span class="p">,</span> <span class="n">action</span><span class="o">=</span><span class="s1">&#39;store_true&#39;</span><span class="p">,</span> <span class="n">help</span><span class="o">=</span><span class="s1">&#39;Enable verbose logging&#39;</span><span class="p">)</span>
@@ -594,10 +602,32 @@
 
     <span class="n">unstable_count</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">flags</span><span class="p">[</span><span class="s1">&#39;tau_interval_unstable_flag&#39;</span><span class="p">]))</span>
     <span class="n">undefined_count</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">flags</span><span class="p">[</span><span class="s1">&#39;undefined_autocorr_flag&#39;</span><span class="p">]))</span>
+    <span class="n">low_effective_count</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">flags</span><span class="p">[</span><span class="s1">&#39;low_effective_sample_flag&#39;</span><span class="p">]))</span>
+    <span class="n">bad_mask</span> <span class="o">=</span> <span class="p">(</span>
+        <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">flags</span><span class="p">[</span><span class="s1">&#39;undefined_autocorr_flag&#39;</span><span class="p">],</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mf">0.0</span>
+    <span class="p">)</span> <span class="o">|</span> <span class="p">(</span>
+        <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">flags</span><span class="p">[</span><span class="s1">&#39;tau_interval_unstable_flag&#39;</span><span class="p">],</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mf">0.0</span>
+    <span class="p">)</span> <span class="o">|</span> <span class="p">(</span>
+        <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">flags</span><span class="p">[</span><span class="s1">&#39;low_effective_sample_flag&#39;</span><span class="p">],</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mf">0.0</span>
+    <span class="p">)</span>
+    <span class="n">total_points</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">temperatures</span><span class="o">.</span><span class="n">size</span><span class="p">)</span>
+    <span class="n">well_conditioned_count</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">total_points</span> <span class="o">-</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">bad_mask</span><span class="p">))</span>
     <span class="n">diagnostics_note</span> <span class="o">=</span> <span class="p">(</span>
         <span class="sa">f</span><span class="s1">&#39;n_seeds=</span><span class="si">{</span><span class="n">n_seeds</span><span class="si">}</span><span class="s1">, undefined tau=</span><span class="si">{</span><span class="n">undefined_count</span><span class="si">}</span><span class="s1">/</span><span class="si">{</span><span class="n">temperatures</span><span class="o">.</span><span class="n">size</span><span class="si">}</span><span class="s1">, &#39;</span>
         <span class="sa">f</span><span class="s1">&#39;unstable tau intervals=</span><span class="si">{</span><span class="n">unstable_count</span><span class="si">}</span><span class="s1">/</span><span class="si">{</span><span class="n">temperatures</span><span class="o">.</span><span class="n">size</span><span class="si">}</span><span class="s1">&#39;</span>
     <span class="p">)</span>
+    <span class="n">run_metadata_note</span> <span class="o">=</span> <span class="p">(</span>
+        <span class="sa">f</span><span class="s1">&#39;L=</span><span class="si">{</span><span class="n">L</span><span class="si">}</span><span class="s1">, n_seeds=</span><span class="si">{</span><span class="n">n_seeds</span><span class="si">}</span><span class="s1">, conf=</span><span class="si">{</span><span class="nb">float</span><span class="p">(</span><span class="n">args</span><span class="o">.</span><span class="n">confidence_level</span><span class="p">)</span><span class="si">:</span><span class="s1">.2f</span><span class="si">}</span><span class="s1">, &#39;</span>
+        <span class="sa">f</span><span class="s1">&#39;method=</span><span class="si">{</span><span class="n">UNCERTAINTY_METHOD_BLOCKING</span><span class="si">}</span><span class="s1">, entropy=</span><span class="si">{</span><span class="n">args</span><span class="o">.</span><span class="n">entropy_uncertainty_method</span><span class="si">}</span><span class="s1">, &#39;</span>
+        <span class="sa">f</span><span class="s1">&#39;strict=</span><span class="si">{</span><span class="n">args</span><span class="o">.</span><span class="n">strict_uncertainty</span><span class="si">}</span><span class="s1">&#39;</span>
+    <span class="p">)</span>
+    <span class="n">quality_summary</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">int</span> <span class="o">|</span> <span class="nb">float</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="s1">&#39;total_points&#39;</span><span class="p">:</span> <span class="n">total_points</span><span class="p">,</span>
+        <span class="s1">&#39;well_conditioned_count&#39;</span><span class="p">:</span> <span class="n">well_conditioned_count</span><span class="p">,</span>
+        <span class="s1">&#39;low_effective_count&#39;</span><span class="p">:</span> <span class="n">low_effective_count</span><span class="p">,</span>
+        <span class="s1">&#39;unstable_interval_count&#39;</span><span class="p">:</span> <span class="n">unstable_count</span><span class="p">,</span>
+        <span class="s1">&#39;undefined_count&#39;</span><span class="p">:</span> <span class="n">undefined_count</span><span class="p">,</span>
+    <span class="p">}</span>
 
     <span class="n">undefined_fraction</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">flags</span><span class="p">[</span><span class="s1">&#39;undefined_autocorr_flag&#39;</span><span class="p">]))</span>
     <span class="k">if</span> <span class="n">args</span><span class="o">.</span><span class="n">strict_uncertainty</span> <span class="ow">and</span> <span class="n">undefined_fraction</span> <span class="o">&gt;</span> <span class="nb">float</span><span class="p">(</span><span class="n">args</span><span class="o">.</span><span class="n">max_undefined_fraction</span><span class="p">):</span>
@@ -664,6 +694,45 @@
         <span class="n">nan_or_undefined_count</span><span class="o">=</span><span class="nb">float</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">isnan</span><span class="p">(</span><span class="n">tau_int_arr</span><span class="p">)</span><span class="o">.</span><span class="n">sum</span><span class="p">()),</span>
     <span class="p">)</span>
 
+    <span class="k">def</span><span class="w"> </span><span class="nf">_peak_temperature</span><span class="p">(</span><span class="n">values</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
+        <span class="n">valid</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">isfinite</span><span class="p">(</span><span class="n">temperatures</span><span class="p">)</span> <span class="o">&amp;</span> <span class="n">np</span><span class="o">.</span><span class="n">isfinite</span><span class="p">(</span><span class="n">values</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">np</span><span class="o">.</span><span class="n">any</span><span class="p">(</span><span class="n">valid</span><span class="p">):</span>
+            <span class="k">return</span> <span class="nb">float</span><span class="p">(</span><span class="s1">&#39;nan&#39;</span><span class="p">)</span>
+        <span class="n">vals</span> <span class="o">=</span> <span class="n">values</span><span class="p">[</span><span class="n">valid</span><span class="p">]</span>
+        <span class="n">temps</span> <span class="o">=</span> <span class="n">temperatures</span><span class="p">[</span><span class="n">valid</span><span class="p">]</span>
+        <span class="k">return</span> <span class="nb">float</span><span class="p">(</span><span class="n">temps</span><span class="p">[</span><span class="nb">int</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">argmax</span><span class="p">(</span><span class="n">vals</span><span class="p">))])</span>
+
+    <span class="n">t_chi_peak</span> <span class="o">=</span> <span class="n">_peak_temperature</span><span class="p">(</span><span class="n">susc_arr</span><span class="p">)</span>
+    <span class="n">t_cv_peak</span> <span class="o">=</span> <span class="n">_peak_temperature</span><span class="p">(</span><span class="n">spec_h_arr</span><span class="p">)</span>
+    <span class="n">t_tau_peak</span> <span class="o">=</span> <span class="n">_peak_temperature</span><span class="p">(</span><span class="n">tau_int_arr</span><span class="p">)</span>
+
+    <span class="n">auto_marker</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">float</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">isfinite</span><span class="p">(</span><span class="n">t_chi_peak</span><span class="p">):</span>
+        <span class="n">auto_marker</span><span class="p">[</span><span class="sa">r</span><span class="s1">&#39;$T_{\chi}$&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">t_chi_peak</span>
+    <span class="k">elif</span> <span class="n">np</span><span class="o">.</span><span class="n">isfinite</span><span class="p">(</span><span class="n">t_cv_peak</span><span class="p">):</span>
+        <span class="n">auto_marker</span><span class="p">[</span><span class="sa">r</span><span class="s1">&#39;$T_</span><span class="si">{C_v}</span><span class="s1">$&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">t_cv_peak</span>
+    <span class="k">elif</span> <span class="n">np</span><span class="o">.</span><span class="n">isfinite</span><span class="p">(</span><span class="n">t_tau_peak</span><span class="p">):</span>
+        <span class="n">auto_marker</span><span class="p">[</span><span class="sa">r</span><span class="s1">&#39;$T_{\tau}$&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">t_tau_peak</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">auto_marker</span><span class="p">[</span><span class="sa">r</span><span class="s1">&#39;$T_c$&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">_TC_ISING_THEORY</span>
+
+    <span class="k">if</span> <span class="n">args</span><span class="o">.</span><span class="n">transition_preset</span> <span class="o">==</span> <span class="s1">&#39;none&#39;</span><span class="p">:</span>
+        <span class="n">transition_markers</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">float</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="k">elif</span> <span class="n">args</span><span class="o">.</span><span class="n">transition_preset</span> <span class="o">==</span> <span class="s1">&#39;theory&#39;</span><span class="p">:</span>
+        <span class="n">transition_markers</span> <span class="o">=</span> <span class="p">{</span><span class="sa">r</span><span class="s1">&#39;$T_c$&#39;</span><span class="p">:</span> <span class="n">_TC_ISING_THEORY</span><span class="p">}</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">transition_markers</span> <span class="o">=</span> <span class="n">auto_marker</span>
+
+    <span class="n">finite_markers</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="nb">list</span><span class="p">(</span><span class="n">transition_markers</span><span class="o">.</span><span class="n">values</span><span class="p">()),</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">)</span>
+    <span class="n">finite_markers</span> <span class="o">=</span> <span class="n">finite_markers</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">isfinite</span><span class="p">(</span><span class="n">finite_markers</span><span class="p">)]</span>
+    <span class="n">transition_window</span><span class="p">:</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">float</span><span class="p">,</span> <span class="nb">float</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="k">if</span> <span class="n">finite_markers</span><span class="o">.</span><span class="n">size</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="n">diffs</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">diff</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">temperatures</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">))</span>
+        <span class="n">pad</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">median</span><span class="p">(</span><span class="n">diffs</span><span class="p">))</span> <span class="k">if</span> <span class="n">diffs</span><span class="o">.</span><span class="n">size</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="k">else</span> <span class="mf">0.1</span>
+        <span class="n">lo</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">min</span><span class="p">(</span><span class="n">finite_markers</span><span class="p">)</span> <span class="o">-</span> <span class="n">pad</span><span class="p">)</span>
+        <span class="n">hi</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">finite_markers</span><span class="p">)</span> <span class="o">+</span> <span class="n">pad</span><span class="p">)</span>
+        <span class="n">transition_window</span> <span class="o">=</span> <span class="p">(</span><span class="n">lo</span><span class="p">,</span> <span class="n">hi</span><span class="p">)</span>
+
     <span class="n">plot_temperature_sweep</span><span class="p">(</span>
         <span class="n">temperatures</span><span class="o">=</span><span class="n">temperatures</span><span class="p">,</span>
         <span class="n">avg_m</span><span class="o">=</span><span class="n">avg_m_arr</span><span class="o">.</span><span class="n">tolist</span><span class="p">(),</span>
@@ -682,7 +751,13 @@
         <span class="n">tau_int_ci_low</span><span class="o">=</span><span class="n">tau_int_ci_low_arr</span><span class="p">,</span>
         <span class="n">tau_int_ci_high</span><span class="o">=</span><span class="n">tau_int_ci_high_arr</span><span class="p">,</span>
         <span class="n">tau_unstable_flag</span><span class="o">=</span><span class="n">flags</span><span class="p">[</span><span class="s1">&#39;tau_interval_unstable_flag&#39;</span><span class="p">],</span>
+        <span class="n">low_effective_sample_flag</span><span class="o">=</span><span class="n">flags</span><span class="p">[</span><span class="s1">&#39;low_effective_sample_flag&#39;</span><span class="p">],</span>
         <span class="n">diagnostics_note</span><span class="o">=</span><span class="n">diagnostics_note</span><span class="p">,</span>
+        <span class="n">run_metadata_note</span><span class="o">=</span><span class="n">run_metadata_note</span><span class="p">,</span>
+        <span class="n">quality_summary</span><span class="o">=</span><span class="n">quality_summary</span><span class="p">,</span>
+        <span class="n">transition_temperatures</span><span class="o">=</span><span class="n">transition_markers</span><span class="p">,</span>
+        <span class="n">transition_window</span><span class="o">=</span><span class="n">transition_window</span><span class="p">,</span>
+        <span class="n">entropy_reference</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
         <span class="n">min_visible_rel_error</span><span class="o">=</span><span class="mf">0.01</span><span class="p">,</span>
         <span class="n">mark_invalid_uncertainty</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
         <span class="n">title</span><span class="o">=</span><span class="sa">f</span><span class="s1">&#39;2D Ising Model: Temperature Sweep (L=</span><span class="si">{</span><span class="n">L</span><span class="si">}</span><span class="s1">)&#39;</span><span class="p">,</span>
