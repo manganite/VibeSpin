@@ -591,18 +591,46 @@
             <span class="n">ax5</span><span class="o">.</span><span class="n">set_visible</span><span class="p">(</span><span class="kc">False</span><span class="p">)</span>
 
         <span class="k">if</span> <span class="n">tau_int</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="n">ax6</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">temperatures</span><span class="p">,</span> <span class="n">tau_int</span><span class="p">,</span> <span class="s1">&#39;o-&#39;</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s1">&#39;saddlebrown&#39;</span><span class="p">,</span> <span class="n">markersize</span><span class="o">=</span><span class="mi">4</span><span class="p">)</span>
+            <span class="n">tau_arr</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">tau_int</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">)</span>
+            <span class="n">temp_arr</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">temperatures</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">)</span>
+            <span class="n">ax6</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">temp_arr</span><span class="p">,</span> <span class="n">tau_arr</span><span class="p">,</span> <span class="s1">&#39;o-&#39;</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s1">&#39;saddlebrown&#39;</span><span class="p">,</span> <span class="n">markersize</span><span class="o">=</span><span class="mi">4</span><span class="p">)</span>
             <span class="k">if</span> <span class="n">tau_int_ci_low</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">tau_int_ci_high</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
                 <span class="n">tau_lo</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">tau_int_ci_low</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">)</span>
                 <span class="n">tau_hi</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">tau_int_ci_high</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">)</span>
-                <span class="n">ax6</span><span class="o">.</span><span class="n">fill_between</span><span class="p">(</span>
-                    <span class="n">temperatures</span><span class="p">,</span>
-                    <span class="n">tau_lo</span><span class="p">,</span>
-                    <span class="n">tau_hi</span><span class="p">,</span>
-                    <span class="n">color</span><span class="o">=</span><span class="s1">&#39;saddlebrown&#39;</span><span class="p">,</span>
-                    <span class="n">alpha</span><span class="o">=</span><span class="mf">0.2</span><span class="p">,</span>
-                    <span class="n">linewidth</span><span class="o">=</span><span class="mf">0.0</span><span class="p">,</span>
-                <span class="p">)</span>
+                <span class="n">band_valid</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">isfinite</span><span class="p">(</span><span class="n">tau_arr</span><span class="p">)</span> <span class="o">&amp;</span> <span class="n">np</span><span class="o">.</span><span class="n">isfinite</span><span class="p">(</span><span class="n">tau_lo</span><span class="p">)</span> <span class="o">&amp;</span> <span class="n">np</span><span class="o">.</span><span class="n">isfinite</span><span class="p">(</span><span class="n">tau_hi</span><span class="p">)</span>
+                <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">any</span><span class="p">(</span><span class="n">band_valid</span><span class="p">):</span>
+                    <span class="n">ax6</span><span class="o">.</span><span class="n">fill_between</span><span class="p">(</span>
+                        <span class="n">temp_arr</span><span class="p">[</span><span class="n">band_valid</span><span class="p">],</span>
+                        <span class="n">tau_lo</span><span class="p">[</span><span class="n">band_valid</span><span class="p">],</span>
+                        <span class="n">tau_hi</span><span class="p">[</span><span class="n">band_valid</span><span class="p">],</span>
+                        <span class="n">color</span><span class="o">=</span><span class="s1">&#39;saddlebrown&#39;</span><span class="p">,</span>
+                        <span class="n">alpha</span><span class="o">=</span><span class="mf">0.2</span><span class="p">,</span>
+                        <span class="n">linewidth</span><span class="o">=</span><span class="mf">0.0</span><span class="p">,</span>
+                    <span class="p">)</span>
+                <span class="k">if</span> <span class="n">mark_invalid_uncertainty</span><span class="p">:</span>
+                    <span class="n">invalid_band</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">isfinite</span><span class="p">(</span><span class="n">tau_arr</span><span class="p">)</span> <span class="o">&amp;</span> <span class="o">~</span><span class="n">band_valid</span>
+                    <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">any</span><span class="p">(</span><span class="n">invalid_band</span><span class="p">):</span>
+                        <span class="n">ax6</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span>
+                            <span class="n">temp_arr</span><span class="p">[</span><span class="n">invalid_band</span><span class="p">],</span>
+                            <span class="n">tau_arr</span><span class="p">[</span><span class="n">invalid_band</span><span class="p">],</span>
+                            <span class="s1">&#39;x&#39;</span><span class="p">,</span>
+                            <span class="n">color</span><span class="o">=</span><span class="s1">&#39;saddlebrown&#39;</span><span class="p">,</span>
+                            <span class="n">markersize</span><span class="o">=</span><span class="mi">5</span><span class="p">,</span>
+                            <span class="n">label</span><span class="o">=</span><span class="s1">&#39;uncertainty unavailable&#39;</span><span class="p">,</span>
+                        <span class="p">)</span>
+                        <span class="n">ax6</span><span class="o">.</span><span class="n">legend</span><span class="p">(</span><span class="n">loc</span><span class="o">=</span><span class="s1">&#39;best&#39;</span><span class="p">,</span> <span class="n">fontsize</span><span class="o">=</span><span class="mi">8</span><span class="p">)</span>
+            <span class="k">elif</span> <span class="n">mark_invalid_uncertainty</span><span class="p">:</span>
+                <span class="n">finite_tau</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">isfinite</span><span class="p">(</span><span class="n">tau_arr</span><span class="p">)</span>
+                <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">any</span><span class="p">(</span><span class="n">finite_tau</span><span class="p">):</span>
+                    <span class="n">ax6</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span>
+                        <span class="n">temp_arr</span><span class="p">[</span><span class="n">finite_tau</span><span class="p">],</span>
+                        <span class="n">tau_arr</span><span class="p">[</span><span class="n">finite_tau</span><span class="p">],</span>
+                        <span class="s1">&#39;x&#39;</span><span class="p">,</span>
+                        <span class="n">color</span><span class="o">=</span><span class="s1">&#39;saddlebrown&#39;</span><span class="p">,</span>
+                        <span class="n">markersize</span><span class="o">=</span><span class="mi">5</span><span class="p">,</span>
+                        <span class="n">label</span><span class="o">=</span><span class="s1">&#39;uncertainty unavailable&#39;</span><span class="p">,</span>
+                    <span class="p">)</span>
+                    <span class="n">ax6</span><span class="o">.</span><span class="n">legend</span><span class="p">(</span><span class="n">loc</span><span class="o">=</span><span class="s1">&#39;best&#39;</span><span class="p">,</span> <span class="n">fontsize</span><span class="o">=</span><span class="mi">8</span><span class="p">)</span>
             <span class="n">ax6</span><span class="o">.</span><span class="n">set_ylabel</span><span class="p">(</span><span class="sa">r</span><span class="s1">&#39;Integrated Autocorr. Time $\tau_\mathrm</span><span class="si">{int}</span><span class="s1">$&#39;</span><span class="p">)</span>
             <span class="n">ax6</span><span class="o">.</span><span class="n">set_title</span><span class="p">(</span><span class="s1">&#39;Critical Slowing Down&#39;</span><span class="p">)</span>
             <span class="n">ax6</span><span class="o">.</span><span class="n">grid</span><span class="p">(</span><span class="kc">True</span><span class="p">)</span>

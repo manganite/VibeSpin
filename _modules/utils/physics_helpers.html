@@ -288,6 +288,51 @@
 
 
 
+<span class="k">def</span><span class="w"> </span><span class="nf">_propagate_entropy_uncertainty_from_cv_errors</span><span class="p">(</span>
+    <span class="o">*</span><span class="p">,</span>
+    <span class="n">temperatures</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
+    <span class="n">specific_heat_err</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Propagate pointwise specific-heat errors into entropy uncertainty.</span>
+
+<span class="sd">    Uses independent-error propagation through the trapezoidal integration used</span>
+<span class="sd">    in :func:`calculate_entropy` for S(T).</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">t</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">temperatures</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">)</span>
+    <span class="n">cv_err</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">specific_heat_err</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">t</span><span class="o">.</span><span class="n">ndim</span> <span class="o">!=</span> <span class="mi">1</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;temperatures must be 1-D, got shape </span><span class="si">{</span><span class="n">t</span><span class="o">.</span><span class="n">shape</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">cv_err</span><span class="o">.</span><span class="n">shape</span> <span class="o">!=</span> <span class="n">t</span><span class="o">.</span><span class="n">shape</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+            <span class="s1">&#39;specific_heat_err must match temperatures shape, &#39;</span>
+            <span class="sa">f</span><span class="s1">&#39;got </span><span class="si">{</span><span class="n">cv_err</span><span class="o">.</span><span class="n">shape</span><span class="si">}</span><span class="s1"> and </span><span class="si">{</span><span class="n">t</span><span class="o">.</span><span class="n">shape</span><span class="si">}</span><span class="s1">&#39;</span>
+        <span class="p">)</span>
+
+    <span class="n">sort_idx</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">argsort</span><span class="p">(</span><span class="n">t</span><span class="p">)</span>
+    <span class="n">t_sorted</span> <span class="o">=</span> <span class="n">t</span><span class="p">[</span><span class="n">sort_idx</span><span class="p">]</span>
+    <span class="n">cv_err_sorted</span> <span class="o">=</span> <span class="n">cv_err</span><span class="p">[</span><span class="n">sort_idx</span><span class="p">]</span>
+    <span class="n">sigma_f</span> <span class="o">=</span> <span class="n">cv_err_sorted</span> <span class="o">/</span> <span class="n">t_sorted</span>
+    <span class="n">dt</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">diff</span><span class="p">(</span><span class="n">t_sorted</span><span class="p">)</span>
+    <span class="n">seg_var</span> <span class="o">=</span> <span class="mf">0.25</span> <span class="o">*</span> <span class="p">(</span><span class="n">dt</span> <span class="o">*</span> <span class="n">dt</span><span class="p">)</span> <span class="o">*</span> <span class="p">(</span><span class="n">sigma_f</span><span class="p">[:</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">*</span> <span class="n">sigma_f</span><span class="p">[:</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">+</span> <span class="n">sigma_f</span><span class="p">[</span><span class="mi">1</span><span class="p">:]</span> <span class="o">*</span> <span class="n">sigma_f</span><span class="p">[</span><span class="mi">1</span><span class="p">:])</span>
+
+    <span class="n">n_t</span> <span class="o">=</span> <span class="n">t_sorted</span><span class="o">.</span><span class="n">size</span>
+    <span class="n">var_sorted</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">n_t</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">)</span>
+    <span class="n">running</span> <span class="o">=</span> <span class="mf">0.0</span>
+    <span class="n">running_finite</span> <span class="o">=</span> <span class="kc">True</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n_t</span> <span class="o">-</span> <span class="mi">2</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">running_finite</span> <span class="ow">and</span> <span class="n">np</span><span class="o">.</span><span class="n">isfinite</span><span class="p">(</span><span class="n">seg_var</span><span class="p">[</span><span class="n">i</span><span class="p">]):</span>
+            <span class="n">running</span> <span class="o">+=</span> <span class="nb">float</span><span class="p">(</span><span class="n">seg_var</span><span class="p">[</span><span class="n">i</span><span class="p">])</span>
+            <span class="n">var_sorted</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">running</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">running_finite</span> <span class="o">=</span> <span class="kc">False</span>
+            <span class="n">var_sorted</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">nan</span>
+
+    <span class="n">err_sorted</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">var_sorted</span><span class="p">)</span>
+    <span class="n">err</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">empty_like</span><span class="p">(</span><span class="n">err_sorted</span><span class="p">)</span>
+    <span class="n">err</span><span class="p">[</span><span class="n">sort_idx</span><span class="p">]</span> <span class="o">=</span> <span class="n">err_sorted</span>
+    <span class="k">return</span> <span class="n">err</span>
+
+
 <div class="viewcode-block" id="summarize_entropy_observable">
 <a class="viewcode-back" href="../../api/vibespin.utils.html#utils.physics_helpers.summarize_entropy_observable">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">summarize_entropy_observable</span><span class="p">(</span>
@@ -296,6 +341,7 @@
     <span class="n">specific_heat_samples</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
     <span class="n">confidence</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="n">DEFAULT_CONFIDENCE_LEVEL</span><span class="p">,</span>
     <span class="n">s_ref</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.0</span><span class="p">,</span>
+    <span class="n">specific_heat_err</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">method</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">UNCERTAINTY_METHOD_BOOTSTRAP</span><span class="p">,</span>
     <span class="n">bootstrap_resamples</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">400</span><span class="p">,</span>
     <span class="n">rng_seed</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span>
@@ -305,7 +351,9 @@
 <span class="sd">    Each replicate column is converted to an entropy curve via</span>
 <span class="sd">    :func:`calculate_entropy`, then uncertainty is computed either via</span>
 <span class="sd">    replicate spread (blocking-like) or bootstrap over replicate curves.</span>
-<span class="sd">    For a single finite replicate, uncertainty is reported as NaN.</span>
+<span class="sd">    For a single finite replicate, uncertainty is reported as NaN unless</span>
+<span class="sd">    ``specific_heat_err`` is provided, in which case entropy uncertainty is</span>
+<span class="sd">    propagated from pointwise specific-heat errors.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="n">_validate_confidence</span><span class="p">(</span><span class="n">confidence</span><span class="o">=</span><span class="n">confidence</span><span class="p">)</span>
     <span class="k">if</span> <span class="n">method</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">{</span><span class="n">UNCERTAINTY_METHOD_BLOCKING</span><span class="p">,</span> <span class="n">UNCERTAINTY_METHOD_BOOTSTRAP</span><span class="p">}:</span>
@@ -344,6 +392,22 @@
     <span class="n">ci_high</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">empty</span><span class="p">(</span><span class="n">n_t</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">)</span>
     <span class="n">alpha</span> <span class="o">=</span> <span class="mf">0.5</span> <span class="o">*</span> <span class="p">(</span><span class="mf">1.0</span> <span class="o">-</span> <span class="n">confidence</span><span class="p">)</span>
     <span class="n">z</span> <span class="o">=</span> <span class="n">_z_multiplier</span><span class="p">(</span><span class="n">confidence</span><span class="o">=</span><span class="n">confidence</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">n_rep</span> <span class="o">&lt;</span> <span class="mi">2</span> <span class="ow">and</span> <span class="n">specific_heat_err</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">value</span><span class="p">[:]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">nanmean</span><span class="p">(</span><span class="n">entropy_samples</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+        <span class="n">err</span><span class="p">[:]</span> <span class="o">=</span> <span class="n">_propagate_entropy_uncertainty_from_cv_errors</span><span class="p">(</span>
+            <span class="n">temperatures</span><span class="o">=</span><span class="n">temperatures_arr</span><span class="p">,</span>
+            <span class="n">specific_heat_err</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">specific_heat_err</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">),</span>
+        <span class="p">)</span>
+        <span class="n">ci_low</span><span class="p">[:]</span> <span class="o">=</span> <span class="n">value</span> <span class="o">-</span> <span class="n">z</span> <span class="o">*</span> <span class="n">err</span>
+        <span class="n">ci_high</span><span class="p">[:]</span> <span class="o">=</span> <span class="n">value</span> <span class="o">+</span> <span class="n">z</span> <span class="o">*</span> <span class="n">err</span>
+        <span class="k">return</span> <span class="p">{</span>
+            <span class="s1">&#39;value&#39;</span><span class="p">:</span> <span class="n">value</span><span class="p">,</span>
+            <span class="s1">&#39;err&#39;</span><span class="p">:</span> <span class="n">err</span><span class="p">,</span>
+            <span class="s1">&#39;ci_low&#39;</span><span class="p">:</span> <span class="n">ci_low</span><span class="p">,</span>
+            <span class="s1">&#39;ci_high&#39;</span><span class="p">:</span> <span class="n">ci_high</span><span class="p">,</span>
+            <span class="s1">&#39;samples&#39;</span><span class="p">:</span> <span class="n">entropy_samples</span><span class="p">,</span>
+        <span class="p">}</span>
 
     <span class="k">if</span> <span class="n">method</span> <span class="o">==</span> <span class="n">UNCERTAINTY_METHOD_BOOTSTRAP</span><span class="p">:</span>
         <span class="k">if</span> <span class="n">n_rep</span> <span class="o">&lt;</span> <span class="mi">2</span><span class="p">:</span>
