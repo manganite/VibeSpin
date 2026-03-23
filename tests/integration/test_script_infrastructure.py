@@ -317,13 +317,42 @@ class TestTemperatureSweepMainPayloads:
         module: Any,
         expected_fields: tuple[str, ...],
         argv: list[str],
+        *,
+        expected_len: int = 2,
     ) -> None:
         """Run a sweep main() with patched dependencies and assert typed payload construction."""
         captured: dict[str, list[Any]] = {}
 
         def _fake_parallel_sweep(*, worker_func, params, num_processes=None):
             params_list = list(params)
-            captured['params'] = params_list
+            captured.setdefault('params', []).extend(params_list)
+            if params_list and hasattr(params_list[0], 'temperatures'):
+                return [
+                    {
+                        'seed_index': float(p.seed_index),
+                        'equilibrated_flag': np.ones(len(p.temperatures), dtype=np.uint8),
+                        'equilibration_steps': np.full(
+                            len(p.temperatures), 100.0, dtype=np.float64
+                        ),
+                        'avg_m_value': np.full(len(p.temperatures), 1.0, dtype=np.float64),
+                        'avg_m_err': np.full(len(p.temperatures), 0.1, dtype=np.float64),
+                        'avg_m_tau_int': np.full(len(p.temperatures), 3.0, dtype=np.float64),
+                        'avg_m_n_eff': np.full(len(p.temperatures), 10.0, dtype=np.float64),
+                        'avg_e_value': np.full(len(p.temperatures), -1.0, dtype=np.float64),
+                        'avg_e_err': np.full(len(p.temperatures), 0.1, dtype=np.float64),
+                        'avg_e_tau_int': np.full(len(p.temperatures), 3.0, dtype=np.float64),
+                        'avg_e_n_eff': np.full(len(p.temperatures), 10.0, dtype=np.float64),
+                        'susc_value': np.full(len(p.temperatures), 0.5, dtype=np.float64),
+                        'susc_err': np.full(len(p.temperatures), 0.05, dtype=np.float64),
+                        'susc_tau_int': np.full(len(p.temperatures), 3.0, dtype=np.float64),
+                        'susc_n_eff': np.full(len(p.temperatures), 10.0, dtype=np.float64),
+                        'spec_h_value': np.full(len(p.temperatures), 0.2, dtype=np.float64),
+                        'spec_h_err': np.full(len(p.temperatures), 0.03, dtype=np.float64),
+                        'spec_h_tau_int': np.full(len(p.temperatures), 3.0, dtype=np.float64),
+                        'spec_h_n_eff': np.full(len(p.temperatures), 10.0, dtype=np.float64),
+                    }
+                    for p in params_list
+                ]
             return [
                 {
                     'temperature_index': float(p.temperature_index),
@@ -347,7 +376,6 @@ class TestTemperatureSweepMainPayloads:
                 }
                 for p in params_list
             ]
-
         monkeypatch.setattr(module, 'parallel_sweep', _fake_parallel_sweep)
         monkeypatch.setattr(module, 'plot_temperature_sweep', lambda **kwargs: None)
         monkeypatch.setattr(sys, 'argv', argv)
@@ -355,7 +383,7 @@ class TestTemperatureSweepMainPayloads:
         module.main()
 
         assert 'params' in captured
-        assert len(captured['params']) == 2
+        assert len(captured['params']) == expected_len
         for payload in captured['params']:
             # Payload should be a named tuple-like object with stable field names.
             assert isinstance(payload, tuple)
@@ -376,16 +404,18 @@ class TestTemperatureSweepMainPayloads:
             monkeypatch,
             ising_module,
             (
-                'temperature',
+                'temperatures',
                 'size',
                 'meas_steps',
                 'eq_probe_steps',
                 'eq_max_steps',
-                'temperature_index',
                 'seed_index',
-                'seed',
             ),
-            ['ising_temperature_sweep', '--size', '8', '--meas-steps', '20', '--t-points', '2'],
+            [
+                'ising_temperature_sweep',
+                '--size', '8', '--meas-steps', '20', '--t-points', '2', '--n-seeds', '1',
+            ],
+            expected_len=1,
         )
 
     def test_xy_main_builds_typed_sweep_payloads(self, monkeypatch) -> None:
@@ -557,24 +587,27 @@ class TestTemperatureSweepUncertaintySchema:
             params_list = list(params)
             return [
                 {
-                    'temperature_index': float(p.temperature_index),
                     'seed_index': float(p.seed_index),
-                    'avg_m_value': 1.0,
-                    'avg_m_err': 0.1,
-                    'avg_m_tau_int': 3.0,
-                    'avg_m_n_eff': 10.0,
-                    'avg_e_value': -1.0,
-                    'avg_e_err': 0.1,
-                    'avg_e_tau_int': 3.0,
-                    'avg_e_n_eff': 10.0,
-                    'susc_value': 0.5,
-                    'susc_err': 0.05,
-                    'susc_tau_int': 3.0,
-                    'susc_n_eff': 10.0,
-                    'spec_h_value': 0.2,
-                    'spec_h_err': 0.03,
-                    'spec_h_tau_int': 3.0,
-                    'spec_h_n_eff': 10.0,
+                    'equilibrated_flag': np.ones(len(p.temperatures), dtype=np.uint8),
+                    'equilibration_steps': np.full(
+                        len(p.temperatures), 100.0, dtype=np.float64
+                    ),
+                    'avg_m_value': np.full(len(p.temperatures), 1.0, dtype=np.float64),
+                    'avg_m_err': np.full(len(p.temperatures), 0.1, dtype=np.float64),
+                    'avg_m_tau_int': np.full(len(p.temperatures), 3.0, dtype=np.float64),
+                    'avg_m_n_eff': np.full(len(p.temperatures), 10.0, dtype=np.float64),
+                    'avg_e_value': np.full(len(p.temperatures), -1.0, dtype=np.float64),
+                    'avg_e_err': np.full(len(p.temperatures), 0.1, dtype=np.float64),
+                    'avg_e_tau_int': np.full(len(p.temperatures), 3.0, dtype=np.float64),
+                    'avg_e_n_eff': np.full(len(p.temperatures), 10.0, dtype=np.float64),
+                    'susc_value': np.full(len(p.temperatures), 0.5, dtype=np.float64),
+                    'susc_err': np.full(len(p.temperatures), 0.05, dtype=np.float64),
+                    'susc_tau_int': np.full(len(p.temperatures), 3.0, dtype=np.float64),
+                    'susc_n_eff': np.full(len(p.temperatures), 10.0, dtype=np.float64),
+                    'spec_h_value': np.full(len(p.temperatures), 0.2, dtype=np.float64),
+                    'spec_h_err': np.full(len(p.temperatures), 0.03, dtype=np.float64),
+                    'spec_h_tau_int': np.full(len(p.temperatures), 3.0, dtype=np.float64),
+                    'spec_h_n_eff': np.full(len(p.temperatures), 10.0, dtype=np.float64),
                 }
                 for p in params_list
             ]
@@ -861,24 +894,27 @@ class TestTemperatureSweepPlotPayloads:
             params_list = list(params)
             return [
                 {
-                    'temperature_index': float(p.temperature_index),
                     'seed_index': float(p.seed_index),
-                    'avg_m_value': 1.0,
-                    'avg_m_err': 0.1,
-                    'avg_m_tau_int': 3.0,
-                    'avg_m_n_eff': 10.0,
-                    'avg_e_value': -1.0,
-                    'avg_e_err': 0.1,
-                    'avg_e_tau_int': 3.0,
-                    'avg_e_n_eff': 10.0,
-                    'susc_value': 0.5,
-                    'susc_err': 0.05,
-                    'susc_tau_int': 3.0,
-                    'susc_n_eff': 10.0,
-                    'spec_h_value': 0.2,
-                    'spec_h_err': 0.03,
-                    'spec_h_tau_int': 3.0,
-                    'spec_h_n_eff': 10.0,
+                    'equilibrated_flag': np.ones(len(p.temperatures), dtype=np.uint8),
+                    'equilibration_steps': np.full(
+                        len(p.temperatures), 100.0, dtype=np.float64
+                    ),
+                    'avg_m_value': np.full(len(p.temperatures), 1.0, dtype=np.float64),
+                    'avg_m_err': np.full(len(p.temperatures), 0.1, dtype=np.float64),
+                    'avg_m_tau_int': np.full(len(p.temperatures), 3.0, dtype=np.float64),
+                    'avg_m_n_eff': np.full(len(p.temperatures), 10.0, dtype=np.float64),
+                    'avg_e_value': np.full(len(p.temperatures), -1.0, dtype=np.float64),
+                    'avg_e_err': np.full(len(p.temperatures), 0.1, dtype=np.float64),
+                    'avg_e_tau_int': np.full(len(p.temperatures), 3.0, dtype=np.float64),
+                    'avg_e_n_eff': np.full(len(p.temperatures), 10.0, dtype=np.float64),
+                    'susc_value': np.full(len(p.temperatures), 0.5, dtype=np.float64),
+                    'susc_err': np.full(len(p.temperatures), 0.05, dtype=np.float64),
+                    'susc_tau_int': np.full(len(p.temperatures), 3.0, dtype=np.float64),
+                    'susc_n_eff': np.full(len(p.temperatures), 10.0, dtype=np.float64),
+                    'spec_h_value': np.full(len(p.temperatures), 0.2, dtype=np.float64),
+                    'spec_h_err': np.full(len(p.temperatures), 0.03, dtype=np.float64),
+                    'spec_h_tau_int': np.full(len(p.temperatures), 3.0, dtype=np.float64),
+                    'spec_h_n_eff': np.full(len(p.temperatures), 10.0, dtype=np.float64),
                 }
                 for p in params_list
             ]
@@ -949,24 +985,27 @@ class TestTemperatureSweepPlotPayloads:
             params_list = list(params)
             return [
                 {
-                    'temperature_index': float(p.temperature_index),
                     'seed_index': float(p.seed_index),
-                    'avg_m_value': 1.0,
-                    'avg_m_err': 0.1,
-                    'avg_m_tau_int': 3.0,
-                    'avg_m_n_eff': 10.0,
-                    'avg_e_value': -1.0,
-                    'avg_e_err': 0.1,
-                    'avg_e_tau_int': 3.0,
-                    'avg_e_n_eff': 10.0,
-                    'susc_value': 0.5,
-                    'susc_err': 0.05,
-                    'susc_tau_int': 3.0,
-                    'susc_n_eff': 10.0,
-                    'spec_h_value': 0.2,
-                    'spec_h_err': 0.03,
-                    'spec_h_tau_int': 3.0,
-                    'spec_h_n_eff': 10.0,
+                    'equilibrated_flag': np.ones(len(p.temperatures), dtype=np.uint8),
+                    'equilibration_steps': np.full(
+                        len(p.temperatures), 100.0, dtype=np.float64
+                    ),
+                    'avg_m_value': np.full(len(p.temperatures), 1.0, dtype=np.float64),
+                    'avg_m_err': np.full(len(p.temperatures), 0.1, dtype=np.float64),
+                    'avg_m_tau_int': np.full(len(p.temperatures), 3.0, dtype=np.float64),
+                    'avg_m_n_eff': np.full(len(p.temperatures), 10.0, dtype=np.float64),
+                    'avg_e_value': np.full(len(p.temperatures), -1.0, dtype=np.float64),
+                    'avg_e_err': np.full(len(p.temperatures), 0.1, dtype=np.float64),
+                    'avg_e_tau_int': np.full(len(p.temperatures), 3.0, dtype=np.float64),
+                    'avg_e_n_eff': np.full(len(p.temperatures), 10.0, dtype=np.float64),
+                    'susc_value': np.full(len(p.temperatures), 0.5, dtype=np.float64),
+                    'susc_err': np.full(len(p.temperatures), 0.05, dtype=np.float64),
+                    'susc_tau_int': np.full(len(p.temperatures), 3.0, dtype=np.float64),
+                    'susc_n_eff': np.full(len(p.temperatures), 10.0, dtype=np.float64),
+                    'spec_h_value': np.full(len(p.temperatures), 0.2, dtype=np.float64),
+                    'spec_h_err': np.full(len(p.temperatures), 0.03, dtype=np.float64),
+                    'spec_h_tau_int': np.full(len(p.temperatures), 3.0, dtype=np.float64),
+                    'spec_h_n_eff': np.full(len(p.temperatures), 10.0, dtype=np.float64),
                 }
                 for p in params_list
             ]
