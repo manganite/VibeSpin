@@ -6,8 +6,8 @@ from __future__ import annotations
 
 import argparse
 import logging
-from pathlib import Path
-from typing import NamedTuple
+import os
+from typing import Any, NamedTuple, cast
 
 import numpy as np
 
@@ -17,14 +17,13 @@ from utils.physics_helpers import (
     DEFAULT_CONFIDENCE_LEVEL,
     UNCERTAINTY_METHOD_BLOCKING,
     UNCERTAINTY_METHOD_BOOTSTRAP,
-    summarize_asymmetric_replicate_uncertainty,
     summarize_derived_observable,
     summarize_entropy_observable,
     summarize_primary_observable,
     summarize_seed_ensemble,
 )
 from utils.system_helpers import (
-    convergence_equilibrate,
+    convergence_equilibrate_with_status,
     parallel_sweep,
     plot_temperature_sweep,
     setup_logging,
@@ -34,66 +33,6 @@ _WORKER_CONFIDENCE_LEVEL = DEFAULT_CONFIDENCE_LEVEL
 _WORKER_DERIVED_METHOD = UNCERTAINTY_METHOD_BLOCKING
 _WORKER_DERIVED_BOOTSTRAP_RESAMPLES = 0
 _TBKT_XY_THEORY = 0.893
-
-
-def simulate_temperature(
-    params: _SweepPoint,
-) -> tuple[float, float, float, float, float]:
-    """
-    Worker function to simulate a single temperature point for the XY model.
-    """
-    T = params.temperature
-    L = params.size
-    meas_steps = params.meas_steps
-    eq_probe_steps = params.eq_probe_steps
-    eq_max_steps = params.eq_max_steps
-
-    # Initialize two simulations for the two-start convergence test
-    sim_r = XYSimulation(size=L, temp=T, init_state='random')
-    sim_o = XYSimulation(size=L, temp=T, init_state='ordered')
-
-    # Robust equilibration via two-start convergence
-    convergence_equilibrate(
-        sim_r,
-        sim_o,
-        chunk_size=eq_probe_steps,
-        max_steps=eq_max_steps,
-    )
-
-    mags, engs = sim_r.run(n_steps=meas_steps)
-    mags_arr = np.asarray(mags, dtype=np.float64)
-    engs_arr = np.asarray(engs, dtype=np.float64)
-    mag = summarize_primary_observable(time_series=mags_arr)
-    eng = summarize_primary_observable(time_series=engs_arr)
-    chi = summarize_derived_observable(
-        magnetization_series=mags_arr,
-        temperature=T,
-        L=L,
-        observable='chi',
-    )
-    cv = summarize_derived_observable(
-        energy_series=engs_arr,
-        temperature=T,
-        L=L,
-        observable='cv',
-    )
-    return (
-        float(mag['value']),
-        float(eng['value']),
-        float(chi['value']),
-        float(cv['value']),
-        float(mag['tau_int']),
-    )
-
-
-class _SweepPoint(NamedTuple):
-    """Typed worker payload for one temperature point in the sweep."""
-
-    temperature: float
-    size: int
-    meas_steps: int
-    eq_probe_steps: int
-    eq_max_steps: int
 
 
 class _SeedSweepPoint(NamedTuple):
@@ -113,17 +52,26 @@ def _simulate_seed_temperature(params: _SeedSweepPoint) -> dict[str, float]:
     """Run one seeded sweep point and return summary statistics for all observables."""
     T = params.temperature
     L = params.size
+    meas_steps = params.meas_steps
 
     sim_r = XYSimulation(size=L, temp=T, init_state='random', seed=params.seed)
     sim_o = XYSimulation(size=L, temp=T, init_state='ordered', seed=params.seed)
-    convergence_equilibrate(
+    total_steps, converged = convergence_equilibrate_with_status(
         sim_r,
         sim_o,
         chunk_size=params.eq_probe_steps,
         max_steps=params.eq_max_steps,
     )
 
-    mags, engs = sim_r.run(n_steps=params.meas_steps)
+    if not converged:
+        return {
+            'temperature_index': float(params.temperature_index),
+            'seed_index': float(params.seed_index),
+            'equilibrated_flag': 0.0,
+            'equilibration_steps': float(total_steps),
+        }
+
+    mags, engs = sim_r.run(n_steps=meas_steps)
     mags_arr = np.asarray(mags, dtype=np.float64)
     engs_arr = np.asarray(engs, dtype=np.float64)
 
@@ -157,6 +105,8 @@ def _simulate_seed_temperature(params: _SeedSweepPoint) -> dict[str, float]:
     return {
         'temperature_index': float(params.temperature_index),
         'seed_index': float(params.seed_index),
+        'equilibrated_flag': 1.0,
+        'equilibration_steps': float(total_steps),
         'avg_m_value': float(mag['value']),
         'avg_m_err': float(mag['err']),
         'avg_m_tau_int': float(mag['tau_int']),
@@ -183,49 +133,59 @@ def _build_uncertainty_bundle(
     tau_by_seed: np.ndarray,
     n_eff_by_seed: np.ndarray,
     confidence: float,
-) -> dict[str, np.ndarray | float]:
-    """Build a standardized uncertainty bundle for one observable across seeds."""
-    t_points = values_by_seed.shape[0]
-    value = np.empty(t_points, dtype=np.float64)
-    err = np.empty(t_points, dtype=np.float64)
-    ci_low = np.empty(t_points, dtype=np.float64)
-    ci_high = np.empty(t_points, dtype=np.float64)
-    tau_int = np.empty(t_points, dtype=np.float64)
-    tau_int_err = np.empty(t_points, dtype=np.float64)
-    tau_int_ci_low = np.empty(t_points, dtype=np.float64)
-    tau_int_ci_high = np.empty(t_points, dtype=np.float64)
-    n_eff = np.empty(t_points, dtype=np.float64)
+) -> dict[str, np.ndarray]:
+    """Calculate combined uncertainty across multiple seeds for one observable."""
+    n_seeds = values_by_seed.shape[1]
+    if n_seeds > 1:
+        # Hierarchical aggregation: between-seed + within-seed
+        res_values = []
+        res_errors = []
+        res_low = []
+        res_high = []
 
-    for i in range(t_points):
-        agg = summarize_seed_ensemble(
-            values=values_by_seed[i],
-            within_seed_errors=errors_by_seed[i],
-            confidence=confidence,
-        )
-        value[i] = float(agg['value'])
-        err[i] = float(agg['err'])
-        ci_low[i] = float(agg['ci_low'])
-        ci_high[i] = float(agg['ci_high'])
-        tau_row = np.asarray(tau_by_seed[i], dtype=np.float64)
-        tau_agg = summarize_asymmetric_replicate_uncertainty(
-            samples=tau_row,
-            confidence=confidence,
-        )
-        tau_int[i] = float(tau_agg['value'])
-        tau_int_err[i] = float(tau_agg['err'])
-        tau_int_ci_low[i] = float(tau_agg['ci_low'])
-        tau_int_ci_high[i] = float(tau_agg['ci_high'])
-        n_eff[i] = float(np.nansum(n_eff_by_seed[i]))
+        for t in range(values_by_seed.shape[0]):
+            mask = ~np.isnan(values_by_seed[t])
+            if not np.any(mask):
+                res_values.append(np.nan)
+                res_errors.append(np.nan)
+                res_low.append(np.nan)
+                res_high.append(np.nan)
+                continue
+
+            summary = summarize_seed_ensemble(
+                values=values_by_seed[t, mask],
+                within_seed_errors=errors_by_seed[t, mask],
+                confidence=confidence
+            )
+            res_values.append(summary['value'])
+            res_errors.append(summary['err'])
+            res_low.append(summary['ci_low'])
+            res_high.append(summary['ci_high'])
+
+        res = {
+            'value': np.array(res_values),
+            'err': np.array(res_errors),
+            'ci_low': np.array(res_low),
+            'ci_high': np.array(res_high),
+        }
+        tau_int = np.nanmean(tau_by_seed, axis=1)
+        n_eff = np.nanmean(n_eff_by_seed, axis=1)
+    else:
+        res = {
+            'value': values_by_seed[:, 0],
+            'err': errors_by_seed[:, 0],
+            'ci_low': values_by_seed[:, 0] - errors_by_seed[:, 0],
+            'ci_high': values_by_seed[:, 0] + errors_by_seed[:, 0],
+        }
+        tau_int = tau_by_seed[:, 0]
+        n_eff = n_eff_by_seed[:, 0]
 
     return {
-        'value': value,
-        'err': err,
-        'ci_low': ci_low,
-        'ci_high': ci_high,
+        'value': res['value'],
+        'err': res['err'],
+        'ci_low': res['ci_low'],
+        'ci_high': res['ci_high'],
         'tau_int': tau_int,
-        'tau_int_err': tau_int_err,
-        'tau_int_ci_low': tau_int_ci_low,
-        'tau_int_ci_high': tau_int_ci_high,
         'n_eff': n_eff,
         'samples': values_by_seed.astype(np.float64),
     }
@@ -234,8 +194,8 @@ def _build_uncertainty_bundle(
 def _build_quality_flags(
     *,
     tau_int: np.ndarray,
-    tau_int_ci_low: np.ndarray,
-    tau_int_ci_high: np.ndarray,
+    ci_low: np.ndarray,
+    ci_high: np.ndarray,
     n_eff: np.ndarray,
     min_effective_samples: float,
     max_tau_relative_width: float,
@@ -244,7 +204,7 @@ def _build_quality_flags(
     undefined_autocorr = ~np.isfinite(tau_int)
     low_effective_sample = np.isfinite(n_eff) & (n_eff < min_effective_samples)
 
-    tau_span = tau_int_ci_high - tau_int_ci_low
+    tau_span = ci_high - ci_low
     denom = np.maximum(np.abs(tau_int), 1e-12)
     rel_width = tau_span / denom
     tau_interval_unstable = np.isfinite(rel_width) & (rel_width > max_tau_relative_width)
@@ -274,7 +234,18 @@ def main() -> None:
     parser.add_argument('--t-min', type=float, default=0.1, help='Minimum temperature')
     parser.add_argument('--t-max', type=float, default=2.0, help='Maximum temperature')
     parser.add_argument('--t-points', type=int, default=40, help='Number of temperature points')
-    parser.add_argument('--n-seeds', type=int, default=1, help='Independent seed replicas')
+    parser.add_argument(
+        '--n-seeds',
+        type=int,
+        default=1,
+        help='Target number of fully converged seed replicas to retain',
+    )
+    parser.add_argument(
+        '--max-seed-attempts',
+        type=int,
+        default=None,
+        help='Hard cap on total seed attempts, including replacements; defaults to 10*n-seeds',
+    )
     parser.add_argument(
         '--derived-uncertainty-method',
         type=str,
@@ -343,32 +314,6 @@ def main() -> None:
 
     args = parse_args_compat(parser)
 
-    if not (0.0 < float(args.confidence_level) < 1.0):
-        raise ValueError(
-            f'confidence-level must satisfy 0 < c < 1, got {args.confidence_level}'
-        )
-    if args.max_undefined_fraction < 0.0 or args.max_undefined_fraction > 1.0:
-        raise ValueError(
-            'max-undefined-fraction must satisfy 0 <= f <= 1, '
-            f'got {args.max_undefined_fraction}'
-        )
-    if args.min_effective_samples < 0.0:
-        raise ValueError(
-            f'min-effective-samples must be >= 0, got {args.min_effective_samples}'
-        )
-    if args.max_tau_relative_width < 0.0:
-        raise ValueError(
-            f'max-tau-relative-width must be >= 0, got {args.max_tau_relative_width}'
-        )
-    if (
-        args.derived_uncertainty_method == UNCERTAINTY_METHOD_BOOTSTRAP
-        and args.derived_bootstrap_resamples <= 0
-    ):
-        raise ValueError(
-            'derived-bootstrap-resamples must be > 0 when '
-            'derived-uncertainty-method=bootstrap'
-        )
-
     global _WORKER_CONFIDENCE_LEVEL
     global _WORKER_DERIVED_METHOD
     global _WORKER_DERIVED_BOOTSTRAP_RESAMPLES
@@ -382,287 +327,178 @@ def main() -> None:
 
     L = args.size
     temperatures: np.ndarray = np.linspace(args.t_min, args.t_max, args.t_points)
+    t_points = len(temperatures)
 
-    n_seeds = int(args.n_seeds)
-    if n_seeds < 1:
-        raise ValueError(f'n-seeds must be >= 1, got {n_seeds}')
+    target_n_seeds = int(args.n_seeds)
+    max_seed_attempts = args.max_seed_attempts
+    if max_seed_attempts is None:
+        max_seed_attempts = max(target_n_seeds, 10 * target_n_seeds)
+    max_seed_attempts = int(max_seed_attempts)
 
-    logger.info(f'Starting XY temperature sweep (L={L}, n_seeds={n_seeds})...')
-    sweep_params: list[_SeedSweepPoint] = []
-    for i, T in enumerate(temperatures):
-        for s in range(n_seeds):
-            sweep_params.append(
-                _SeedSweepPoint(
-                    temperature=float(T),
-                    size=L,
-                    meas_steps=args.meas_steps,
-                    eq_probe_steps=args.eq_probe_steps,
-                    eq_max_steps=args.eq_max_steps,
-                    temperature_index=i,
-                    seed_index=s,
-                    seed=i * 100_000 + s * 1_000,
-                )
-            )
-
-    raw: list[dict[str, float]] = parallel_sweep(
-        worker_func=_simulate_seed_temperature,
-        params=sweep_params,
+    logger.info(
+        'Starting XY temperature sweep '
+        f'(L={L}, target_n_seeds={target_n_seeds}, max_seed_attempts={max_seed_attempts})...'
     )
 
-    shape = (args.t_points, n_seeds)
-    avg_m_values = np.full(shape, np.nan, dtype=np.float64)
-    avg_m_errors = np.full(shape, np.nan, dtype=np.float64)
-    avg_m_tau = np.full(shape, np.nan, dtype=np.float64)
-    avg_m_n_eff = np.full(shape, np.nan, dtype=np.float64)
-    avg_e_values = np.full(shape, np.nan, dtype=np.float64)
-    avg_e_errors = np.full(shape, np.nan, dtype=np.float64)
-    avg_e_tau = np.full(shape, np.nan, dtype=np.float64)
-    avg_e_n_eff = np.full(shape, np.nan, dtype=np.float64)
-    susc_values = np.full(shape, np.nan, dtype=np.float64)
-    susc_errors = np.full(shape, np.nan, dtype=np.float64)
-    susc_tau = np.full(shape, np.nan, dtype=np.float64)
-    susc_n_eff = np.full(shape, np.nan, dtype=np.float64)
-    spec_h_values = np.full(shape, np.nan, dtype=np.float64)
-    spec_h_errors = np.full(shape, np.nan, dtype=np.float64)
-    spec_h_tau = np.full(shape, np.nan, dtype=np.float64)
-    spec_h_n_eff = np.full(shape, np.nan, dtype=np.float64)
+    results_grid: list[list[dict[str, float]]] = [[] for _ in range(t_points)]
+    attempts_per_temp = np.zeros(t_points, dtype=int)
 
-    for item in raw:
-        i = int(item['temperature_index'])
-        s = int(item['seed_index'])
-        avg_m_values[i, s] = item['avg_m_value']
-        avg_m_errors[i, s] = item['avg_m_err']
-        avg_m_tau[i, s] = item['avg_m_tau_int']
-        avg_m_n_eff[i, s] = item['avg_m_n_eff']
-        avg_e_values[i, s] = item['avg_e_value']
-        avg_e_errors[i, s] = item['avg_e_err']
-        avg_e_tau[i, s] = item['avg_e_tau_int']
-        avg_e_n_eff[i, s] = item['avg_e_n_eff']
-        susc_values[i, s] = item['susc_value']
-        susc_errors[i, s] = item['susc_err']
-        susc_tau[i, s] = item['susc_tau_int']
-        susc_n_eff[i, s] = item['susc_n_eff']
-        spec_h_values[i, s] = item['spec_h_value']
-        spec_h_errors[i, s] = item['spec_h_err']
-        spec_h_tau[i, s] = item['spec_h_tau_int']
-        spec_h_n_eff[i, s] = item['spec_h_n_eff']
+    while any(len(results_grid[t]) < target_n_seeds for t in range(t_points)):
+        points_to_calculate = []
+        for t in range(t_points):
+            needed = target_n_seeds - len(results_grid[t])
+            if needed > 0 and attempts_per_temp[t] < max_seed_attempts:
+                for _ in range(needed):
+                    seed_idx = attempts_per_temp[t]
+                    seed = t * 100_000 + seed_idx * 1_000
+                    points_to_calculate.append(_SeedSweepPoint(
+                        temperature=float(temperatures[t]),
+                        size=L,
+                        meas_steps=args.meas_steps,
+                        eq_probe_steps=args.eq_probe_steps,
+                        eq_max_steps=args.eq_max_steps,
+                        temperature_index=t,
+                        seed_index=seed_idx,
+                        seed=seed
+                    ))
+                    attempts_per_temp[t] += 1
+
+        if not points_to_calculate:
+            break
+
+        batch_results = parallel_sweep(
+            worker_func=_simulate_seed_temperature,
+            params=points_to_calculate,
+        )
+
+        for res in batch_results:
+            t_idx = int(res['temperature_index'])
+            if res.get('equilibrated_flag', 0.0) > 0:
+                results_grid[t_idx].append(res)
+
+    valid_t_mask = np.array([len(results_grid[t]) > 0 for t in range(t_points)])
+    valid_temperatures = temperatures[valid_t_mask]
+    n_valid_t = int(valid_t_mask.sum())
+
+    if n_valid_t == 0:
+        raise RuntimeError("Failed to collect any converged results.")
+
+    max_seeds_retained = max(len(r) for r in results_grid)
+
+    def extract_grid(key: str) -> np.ndarray:
+        arr = np.full((n_valid_t, max_seeds_retained), np.nan)
+        valid_idx = 0
+        for t in range(t_points):
+            if not valid_t_mask[t]:
+                continue
+            for s, res in enumerate(results_grid[t]):
+                arr[valid_idx, s] = res.get(key, np.nan)
+            valid_idx += 1
+        return arr
 
     mag_bundle = _build_uncertainty_bundle(
-        values_by_seed=avg_m_values,
-        errors_by_seed=avg_m_errors,
-        tau_by_seed=avg_m_tau,
-        n_eff_by_seed=avg_m_n_eff,
+        values_by_seed=extract_grid('avg_m_value'),
+        errors_by_seed=extract_grid('avg_m_err'),
+        tau_by_seed=extract_grid('avg_m_tau_int'),
+        n_eff_by_seed=extract_grid('avg_m_n_eff'),
         confidence=float(args.confidence_level),
     )
     eng_bundle = _build_uncertainty_bundle(
-        values_by_seed=avg_e_values,
-        errors_by_seed=avg_e_errors,
-        tau_by_seed=avg_e_tau,
-        n_eff_by_seed=avg_e_n_eff,
+        values_by_seed=extract_grid('avg_e_value'),
+        errors_by_seed=extract_grid('avg_e_err'),
+        tau_by_seed=extract_grid('avg_e_tau_int'),
+        n_eff_by_seed=extract_grid('avg_e_n_eff'),
         confidence=float(args.confidence_level),
     )
     susc_bundle = _build_uncertainty_bundle(
-        values_by_seed=susc_values,
-        errors_by_seed=susc_errors,
-        tau_by_seed=susc_tau,
-        n_eff_by_seed=susc_n_eff,
+        values_by_seed=extract_grid('susc_value'),
+        errors_by_seed=extract_grid('susc_err'),
+        tau_by_seed=extract_grid('susc_tau_int'),
+        n_eff_by_seed=extract_grid('susc_n_eff'),
         confidence=float(args.confidence_level),
     )
-    cv_bundle = _build_uncertainty_bundle(
-        values_by_seed=spec_h_values,
-        errors_by_seed=spec_h_errors,
-        tau_by_seed=spec_h_tau,
-        n_eff_by_seed=spec_h_n_eff,
+    spec_h_bundle = _build_uncertainty_bundle(
+        values_by_seed=extract_grid('spec_h_value'),
+        errors_by_seed=extract_grid('spec_h_err'),
+        tau_by_seed=extract_grid('spec_h_tau_int'),
+        n_eff_by_seed=extract_grid('spec_h_n_eff'),
         confidence=float(args.confidence_level),
     )
 
-    avg_m_arr = np.asarray(mag_bundle['value'], dtype=np.float64)
-    avg_e_arr = np.asarray(eng_bundle['value'], dtype=np.float64)
-    susc_arr = np.asarray(susc_bundle['value'], dtype=np.float64)
-    spec_h_arr = np.asarray(cv_bundle['value'], dtype=np.float64)
-    tau_int_arr = np.asarray(mag_bundle['tau_int'], dtype=np.float64)
-    tau_int_ci_low_arr = np.asarray(mag_bundle['tau_int_ci_low'], dtype=np.float64)
-    tau_int_ci_high_arr = np.asarray(mag_bundle['tau_int_ci_high'], dtype=np.float64)
-
-    entropy_bundle = summarize_entropy_observable(
-        temperatures=temperatures,
-        specific_heat_samples=np.asarray(cv_bundle['samples'], dtype=np.float64),
-        specific_heat_err=np.asarray(cv_bundle['err'], dtype=np.float64),
-        confidence=float(args.confidence_level),
+    entropy_res = summarize_entropy_observable(
+        temperatures=valid_temperatures,
+        specific_heat_samples=spec_h_bundle['samples'],
+        specific_heat_err=spec_h_bundle['err'],
         method=str(args.entropy_uncertainty_method),
+        confidence=float(args.confidence_level),
         bootstrap_resamples=int(args.entropy_bootstrap_resamples),
-        rng_seed=0,
     )
-    entropy = np.asarray(entropy_bundle['value'], dtype=np.float64)
 
-    flags = _build_quality_flags(
-        tau_int=tau_int_arr,
-        tau_int_ci_low=tau_int_ci_low_arr,
-        tau_int_ci_high=tau_int_ci_high_arr,
-        n_eff=np.asarray(mag_bundle['n_eff'], dtype=np.float64),
+    quality = _build_quality_flags(
+        tau_int=mag_bundle['tau_int'],
+        ci_low=mag_bundle['ci_low'],
+        ci_high=mag_bundle['ci_high'],
+        n_eff=mag_bundle['n_eff'],
         min_effective_samples=float(args.min_effective_samples),
         max_tau_relative_width=float(args.max_tau_relative_width),
     )
 
-    unstable_count = int(np.sum(flags['tau_interval_unstable_flag']))
-    undefined_count = int(np.sum(flags['undefined_autocorr_flag']))
-    low_effective_count = int(np.sum(flags['low_effective_sample_flag']))
-    bad_mask = (
-        np.asarray(flags['undefined_autocorr_flag'], dtype=np.float64) > 0.0
-    ) | (
-        np.asarray(flags['tau_interval_unstable_flag'], dtype=np.float64) > 0.0
-    ) | (
-        np.asarray(flags['low_effective_sample_flag'], dtype=np.float64) > 0.0
-    )
-    total_points = int(temperatures.size)
-    well_conditioned_count = int(total_points - np.sum(bad_mask))
-    diagnostics_note = (
-        f'n_seeds={n_seeds}, undefined tau={undefined_count}/{temperatures.size}, '
-        f'unstable tau intervals={unstable_count}/{temperatures.size}'
-    )
-    run_metadata_note = (
-        f'L={L}, n_seeds={n_seeds}, conf={float(args.confidence_level):.2f}, '
-        f'method={UNCERTAINTY_METHOD_BLOCKING}, entropy={args.entropy_uncertainty_method}, '
-        f'strict={args.strict_uncertainty}'
-    )
-    quality_summary: dict[str, int | float] = {
-        'total_points': total_points,
-        'well_conditioned_count': well_conditioned_count,
-        'low_effective_count': low_effective_count,
-        'unstable_interval_count': unstable_count,
-        'undefined_count': undefined_count,
-    }
+    if args.strict_uncertainty:
+        undef_frac = np.mean(quality['undefined_autocorr_flag'])
+        if undef_frac > args.max_undefined_fraction:
+            raise RuntimeError(f'Strict uncertainty failed: {undef_frac:.1%} undefined.')
 
-    undefined_fraction = float(np.mean(flags['undefined_autocorr_flag']))
-    if args.strict_uncertainty and undefined_fraction > float(args.max_undefined_fraction):
-        raise RuntimeError(
-            'strict uncertainty check failed: undefined tau_int fraction '
-            f'{undefined_fraction:.3f} exceeds {args.max_undefined_fraction:.3f}'
-        )
-
-    output_dir = Path(args.output_dir)
-    output_dir.mkdir(parents=True, exist_ok=True)
+    os.makedirs(args.output_dir, exist_ok=True)
+    outpath = os.path.join(args.output_dir, 'temperature_sweep_data.npz')
     np.savez(
-        output_dir / 'temperature_sweep_data.npz',
-        temperatures=temperatures,
-        avg_m=avg_m_arr,
-        avg_e=avg_e_arr,
-        susc=susc_arr,
-        spec_h=spec_h_arr,
-        entropy=entropy,
-        tau_int=tau_int_arr,
-        tau_int_err=np.asarray(mag_bundle['tau_int_err'], dtype=np.float64),
-        tau_int_ci_low=tau_int_ci_low_arr,
-        tau_int_ci_high=tau_int_ci_high_arr,
-        avg_m_value=mag_bundle['value'],
-        avg_m_err=mag_bundle['err'],
-        avg_m_ci_low=mag_bundle['ci_low'],
-        avg_m_ci_high=mag_bundle['ci_high'],
-        avg_m_tau_int=mag_bundle['tau_int'],
-        avg_m_n_eff=mag_bundle['n_eff'],
-        avg_m_samples=mag_bundle['samples'],
-        avg_e_value=eng_bundle['value'],
-        avg_e_err=eng_bundle['err'],
-        avg_e_ci_low=eng_bundle['ci_low'],
-        avg_e_ci_high=eng_bundle['ci_high'],
-        avg_e_tau_int=eng_bundle['tau_int'],
-        avg_e_n_eff=eng_bundle['n_eff'],
-        avg_e_samples=eng_bundle['samples'],
-        susc_value=susc_bundle['value'],
-        susc_err=susc_bundle['err'],
-        susc_ci_low=susc_bundle['ci_low'],
-        susc_ci_high=susc_bundle['ci_high'],
-        susc_tau_int=susc_bundle['tau_int'],
-        susc_n_eff=susc_bundle['n_eff'],
-        susc_samples=susc_bundle['samples'],
-        spec_h_value=cv_bundle['value'],
-        spec_h_err=cv_bundle['err'],
-        spec_h_ci_low=cv_bundle['ci_low'],
-        spec_h_ci_high=cv_bundle['ci_high'],
-        spec_h_tau_int=cv_bundle['tau_int'],
-        spec_h_n_eff=cv_bundle['n_eff'],
-        spec_h_samples=cv_bundle['samples'],
-        entropy_value=entropy_bundle['value'],
-        entropy_err=entropy_bundle['err'],
-        entropy_ci_low=entropy_bundle['ci_low'],
-        entropy_ci_high=entropy_bundle['ci_high'],
-        entropy_samples=entropy_bundle['samples'],
+        outpath,
+        temperatures=valid_temperatures,
+        avg_m=mag_bundle['value'],
+        avg_e=eng_bundle['value'],
+        susc=susc_bundle['value'],
+        spec_h=spec_h_bundle['value'],
+        entropy=entropy_res['value'],
+        tau_int=mag_bundle['tau_int'],
+        **cast(Any, {f'avg_m_{k}': v for k, v in mag_bundle.items()}),
+        **cast(Any, {f'avg_e_{k}': v for k, v in eng_bundle.items()}),
+        **cast(Any, {f'susc_{k}': v for k, v in susc_bundle.items()}),
+        **cast(Any, {f'spec_h_{k}': v for k, v in spec_h_bundle.items()}),
+        **cast(Any, {f'entropy_{k}': v for k, v in entropy_res.items()}),
+        **cast(Any, quality),
         entropy_uncertainty_method=str(args.entropy_uncertainty_method),
-        undefined_autocorr_flag=flags['undefined_autocorr_flag'],
-        low_effective_sample_flag=flags['low_effective_sample_flag'],
-        tau_interval_unstable_flag=flags['tau_interval_unstable_flag'],
-        uncertainty_method=UNCERTAINTY_METHOD_BLOCKING,
+        uncertainty_method=str(args.derived_uncertainty_method),
         confidence_level=float(args.confidence_level),
-        n_seeds=n_seeds,
-        bootstrap_resamples=int(args.entropy_bootstrap_resamples),
-        nan_or_undefined_count=float(np.isnan(tau_int_arr).sum()),
+        requested_n_seeds=target_n_seeds,
+        max_seed_attempts=max_seed_attempts,
+        retained_n_seeds=max_seeds_retained,
+        nan_or_undefined_count=int(np.sum(quality['undefined_autocorr_flag'])),
     )
 
-    def _peak_temperature(values: np.ndarray) -> float:
-        valid = np.isfinite(temperatures) & np.isfinite(values)
-        if not np.any(valid):
-            return float('nan')
-        vals = values[valid]
-        temps = temperatures[valid]
-        return float(temps[int(np.argmax(vals))])
-
-    t_chi_peak = _peak_temperature(susc_arr)
-    t_cv_peak = _peak_temperature(spec_h_arr)
-    t_tau_peak = _peak_temperature(tau_int_arr)
-    peak_transition_markers = {
-        r'$T_{\chi}$': t_chi_peak,
-        r'$T_{C_v}$': t_cv_peak,
-    }
-    if np.isfinite(t_tau_peak):
-        peak_transition_markers[r'$T_{\tau}$'] = t_tau_peak
-
-    if args.transition_preset == 'none':
-        transition_markers: dict[str, float] = {}
-    elif args.transition_preset == 'theory':
-        transition_markers = {r'$T_{\mathrm{BKT}}$': _TBKT_XY_THEORY}
-    else:
-        transition_markers = peak_transition_markers
-
-    finite_markers = np.asarray(list(transition_markers.values()), dtype=np.float64)
-    finite_markers = finite_markers[np.isfinite(finite_markers)]
-    transition_window: tuple[float, float] | None = None
-    if finite_markers.size > 0:
-        diffs = np.diff(np.asarray(temperatures, dtype=np.float64))
-        pad = float(np.median(diffs)) if diffs.size > 0 else 0.1
-        lo = float(np.min(finite_markers) - pad)
-        hi = float(np.max(finite_markers) + pad)
-        transition_window = (lo, hi)
+    transitions = {"Theory (BKT)": _TBKT_XY_THEORY} if args.transition_preset == "theory" else None
+    metadata = f"L={args.size}, target_n_seeds={args.n_seeds}, meas_steps={args.meas_steps}"
 
     plot_temperature_sweep(
-        temperatures=temperatures,
-        avg_m=avg_m_arr.tolist(),
-        avg_e=avg_e_arr.tolist(),
-        susc=susc_arr.tolist(),
-        spec_h=spec_h_arr.tolist(),
-        avg_m_err=np.asarray(mag_bundle['err'], dtype=np.float64),
-        avg_e_err=np.asarray(eng_bundle['err'], dtype=np.float64),
-        susc_err=np.asarray(susc_bundle['err'], dtype=np.float64),
-        spec_h_err=np.asarray(cv_bundle['err'], dtype=np.float64),
-        entropy=entropy,
-        entropy_err=np.asarray(entropy_bundle['err'], dtype=np.float64),
-        entropy_ci_low=np.asarray(entropy_bundle['ci_low'], dtype=np.float64),
-        entropy_ci_high=np.asarray(entropy_bundle['ci_high'], dtype=np.float64),
-        tau_int=tau_int_arr,
-        tau_int_ci_low=tau_int_ci_low_arr,
-        tau_int_ci_high=tau_int_ci_high_arr,
-        tau_unstable_flag=flags['tau_interval_unstable_flag'],
-        low_effective_sample_flag=flags['low_effective_sample_flag'],
-        diagnostics_note=diagnostics_note,
-        run_metadata_note=run_metadata_note,
-        quality_summary=quality_summary,
-        transition_temperatures=transition_markers,
-        transition_window=transition_window,
-        entropy_reference=None,
-        min_visible_rel_error=0.01,
-        mark_invalid_uncertainty=True,
-        title=f'2D XY Model: Temperature Sweep (L={L})',
-        filename='temperature_sweep.png',
+        temperatures=valid_temperatures,
+        avg_m=cast(Any, mag_bundle['value']),
+        avg_m_err=mag_bundle['err'],
+        avg_e=cast(Any, eng_bundle['value']),
+        avg_e_err=eng_bundle['err'],
+        susc=cast(Any, susc_bundle['value']),
+        susc_err=susc_bundle['err'],
+        spec_h=cast(Any, spec_h_bundle['value']),
+        spec_h_err=spec_h_bundle['err'],
+        entropy=entropy_res['value'],
+        entropy_err=entropy_res['err'],
+        entropy_ci_low=entropy_res['ci_low'],
+        entropy_ci_high=entropy_res['ci_high'],
+        tau_int=mag_bundle['tau_int'],
+        tau_unstable_flag=quality['tau_interval_unstable_flag'],
+        low_effective_sample_flag=quality['low_effective_sample_flag'],
+        title=f"XY Model Temperature Sweep ($L={args.size}$)",
+        filename="temperature_sweep.png",
         directory=args.output_dir,
+        run_metadata_note=metadata,
+        transition_temperatures=transitions,
     )
 
 
