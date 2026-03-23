@@ -22,6 +22,7 @@ benchmarks
 wolff_efficiency
 dynamic_critical_exponents
 ising_relaxation_and_autocorrelation_analysis
+ising_temperature_sweep
 ```
 
 ```{toctree}

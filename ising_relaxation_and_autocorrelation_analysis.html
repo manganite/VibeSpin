@@ -24,7 +24,7 @@
     <script src="_static/js/theme.js"></script>
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
-    <link rel="next" title="vibespin" href="api/modules.html" />
+    <link rel="next" title="Ising Model: Temperature Sweep and Critical Behavior" href="ising_temperature_sweep.html" />
     <link rel="prev" title="Dynamical Critical Exponents in the 2D Ising Model" href="dynamic_critical_exponents.html" /> 
 </head>
 
@@ -79,6 +79,7 @@
 <li class="toctree-l2"><a class="reference internal" href="#Bibliography">Bibliography</a></li>
 </ul>
 </li>
+<li class="toctree-l1"><a class="reference internal" href="ising_temperature_sweep.html">Ising Model: Temperature Sweep and Critical Behavior</a></li>
 </ul>
 <p class="caption" role="heading"><span class="caption-text">API Reference:</span></p>
 <ul>
@@ -323,11 +324,11 @@ Loaded cached trajectories from ../results/ising/ising_autocorrelation_multiseed
 <p>Near <span class="math notranslate nohighlight">\(T_c\)</span>, one-trajectory criteria are noisy and can misclassify equilibration. We therefore estimate relaxation with a <strong>two-start convergence test</strong> for every seed:</p>
 <ol class="arabic simple">
 <li><p>Run the same (temperature, update, seed) from two initial states: a random state and a fully ordered state.</p></li>
-<li><p>Smooth both <span class="math notranslate nohighlight">\(|M|\)</span> traces with a short moving average.</p></li>
-<li><p>Estimate an equilibrium scale from the second half of both traces combined.</p></li>
-<li><p>Define <span class="math notranslate nohighlight">\(\hat{\tau}_\text{relax}\)</span> as the first time where both smoothed traces are simultaneously inside the same equilibrium band and remain so for a sustained dwell window.</p></li>
+<li><p>Smooth both <span class="math notranslate nohighlight">\(|M|\)</span> traces with a moving average.</p></li>
+<li><p>Estimate tail statistics from the second half of each smoothed trace separately: mean and standard deviation for each trajectory.</p></li>
+<li><p>Define <span class="math notranslate nohighlight">\(\hat{\tau}_\text{relax}\)</span> as the first time where the random-start trace lies within <span class="math notranslate nohighlight">\(\pm k\)</span> standard deviations of the ordered-start tail mean and the ordered-start trace simultaneously lies within <span class="math notranslate nohighlight">\(\pm k\)</span> standard deviations of the random-start tail mean, sustained over a dwell window. A sigma floor prevents band collapse for near-flat traces.</p></li>
 </ol>
-<p>This measures when the dynamics has effectively forgotten the initial condition, which is the operational definition we want for thermalization.</p>
+<p>This mutual cross-band test is the operational definition of thermalization: neither trace can be declared equilibrated until it has entered the statistical range of the other.</p>
 <section id="Visual-Example-of-Convergence">
 <h3>Visual Example of Convergence<a class="headerlink" href="#Visual-Example-of-Convergence" title="Link to this heading"></a></h3>
 <p>Here is a visual demonstration of the two-start relaxation process for a single configuration at the critical point <span class="math notranslate nohighlight">\(T \approx T_c\)</span> using random updates. This combination represents a worst-case scenario where critical slowing down and the inefficiency of random-site selection create a long relaxation transient.</p>
@@ -344,9 +345,10 @@ Loaded cached trajectories from ../results/ising/ising_autocorrelation_multiseed
 
 <span class="c1"># Match the analysis parameters used below</span>
 <span class="n">TOLERANCE_K_DEMO</span> <span class="o">=</span> <span class="mf">1.0</span>
-<span class="n">SMOOTH_WINDOW_DEMO</span> <span class="o">=</span> <span class="mi">30</span>
-<span class="n">DWELL_WINDOW_DEMO</span> <span class="o">=</span> <span class="mi">30</span>
+<span class="n">SMOOTH_WINDOW_DEMO</span> <span class="o">=</span> <span class="mi">60</span>
+<span class="n">DWELL_WINDOW_DEMO</span> <span class="o">=</span> <span class="mi">60</span>
 <span class="n">MIN_FRACTION_DEMO</span> <span class="o">=</span> <span class="mf">0.85</span>
+<span class="n">SIGMA_FLOOR_DEMO</span> <span class="o">=</span> <span class="mf">0.02</span>
 
 <span class="c1"># Extract raw traces and remove potential NaNs padding</span>
 <span class="n">raw_r</span> <span class="o">=</span> <span class="n">_valid_prefix</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">magnetization_traces_full</span><span class="p">[</span><span class="n">idx_t</span><span class="p">,</span> <span class="n">idx_u</span><span class="p">,</span> <span class="n">idx_s</span><span class="p">,</span> <span class="mi">0</span><span class="p">]))</span>
@@ -362,7 +364,8 @@ Loaded cached trajectories from ../results/ising/ising_autocorrelation_multiseed
     <span class="n">k</span><span class="o">=</span><span class="n">TOLERANCE_K_DEMO</span><span class="p">,</span>
     <span class="n">smooth_window</span><span class="o">=</span><span class="n">SMOOTH_WINDOW_DEMO</span><span class="p">,</span>
     <span class="n">dwell_window</span><span class="o">=</span><span class="n">DWELL_WINDOW_DEMO</span><span class="p">,</span>
-    <span class="n">min_fraction_inside</span><span class="o">=</span><span class="n">MIN_FRACTION_DEMO</span>
+    <span class="n">min_fraction_inside</span><span class="o">=</span><span class="n">MIN_FRACTION_DEMO</span><span class="p">,</span>
+    <span class="n">sigma_floor</span><span class="o">=</span><span class="n">SIGMA_FLOOR_DEMO</span><span class="p">,</span>
 <span class="p">)</span>
 
 <span class="c1"># Recreate inner smoothing logic for plotting to match algorithm precisely</span>
@@ -372,12 +375,16 @@ Loaded cached trajectories from ../results/ising/ising_autocorrelation_multiseed
 <span class="n">sm_r</span> <span class="o">=</span> <span class="n">sm_r</span><span class="p">[:</span><span class="n">m_points</span><span class="p">]</span>
 <span class="n">sm_o</span> <span class="o">=</span> <span class="n">sm_o</span><span class="p">[:</span><span class="n">m_points</span><span class="p">]</span>
 
-<span class="c1"># Equilibrium band estimation from the tail of the smoothed traces</span>
+<span class="c1"># Mutual cross-band criterion: separate tail statistics for each trace</span>
 <span class="n">half</span> <span class="o">=</span> <span class="n">m_points</span> <span class="o">//</span> <span class="mi">2</span>
-<span class="n">tail_combined</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">concatenate</span><span class="p">([</span><span class="n">sm_r</span><span class="p">[</span><span class="n">half</span><span class="p">:],</span> <span class="n">sm_o</span><span class="p">[</span><span class="n">half</span><span class="p">:]])</span>
-<span class="n">mean_eq</span> <span class="o">=</span> <span class="n">tail_combined</span><span class="o">.</span><span class="n">mean</span><span class="p">()</span>
-<span class="n">sigma_eq</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="n">tail_combined</span><span class="o">.</span><span class="n">std</span><span class="p">(),</span> <span class="mf">1e-12</span><span class="p">)</span>
-<span class="n">band</span> <span class="o">=</span> <span class="n">TOLERANCE_K_DEMO</span> <span class="o">*</span> <span class="n">sigma_eq</span>
+<span class="n">tail_r</span> <span class="o">=</span> <span class="n">sm_r</span><span class="p">[</span><span class="n">half</span><span class="p">:]</span>
+<span class="n">tail_o</span> <span class="o">=</span> <span class="n">sm_o</span><span class="p">[</span><span class="n">half</span><span class="p">:]</span>
+<span class="n">mu_r</span> <span class="o">=</span> <span class="n">tail_r</span><span class="o">.</span><span class="n">mean</span><span class="p">()</span>
+<span class="n">mu_o</span> <span class="o">=</span> <span class="n">tail_o</span><span class="o">.</span><span class="n">mean</span><span class="p">()</span>
+<span class="n">sig_r</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="nb">float</span><span class="p">(</span><span class="n">tail_r</span><span class="o">.</span><span class="n">std</span><span class="p">()),</span> <span class="n">SIGMA_FLOOR_DEMO</span><span class="p">)</span>
+<span class="n">sig_o</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="nb">float</span><span class="p">(</span><span class="n">tail_o</span><span class="o">.</span><span class="n">std</span><span class="p">()),</span> <span class="n">SIGMA_FLOOR_DEMO</span><span class="p">)</span>
+<span class="n">band_r</span> <span class="o">=</span> <span class="n">TOLERANCE_K_DEMO</span> <span class="o">*</span> <span class="n">sig_r</span>  <span class="c1"># ordered must enter random&#39;s band</span>
+<span class="n">band_o</span> <span class="o">=</span> <span class="n">TOLERANCE_K_DEMO</span> <span class="o">*</span> <span class="n">sig_o</span>  <span class="c1"># random must enter ordered&#39;s band</span>
 
 <span class="c1"># Plot</span>
 <span class="n">fig</span><span class="p">,</span> <span class="n">ax</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">10</span><span class="p">,</span> <span class="mi">5</span><span class="p">))</span>
@@ -394,9 +401,13 @@ Loaded cached trajectories from ../results/ising/ising_autocorrelation_multiseed
 <span class="n">ax</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">steps_sm</span><span class="p">,</span> <span class="n">sm_r</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s1">&#39;#1f77b4&#39;</span><span class="p">,</span> <span class="n">linewidth</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s1">&#39;Random start (smoothed)&#39;</span><span class="p">)</span>
 <span class="n">ax</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">steps_sm</span><span class="p">,</span> <span class="n">sm_o</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s1">&#39;#ff7f0e&#39;</span><span class="p">,</span> <span class="n">linewidth</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s1">&#39;Ordered start (smoothed)&#39;</span><span class="p">)</span>
 
-<span class="c1"># Equilibrium band</span>
-<span class="n">ax</span><span class="o">.</span><span class="n">axhline</span><span class="p">(</span><span class="n">mean_eq</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s1">&#39;k&#39;</span><span class="p">,</span> <span class="n">linestyle</span><span class="o">=</span><span class="s1">&#39;--&#39;</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.6</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s1">&#39;Equilibrium Mean&#39;</span><span class="p">)</span>
-<span class="n">ax</span><span class="o">.</span><span class="n">axhspan</span><span class="p">(</span><span class="n">mean_eq</span> <span class="o">-</span> <span class="n">band</span><span class="p">,</span> <span class="n">mean_eq</span> <span class="o">+</span> <span class="n">band</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s1">&#39;gray&#39;</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.2</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="sa">r</span><span class="s1">&#39;Tolerance Band ($\pm 1\sigma$)&#39;</span><span class="p">)</span>
+<span class="c1"># Ordered-start band (random must enter): centred on ordered tail mean</span>
+<span class="n">ax</span><span class="o">.</span><span class="n">axhline</span><span class="p">(</span><span class="n">mu_o</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s1">&#39;#ff7f0e&#39;</span><span class="p">,</span> <span class="n">linestyle</span><span class="o">=</span><span class="s1">&#39;--&#39;</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.7</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="sa">f</span><span class="s1">&#39;Ordered tail mean (</span><span class="si">{</span><span class="n">mu_o</span><span class="si">:</span><span class="s1">.3f</span><span class="si">}</span><span class="s1">)&#39;</span><span class="p">)</span>
+<span class="n">ax</span><span class="o">.</span><span class="n">axhspan</span><span class="p">(</span><span class="n">mu_o</span> <span class="o">-</span> <span class="n">band_o</span><span class="p">,</span> <span class="n">mu_o</span> <span class="o">+</span> <span class="n">band_o</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s1">&#39;#ff7f0e&#39;</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.12</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="sa">r</span><span class="s1">&#39;Ordered band ($\pm k\sigma_o$)&#39;</span><span class="p">)</span>
+
+<span class="c1"># Random-start band (ordered must enter): centred on random tail mean</span>
+<span class="n">ax</span><span class="o">.</span><span class="n">axhline</span><span class="p">(</span><span class="n">mu_r</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s1">&#39;#1f77b4&#39;</span><span class="p">,</span> <span class="n">linestyle</span><span class="o">=</span><span class="s1">&#39;--&#39;</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.7</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="sa">f</span><span class="s1">&#39;Random tail mean (</span><span class="si">{</span><span class="n">mu_r</span><span class="si">:</span><span class="s1">.3f</span><span class="si">}</span><span class="s1">)&#39;</span><span class="p">)</span>
+<span class="n">ax</span><span class="o">.</span><span class="n">axhspan</span><span class="p">(</span><span class="n">mu_r</span> <span class="o">-</span> <span class="n">band_r</span><span class="p">,</span> <span class="n">mu_r</span> <span class="o">+</span> <span class="n">band_r</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s1">&#39;#1f77b4&#39;</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.12</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="sa">r</span><span class="s1">&#39;Random band ($\pm k\sigma_r$)&#39;</span><span class="p">)</span>
 
 <span class="c1"># Relaxation point indicator</span>
 <span class="k">if</span> <span class="n">tau_demo</span> <span class="o">&lt;</span> <span class="n">m_points</span><span class="p">:</span>
@@ -409,7 +420,7 @@ Loaded cached trajectories from ../results/ising/ising_autocorrelation_multiseed
 <span class="n">ax</span><span class="o">.</span><span class="n">set_xlabel</span><span class="p">(</span><span class="s1">&#39;MC Steps&#39;</span><span class="p">,</span> <span class="n">fontsize</span><span class="o">=</span><span class="mi">11</span><span class="p">)</span>
 <span class="n">ax</span><span class="o">.</span><span class="n">set_ylabel</span><span class="p">(</span><span class="sa">r</span><span class="s1">&#39;Absolute Magnetization $|M|$&#39;</span><span class="p">,</span> <span class="n">fontsize</span><span class="o">=</span><span class="mi">11</span><span class="p">)</span>
 <span class="n">ax</span><span class="o">.</span><span class="n">set_title</span><span class="p">(</span><span class="sa">r</span><span class="s2">&quot;Two-Start Convergence Example (random updates, $T \approx T_c$)&quot;</span><span class="p">,</span> <span class="n">fontsize</span><span class="o">=</span><span class="mi">12</span><span class="p">)</span>
-<span class="n">ax</span><span class="o">.</span><span class="n">legend</span><span class="p">(</span><span class="n">loc</span><span class="o">=</span><span class="s1">&#39;lower right&#39;</span><span class="p">,</span> <span class="n">fontsize</span><span class="o">=</span><span class="mi">10</span><span class="p">)</span>
+<span class="n">ax</span><span class="o">.</span><span class="n">legend</span><span class="p">(</span><span class="n">loc</span><span class="o">=</span><span class="s1">&#39;lower right&#39;</span><span class="p">,</span> <span class="n">fontsize</span><span class="o">=</span><span class="mi">9</span><span class="p">)</span>
 <span class="n">ax</span><span class="o">.</span><span class="n">grid</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="s1">&#39;y&#39;</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.3</span><span class="p">)</span>
 <span class="n">fig</span><span class="o">.</span><span class="n">tight_layout</span><span class="p">()</span>
 <span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
@@ -423,15 +434,17 @@ Loaded cached trajectories from ../results/ising/ising_autocorrelation_multiseed
 <img alt="_images/ising_relaxation_and_autocorrelation_analysis_8_0.png" src="_images/ising_relaxation_and_autocorrelation_analysis_8_0.png" />
 </div>
 </div>
-<p>The plot demonstrates how the random (hot) start and the ordered (cold) start converge onto an identical thermal average band. The green dashed line marks the threshold where both smoothed trajectories conform simultaneously to the equilibrium properties derived from the simulation tail. This step identifies when the system’s kinetic memory of its initial state has decayed entirely.</p>
+<p>The plot shows how the random (hot) start and the ordered (cold) start converge onto the same thermal average. The orange band marks the region that the random-start trace must enter (centred on the ordered-start tail mean); the blue band marks the region the ordered-start trace must enter (centred on the random-start tail mean). The green dashed line marks <span class="math notranslate nohighlight">\(\hat{\tau}_\text{relax}\)</span>, the first step at which both conditions are jointly satisfied and sustained. This is when the system’s
+kinetic memory of its initial state has decayed.</p>
 <div class="nbinput docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[5]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">TOLERANCE_K</span> <span class="o">=</span> <span class="mf">1.0</span>
-<span class="n">SMOOTH_WINDOW</span> <span class="o">=</span> <span class="mi">30</span>
-<span class="n">DWELL_WINDOW</span> <span class="o">=</span> <span class="mi">30</span>
+<span class="n">SMOOTH_WINDOW</span> <span class="o">=</span> <span class="mi">60</span>
+<span class="n">DWELL_WINDOW</span> <span class="o">=</span> <span class="mi">60</span>
 <span class="n">MIN_FRACTION_INSIDE</span> <span class="o">=</span> <span class="mf">0.85</span>
+<span class="n">SIGMA_FLOOR</span> <span class="o">=</span> <span class="mf">0.02</span>
 
 <span class="n">tau_samples</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">empty</span><span class="p">((</span><span class="nb">len</span><span class="p">(</span><span class="n">TEMPS</span><span class="p">),</span> <span class="nb">len</span><span class="p">(</span><span class="n">UPDATES</span><span class="p">),</span> <span class="nb">len</span><span class="p">(</span><span class="n">SEEDS</span><span class="p">)),</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">float</span><span class="p">)</span>
 
@@ -447,6 +460,7 @@ Loaded cached trajectories from ../results/ising/ising_autocorrelation_multiseed
                 <span class="n">smooth_window</span><span class="o">=</span><span class="n">SMOOTH_WINDOW</span><span class="p">,</span>
                 <span class="n">dwell_window</span><span class="o">=</span><span class="n">DWELL_WINDOW</span><span class="p">,</span>
                 <span class="n">min_fraction_inside</span><span class="o">=</span><span class="n">MIN_FRACTION_INSIDE</span><span class="p">,</span>
+                <span class="n">sigma_floor</span><span class="o">=</span><span class="n">SIGMA_FLOOR</span><span class="p">,</span>
             <span class="p">)</span>
 
 <span class="c1"># Robust central tendency and uncertainty across seeds</span>
@@ -471,7 +485,8 @@ Loaded cached trajectories from ../results/ising/ising_autocorrelation_multiseed
 
 <span class="nb">print</span><span class="p">(</span>
     <span class="sa">f</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">(seeds = </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">SEEDS</span><span class="p">)</span><span class="si">}</span><span class="s2">, k = </span><span class="si">{</span><span class="n">TOLERANCE_K</span><span class="si">}</span><span class="s2">, smooth = </span><span class="si">{</span><span class="n">SMOOTH_WINDOW</span><span class="si">}</span><span class="s2">, &quot;</span>
-    <span class="sa">f</span><span class="s2">&quot;dwell = </span><span class="si">{</span><span class="n">DWELL_WINDOW</span><span class="si">}</span><span class="s2">, min_fraction_inside = </span><span class="si">{</span><span class="n">MIN_FRACTION_INSIDE</span><span class="si">:</span><span class="s2">.2f</span><span class="si">}</span><span class="s2">, L = </span><span class="si">{</span><span class="n">L</span><span class="si">}</span><span class="s2">)&quot;</span>
+    <span class="sa">f</span><span class="s2">&quot;dwell = </span><span class="si">{</span><span class="n">DWELL_WINDOW</span><span class="si">}</span><span class="s2">, min_fraction_inside = </span><span class="si">{</span><span class="n">MIN_FRACTION_INSIDE</span><span class="si">:</span><span class="s2">.2f</span><span class="si">}</span><span class="s2">, &quot;</span>
+    <span class="sa">f</span><span class="s2">&quot;sigma_floor = </span><span class="si">{</span><span class="n">SIGMA_FLOOR</span><span class="si">:</span><span class="s2">.2f</span><span class="si">}</span><span class="s2">, L = </span><span class="si">{</span><span class="n">L</span><span class="si">}</span><span class="s2">)&quot;</span>
 <span class="p">)</span>
 <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Each entry is median [16th, 84th percentile] over seeds.&#39;</span><span class="p">)</span>
 <span class="nb">print</span><span class="p">(</span>
@@ -508,7 +523,7 @@ Loaded cached trajectories from ../results/ising/ising_autocorrelation_multiseed
 <span class="n">ax</span><span class="o">.</span><span class="n">grid</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="s1">&#39;y&#39;</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.3</span><span class="p">)</span>
 <span class="n">fig</span><span class="o">.</span><span class="n">tight_layout</span><span class="p">()</span>
 <span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
-<br/></pre></div>
+</pre></div>
 </div>
 </div>
 <div class="nboutput docutils container">
@@ -518,11 +533,11 @@ Loaded cached trajectories from ../results/ising/ising_autocorrelation_multiseed
 <div class="highlight"><pre>
 Temperature                   Random-site Metropolis           Checkerboard Metropolis                     Wolff cluster
 ------------------------------------------------------------------------------------------------------------------------
-Below $T_c$                         596 [ 510, 1000]                  344 [ 147,  593]                  150 [ 111,  503]
-At $T_c$                            568 [ 450, 1341]                  341 [  91,  675]                  504 [ 375,  742]
-Above $T_c$                         152 [  75,  257]                  211 [  76,  504]                  163 [ 106,  513]
+Below $T_c$                         554 [ 417, 1000]                   90 [  74,  364]                   50 [  37,   70]
+At $T_c$                            570 [ 372, 1866]                  218 [  47,  609]                  546 [ 355,  787]
+Above $T_c$                         136 [  68,  239]                   50 [  10,  322]                  399 [ 238,  646]
 
-(seeds = 10, k = 1.0, smooth = 30, dwell = 30, min_fraction_inside = 0.85, L = 64)
+(seeds = 10, k = 1.0, smooth = 60, dwell = 60, min_fraction_inside = 0.85, sigma_floor = 0.02, L = 64)
 Each entry is median [16th, 84th percentile] over seeds.
 Note: at T_c, local updates run for 4000 steps (N_STEPS × MAX_STEPS_FACTOR = 1000 × 4); Wolff and off-critical runs use N_STEPS.
 </pre></div></div>
@@ -667,9 +682,9 @@ Exact mean Wolff cluster size &lt;C&gt; per temperature (from recorded step data
 Work-normalised relaxation time (in L² sweep equivalents):
 Temperature                   Random-site Metropolis           Checkerboard Metropolis                     Wolff cluster
 ------------------------------------------------------------------------------------------------------------------------
-Below $T_c$                         596 [ 510, 1000]                  344 [ 147,  593]                  136 [ 101,  456]
-At $T_c$                            568 [ 450, 1341]                  341 [  91,  675]                  196 [ 146,  289]
-Above $T_c$                         152 [  75,  257]                  211 [  76,  504]                    1 [   1,    3]
+Below $T_c$                         554 [ 417, 1000]                   90 [  74,  364]                   46 [  33,   64]
+At $T_c$                            570 [ 372, 1866]                  218 [  47,  609]                  213 [ 138,  306]
+Above $T_c$                         136 [  68,  239]                   50 [  10,  322]                    2 [   1,    3]
 
 (units: equivalent L²=4096 flip-attempt sweeps  |  L = 64  |  seeds = 10)
 </pre></div></div>
@@ -855,13 +870,13 @@ Above $T_c$                         152 [  75,  257]                  211 [  76,
 Integrated autocorrelation time τ_int  (raw steps, observable = |M|, c = 5):
 Temperature                   Random-site Metropolis           Checkerboard Metropolis                     Wolff cluster
 ------------------------------------------------------------------------------------------------------------------------
-Below $T_c$                         4.2 [ 2.9,  8.2]                  1.2 [ 1.0,  1.3]                  0.8 [ 0.7,  0.9]
-At $T_c$                          92.4 [80.0, 190.2]                74.7 [48.4, 101.1]                  3.0 [ 1.8,  3.9]
-Above $T_c$                        11.4 [ 9.5, 16.4]                  2.6 [ 2.5,  3.6]                 11.9 [ 7.7, 24.6]
+Below $T_c$                        14.0 [12.4, 14.7]                  9.1 [ 8.7,  9.6]                  5.7 [ 5.4,  5.8]
+At $T_c$                          93.1 [80.8, 183.3]                70.7 [50.7, 114.5]                  2.9 [ 1.9,  4.0]
+Above $T_c$                        13.6 [11.0, 19.2]                  2.8 [ 2.6,  3.7]                 10.0 [ 6.6, 27.0]
 
 (Madras–Sokal window c = 5, max-lag cap = 400, seeds = 10)
 Burn-in per seed = per-seed τ_relax from the two-start test.
-Note: 5 seed(s) returned NaN (post-burn-in trace too short); excluded from median.
+Note: 7 seed(s) returned NaN (post-burn-in trace too short); excluded from median.
 </pre></div></div>
 </div>
 <div class="nboutput docutils container">
@@ -956,7 +971,7 @@ magnetisation drift below <span class="math notranslate nohighlight">\(T_c\)</sp
           </div>
           <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
         <a href="dynamic_critical_exponents.html" class="btn btn-neutral float-left" title="Dynamical Critical Exponents in the 2D Ising Model" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
-        <a href="api/modules.html" class="btn btn-neutral float-right" title="vibespin" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+        <a href="ising_temperature_sweep.html" class="btn btn-neutral float-right" title="Ising Model: Temperature Sweep and Critical Behavior" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
     </div>
 
   <hr/>
