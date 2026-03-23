@@ -238,13 +238,8 @@
         <span class="n">max_steps</span><span class="o">=</span><span class="n">params</span><span class="o">.</span><span class="n">eq_max_steps</span><span class="p">,</span>
         <span class="n">qs_sigma_threshold</span><span class="o">=</span><span class="n">params</span><span class="o">.</span><span class="n">eq_qs_sigma_threshold</span><span class="p">,</span>
         <span class="n">qs_min_steps</span><span class="o">=</span><span class="n">params</span><span class="o">.</span><span class="n">eq_qs_min_steps</span><span class="p">,</span>
+        <span class="n">qs_allow_stuck</span><span class="o">=</span><span class="p">(</span><span class="n">T</span> <span class="o">&lt;</span> <span class="n">_TC_ISING_THEORY</span><span class="p">),</span>
     <span class="p">)</span>
-
-    <span class="c1"># Ising-specific relaxation logic: allow low-T stuck states if ordered is stable</span>
-    <span class="k">if</span> <span class="ow">not</span> <span class="n">converged</span> <span class="ow">and</span> <span class="n">T</span> <span class="o">&lt;</span> <span class="n">_TC_ISING_THEORY</span><span class="p">:</span>
-        <span class="n">m_o</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">sim_o</span><span class="o">.</span><span class="n">_get_magnetization</span><span class="p">()))</span>
-        <span class="k">if</span> <span class="n">m_o</span> <span class="o">&gt;</span> <span class="mf">0.8</span><span class="p">:</span>
-            <span class="n">converged</span> <span class="o">=</span> <span class="kc">True</span>
 
     <span class="k">if</span> <span class="ow">not</span> <span class="n">converged</span><span class="p">:</span>
         <span class="k">return</span> <span class="p">{</span>
@@ -351,15 +346,8 @@
             <span class="n">max_steps</span><span class="o">=</span><span class="n">params</span><span class="o">.</span><span class="n">eq_max_steps</span><span class="p">,</span>
             <span class="n">qs_sigma_threshold</span><span class="o">=</span><span class="n">params</span><span class="o">.</span><span class="n">eq_qs_sigma_threshold</span><span class="p">,</span>
             <span class="n">qs_min_steps</span><span class="o">=</span><span class="n">params</span><span class="o">.</span><span class="n">eq_qs_min_steps</span><span class="p">,</span>
+            <span class="n">qs_allow_stuck</span><span class="o">=</span><span class="p">(</span><span class="n">T</span> <span class="o">&lt;</span> <span class="n">_TC_ISING_THEORY</span><span class="p">),</span>
         <span class="p">)</span>
-
-        <span class="c1"># Ising-specific relaxation logic: At low T, a random start often gets stuck</span>
-        <span class="c1"># in a domain-wall state while the ordered start stays in the ground state.</span>
-        <span class="c1"># If the ordered start remains stable (high M), we treat it as converged.</span>
-        <span class="k">if</span> <span class="ow">not</span> <span class="n">converged</span> <span class="ow">and</span> <span class="n">T</span> <span class="o">&lt;</span> <span class="n">_TC_ISING_THEORY</span><span class="p">:</span>
-            <span class="n">m_o</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">sim_o</span><span class="o">.</span><span class="n">_get_magnetization</span><span class="p">()))</span>
-            <span class="k">if</span> <span class="n">m_o</span> <span class="o">&gt;</span> <span class="mf">0.8</span><span class="p">:</span>  <span class="c1"># Ordered start is cleanly ordered</span>
-                <span class="n">converged</span> <span class="o">=</span> <span class="kc">True</span>
 
         <span class="n">equilibration_steps</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">total_steps</span><span class="p">)</span>
         <span class="n">equilibrated</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">uint8</span><span class="p">(</span><span class="n">converged</span><span class="p">)</span>

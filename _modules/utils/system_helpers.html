@@ -373,6 +373,7 @@
     <span class="n">max_steps</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">200_000</span><span class="p">,</span>
     <span class="n">qs_sigma_threshold</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.05</span><span class="p">,</span>
     <span class="n">qs_min_steps</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">1500</span><span class="p">,</span>
+    <span class="n">qs_allow_stuck</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
     <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">bool</span><span class="p">]:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
@@ -396,6 +397,10 @@
 <span class="sd">            to fire.  Ensures tail statistics are computed from enough data to be</span>
 <span class="sd">            reliable, preventing false positives when traces have not yet had time</span>
 <span class="sd">            to settle.</span>
+<span class="sd">        qs_allow_stuck: If True, detecting a quasi-steady stuck state (where the</span>
+<span class="sd">            ordered trace is stable but the random trace is stranded) is treated</span>
+<span class="sd">            as a successful equilibration. Useful for Ising sweeps where</span>
+<span class="sd">            random-start domain-wall trapping is physically expected.</span>
 <span class="sd">        **kwargs: Passed to ``estimate_relaxation_time_two_start`` (k, smooth_window,</span>
 <span class="sd">            dwell_window, min_fraction_inside, sigma_floor, etc.).</span>
 
@@ -409,23 +414,35 @@
     <span class="p">)</span>
 
     <span class="n">logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="s1">&#39;vibespin&#39;</span><span class="p">)</span>
-    <span class="n">mags_r</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
-    <span class="n">mags_o</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">mags_r</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">full</span><span class="p">(</span><span class="n">max_steps</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">nan</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">float</span><span class="p">)</span>
+    <span class="n">mags_o</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">full</span><span class="p">(</span><span class="n">max_steps</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">nan</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">float</span><span class="p">)</span>
     <span class="n">total</span> <span class="o">=</span> <span class="mi">0</span>
 
     <span class="k">while</span> <span class="n">total</span> <span class="o">&lt;</span> <span class="n">max_steps</span><span class="p">:</span>
+        <span class="c1"># Run next chunk</span>
         <span class="n">mr</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">sim_random</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="n">n_steps</span><span class="o">=</span><span class="n">chunk_size</span><span class="p">)</span>
         <span class="n">mo</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">sim_ordered</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="n">n_steps</span><span class="o">=</span><span class="n">chunk_size</span><span class="p">)</span>
-        <span class="n">mags_r</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="n">mr</span><span class="p">)</span>
-        <span class="n">mags_o</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="n">mo</span><span class="p">)</span>
-        <span class="n">total</span> <span class="o">+=</span> <span class="n">chunk_size</span>
+
+        <span class="c1"># Clip chunk if it would exceed max_steps</span>
+        <span class="n">actual_len</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">mr</span><span class="p">),</span> <span class="n">max_steps</span> <span class="o">-</span> <span class="n">total</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">actual_len</span> <span class="o">&lt;=</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">break</span>
+
+        <span class="n">mags_r</span><span class="p">[</span><span class="n">total</span> <span class="p">:</span> <span class="n">total</span> <span class="o">+</span> <span class="n">actual_len</span><span class="p">]</span> <span class="o">=</span> <span class="n">mr</span><span class="p">[:</span><span class="n">actual_len</span><span class="p">]</span>
+        <span class="n">mags_o</span><span class="p">[</span><span class="n">total</span> <span class="p">:</span> <span class="n">total</span> <span class="o">+</span> <span class="n">actual_len</span><span class="p">]</span> <span class="o">=</span> <span class="n">mo</span><span class="p">[:</span><span class="n">actual_len</span><span class="p">]</span>
+        <span class="n">total</span> <span class="o">+=</span> <span class="n">actual_len</span>
 
         <span class="c1"># Only check if we have enough data for a meaningful estimate</span>
         <span class="c1"># smooth_window defaults to 60, dwell_window to 60.</span>
         <span class="k">if</span> <span class="n">total</span> <span class="o">&gt;=</span> <span class="mi">100</span><span class="p">:</span>
+            <span class="c1"># Pass slices (views) to avoid copying</span>
+            <span class="n">trace_r</span> <span class="o">=</span> <span class="n">mags_r</span><span class="p">[:</span><span class="n">total</span><span class="p">]</span>
+            <span class="n">trace_o</span> <span class="o">=</span> <span class="n">mags_o</span><span class="p">[:</span><span class="n">total</span><span class="p">]</span>
+
             <span class="n">tau</span> <span class="o">=</span> <span class="n">estimate_relaxation_time_two_start</span><span class="p">(</span>
-                <span class="n">trace_random</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">mags_r</span><span class="p">),</span>
-                <span class="n">trace_ordered</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">mags_o</span><span class="p">),</span>
+                <span class="n">trace_random</span><span class="o">=</span><span class="n">trace_r</span><span class="p">,</span>
+                <span class="n">trace_ordered</span><span class="o">=</span><span class="n">trace_o</span><span class="p">,</span>
+                <span class="n">skip_validation</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
                 <span class="o">**</span><span class="n">kwargs</span><span class="p">,</span>
             <span class="p">)</span>
             <span class="c1"># If estimate_relaxation_time_two_start returns a value &lt; total,</span>
@@ -434,14 +451,22 @@
                 <span class="k">return</span> <span class="n">total</span><span class="p">,</span> <span class="kc">True</span>
 
             <span class="k">if</span> <span class="n">total</span> <span class="o">&gt;=</span> <span class="n">qs_min_steps</span> <span class="ow">and</span> <span class="n">_detect_quasi_steady_stuck</span><span class="p">(</span>
-                <span class="n">trace_random</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">mags_r</span><span class="p">),</span>
-                <span class="n">trace_ordered</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">mags_o</span><span class="p">),</span>
+                <span class="n">trace_random</span><span class="o">=</span><span class="n">trace_r</span><span class="p">,</span>
+                <span class="n">trace_ordered</span><span class="o">=</span><span class="n">trace_o</span><span class="p">,</span>
                 <span class="n">k</span><span class="o">=</span><span class="nb">float</span><span class="p">(</span><span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;k&#39;</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">)),</span>
                 <span class="n">smooth_window</span><span class="o">=</span><span class="nb">int</span><span class="p">(</span><span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;smooth_window&#39;</span><span class="p">,</span> <span class="mi">60</span><span class="p">)),</span>
                 <span class="n">qs_sigma_threshold</span><span class="o">=</span><span class="n">qs_sigma_threshold</span><span class="p">,</span>
                 <span class="n">sigma_floor</span><span class="o">=</span><span class="nb">float</span><span class="p">(</span><span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;sigma_floor&#39;</span><span class="p">,</span> <span class="mf">0.02</span><span class="p">)),</span>
                 <span class="n">lattice_size</span><span class="o">=</span><span class="nb">getattr</span><span class="p">(</span><span class="n">sim_random</span><span class="p">,</span> <span class="s1">&#39;size&#39;</span><span class="p">,</span> <span class="kc">None</span><span class="p">),</span>
+                <span class="n">skip_validation</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
             <span class="p">):</span>
+                <span class="k">if</span> <span class="n">qs_allow_stuck</span><span class="p">:</span>
+                    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
+                        <span class="s1">&#39;convergence_equilibrate: detected stable quasi-steady stuck state; &#39;</span>
+                        <span class="s1">&#39;stopping early and accepting ordered start.&#39;</span>
+                    <span class="p">)</span>
+                    <span class="k">return</span> <span class="n">total</span><span class="p">,</span> <span class="kc">True</span>
+
                 <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span>
                     <span class="s1">&#39;convergence_equilibrate: detected quasi-steady stuck state &#39;</span>
                     <span class="sa">f</span><span class="s1">&#39;before max_steps=</span><span class="si">{</span><span class="n">max_steps</span><span class="si">}</span><span class="s1">; stopping early without convergence.&#39;</span>
