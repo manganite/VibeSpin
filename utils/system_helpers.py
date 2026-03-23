@@ -215,8 +215,10 @@ def convergence_equilibrate(
     """
     Equilibrate two simulations (random- and ordered-start) until they converge.
 
-    Uses ``estimate_relaxation_time_two_start`` to detect when the two
-    trajectories have entered the same equilibrium band. This is more robust
+    Uses ``estimate_relaxation_time_two_start`` to detect convergence via the
+    mutual cross-band criterion: each smoothed trajectory must enter and sustain
+    a band defined by the other trajectory's tail statistics.  A sigma floor
+    prevents false positives when one trace is nearly flat.  This is more robust
     than one-start adaptive methods for complex energy landscapes.
 
     Parameters
@@ -225,11 +227,52 @@ def convergence_equilibrate(
         sim_ordered: Simulation instance started from an ordered state.
         chunk_size: Number of steps to run between convergence checks.
         max_steps: Hard cap on total steps.
-        **kwargs: Passed to ``estimate_relaxation_time_two_start`` (k, smooth, dwell, etc.).
+        **kwargs: Passed to ``estimate_relaxation_time_two_start`` (k, smooth_window,
+            dwell_window, min_fraction_inside, sigma_floor, etc.).
 
     Returns
     -------
         Total number of MC steps run per simulation.
+    """
+    total, _ = convergence_equilibrate_with_status(
+        sim_random,
+        sim_ordered,
+        chunk_size=chunk_size,
+        max_steps=max_steps,
+        **kwargs,
+    )
+    return total
+
+
+def convergence_equilibrate_with_status(
+    sim_random: _Sim,
+    sim_ordered: _Sim,
+    *,
+    chunk_size: int = 500,
+    max_steps: int = 200_000,
+    **kwargs: Any,
+) -> tuple[int, bool]:
+    """
+    Equilibrate two simulations and report whether convergence was reached.
+
+    Uses ``estimate_relaxation_time_two_start`` to detect convergence via the
+    mutual cross-band criterion: each smoothed trajectory must enter and sustain
+    a band defined by the other trajectory's tail statistics.  A sigma floor
+    prevents false positives when one trace is nearly flat.  This variant returns
+    both the total number of MC steps executed and a boolean convergence flag.
+
+    Parameters
+    ----------
+        sim_random: Simulation instance started from a random state.
+        sim_ordered: Simulation instance started from an ordered state.
+        chunk_size: Number of steps to run between convergence checks.
+        max_steps: Hard cap on total steps.
+        **kwargs: Passed to ``estimate_relaxation_time_two_start`` (k, smooth_window,
+            dwell_window, min_fraction_inside, sigma_floor, etc.).
+
+    Returns
+    -------
+        Tuple ``(total_steps, converged)``.
     """
     from .physics_helpers import estimate_relaxation_time_two_start  # lazy import
 
@@ -246,7 +289,7 @@ def convergence_equilibrate(
         total += chunk_size
 
         # Only check if we have enough data for a meaningful estimate
-        # smooth_window defaults to 30, dwell_window to 30.
+        # smooth_window defaults to 60, dwell_window to 60.
         if total >= 100:
             tau = estimate_relaxation_time_two_start(
                 trace_random=np.array(mags_r),
@@ -256,13 +299,13 @@ def convergence_equilibrate(
             # If estimate_relaxation_time_two_start returns a value < total,
             # it means convergence was detected at some point in the past.
             if tau < total:
-                return total
+                return total, True
 
     logger.warning(
         f'convergence_equilibrate: reached max_steps={max_steps} without convergence; '
         'proceeding anyway.'
     )
-    return total
+    return total, False
 
 
 def plot_temperature_sweep(

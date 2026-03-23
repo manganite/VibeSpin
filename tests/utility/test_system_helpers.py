@@ -407,6 +407,50 @@ def test_convergence_equilibrate_warns_on_max_steps(caplog):
     assert 'without convergence' in caplog.text
 
 
+def test_convergence_equilibrate_with_status_reports_success():
+    """Status helper should report successful convergence before max_steps."""
+
+    class _ConvergenceStub:
+        def run(self, *, n_steps: int) -> tuple[np.ndarray, np.ndarray]:
+            return np.ones(n_steps), np.zeros(n_steps)
+
+    with patch('utils.physics_helpers.estimate_relaxation_time_two_start', return_value=75):
+        from utils.system_helpers import convergence_equilibrate_with_status
+
+        total, converged = convergence_equilibrate_with_status(
+            _ConvergenceStub(),
+            _ConvergenceStub(),
+            chunk_size=50,
+            max_steps=200,
+        )
+
+    assert total == 100
+    assert converged is True
+
+
+def test_convergence_equilibrate_with_status_reports_failure(caplog):
+    """Status helper should return False when max_steps is reached."""
+
+    class _ConvergenceStub:
+        def run(self, *, n_steps: int) -> tuple[np.ndarray, np.ndarray]:
+            return np.ones(n_steps), np.zeros(n_steps)
+
+    caplog.set_level('WARNING', logger='vibespin')
+    with patch('utils.physics_helpers.estimate_relaxation_time_two_start', return_value=1000):
+        from utils.system_helpers import convergence_equilibrate_with_status
+
+        total, converged = convergence_equilibrate_with_status(
+            _ConvergenceStub(),
+            _ConvergenceStub(),
+            chunk_size=50,
+            max_steps=100,
+        )
+
+    assert total == 100
+    assert converged is False
+    assert 'without convergence' in caplog.text
+
+
 def test_plot_temperature_sweep_with_entropy_only(temp_dir):
     """Optional panel layout should handle entropy-only inputs."""
     temps = np.array([1.0, 2.0])

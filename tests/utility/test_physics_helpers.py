@@ -745,7 +745,7 @@ def test_power_fit_none_on_insufficient_data():
 
 def test_estimate_relaxation_time_two_start_basic():
     """Verify relaxation time estimation on a synthetic converging sequence."""
-    n = 200
+    n = 300
     # Ordered starts at 1, decays to 0.5
     trace_ordered = 0.5 + 0.5 * np.exp(-np.arange(n) / 20.0)
     # Random starts at 0, grows to 0.5
@@ -759,14 +759,14 @@ def test_estimate_relaxation_time_two_start_basic():
     tau = estimate_relaxation_time_two_start(
         trace_random=trace_random,
         trace_ordered=trace_ordered,
-        smooth_window=5,
-        dwell_window=5,
+        smooth_window=10,
+        dwell_window=10,
     )
 
     # Should converge well before the end
     assert 0 < tau < n
     # For these params, should be roughly a few decay constants
-    assert 30 < tau < 180
+    assert 20 < tau < 250
 
 
 def test_estimate_relaxation_time_two_start_short():
@@ -777,10 +777,38 @@ def test_estimate_relaxation_time_two_start_short():
 
 
 def test_estimate_relaxation_time_two_start_no_convergence():
-    """Should return trace length if they never meet."""
+    """Should return trace length if the two traces never meet."""
     n = 50
     r = np.zeros(n)
     o = np.ones(n)
-    # Use small k to ensure they don't "accidentally" converge
+    # Use small k to ensure they don't accidentally converge
     tau = estimate_relaxation_time_two_start(r, o, k=0.1)
+    assert tau == n
+
+
+def test_estimate_relaxation_time_two_start_sigma_floor():
+    """Sigma floor must prevent false positives when one trace is nearly flat.
+
+    The old pooled-band criterion would declare convergence here because the
+    near-zero variance of the ordered trace widens the pooled band enough to
+    swallow the random trace.  The mutual cross-band criterion should not fire
+    because the random trace (tail mean ~0.0) is far from the ordered tail
+    mean (~1.0), and sigma_floor keeps the ordered band narrow.
+    """
+    n = 200
+    rng = np.random.default_rng(99)
+    # Ordered trace: stays near 1.0 with tiny noise (nearly flat, very low variance)
+    trace_ordered = np.ones(n) + rng.normal(0, 1e-4, n)
+    # Random trace: stays near 0.0 with small noise
+    trace_random = np.zeros(n) + rng.normal(0, 0.05, n)
+
+    tau = estimate_relaxation_time_two_start(
+        trace_random=trace_random,
+        trace_ordered=trace_ordered,
+        k=2.0,
+        smooth_window=10,
+        dwell_window=10,
+        sigma_floor=0.02,
+    )
+    # These traces never meet; should return full trace length
     assert tau == n

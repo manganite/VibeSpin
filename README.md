@@ -78,7 +78,7 @@ Launch an equilibrium temperature sweep for the XY model:
 python scripts/xy/temperature_sweep.py --size 64 --t-min 0.2 --t-max 1.5 --t-points 20
 ```
 
-Temperature sweep scripts use **Two-Start Convergence equilibration**: for every temperature point, two independent simulations (one starting from a random disordered state and one from a fully ordered state) are evolved in parallel. The burn-in continues in chunks (defined by `--eq-probe-steps`) until both trajectories converge and remain within the same equilibrium statistical band. This robust non-equilibrium diagnostic guarantees that measurements are free from initialization bias even in complex energy landscapes. The `--eq-max-steps` flag provides a hard cap on the total equilibration time.
+Temperature sweep scripts use **Two-Start Convergence equilibration**: for every temperature point, two independent simulations (one starting from a random disordered state and one from a fully ordered state) are evolved in parallel. The burn-in continues in chunks (defined by `--eq-probe-steps`) until both smoothed magnetization traces pass a mutual cross-band test: the random-start trace must lie within a band of ±k standard deviations of the ordered-start tail mean, and vice versa. A sigma floor prevents band collapse when either trace is nearly variance-free. This non-equilibrium diagnostic guarantees that measurements are free from initialization bias. The `--eq-max-steps` flag provides a hard cap on the total equilibration time.
 
 Investigate phase-ordering kinetics in the Ising model using random-site updates:
 

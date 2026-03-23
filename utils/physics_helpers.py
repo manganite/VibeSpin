@@ -1060,26 +1060,37 @@ def estimate_relaxation_time_two_start(
     trace_ordered: np.ndarray,
     *,
     k: float = 1.0,
-    smooth_window: int = 30,
-    dwell_window: int = 30,
+    smooth_window: int = 60,
+    dwell_window: int = 60,
     min_fraction_inside: float = 0.85,
+    sigma_floor: float = 0.02,
 ) -> int:
     """Estimate thermalization time from convergence of random- and ordered-start traces.
 
     Compares a trajectory started from a random spin configuration against one
     started from a fully ordered configuration.  Returns the first step at which
-    both smoothed traces enter and sustain a common equilibrium band.
+    both smoothed traces pass a mutual cross-band test sustained over a dwell window.
+
+    The criterion is asymmetric in the correct physical sense: the smoothed
+    random-start trace must lie within ``k`` standard deviations of the
+    ordered-start tail mean, and the ordered-start trace must simultaneously
+    lie within ``k`` standard deviations of the random-start tail mean.
+    Tail statistics are computed from the second half of each smoothed trace
+    independently.  A ``sigma_floor`` prevents band collapse when one trace is
+    nearly variance-free (e.g. in the deep ordered phase near T=0).
 
     Parameters
     ----------
         trace_random: 1-D magnetization trace from a random initial state.
         trace_ordered: 1-D magnetization trace from an ordered initial state.
-        k: Half-width of the convergence band in units of the tail standard
-            deviation.  Larger values are more permissive.
+        k: Half-width of each convergence band in units of the respective tail
+            standard deviation.  Larger values are more permissive.
         smooth_window: Window length (steps) for the moving-average smoother.
         dwell_window: Window length (steps) for the sustained-convergence test.
         min_fraction_inside: Fraction of steps within ``dwell_window`` that must
-            lie inside the band to declare convergence.
+            satisfy the mutual cross-band condition to declare convergence.
+        sigma_floor: Minimum allowed standard deviation for each tail, preventing
+            band collapse when a trajectory is nearly flat.
 
     Returns
     -------
@@ -1101,17 +1112,19 @@ def estimate_relaxation_time_two_start(
     r_sm = r_sm[:m]
     o_sm = o_sm[:m]
 
+    # Compute tail statistics independently for each trace
     half = m // 2
-    tail_combined = np.concatenate([r_sm[half:], o_sm[half:]])
-    mean_eq = tail_combined.mean()
-    sigma_eq = max(tail_combined.std(), 1e-12)
-    band = k * sigma_eq
+    tail_r = r_sm[half:]
+    tail_o = o_sm[half:]
+    mu_r = tail_r.mean()
+    mu_o = tail_o.mean()
+    sig_r = max(float(tail_r.std()), sigma_floor)
+    sig_o = max(float(tail_o.std()), sigma_floor)
 
-    both_inside = (
-        (np.abs(r_sm - mean_eq) <= band)
-        & (np.abs(o_sm - mean_eq) <= band)
-        & (np.abs(r_sm - o_sm) <= band)
-    ).astype(float)
+    # Mutual cross-band test: each trace must be inside the other trace's band
+    in_o_band = np.abs(r_sm - mu_o) <= k * sig_o  # random inside ordered's band
+    in_r_band = np.abs(o_sm - mu_r) <= k * sig_r  # ordered inside random's band
+    both_inside = (in_o_band & in_r_band).astype(float)
 
     dwell_window = max(3, min(dwell_window, len(both_inside)))
     sustained_fraction = (
