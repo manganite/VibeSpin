@@ -270,8 +270,24 @@
             <span class="s1">&#39;ci_low&#39;</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">res_low</span><span class="p">),</span>
             <span class="s1">&#39;ci_high&#39;</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">res_high</span><span class="p">),</span>
         <span class="p">}</span>
-        <span class="n">tau_int</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">nanmean</span><span class="p">(</span><span class="n">tau_by_seed</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
-        <span class="n">n_eff</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">nanmean</span><span class="p">(</span><span class="n">n_eff_by_seed</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+
+        <span class="c1"># Calculate ensemble-averaged diagnostics, avoiding RuntimeWarning for all-NaN rows</span>
+        <span class="n">nan_mask</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">all</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">isnan</span><span class="p">(</span><span class="n">tau_by_seed</span><span class="p">),</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+        <span class="n">tau_int</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">full</span><span class="p">(</span><span class="n">nan_mask</span><span class="o">.</span><span class="n">shape</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">nan</span><span class="p">)</span>
+        <span class="n">n_eff</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">full</span><span class="p">(</span><span class="n">nan_mask</span><span class="o">.</span><span class="n">shape</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">nan</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">np</span><span class="o">.</span><span class="n">all</span><span class="p">(</span><span class="n">nan_mask</span><span class="p">):</span>
+            <span class="k">with</span> <span class="n">np</span><span class="o">.</span><span class="n">errstate</span><span class="p">(</span><span class="nb">all</span><span class="o">=</span><span class="s1">&#39;ignore&#39;</span><span class="p">):</span>
+                <span class="n">tau_int</span><span class="p">[</span><span class="o">~</span><span class="n">nan_mask</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">nanmean</span><span class="p">(</span><span class="n">tau_by_seed</span><span class="p">[</span><span class="o">~</span><span class="n">nan_mask</span><span class="p">],</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+                <span class="n">n_eff</span><span class="p">[</span><span class="o">~</span><span class="n">nan_mask</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">nanmean</span><span class="p">(</span><span class="n">n_eff_by_seed</span><span class="p">[</span><span class="o">~</span><span class="n">nan_mask</span><span class="p">],</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">any</span><span class="p">(</span><span class="n">nan_mask</span><span class="p">):</span>
+            <span class="n">logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="s1">&#39;vibespin&#39;</span><span class="p">)</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;Autocorrelation diagnostics are undefined for </span><span class="si">{</span><span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">nan_mask</span><span class="p">)</span><span class="si">}</span><span class="s2"> &quot;</span>
+                <span class="s2">&quot;temperature points (all seeds returned NaN). This is expected in &quot;</span>
+                <span class="s2">&quot;the deep ordered/frozen phase.&quot;</span>
+            <span class="p">)</span>
     <span class="k">else</span><span class="p">:</span>
         <span class="c1"># Fallback to single-seed blocking results</span>
         <span class="n">res</span> <span class="o">=</span> <span class="p">{</span>
@@ -279,74 +295,6 @@
             <span class="s1">&#39;err&#39;</span><span class="p">:</span> <span class="n">errors_by_seed</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">],</span>
             <span class="s1">&#39;ci_low&#39;</span><span class="p">:</span> <span class="n">values_by_seed</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">]</span> <span class="o">-</span> <span class="n">errors_by_seed</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">],</span>
             <span class="s1">&#39;ci_high&#39;</span><span class="p">:</span> <span class="n">values_by_seed</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">]</span> <span class="o">+</span> <span class="n">errors_by_seed</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">],</span>
-        <span class="p">}</span>
-        <span class="n">tau_int</span> <span class="o">=</span> <span class="n">tau_by_seed</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">]</span>
-        <span class="n">n_eff</span> <span class="o">=</span> <span class="n">n_eff_by_seed</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">]</span>
-
-    <span class="k">return</span> <span class="p">{</span>
-        <span class="s1">&#39;value&#39;</span><span class="p">:</span> <span class="n">res</span><span class="p">[</span><span class="s1">&#39;value&#39;</span><span class="p">],</span>
-        <span class="s1">&#39;err&#39;</span><span class="p">:</span> <span class="n">res</span><span class="p">[</span><span class="s1">&#39;err&#39;</span><span class="p">],</span>
-        <span class="s1">&#39;ci_low&#39;</span><span class="p">:</span> <span class="n">res</span><span class="p">[</span><span class="s1">&#39;ci_low&#39;</span><span class="p">],</span>
-        <span class="s1">&#39;ci_high&#39;</span><span class="p">:</span> <span class="n">res</span><span class="p">[</span><span class="s1">&#39;ci_high&#39;</span><span class="p">],</span>
-        <span class="s1">&#39;tau_int&#39;</span><span class="p">:</span> <span class="n">tau_int</span><span class="p">,</span>
-        <span class="s1">&#39;n_eff&#39;</span><span class="p">:</span> <span class="n">n_eff</span><span class="p">,</span>
-        <span class="s1">&#39;samples&#39;</span><span class="p">:</span> <span class="n">values_by_seed</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">),</span>
-    <span class="p">}</span>
-
-
-<span class="k">def</span><span class="w"> </span><span class="nf">_build_asymmetric_uncertainty_bundle</span><span class="p">(</span>
-    <span class="o">*</span><span class="p">,</span>
-    <span class="n">values_by_seed</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
-    <span class="n">ci_low_by_seed</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
-    <span class="n">ci_high_by_seed</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
-    <span class="n">tau_by_seed</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
-    <span class="n">n_eff_by_seed</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
-    <span class="n">confidence</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
-<span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">]:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Calculate combined asymmetric uncertainty (like tau_int) across seeds.&quot;&quot;&quot;</span>
-    <span class="n">n_seeds</span> <span class="o">=</span> <span class="n">values_by_seed</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
-    <span class="k">if</span> <span class="n">n_seeds</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
-        <span class="c1"># Hierarchical aggregation: between-seed + within-seed</span>
-        <span class="n">res_values</span> <span class="o">=</span> <span class="p">[]</span>
-        <span class="n">res_errors</span> <span class="o">=</span> <span class="p">[]</span>
-        <span class="n">res_low</span> <span class="o">=</span> <span class="p">[]</span>
-        <span class="n">res_high</span> <span class="o">=</span> <span class="p">[]</span>
-
-        <span class="n">within_seed_errors</span> <span class="o">=</span> <span class="p">(</span><span class="n">ci_high_by_seed</span> <span class="o">-</span> <span class="n">ci_low_by_seed</span><span class="p">)</span> <span class="o">/</span> <span class="mf">2.0</span>
-
-        <span class="k">for</span> <span class="n">t</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">values_by_seed</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]):</span>
-            <span class="n">mask</span> <span class="o">=</span> <span class="o">~</span><span class="n">np</span><span class="o">.</span><span class="n">isnan</span><span class="p">(</span><span class="n">values_by_seed</span><span class="p">[</span><span class="n">t</span><span class="p">])</span>
-            <span class="k">if</span> <span class="ow">not</span> <span class="n">np</span><span class="o">.</span><span class="n">any</span><span class="p">(</span><span class="n">mask</span><span class="p">):</span>
-                <span class="n">res_values</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">nan</span><span class="p">)</span>
-                <span class="n">res_errors</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">nan</span><span class="p">)</span>
-                <span class="n">res_low</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">nan</span><span class="p">)</span>
-                <span class="n">res_high</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">nan</span><span class="p">)</span>
-                <span class="k">continue</span>
-
-            <span class="n">summary</span> <span class="o">=</span> <span class="n">summarize_seed_ensemble</span><span class="p">(</span>
-                <span class="n">values</span><span class="o">=</span><span class="n">values_by_seed</span><span class="p">[</span><span class="n">t</span><span class="p">,</span> <span class="n">mask</span><span class="p">],</span>
-                <span class="n">within_seed_errors</span><span class="o">=</span><span class="n">within_seed_errors</span><span class="p">[</span><span class="n">t</span><span class="p">,</span> <span class="n">mask</span><span class="p">],</span>
-                <span class="n">confidence</span><span class="o">=</span><span class="n">confidence</span>
-            <span class="p">)</span>
-            <span class="n">res_values</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">summary</span><span class="p">[</span><span class="s1">&#39;value&#39;</span><span class="p">])</span>
-            <span class="n">res_errors</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">summary</span><span class="p">[</span><span class="s1">&#39;err&#39;</span><span class="p">])</span>
-            <span class="n">res_low</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">summary</span><span class="p">[</span><span class="s1">&#39;ci_low&#39;</span><span class="p">])</span>
-            <span class="n">res_high</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">summary</span><span class="p">[</span><span class="s1">&#39;ci_high&#39;</span><span class="p">])</span>
-
-        <span class="n">res</span> <span class="o">=</span> <span class="p">{</span>
-            <span class="s1">&#39;value&#39;</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">res_values</span><span class="p">),</span>
-            <span class="s1">&#39;err&#39;</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">res_errors</span><span class="p">),</span>
-            <span class="s1">&#39;ci_low&#39;</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">res_low</span><span class="p">),</span>
-            <span class="s1">&#39;ci_high&#39;</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">res_high</span><span class="p">),</span>
-        <span class="p">}</span>
-        <span class="n">tau_int</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">nanmean</span><span class="p">(</span><span class="n">tau_by_seed</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
-        <span class="n">n_eff</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">nanmean</span><span class="p">(</span><span class="n">n_eff_by_seed</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
-    <span class="k">else</span><span class="p">:</span>
-        <span class="n">res</span> <span class="o">=</span> <span class="p">{</span>
-            <span class="s1">&#39;value&#39;</span><span class="p">:</span> <span class="n">values_by_seed</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">],</span>
-            <span class="s1">&#39;err&#39;</span><span class="p">:</span> <span class="p">(</span><span class="n">ci_high_by_seed</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">]</span> <span class="o">-</span> <span class="n">ci_low_by_seed</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">])</span> <span class="o">/</span> <span class="mf">2.0</span><span class="p">,</span>
-            <span class="s1">&#39;ci_low&#39;</span><span class="p">:</span> <span class="n">ci_low_by_seed</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">],</span>
-            <span class="s1">&#39;ci_high&#39;</span><span class="p">:</span> <span class="n">ci_high_by_seed</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">],</span>
         <span class="p">}</span>
         <span class="n">tau_int</span> <span class="o">=</span> <span class="n">tau_by_seed</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">]</span>
         <span class="n">n_eff</span> <span class="o">=</span> <span class="n">n_eff_by_seed</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">]</span>
