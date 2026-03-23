@@ -158,6 +158,58 @@ Extracts the critical exponent nu by fitting correlation lengths near Tc.</p>
 </dd></dl>
 
 </section>
+<section id="module-scripts.ising.diag_eq_traces">
+<span id="scripts-ising-diag-eq-traces-module"></span><h2>scripts.ising.diag_eq_traces module<a class="headerlink" href="#module-scripts.ising.diag_eq_traces" title="Link to this heading"></a></h2>
+<p>Diagnostic tool for visualizing two-start equilibration traces.</p>
+<p>This script runs simultaneous random-start and ordered-start simulations of the
+2D Ising model at multiple representative temperatures (deep ordered, critical,
+and paramagnetic). It identifies seeds that lead to metastable stuck states at
+low temperatures and generates a multi-panel visualization of the magnetization
+trajectories.</p>
+<p>Results are saved to <code class="docutils literal notranslate"><span class="pre">results/ising/diagnostic_eq_traces_L&lt;size&gt;.png</span></code>.</p>
+<dl class="py data">
+<dt class="sig sig-object py" id="scripts.ising.diag_eq_traces.SEED_COLORS">
+<span class="sig-prename descclassname"><span class="pre">scripts.ising.diag_eq_traces.</span></span><span class="sig-name descname"><span class="pre">SEED_COLORS</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">list</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">['#2166ac',</span> <span class="pre">'#d6604d',</span> <span class="pre">'#4dac26',</span> <span class="pre">'#984ea3',</span> <span class="pre">'#ff7f00',</span> <span class="pre">'#a65628']</span></span><a class="headerlink" href="#scripts.ising.diag_eq_traces.SEED_COLORS" title="Link to this definition"></a></dt>
+<dd><p>Colors used for different seed trajectories.</p>
+</dd></dl>
+
+<dl class="py data">
+<dt class="sig sig-object py" id="scripts.ising.diag_eq_traces.TC_ISING">
+<span class="sig-prename descclassname"><span class="pre">scripts.ising.diag_eq_traces.</span></span><span class="sig-name descname"><span class="pre">TC_ISING</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">float</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">np.float64(2.269185314213022)</span></span><a class="headerlink" href="#scripts.ising.diag_eq_traces.TC_ISING" title="Link to this definition"></a></dt>
+<dd><p>Exact Onsager critical temperature for the 2D nearest-neighbour Ising model.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="scripts.ising.diag_eq_traces.collect_trace">
+<span class="sig-prename descclassname"><span class="pre">scripts.ising.diag_eq_traces.</span></span><span class="sig-name descname"><span class="pre">collect_trace</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">size</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">temp</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">seed</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">init_state</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_chunks</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">chunk_size</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">ndarray</span></span></span><a class="reference internal" href="../_modules/scripts/ising/diag_eq_traces.html#collect_trace"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#scripts.ising.diag_eq_traces.collect_trace" title="Link to this definition"></a></dt>
+<dd><p>Run a simulation and collect the magnetization trace.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>size</strong> (<em>int</em>) – Linear lattice size L.</p></li>
+<li><p><strong>temp</strong> (<em>float</em>) – Temperature T.</p></li>
+<li><p><strong>seed</strong> (<em>int</em>) – RNG seed.</p></li>
+<li><p><strong>init_state</strong> (<em>str</em>) – Initial state (‘random’ or ‘ordered’).</p></li>
+<li><p><strong>n_chunks</strong> (<em>int</em>) – Number of measurement chunks.</p></li>
+<li><p><strong>chunk_size</strong> (<em>int</em>) – Sweeps per chunk.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Array of magnetization values at each sweep.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>np.ndarray</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="scripts.ising.diag_eq_traces.main">
+<span class="sig-prename descclassname"><span class="pre">scripts.ising.diag_eq_traces.</span></span><span class="sig-name descname"><span class="pre">main</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="../_modules/scripts/ising/diag_eq_traces.html#main"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#scripts.ising.diag_eq_traces.main" title="Link to this definition"></a></dt>
+<dd><p>Execute the equilibration diagnostic and generate plots.</p>
+</dd></dl>
+
+</section>
 <section id="module-scripts.ising.measure_z">
 <span id="scripts-ising-measure-z-module"></span><h2>scripts.ising.measure_z module<a class="headerlink" href="#module-scripts.ising.measure_z" title="Link to this heading"></a></h2>
 <p>Measure the dynamical critical exponent z for Metropolis and Wolff algorithms.</p>

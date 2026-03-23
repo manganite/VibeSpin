@@ -226,6 +226,8 @@
 <span class="k">class</span><span class="w"> </span><span class="nc">_Sim</span><span class="p">(</span><span class="n">Protocol</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Structural type for any MonteCarloSimulation; avoids a models/ → utils/ import.&quot;&quot;&quot;</span>
 
+    <span class="n">size</span><span class="p">:</span> <span class="nb">int</span>
+
     <span class="k">def</span><span class="w"> </span><span class="nf">equilibrate</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">n_steps</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span> <span class="o">...</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">run</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">n_steps</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">]:</span> <span class="o">...</span>
@@ -316,6 +318,8 @@
     <span class="o">*</span><span class="p">,</span>
     <span class="n">chunk_size</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">500</span><span class="p">,</span>
     <span class="n">max_steps</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">200_000</span><span class="p">,</span>
+    <span class="n">qs_sigma_threshold</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.05</span><span class="p">,</span>
+    <span class="n">qs_min_steps</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">1500</span><span class="p">,</span>
     <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
@@ -333,6 +337,12 @@
 <span class="sd">        sim_ordered: Simulation instance started from an ordered state.</span>
 <span class="sd">        chunk_size: Number of steps to run between convergence checks.</span>
 <span class="sd">        max_steps: Hard cap on total steps.</span>
+<span class="sd">        qs_sigma_threshold: Tail-std threshold used to detect a quasi-steady,</span>
+<span class="sd">            non-converged stuck state and exit early.</span>
+<span class="sd">        qs_min_steps: Minimum accumulated steps before stuck detection is allowed</span>
+<span class="sd">            to fire.  Ensures tail statistics are computed from enough data to be</span>
+<span class="sd">            reliable, preventing false positives when traces have not yet had time</span>
+<span class="sd">            to settle.</span>
 <span class="sd">        **kwargs: Passed to ``estimate_relaxation_time_two_start`` (k, smooth_window,</span>
 <span class="sd">            dwell_window, min_fraction_inside, sigma_floor, etc.).</span>
 
@@ -345,6 +355,8 @@
         <span class="n">sim_ordered</span><span class="p">,</span>
         <span class="n">chunk_size</span><span class="o">=</span><span class="n">chunk_size</span><span class="p">,</span>
         <span class="n">max_steps</span><span class="o">=</span><span class="n">max_steps</span><span class="p">,</span>
+        <span class="n">qs_sigma_threshold</span><span class="o">=</span><span class="n">qs_sigma_threshold</span><span class="p">,</span>
+        <span class="n">qs_min_steps</span><span class="o">=</span><span class="n">qs_min_steps</span><span class="p">,</span>
         <span class="o">**</span><span class="n">kwargs</span><span class="p">,</span>
     <span class="p">)</span>
     <span class="k">return</span> <span class="n">total</span></div>
@@ -359,6 +371,8 @@
     <span class="o">*</span><span class="p">,</span>
     <span class="n">chunk_size</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">500</span><span class="p">,</span>
     <span class="n">max_steps</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">200_000</span><span class="p">,</span>
+    <span class="n">qs_sigma_threshold</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.05</span><span class="p">,</span>
+    <span class="n">qs_min_steps</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">1500</span><span class="p">,</span>
     <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">bool</span><span class="p">]:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
@@ -376,6 +390,12 @@
 <span class="sd">        sim_ordered: Simulation instance started from an ordered state.</span>
 <span class="sd">        chunk_size: Number of steps to run between convergence checks.</span>
 <span class="sd">        max_steps: Hard cap on total steps.</span>
+<span class="sd">        qs_sigma_threshold: Tail-std threshold used to detect a quasi-steady,</span>
+<span class="sd">            non-converged stuck state and exit early.</span>
+<span class="sd">        qs_min_steps: Minimum accumulated steps before stuck detection is allowed</span>
+<span class="sd">            to fire.  Ensures tail statistics are computed from enough data to be</span>
+<span class="sd">            reliable, preventing false positives when traces have not yet had time</span>
+<span class="sd">            to settle.</span>
 <span class="sd">        **kwargs: Passed to ``estimate_relaxation_time_two_start`` (k, smooth_window,</span>
 <span class="sd">            dwell_window, min_fraction_inside, sigma_floor, etc.).</span>
 
@@ -383,7 +403,10 @@
 <span class="sd">    -------</span>
 <span class="sd">        Tuple ``(total_steps, converged)``.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
-    <span class="kn">from</span><span class="w"> </span><span class="nn">.physics_helpers</span><span class="w"> </span><span class="kn">import</span> <span class="n">estimate_relaxation_time_two_start</span>  <span class="c1"># lazy import</span>
+    <span class="kn">from</span><span class="w"> </span><span class="nn">.physics_helpers</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>  <span class="c1"># lazy import</span>
+        <span class="n">_detect_quasi_steady_stuck</span><span class="p">,</span>
+        <span class="n">estimate_relaxation_time_two_start</span><span class="p">,</span>
+    <span class="p">)</span>
 
     <span class="n">logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="s1">&#39;vibespin&#39;</span><span class="p">)</span>
     <span class="n">mags_r</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
@@ -409,6 +432,21 @@
             <span class="c1"># it means convergence was detected at some point in the past.</span>
             <span class="k">if</span> <span class="n">tau</span> <span class="o">&lt;</span> <span class="n">total</span><span class="p">:</span>
                 <span class="k">return</span> <span class="n">total</span><span class="p">,</span> <span class="kc">True</span>
+
+            <span class="k">if</span> <span class="n">total</span> <span class="o">&gt;=</span> <span class="n">qs_min_steps</span> <span class="ow">and</span> <span class="n">_detect_quasi_steady_stuck</span><span class="p">(</span>
+                <span class="n">trace_random</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">mags_r</span><span class="p">),</span>
+                <span class="n">trace_ordered</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">mags_o</span><span class="p">),</span>
+                <span class="n">k</span><span class="o">=</span><span class="nb">float</span><span class="p">(</span><span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;k&#39;</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">)),</span>
+                <span class="n">smooth_window</span><span class="o">=</span><span class="nb">int</span><span class="p">(</span><span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;smooth_window&#39;</span><span class="p">,</span> <span class="mi">60</span><span class="p">)),</span>
+                <span class="n">qs_sigma_threshold</span><span class="o">=</span><span class="n">qs_sigma_threshold</span><span class="p">,</span>
+                <span class="n">sigma_floor</span><span class="o">=</span><span class="nb">float</span><span class="p">(</span><span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;sigma_floor&#39;</span><span class="p">,</span> <span class="mf">0.02</span><span class="p">)),</span>
+                <span class="n">lattice_size</span><span class="o">=</span><span class="nb">getattr</span><span class="p">(</span><span class="n">sim_random</span><span class="p">,</span> <span class="s1">&#39;size&#39;</span><span class="p">,</span> <span class="kc">None</span><span class="p">),</span>
+            <span class="p">):</span>
+                <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span>
+                    <span class="s1">&#39;convergence_equilibrate: detected quasi-steady stuck state &#39;</span>
+                    <span class="sa">f</span><span class="s1">&#39;before max_steps=</span><span class="si">{</span><span class="n">max_steps</span><span class="si">}</span><span class="s1">; stopping early without convergence.&#39;</span>
+                <span class="p">)</span>
+                <span class="k">return</span> <span class="n">total</span><span class="p">,</span> <span class="kc">False</span>
 
     <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span>
         <span class="sa">f</span><span class="s1">&#39;convergence_equilibrate: reached max_steps=</span><span class="si">{</span><span class="n">max_steps</span><span class="si">}</span><span class="s1"> without convergence; &#39;</span>

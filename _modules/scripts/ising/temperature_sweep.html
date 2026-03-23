@@ -150,6 +150,8 @@
         <span class="n">sim_o</span><span class="p">,</span>
         <span class="n">chunk_size</span><span class="o">=</span><span class="n">eq_probe_steps</span><span class="p">,</span>
         <span class="n">max_steps</span><span class="o">=</span><span class="n">eq_max_steps</span><span class="p">,</span>
+        <span class="n">qs_sigma_threshold</span><span class="o">=</span><span class="n">params</span><span class="o">.</span><span class="n">eq_qs_sigma_threshold</span><span class="p">,</span>
+        <span class="n">qs_min_steps</span><span class="o">=</span><span class="n">params</span><span class="o">.</span><span class="n">eq_qs_min_steps</span><span class="p">,</span>
     <span class="p">)</span>
 
     <span class="c1"># Use the converged random-start instance for measurement.</span>
@@ -189,6 +191,8 @@
     <span class="n">meas_steps</span><span class="p">:</span> <span class="nb">int</span>
     <span class="n">eq_probe_steps</span><span class="p">:</span> <span class="nb">int</span>
     <span class="n">eq_max_steps</span><span class="p">:</span> <span class="nb">int</span>
+    <span class="n">eq_qs_sigma_threshold</span><span class="p">:</span> <span class="nb">float</span>
+    <span class="n">eq_qs_min_steps</span><span class="p">:</span> <span class="nb">int</span>
 
 
 <span class="k">class</span><span class="w"> </span><span class="nc">_SeedSweepPoint</span><span class="p">(</span><span class="n">NamedTuple</span><span class="p">):</span>
@@ -199,6 +203,8 @@
     <span class="n">meas_steps</span><span class="p">:</span> <span class="nb">int</span>
     <span class="n">eq_probe_steps</span><span class="p">:</span> <span class="nb">int</span>
     <span class="n">eq_max_steps</span><span class="p">:</span> <span class="nb">int</span>
+    <span class="n">eq_qs_sigma_threshold</span><span class="p">:</span> <span class="nb">float</span>
+    <span class="n">eq_qs_min_steps</span><span class="p">:</span> <span class="nb">int</span>
     <span class="n">temperature_index</span><span class="p">:</span> <span class="nb">int</span>
     <span class="n">seed_index</span><span class="p">:</span> <span class="nb">int</span>
     <span class="n">seed</span><span class="p">:</span> <span class="nb">int</span>
@@ -212,6 +218,8 @@
     <span class="n">meas_steps</span><span class="p">:</span> <span class="nb">int</span>
     <span class="n">eq_probe_steps</span><span class="p">:</span> <span class="nb">int</span>
     <span class="n">eq_max_steps</span><span class="p">:</span> <span class="nb">int</span>
+    <span class="n">eq_qs_sigma_threshold</span><span class="p">:</span> <span class="nb">float</span>
+    <span class="n">eq_qs_min_steps</span><span class="p">:</span> <span class="nb">int</span>
     <span class="n">seed_index</span><span class="p">:</span> <span class="nb">int</span>
 
 
@@ -228,6 +236,8 @@
         <span class="n">sim_o</span><span class="p">,</span>
         <span class="n">chunk_size</span><span class="o">=</span><span class="n">params</span><span class="o">.</span><span class="n">eq_probe_steps</span><span class="p">,</span>
         <span class="n">max_steps</span><span class="o">=</span><span class="n">params</span><span class="o">.</span><span class="n">eq_max_steps</span><span class="p">,</span>
+        <span class="n">qs_sigma_threshold</span><span class="o">=</span><span class="n">params</span><span class="o">.</span><span class="n">eq_qs_sigma_threshold</span><span class="p">,</span>
+        <span class="n">qs_min_steps</span><span class="o">=</span><span class="n">params</span><span class="o">.</span><span class="n">eq_qs_min_steps</span><span class="p">,</span>
     <span class="p">)</span>
 
     <span class="n">mags</span><span class="p">,</span> <span class="n">engs</span> <span class="o">=</span> <span class="n">sim_r</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="n">n_steps</span><span class="o">=</span><span class="n">meas_steps</span><span class="p">)</span>
@@ -318,6 +328,8 @@
             <span class="n">sim_o</span><span class="p">,</span>
             <span class="n">chunk_size</span><span class="o">=</span><span class="n">params</span><span class="o">.</span><span class="n">eq_probe_steps</span><span class="p">,</span>
             <span class="n">max_steps</span><span class="o">=</span><span class="n">params</span><span class="o">.</span><span class="n">eq_max_steps</span><span class="p">,</span>
+            <span class="n">qs_sigma_threshold</span><span class="o">=</span><span class="n">params</span><span class="o">.</span><span class="n">eq_qs_sigma_threshold</span><span class="p">,</span>
+            <span class="n">qs_min_steps</span><span class="o">=</span><span class="n">params</span><span class="o">.</span><span class="n">eq_qs_min_steps</span><span class="p">,</span>
         <span class="p">)</span>
         <span class="n">equilibration_steps</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">total_steps</span><span class="p">)</span>
         <span class="n">equilibrated</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">uint8</span><span class="p">(</span><span class="n">converged</span><span class="p">)</span>
@@ -491,6 +503,14 @@
         <span class="s1">&#39;--eq-max-steps&#39;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">int</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="mi">20000</span><span class="p">,</span>
         <span class="n">help</span><span class="o">=</span><span class="s1">&#39;Hard cap on total equilibration steps&#39;</span><span class="p">,</span>
     <span class="p">)</span>
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span>
+        <span class="s1">&#39;--eq-qs-sigma-threshold&#39;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">float</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="mf">0.05</span><span class="p">,</span>
+        <span class="n">help</span><span class="o">=</span><span class="s1">&#39;Tail-std threshold for quasi-steady stuck detection (0 disables)&#39;</span><span class="p">,</span>
+    <span class="p">)</span>
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span>
+        <span class="s1">&#39;--eq-qs-min-steps&#39;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">int</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="mi">1500</span><span class="p">,</span>
+        <span class="n">help</span><span class="o">=</span><span class="s1">&#39;Minimum accumulated equilibration steps before stuck detection can fire&#39;</span><span class="p">,</span>
+    <span class="p">)</span>
     <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;--meas-steps&#39;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">int</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="mi">5000</span><span class="p">,</span> <span class="n">help</span><span class="o">=</span><span class="s1">&#39;Measurement steps&#39;</span><span class="p">)</span>
     <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;--t-min&#39;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">float</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="mf">0.1</span><span class="p">,</span> <span class="n">help</span><span class="o">=</span><span class="s1">&#39;Minimum temperature&#39;</span><span class="p">)</span>
     <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;--t-max&#39;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">float</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="mf">4.0</span><span class="p">,</span> <span class="n">help</span><span class="o">=</span><span class="s1">&#39;Maximum temperature&#39;</span><span class="p">)</span>
@@ -657,6 +677,8 @@
                 <span class="n">meas_steps</span><span class="o">=</span><span class="n">args</span><span class="o">.</span><span class="n">meas_steps</span><span class="p">,</span>
                 <span class="n">eq_probe_steps</span><span class="o">=</span><span class="n">args</span><span class="o">.</span><span class="n">eq_probe_steps</span><span class="p">,</span>
                 <span class="n">eq_max_steps</span><span class="o">=</span><span class="n">args</span><span class="o">.</span><span class="n">eq_max_steps</span><span class="p">,</span>
+                <span class="n">eq_qs_sigma_threshold</span><span class="o">=</span><span class="n">args</span><span class="o">.</span><span class="n">eq_qs_sigma_threshold</span><span class="p">,</span>
+                <span class="n">eq_qs_min_steps</span><span class="o">=</span><span class="n">args</span><span class="o">.</span><span class="n">eq_qs_min_steps</span><span class="p">,</span>
                 <span class="n">seed_index</span><span class="o">=</span><span class="n">attempted_n_seeds</span> <span class="o">+</span> <span class="n">s</span><span class="p">,</span>
             <span class="p">)</span>
             <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">batch_size</span><span class="p">)</span>

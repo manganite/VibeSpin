@@ -20,6 +20,14 @@ scripts.ising.correlation\_divergence module
    :show-inheritance:
    :undoc-members:
 
+scripts.ising.diag\_eq\_traces module
+-------------------------------------
+
+.. automodule:: scripts.ising.diag_eq_traces
+   :members:
+   :show-inheritance:
+   :undoc-members:
+
 scripts.ising.measure\_z module
 -------------------------------
 
