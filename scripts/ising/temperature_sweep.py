@@ -146,13 +146,8 @@ def _simulate_seed_temperature(params: _SeedSweepPoint) -> dict[str, float]:
         max_steps=params.eq_max_steps,
         qs_sigma_threshold=params.eq_qs_sigma_threshold,
         qs_min_steps=params.eq_qs_min_steps,
+        qs_allow_stuck=(T < _TC_ISING_THEORY),
     )
-
-    # Ising-specific relaxation logic: allow low-T stuck states if ordered is stable
-    if not converged and T < _TC_ISING_THEORY:
-        m_o = float(np.abs(sim_o._get_magnetization()))
-        if m_o > 0.8:
-            converged = True
 
     if not converged:
         return {
@@ -259,15 +254,8 @@ def _simulate_seed_replica_attempt(
             max_steps=params.eq_max_steps,
             qs_sigma_threshold=params.eq_qs_sigma_threshold,
             qs_min_steps=params.eq_qs_min_steps,
+            qs_allow_stuck=(T < _TC_ISING_THEORY),
         )
-
-        # Ising-specific relaxation logic: At low T, a random start often gets stuck
-        # in a domain-wall state while the ordered start stays in the ground state.
-        # If the ordered start remains stable (high M), we treat it as converged.
-        if not converged and T < _TC_ISING_THEORY:
-            m_o = float(np.abs(sim_o._get_magnetization()))
-            if m_o > 0.8:  # Ordered start is cleanly ordered
-                converged = True
 
         equilibration_steps[i] = float(total_steps)
         equilibrated[i] = np.uint8(converged)

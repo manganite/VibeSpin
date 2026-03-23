@@ -1064,6 +1064,7 @@ def estimate_relaxation_time_two_start(
     dwell_window: int = 60,
     min_fraction_inside: float = 0.85,
     sigma_floor: float = 0.02,
+    skip_validation: bool = False,
 ) -> int:
     """Estimate thermalization time from convergence of random- and ordered-start traces.
 
@@ -1091,14 +1092,19 @@ def estimate_relaxation_time_two_start(
             satisfy the mutual cross-band condition to declare convergence.
         sigma_floor: Minimum allowed standard deviation for each tail, preventing
             band collapse when a trajectory is nearly flat.
+        skip_validation: If True, skip np.asarray and finite-prefix checks.
 
     Returns
     -------
         Estimated relaxation time in MC steps.  Returns the full trace length
         if no convergence is detected, or 0 for very short traces.
     """
-    r = np.abs(_valid_prefix(np.asarray(trace_random, dtype=float)))
-    o = np.abs(_valid_prefix(np.asarray(trace_ordered, dtype=float)))
+    if skip_validation:
+        r = np.abs(trace_random)
+        o = np.abs(trace_ordered)
+    else:
+        r = np.abs(_valid_prefix(np.asarray(trace_random, dtype=float)))
+        o = np.abs(_valid_prefix(np.asarray(trace_ordered, dtype=float)))
 
     n = min(len(r), len(o))
     if n < 8:
@@ -1152,6 +1158,7 @@ def _detect_quasi_steady_stuck(
     qs_sigma_threshold: float = 0.05,
     sigma_floor: float = 0.02,
     lattice_size: int | None = None,
+    skip_validation: bool = False,
 ) -> bool:
     """Detect low-temperature stuck states in two-start equilibration.
 
@@ -1174,8 +1181,12 @@ def _detect_quasi_steady_stuck(
     variance at any system size.  At ``lattice_size = _QS_SIGMA_REF_L`` the
     effective threshold equals ``qs_sigma_threshold`` exactly.
     """
-    r = np.abs(_valid_prefix(np.asarray(trace_random, dtype=float)))
-    o = np.abs(_valid_prefix(np.asarray(trace_ordered, dtype=float)))
+    if skip_validation:
+        r = np.abs(trace_random)
+        o = np.abs(trace_ordered)
+    else:
+        r = np.abs(_valid_prefix(np.asarray(trace_random, dtype=float)))
+        o = np.abs(_valid_prefix(np.asarray(trace_ordered, dtype=float)))
 
     n = min(len(r), len(o))
     if n < 8:

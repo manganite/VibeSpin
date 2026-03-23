@@ -264,6 +264,7 @@ def convergence_equilibrate_with_status(
     max_steps: int = 200_000,
     qs_sigma_threshold: float = 0.05,
     qs_min_steps: int = 1500,
+    qs_allow_stuck: bool = False,
     **kwargs: Any,
 ) -> tuple[int, bool]:
     """
@@ -287,6 +288,10 @@ def convergence_equilibrate_with_status(
             to fire.  Ensures tail statistics are computed from enough data to be
             reliable, preventing false positives when traces have not yet had time
             to settle.
+        qs_allow_stuck: If True, detecting a quasi-steady stuck state (where the
+            ordered trace is stable but the random trace is stranded) is treated
+            as a successful equilibration. Useful for Ising sweeps where
+            random-start domain-wall trapping is physically expected.
         **kwargs: Passed to ``estimate_relaxation_time_two_start`` (k, smooth_window,
             dwell_window, min_fraction_inside, sigma_floor, etc.).
 
@@ -300,23 +305,35 @@ def convergence_equilibrate_with_status(
     )
 
     logger = logging.getLogger('vibespin')
-    mags_r: list[float] = []
-    mags_o: list[float] = []
+    mags_r = np.full(max_steps, np.nan, dtype=float)
+    mags_o = np.full(max_steps, np.nan, dtype=float)
     total = 0
 
     while total < max_steps:
+        # Run next chunk
         mr, _ = sim_random.run(n_steps=chunk_size)
         mo, _ = sim_ordered.run(n_steps=chunk_size)
-        mags_r.extend(mr)
-        mags_o.extend(mo)
-        total += chunk_size
+
+        # Clip chunk if it would exceed max_steps
+        actual_len = min(len(mr), max_steps - total)
+        if actual_len <= 0:
+            break
+
+        mags_r[total : total + actual_len] = mr[:actual_len]
+        mags_o[total : total + actual_len] = mo[:actual_len]
+        total += actual_len
 
         # Only check if we have enough data for a meaningful estimate
         # smooth_window defaults to 60, dwell_window to 60.
         if total >= 100:
+            # Pass slices (views) to avoid copying
+            trace_r = mags_r[:total]
+            trace_o = mags_o[:total]
+
             tau = estimate_relaxation_time_two_start(
-                trace_random=np.array(mags_r),
-                trace_ordered=np.array(mags_o),
+                trace_random=trace_r,
+                trace_ordered=trace_o,
+                skip_validation=True,
                 **kwargs,
             )
             # If estimate_relaxation_time_two_start returns a value < total,
@@ -325,14 +342,22 @@ def convergence_equilibrate_with_status(
                 return total, True
 
             if total >= qs_min_steps and _detect_quasi_steady_stuck(
-                trace_random=np.array(mags_r),
-                trace_ordered=np.array(mags_o),
+                trace_random=trace_r,
+                trace_ordered=trace_o,
                 k=float(kwargs.get('k', 1.0)),
                 smooth_window=int(kwargs.get('smooth_window', 60)),
                 qs_sigma_threshold=qs_sigma_threshold,
                 sigma_floor=float(kwargs.get('sigma_floor', 0.02)),
                 lattice_size=getattr(sim_random, 'size', None),
+                skip_validation=True,
             ):
+                if qs_allow_stuck:
+                    logger.info(
+                        'convergence_equilibrate: detected stable quasi-steady stuck state; '
+                        'stopping early and accepting ordered start.'
+                    )
+                    return total, True
+
                 logger.warning(
                     'convergence_equilibrate: detected quasi-steady stuck state '
                     f'before max_steps={max_steps}; stopping early without convergence.'
