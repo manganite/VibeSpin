@@ -66,6 +66,7 @@
 <li class="toctree-l2"><a class="reference internal" href="#Magnetization-traces">Magnetization traces</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#Quantitative-relaxation-time-analysis-(multi-seed,-two-start)">Quantitative relaxation-time analysis (multi-seed, two-start)</a><ul>
 <li class="toctree-l3"><a class="reference internal" href="#Visual-Example-of-Convergence">Visual Example of Convergence</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#Robustness-in-the-Ordered-Phase:-Quasi-Steady-Stuck-Detection">Robustness in the Ordered Phase: Quasi-Steady Stuck Detection</a></li>
 </ul>
 </li>
 <li class="toctree-l2"><a class="reference internal" href="#Work-normalised-relaxation-time">Work-normalised relaxation time</a></li>
@@ -550,6 +551,12 @@ Note: at T_c, local updates run for 4000 steps (N_STEPS × MAX_STEPS_FACTOR = 10
 </div>
 </div>
 </section>
+<section id="Robustness-in-the-Ordered-Phase:-Quasi-Steady-Stuck-Detection">
+<h3>Robustness in the Ordered Phase: Quasi-Steady Stuck Detection<a class="headerlink" href="#Robustness-in-the-Ordered-Phase:-Quasi-Steady-Stuck-Detection" title="Link to this heading"></a></h3>
+<p>In the deep ordered phase (<span class="math notranslate nohighlight">\(T &lt; T_c\)</span>), the simple mutual cross-band criterion used above can sometimes fail to signal convergence within a reasonable time. This occurs because a random initial state often nucleates multiple domains of opposite spin that become topologically trapped. These “stuck” states form a long-lived metastable plateau with <span class="math notranslate nohighlight">\(\lvert M \rvert &lt; 1\)</span> and very low variance, making them appear “quasi-steady” even though they have not reached the global minimum.</p>
+<p>To handle this physical reality efficiently, VibeSpin’s production equilibration routine (<code class="docutils literal notranslate"><span class="pre">convergence_equilibrate_with_status</span></code>) implements <strong>Quasi-Steady Stuck Detection</strong>. If the system detects that the ordered-start trace has settled into a stable ground state (<span class="math notranslate nohighlight">\(\lvert M \rvert \approx 1\)</span> with low variance) while the random-start trace remains stranded in a lower-magnetization plateau, it declares the equilibration complete. In these cases, the engine automatically falls back to using
+the stable ordered-start simulation for all subsequent thermodynamic measurements. This ensures that the simulation provides physically correct equilibrium results without wasting thousands of MC steps waiting for a random start to overcome a massive free-energy barrier.</p>
+</section>
 </section>
 <section id="Work-normalised-relaxation-time">
 <h2>Work-normalised relaxation time<a class="headerlink" href="#Work-normalised-relaxation-time" title="Link to this heading"></a></h2>
@@ -693,7 +700,7 @@ Above $T_c$                         136 [  68,  239]                   50 [  10,
 <div class="prompt empty docutils container">
 </div>
 <div class="output_area docutils container">
-<img alt="_images/ising_relaxation_and_autocorrelation_analysis_12_1.png" src="_images/ising_relaxation_and_autocorrelation_analysis_12_1.png" />
+<img alt="_images/ising_relaxation_and_autocorrelation_analysis_13_1.png" src="_images/ising_relaxation_and_autocorrelation_analysis_13_1.png" />
 </div>
 </div>
 </section>
@@ -883,14 +890,14 @@ Note: 7 seed(s) returned NaN (post-burn-in trace too short); excluded from media
 <div class="prompt empty docutils container">
 </div>
 <div class="output_area docutils container">
-<img alt="_images/ising_relaxation_and_autocorrelation_analysis_14_1.png" src="_images/ising_relaxation_and_autocorrelation_analysis_14_1.png" />
+<img alt="_images/ising_relaxation_and_autocorrelation_analysis_15_1.png" src="_images/ising_relaxation_and_autocorrelation_analysis_15_1.png" />
 </div>
 </div>
 <div class="nboutput nblast docutils container">
 <div class="prompt empty docutils container">
 </div>
 <div class="output_area docutils container">
-<img alt="_images/ising_relaxation_and_autocorrelation_analysis_14_2.png" src="_images/ising_relaxation_and_autocorrelation_analysis_14_2.png" />
+<img alt="_images/ising_relaxation_and_autocorrelation_analysis_15_2.png" src="_images/ising_relaxation_and_autocorrelation_analysis_15_2.png" />
 </div>
 </div>
 </section>

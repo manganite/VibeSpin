@@ -528,6 +528,18 @@
   },
   {
    "cell_type": "markdown",
+   "id": "quasi-steady-stuck-detection",
+   "metadata": {},
+   "source": [
+    "### Robustness in the Ordered Phase: Quasi-Steady Stuck Detection\n",
+    "\n",
+    "In the deep ordered phase ($T < T_c$), the simple mutual cross-band criterion used above can sometimes fail to signal convergence within a reasonable time. This occurs because a random initial state often nucleates multiple domains of opposite spin that become topologically trapped. These \"stuck\" states form a long-lived metastable plateau with $\\lvert M \\rvert < 1$ and very low variance, making them appear \"quasi-steady\" even though they have not reached the global minimum.\n",
+    "\n",
+    "To handle this physical reality efficiently, VibeSpin's production equilibration routine (`convergence_equilibrate_with_status`) implements **Quasi-Steady Stuck Detection**. If the system detects that the ordered-start trace has settled into a stable ground state ($\\lvert M \\rvert \\approx 1$ with low variance) while the random-start trace remains stranded in a lower-magnetization plateau, it declares the equilibration complete. In these cases, the engine automatically falls back to using the stable ordered-start simulation for all subsequent thermodynamic measurements. This ensures that the simulation provides physically correct equilibrium results without wasting thousands of MC steps waiting for a random start to overcome a massive free-energy barrier."
+   ]
+  },
+  {
+   "cell_type": "markdown",
    "id": "f5d9e209",
    "metadata": {},
    "source": [
