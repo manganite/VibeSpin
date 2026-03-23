@@ -25,6 +25,7 @@ from utils.physics_helpers import (
 )
 from utils.system_helpers import (
     convergence_equilibrate,
+    convergence_equilibrate_with_status,
     parallel_sweep,
     plot_temperature_sweep,
     setup_logging,
@@ -111,6 +112,17 @@ class _SeedSweepPoint(NamedTuple):
     seed: int
 
 
+class _SeedReplicaAttempt(NamedTuple):
+    """Typed worker payload for one full temperature sweep attempt for a seed replica."""
+
+    temperatures: tuple[float, ...]
+    size: int
+    meas_steps: int
+    eq_probe_steps: int
+    eq_max_steps: int
+    seed_index: int
+
+
 def _simulate_seed_temperature(params: _SeedSweepPoint) -> dict[str, float]:
     """Run one seeded sweep point and return summary statistics for all observables."""
     T = params.temperature
@@ -119,7 +131,7 @@ def _simulate_seed_temperature(params: _SeedSweepPoint) -> dict[str, float]:
 
     sim_r = IsingSimulation(size=L, temp=T, init_state='random', seed=params.seed)
     sim_o = IsingSimulation(size=L, temp=T, init_state='ordered', seed=params.seed)
-    convergence_equilibrate(
+    equilibration_steps, converged = convergence_equilibrate_with_status(
         sim_r,
         sim_o,
         chunk_size=params.eq_probe_steps,
@@ -160,6 +172,8 @@ def _simulate_seed_temperature(params: _SeedSweepPoint) -> dict[str, float]:
     return {
         'temperature_index': float(params.temperature_index),
         'seed_index': float(params.seed_index),
+        'equilibrated_flag': float(converged),
+        'equilibration_steps': float(equilibration_steps),
         'avg_m_value': float(mag['value']),
         'avg_m_err': float(mag['err']),
         'avg_m_tau_int': float(mag['tau_int']),
@@ -176,6 +190,116 @@ def _simulate_seed_temperature(params: _SeedSweepPoint) -> dict[str, float]:
         'spec_h_err': float(cv['err']),
         'spec_h_tau_int': float(cv['tau_int']),
         'spec_h_n_eff': float(cv['n_eff']),
+    }
+
+
+def _simulate_seed_replica_attempt(
+    params: _SeedReplicaAttempt,
+) -> dict[str, np.ndarray | float]:
+    """Run one full seed replica sweep and stop immediately on the first failed temperature."""
+    t_points = len(params.temperatures)
+    avg_m_values = np.full(t_points, np.nan, dtype=np.float64)
+    avg_m_errors = np.full(t_points, np.nan, dtype=np.float64)
+    avg_m_tau = np.full(t_points, np.nan, dtype=np.float64)
+    avg_m_n_eff = np.full(t_points, np.nan, dtype=np.float64)
+    avg_e_values = np.full(t_points, np.nan, dtype=np.float64)
+    avg_e_errors = np.full(t_points, np.nan, dtype=np.float64)
+    avg_e_tau = np.full(t_points, np.nan, dtype=np.float64)
+    avg_e_n_eff = np.full(t_points, np.nan, dtype=np.float64)
+    susc_values = np.full(t_points, np.nan, dtype=np.float64)
+    susc_errors = np.full(t_points, np.nan, dtype=np.float64)
+    susc_tau = np.full(t_points, np.nan, dtype=np.float64)
+    susc_n_eff = np.full(t_points, np.nan, dtype=np.float64)
+    spec_h_values = np.full(t_points, np.nan, dtype=np.float64)
+    spec_h_errors = np.full(t_points, np.nan, dtype=np.float64)
+    spec_h_tau = np.full(t_points, np.nan, dtype=np.float64)
+    spec_h_n_eff = np.full(t_points, np.nan, dtype=np.float64)
+    equilibrated = np.zeros(t_points, dtype=np.uint8)
+    equilibration_steps = np.full(t_points, np.nan, dtype=np.float64)
+
+    for i, T in enumerate(params.temperatures):
+        seed = i * 100_000 + params.seed_index * 1_000
+        sim_r = IsingSimulation(size=params.size, temp=T, init_state='random', seed=seed)
+        sim_o = IsingSimulation(size=params.size, temp=T, init_state='ordered', seed=seed)
+        total_steps, converged = convergence_equilibrate_with_status(
+            sim_r,
+            sim_o,
+            chunk_size=params.eq_probe_steps,
+            max_steps=params.eq_max_steps,
+        )
+        equilibration_steps[i] = float(total_steps)
+        equilibrated[i] = np.uint8(converged)
+        if not converged:
+            break
+
+        mags, engs = sim_r.run(n_steps=params.meas_steps)
+        mags_arr = np.asarray(mags, dtype=np.float64)
+        engs_arr = np.asarray(engs, dtype=np.float64)
+
+        mag = summarize_primary_observable(
+            time_series=mags_arr,
+            confidence=_WORKER_CONFIDENCE_LEVEL,
+        )
+        eng = summarize_primary_observable(
+            time_series=engs_arr,
+            confidence=_WORKER_CONFIDENCE_LEVEL,
+        )
+        chi = summarize_derived_observable(
+            magnetization_series=mags_arr,
+            temperature=T,
+            L=params.size,
+            observable='chi',
+            method=_WORKER_DERIVED_METHOD,
+            confidence=_WORKER_CONFIDENCE_LEVEL,
+            bootstrap_resamples=_WORKER_DERIVED_BOOTSTRAP_RESAMPLES,
+        )
+        cv = summarize_derived_observable(
+            energy_series=engs_arr,
+            temperature=T,
+            L=params.size,
+            observable='cv',
+            method=_WORKER_DERIVED_METHOD,
+            confidence=_WORKER_CONFIDENCE_LEVEL,
+            bootstrap_resamples=_WORKER_DERIVED_BOOTSTRAP_RESAMPLES,
+        )
+
+        avg_m_values[i] = float(mag['value'])
+        avg_m_errors[i] = float(mag['err'])
+        avg_m_tau[i] = float(mag['tau_int'])
+        avg_m_n_eff[i] = float(mag['n_eff'])
+        avg_e_values[i] = float(eng['value'])
+        avg_e_errors[i] = float(eng['err'])
+        avg_e_tau[i] = float(eng['tau_int'])
+        avg_e_n_eff[i] = float(eng['n_eff'])
+        susc_values[i] = float(chi['value'])
+        susc_errors[i] = float(chi['err'])
+        susc_tau[i] = float(chi['tau_int'])
+        susc_n_eff[i] = float(chi['n_eff'])
+        spec_h_values[i] = float(cv['value'])
+        spec_h_errors[i] = float(cv['err'])
+        spec_h_tau[i] = float(cv['tau_int'])
+        spec_h_n_eff[i] = float(cv['n_eff'])
+
+    return {
+        'seed_index': float(params.seed_index),
+        'equilibrated_flag': equilibrated,
+        'equilibration_steps': equilibration_steps,
+        'avg_m_value': avg_m_values,
+        'avg_m_err': avg_m_errors,
+        'avg_m_tau_int': avg_m_tau,
+        'avg_m_n_eff': avg_m_n_eff,
+        'avg_e_value': avg_e_values,
+        'avg_e_err': avg_e_errors,
+        'avg_e_tau_int': avg_e_tau,
+        'avg_e_n_eff': avg_e_n_eff,
+        'susc_value': susc_values,
+        'susc_err': susc_errors,
+        'susc_tau_int': susc_tau,
+        'susc_n_eff': susc_n_eff,
+        'spec_h_value': spec_h_values,
+        'spec_h_err': spec_h_errors,
+        'spec_h_tau_int': spec_h_tau,
+        'spec_h_n_eff': spec_h_n_eff,
     }
 
 
@@ -270,14 +394,25 @@ def main() -> None:
         help='Chunk size for convergence check during equilibration',
     )
     parser.add_argument(
-        '--eq-max-steps', type=int, default=200000,
+        '--eq-max-steps', type=int, default=20000,
         help='Hard cap on total equilibration steps',
     )
     parser.add_argument('--meas-steps', type=int, default=5000, help='Measurement steps')
     parser.add_argument('--t-min', type=float, default=0.1, help='Minimum temperature')
     parser.add_argument('--t-max', type=float, default=4.0, help='Maximum temperature')
     parser.add_argument('--t-points', type=int, default=40, help='Number of temperature points')
-    parser.add_argument('--n-seeds', type=int, default=1, help='Independent seed replicas')
+    parser.add_argument(
+        '--n-seeds',
+        type=int,
+        default=1,
+        help='Target number of fully converged seed replicas to retain',
+    )
+    parser.add_argument(
+        '--max-seed-attempts',
+        type=int,
+        default=None,
+        help='Hard cap on total seed attempts, including replacements; defaults to 10*n-seeds',
+    )
     parser.add_argument(
         '--derived-uncertainty-method',
         type=str,
@@ -386,33 +521,66 @@ def main() -> None:
     L = args.size
     temperatures: np.ndarray = np.linspace(args.t_min, args.t_max, args.t_points)
 
-    n_seeds = int(args.n_seeds)
-    if n_seeds < 1:
-        raise ValueError(f'n-seeds must be >= 1, got {n_seeds}')
+    target_n_seeds = int(args.n_seeds)
+    if target_n_seeds < 1:
+        raise ValueError(f'n-seeds must be >= 1, got {target_n_seeds}')
 
-    logger.info(f'Starting Ising temperature sweep (L={L}, n_seeds={n_seeds})...')
-    sweep_params: list[_SeedSweepPoint] = []
-    for i, T in enumerate(temperatures):
-        for s in range(n_seeds):
-            sweep_params.append(
-                _SeedSweepPoint(
-                    temperature=float(T),
-                    size=L,
-                    meas_steps=args.meas_steps,
-                    eq_probe_steps=args.eq_probe_steps,
-                    eq_max_steps=args.eq_max_steps,
-                    temperature_index=i,
-                    seed_index=s,
-                    seed=i * 100_000 + s * 1_000,
-                )
-            )
+    max_seed_attempts = args.max_seed_attempts
+    if max_seed_attempts is None:
+        max_seed_attempts = max(target_n_seeds, 10 * target_n_seeds)
+    max_seed_attempts = int(max_seed_attempts)
+    if max_seed_attempts < target_n_seeds:
+        raise ValueError(
+            'max-seed-attempts must be >= n-seeds, '
+            f'got max-seed-attempts={max_seed_attempts}, n-seeds={target_n_seeds}'
+        )
 
-    raw: list[dict[str, float]] = parallel_sweep(
-        worker_func=_simulate_seed_temperature,
-        params=sweep_params,
+    logger.info(
+        'Starting Ising temperature sweep '
+        f'(L={L}, target_n_seeds={target_n_seeds}, max_seed_attempts={max_seed_attempts})...'
     )
 
-    shape = (args.t_points, n_seeds)
+    temperature_tuple = tuple(float(T) for T in temperatures)
+    attempt_records: list[dict[str, np.ndarray | float]] = []
+    retained_records: list[dict[str, np.ndarray | float]] = []
+
+    while len(retained_records) < target_n_seeds:
+        attempted_n_seeds = len(attempt_records)
+        remaining_attempts = max_seed_attempts - attempted_n_seeds
+        if remaining_attempts <= 0:
+            raise RuntimeError(
+                'Could not collect the requested number of fully converged seed replicas. '
+                f'Retained {len(retained_records)} of {target_n_seeds} after '
+                f'{max_seed_attempts} total attempts. Increase --max-seed-attempts or relax '
+                'equilibration settings.'
+            )
+
+        batch_size = min(target_n_seeds - len(retained_records), remaining_attempts)
+        batch_params = [
+            _SeedReplicaAttempt(
+                temperatures=temperature_tuple,
+                size=L,
+                meas_steps=args.meas_steps,
+                eq_probe_steps=args.eq_probe_steps,
+                eq_max_steps=args.eq_max_steps,
+                seed_index=attempted_n_seeds + s,
+            )
+            for s in range(batch_size)
+        ]
+        batch_raw: list[dict[str, np.ndarray | float]] = parallel_sweep(
+            worker_func=_simulate_seed_replica_attempt,
+            params=batch_params,
+        )
+
+        for item in sorted(batch_raw, key=lambda record: int(record['seed_index'])):
+            attempt_records.append(item)
+            seed_flags = np.asarray(item['equilibrated_flag'], dtype=np.uint8)
+            if bool(np.all(seed_flags > 0)):
+                retained_records.append(item)
+
+    attempted_n_seeds = len(attempt_records)
+    retained_n_seeds = len(retained_records)
+    shape = (args.t_points, attempted_n_seeds)
     avg_m_values = np.full(shape, np.nan, dtype=np.float64)
     avg_m_errors = np.full(shape, np.nan, dtype=np.float64)
     avg_m_tau = np.full(shape, np.nan, dtype=np.float64)
@@ -429,26 +597,51 @@ def main() -> None:
     spec_h_errors = np.full(shape, np.nan, dtype=np.float64)
     spec_h_tau = np.full(shape, np.nan, dtype=np.float64)
     spec_h_n_eff = np.full(shape, np.nan, dtype=np.float64)
+    equilibrated = np.zeros(shape, dtype=np.uint8)
+    equilibration_steps = np.full(shape, np.nan, dtype=np.float64)
 
-    for item in raw:
-        i = int(item['temperature_index'])
+    for item in attempt_records:
         s = int(item['seed_index'])
-        avg_m_values[i, s] = item['avg_m_value']
-        avg_m_errors[i, s] = item['avg_m_err']
-        avg_m_tau[i, s] = item['avg_m_tau_int']
-        avg_m_n_eff[i, s] = item['avg_m_n_eff']
-        avg_e_values[i, s] = item['avg_e_value']
-        avg_e_errors[i, s] = item['avg_e_err']
-        avg_e_tau[i, s] = item['avg_e_tau_int']
-        avg_e_n_eff[i, s] = item['avg_e_n_eff']
-        susc_values[i, s] = item['susc_value']
-        susc_errors[i, s] = item['susc_err']
-        susc_tau[i, s] = item['susc_tau_int']
-        susc_n_eff[i, s] = item['susc_n_eff']
-        spec_h_values[i, s] = item['spec_h_value']
-        spec_h_errors[i, s] = item['spec_h_err']
-        spec_h_tau[i, s] = item['spec_h_tau_int']
-        spec_h_n_eff[i, s] = item['spec_h_n_eff']
+        equilibrated[:, s] = np.asarray(item['equilibrated_flag'], dtype=np.uint8)
+        equilibration_steps[:, s] = np.asarray(item['equilibration_steps'], dtype=np.float64)
+        avg_m_values[:, s] = np.asarray(item['avg_m_value'], dtype=np.float64)
+        avg_m_errors[:, s] = np.asarray(item['avg_m_err'], dtype=np.float64)
+        avg_m_tau[:, s] = np.asarray(item['avg_m_tau_int'], dtype=np.float64)
+        avg_m_n_eff[:, s] = np.asarray(item['avg_m_n_eff'], dtype=np.float64)
+        avg_e_values[:, s] = np.asarray(item['avg_e_value'], dtype=np.float64)
+        avg_e_errors[:, s] = np.asarray(item['avg_e_err'], dtype=np.float64)
+        avg_e_tau[:, s] = np.asarray(item['avg_e_tau_int'], dtype=np.float64)
+        avg_e_n_eff[:, s] = np.asarray(item['avg_e_n_eff'], dtype=np.float64)
+        susc_values[:, s] = np.asarray(item['susc_value'], dtype=np.float64)
+        susc_errors[:, s] = np.asarray(item['susc_err'], dtype=np.float64)
+        susc_tau[:, s] = np.asarray(item['susc_tau_int'], dtype=np.float64)
+        susc_n_eff[:, s] = np.asarray(item['susc_n_eff'], dtype=np.float64)
+        spec_h_values[:, s] = np.asarray(item['spec_h_value'], dtype=np.float64)
+        spec_h_errors[:, s] = np.asarray(item['spec_h_err'], dtype=np.float64)
+        spec_h_tau[:, s] = np.asarray(item['spec_h_tau_int'], dtype=np.float64)
+        spec_h_n_eff[:, s] = np.asarray(item['spec_h_n_eff'], dtype=np.float64)
+
+    retained_seed_mask = np.all(equilibrated > 0, axis=0)
+    retained_seed_indices = np.flatnonzero(retained_seed_mask).astype(np.int64)
+    dropped_seed_indices = np.flatnonzero(~retained_seed_mask).astype(np.int64)
+    dropped_n_seeds = int(dropped_seed_indices.size)
+
+    avg_m_values = avg_m_values[:, retained_seed_mask]
+    avg_m_errors = avg_m_errors[:, retained_seed_mask]
+    avg_m_tau = avg_m_tau[:, retained_seed_mask]
+    avg_m_n_eff = avg_m_n_eff[:, retained_seed_mask]
+    avg_e_values = avg_e_values[:, retained_seed_mask]
+    avg_e_errors = avg_e_errors[:, retained_seed_mask]
+    avg_e_tau = avg_e_tau[:, retained_seed_mask]
+    avg_e_n_eff = avg_e_n_eff[:, retained_seed_mask]
+    susc_values = susc_values[:, retained_seed_mask]
+    susc_errors = susc_errors[:, retained_seed_mask]
+    susc_tau = susc_tau[:, retained_seed_mask]
+    susc_n_eff = susc_n_eff[:, retained_seed_mask]
+    spec_h_values = spec_h_values[:, retained_seed_mask]
+    spec_h_errors = spec_h_errors[:, retained_seed_mask]
+    spec_h_tau = spec_h_tau[:, retained_seed_mask]
+    spec_h_n_eff = spec_h_n_eff[:, retained_seed_mask]
 
     mag_bundle = _build_uncertainty_bundle(
         values_by_seed=avg_m_values,
@@ -520,11 +713,13 @@ def main() -> None:
     total_points = int(temperatures.size)
     well_conditioned_count = int(total_points - np.sum(bad_mask))
     diagnostics_note = (
-        f'n_seeds={n_seeds}, undefined tau={undefined_count}/{temperatures.size}, '
+        f'n_seeds={retained_n_seeds}/{target_n_seeds}, attempted={attempted_n_seeds}, '
+        f'undefined tau={undefined_count}/{temperatures.size}, '
         f'unstable tau intervals={unstable_count}/{temperatures.size}'
     )
     run_metadata_note = (
-        f'L={L}, n_seeds={n_seeds}, conf={float(args.confidence_level):.2f}, '
+        f'L={L}, n_seeds={retained_n_seeds}/{target_n_seeds}, attempted={attempted_n_seeds}, '
+        f'conf={float(args.confidence_level):.2f}, '
         f'method={UNCERTAINTY_METHOD_BLOCKING}, entropy={args.entropy_uncertainty_method}, '
         f'strict={args.strict_uncertainty}'
     )
@@ -534,6 +729,9 @@ def main() -> None:
         'low_effective_count': low_effective_count,
         'unstable_interval_count': unstable_count,
         'undefined_count': undefined_count,
+        'attempted_n_seeds': attempted_n_seeds,
+        'retained_n_seeds': retained_n_seeds,
+        'dropped_n_seeds': dropped_n_seeds,
     }
 
     undefined_fraction = float(np.mean(flags['undefined_autocorr_flag']))
@@ -596,7 +794,17 @@ def main() -> None:
         tau_interval_unstable_flag=flags['tau_interval_unstable_flag'],
         uncertainty_method=UNCERTAINTY_METHOD_BLOCKING,
         confidence_level=float(args.confidence_level),
-        n_seeds=n_seeds,
+        n_seeds=retained_n_seeds,
+        requested_n_seeds=target_n_seeds,
+        attempted_n_seeds=attempted_n_seeds,
+        max_seed_attempts=max_seed_attempts,
+        retained_n_seeds=retained_n_seeds,
+        dropped_n_seeds=dropped_n_seeds,
+        retained_seed_indices=retained_seed_indices,
+        dropped_seed_indices=dropped_seed_indices,
+        seed_converged_mask=retained_seed_mask.astype(np.uint8),
+        convergence_by_temperature_seed=equilibrated,
+        equilibration_steps=equilibration_steps,
         bootstrap_resamples=int(args.entropy_bootstrap_resamples),
         nan_or_undefined_count=float(np.isnan(tau_int_arr).sum()),
     )

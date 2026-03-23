@@ -319,6 +319,7 @@ class TestTemperatureSweepMainPayloads:
         argv: list[str],
         *,
         expected_len: int = 2,
+        expected_eq_max_steps: int | None = None,
     ) -> None:
         """Run a sweep main() with patched dependencies and assert typed payload construction."""
         captured: dict[str, list[Any]] = {}
@@ -391,6 +392,8 @@ class TestTemperatureSweepMainPayloads:
             assert tuple(payload._fields) == expected_fields
             for field in expected_fields:
                 assert hasattr(payload, field)
+            if expected_eq_max_steps is not None:
+                assert int(payload.eq_max_steps) == expected_eq_max_steps
 
     def test_ising_main_builds_typed_sweep_payloads(self, monkeypatch) -> None:
         """Ising temperature sweep main should build Ising SweepPoint payloads."""
@@ -416,6 +419,7 @@ class TestTemperatureSweepMainPayloads:
                 '--size', '8', '--meas-steps', '20', '--t-points', '2', '--n-seeds', '1',
             ],
             expected_len=1,
+            expected_eq_max_steps=20000,
         )
 
     def test_xy_main_builds_typed_sweep_payloads(self, monkeypatch) -> None:
