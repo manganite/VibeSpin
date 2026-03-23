@@ -451,6 +451,74 @@ def test_convergence_equilibrate_with_status_reports_failure(caplog):
     assert 'without convergence' in caplog.text
 
 
+def test_convergence_equilibrate_with_status_exits_early_when_stuck(caplog):
+    """Two-start equilibration should stop early when stuck in quasi-steady state."""
+
+    class _ConvergenceStubRandom:
+        size = 32
+        def run(self, *, n_steps: int) -> tuple[np.ndarray, np.ndarray]:
+            return np.full(n_steps, 0.55), np.zeros(n_steps)
+
+    class _ConvergenceStubOrdered:
+        size = 32
+        def run(self, *, n_steps: int) -> tuple[np.ndarray, np.ndarray]:
+            return np.ones(n_steps), np.zeros(n_steps)
+
+    caplog.set_level('WARNING', logger='vibespin')
+    with patch('utils.physics_helpers.estimate_relaxation_time_two_start', return_value=1000):
+        from utils.system_helpers import convergence_equilibrate_with_status
+
+        total, converged = convergence_equilibrate_with_status(
+            _ConvergenceStubRandom(),
+            _ConvergenceStubOrdered(),
+            chunk_size=50,
+            max_steps=1_000,
+            smooth_window=10,
+            qs_sigma_threshold=0.02,
+            qs_min_steps=50,
+            sigma_floor=0.02,
+        )
+
+    assert total < 1_000
+    assert converged is False
+    assert 'quasi-steady stuck state' in caplog.text
+
+
+def test_convergence_equilibrate_with_status_gate_blocks_stuck_detection(caplog):
+    """Stuck detection must not fire before qs_min_steps have accumulated."""
+
+    class _ConvergenceStubRandom:
+        size = 32
+        def run(self, *, n_steps: int) -> tuple[np.ndarray, np.ndarray]:
+            return np.full(n_steps, 0.55), np.zeros(n_steps)
+
+    class _ConvergenceStubOrdered:
+        size = 32
+        def run(self, *, n_steps: int) -> tuple[np.ndarray, np.ndarray]:
+            return np.ones(n_steps), np.zeros(n_steps)
+
+    caplog.set_level('WARNING', logger='vibespin')
+    with patch('utils.physics_helpers.estimate_relaxation_time_two_start', return_value=1000):
+        from utils.system_helpers import convergence_equilibrate_with_status
+
+        # qs_min_steps=10_000 means stuck detection can never fire in this run
+        total, converged = convergence_equilibrate_with_status(
+            _ConvergenceStubRandom(),
+            _ConvergenceStubOrdered(),
+            chunk_size=50,
+            max_steps=200,
+            smooth_window=10,
+            qs_sigma_threshold=0.02,
+            qs_min_steps=10_000,
+            sigma_floor=0.02,
+        )
+
+    assert total == 200
+    assert converged is False
+    assert 'quasi-steady stuck state' not in caplog.text
+    assert 'without convergence' in caplog.text
+
+
 def test_plot_temperature_sweep_with_entropy_only(temp_dir):
     """Optional panel layout should handle entropy-only inputs."""
     temps = np.array([1.0, 2.0])

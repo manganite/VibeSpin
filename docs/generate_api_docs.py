@@ -38,7 +38,7 @@ def _iter_modules(package: str) -> list[str]:
     return sorted(
         path.stem
         for path in package_dir.glob('*.py')
-        if path.name != '__init__.py'
+        if path.name != '__init__.py' and not path.name.startswith('_')
     )
 
 

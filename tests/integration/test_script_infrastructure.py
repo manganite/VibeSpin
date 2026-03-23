@@ -412,6 +412,8 @@ class TestTemperatureSweepMainPayloads:
                 'meas_steps',
                 'eq_probe_steps',
                 'eq_max_steps',
+                'eq_qs_sigma_threshold',
+                'eq_qs_min_steps',
                 'seed_index',
             ),
             [
@@ -496,6 +498,8 @@ class TestTemperatureSweepWorkerPayloads:
             meas_steps=40,
             eq_probe_steps=10,
             eq_max_steps=40,
+            eq_qs_sigma_threshold=0.05,
+            eq_qs_min_steps=1500,
         )
         result = simulate_ising_temperature(payload)
         self._assert_valid_thermo_result(result)

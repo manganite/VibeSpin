@@ -125,6 +125,8 @@ def parallel_sweep(
 class _Sim(Protocol):
     """Structural type for any MonteCarloSimulation; avoids a models/ → utils/ import."""
 
+    size: int
+
     def equilibrate(self, *, n_steps: int) -> None: ...
 
     def run(self, *, n_steps: int) -> tuple[np.ndarray, np.ndarray]: ...
@@ -210,6 +212,8 @@ def convergence_equilibrate(
     *,
     chunk_size: int = 500,
     max_steps: int = 200_000,
+    qs_sigma_threshold: float = 0.05,
+    qs_min_steps: int = 1500,
     **kwargs: Any,
 ) -> int:
     """
@@ -227,6 +231,12 @@ def convergence_equilibrate(
         sim_ordered: Simulation instance started from an ordered state.
         chunk_size: Number of steps to run between convergence checks.
         max_steps: Hard cap on total steps.
+        qs_sigma_threshold: Tail-std threshold used to detect a quasi-steady,
+            non-converged stuck state and exit early.
+        qs_min_steps: Minimum accumulated steps before stuck detection is allowed
+            to fire.  Ensures tail statistics are computed from enough data to be
+            reliable, preventing false positives when traces have not yet had time
+            to settle.
         **kwargs: Passed to ``estimate_relaxation_time_two_start`` (k, smooth_window,
             dwell_window, min_fraction_inside, sigma_floor, etc.).
 
@@ -239,6 +249,8 @@ def convergence_equilibrate(
         sim_ordered,
         chunk_size=chunk_size,
         max_steps=max_steps,
+        qs_sigma_threshold=qs_sigma_threshold,
+        qs_min_steps=qs_min_steps,
         **kwargs,
     )
     return total
@@ -250,6 +262,8 @@ def convergence_equilibrate_with_status(
     *,
     chunk_size: int = 500,
     max_steps: int = 200_000,
+    qs_sigma_threshold: float = 0.05,
+    qs_min_steps: int = 1500,
     **kwargs: Any,
 ) -> tuple[int, bool]:
     """
@@ -267,6 +281,12 @@ def convergence_equilibrate_with_status(
         sim_ordered: Simulation instance started from an ordered state.
         chunk_size: Number of steps to run between convergence checks.
         max_steps: Hard cap on total steps.
+        qs_sigma_threshold: Tail-std threshold used to detect a quasi-steady,
+            non-converged stuck state and exit early.
+        qs_min_steps: Minimum accumulated steps before stuck detection is allowed
+            to fire.  Ensures tail statistics are computed from enough data to be
+            reliable, preventing false positives when traces have not yet had time
+            to settle.
         **kwargs: Passed to ``estimate_relaxation_time_two_start`` (k, smooth_window,
             dwell_window, min_fraction_inside, sigma_floor, etc.).
 
@@ -274,7 +294,10 @@ def convergence_equilibrate_with_status(
     -------
         Tuple ``(total_steps, converged)``.
     """
-    from .physics_helpers import estimate_relaxation_time_two_start  # lazy import
+    from .physics_helpers import (  # lazy import
+        _detect_quasi_steady_stuck,
+        estimate_relaxation_time_two_start,
+    )
 
     logger = logging.getLogger('vibespin')
     mags_r: list[float] = []
@@ -300,6 +323,21 @@ def convergence_equilibrate_with_status(
             # it means convergence was detected at some point in the past.
             if tau < total:
                 return total, True
+
+            if total >= qs_min_steps and _detect_quasi_steady_stuck(
+                trace_random=np.array(mags_r),
+                trace_ordered=np.array(mags_o),
+                k=float(kwargs.get('k', 1.0)),
+                smooth_window=int(kwargs.get('smooth_window', 60)),
+                qs_sigma_threshold=qs_sigma_threshold,
+                sigma_floor=float(kwargs.get('sigma_floor', 0.02)),
+                lattice_size=getattr(sim_random, 'size', None),
+            ):
+                logger.warning(
+                    'convergence_equilibrate: detected quasi-steady stuck state '
+                    f'before max_steps={max_steps}; stopping early without convergence.'
+                )
+                return total, False
 
     logger.warning(
         f'convergence_equilibrate: reached max_steps={max_steps} without convergence; '

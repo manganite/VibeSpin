@@ -59,6 +59,8 @@ def simulate_temperature(
         sim_o,
         chunk_size=eq_probe_steps,
         max_steps=eq_max_steps,
+        qs_sigma_threshold=params.eq_qs_sigma_threshold,
+        qs_min_steps=params.eq_qs_min_steps,
     )
 
     # Use the converged random-start instance for measurement.
@@ -97,6 +99,8 @@ class _SweepPoint(NamedTuple):
     meas_steps: int
     eq_probe_steps: int
     eq_max_steps: int
+    eq_qs_sigma_threshold: float
+    eq_qs_min_steps: int
 
 
 class _SeedSweepPoint(NamedTuple):
@@ -107,6 +111,8 @@ class _SeedSweepPoint(NamedTuple):
     meas_steps: int
     eq_probe_steps: int
     eq_max_steps: int
+    eq_qs_sigma_threshold: float
+    eq_qs_min_steps: int
     temperature_index: int
     seed_index: int
     seed: int
@@ -120,6 +126,8 @@ class _SeedReplicaAttempt(NamedTuple):
     meas_steps: int
     eq_probe_steps: int
     eq_max_steps: int
+    eq_qs_sigma_threshold: float
+    eq_qs_min_steps: int
     seed_index: int
 
 
@@ -136,6 +144,8 @@ def _simulate_seed_temperature(params: _SeedSweepPoint) -> dict[str, float]:
         sim_o,
         chunk_size=params.eq_probe_steps,
         max_steps=params.eq_max_steps,
+        qs_sigma_threshold=params.eq_qs_sigma_threshold,
+        qs_min_steps=params.eq_qs_min_steps,
     )
 
     mags, engs = sim_r.run(n_steps=meas_steps)
@@ -226,6 +236,8 @@ def _simulate_seed_replica_attempt(
             sim_o,
             chunk_size=params.eq_probe_steps,
             max_steps=params.eq_max_steps,
+            qs_sigma_threshold=params.eq_qs_sigma_threshold,
+            qs_min_steps=params.eq_qs_min_steps,
         )
         equilibration_steps[i] = float(total_steps)
         equilibrated[i] = np.uint8(converged)
@@ -397,6 +409,14 @@ def main() -> None:
         '--eq-max-steps', type=int, default=20000,
         help='Hard cap on total equilibration steps',
     )
+    parser.add_argument(
+        '--eq-qs-sigma-threshold', type=float, default=0.05,
+        help='Tail-std threshold for quasi-steady stuck detection (0 disables)',
+    )
+    parser.add_argument(
+        '--eq-qs-min-steps', type=int, default=1500,
+        help='Minimum accumulated equilibration steps before stuck detection can fire',
+    )
     parser.add_argument('--meas-steps', type=int, default=5000, help='Measurement steps')
     parser.add_argument('--t-min', type=float, default=0.1, help='Minimum temperature')
     parser.add_argument('--t-max', type=float, default=4.0, help='Maximum temperature')
@@ -563,6 +583,8 @@ def main() -> None:
                 meas_steps=args.meas_steps,
                 eq_probe_steps=args.eq_probe_steps,
                 eq_max_steps=args.eq_max_steps,
+                eq_qs_sigma_threshold=args.eq_qs_sigma_threshold,
+                eq_qs_min_steps=args.eq_qs_min_steps,
                 seed_index=attempted_n_seeds + s,
             )
             for s in range(batch_size)

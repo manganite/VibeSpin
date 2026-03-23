@@ -1133,3 +1133,90 @@ def estimate_relaxation_time_two_start(
 
     hits = np.where(sustained_fraction >= min_fraction_inside)[0]
     return int(hits[0]) if hits.size else n
+
+
+_QS_SIGMA_REF_L: int = 32
+"""Reference lattice side-length for ``_detect_quasi_steady_stuck`` threshold scaling.
+
+The ``qs_sigma_threshold`` parameter is calibrated at this L and scaled
+proportionally as ``threshold * _QS_SIGMA_REF_L / lattice_size`` for other sizes.
+"""
+
+
+def _detect_quasi_steady_stuck(
+    trace_random: np.ndarray,
+    trace_ordered: np.ndarray,
+    *,
+    k: float = 1.0,
+    smooth_window: int = 60,
+    qs_sigma_threshold: float = 0.05,
+    sigma_floor: float = 0.02,
+    lattice_size: int | None = None,
+) -> bool:
+    """Detect low-temperature stuck states in two-start equilibration.
+
+    A stuck state is declared when the ordered-start trace has settled
+    (small tail variance, as expected for any equilibrated state) but the
+    two smoothed traces still fail the mutual cross-band condition, indicating
+    the random-start trace is stranded in a metastable plateau.
+
+    The guard uses only the ordered-trace tail variance, not the random-trace
+    variance.  The random trace in a multi-domain stuck state has domain-wall
+    fluctuations of similar amplitude to the thermal fluctuations of a
+    thermalized disordered system, making it an unreliable discriminator.
+    The ordered trace is always the reliable anchor: in the deep ordered phase
+    its variance is essentially zero; in the disordered phase it carries thermal
+    fluctuations of magnitude ``sigma ~ 1 / lattice_size``.
+
+    When ``lattice_size`` is provided, the effective threshold scales as
+    ``qs_sigma_threshold * _QS_SIGMA_REF_L / lattice_size``.  This keeps a
+    constant safety margin between the threshold and the thermal ordered-trace
+    variance at any system size.  At ``lattice_size = _QS_SIGMA_REF_L`` the
+    effective threshold equals ``qs_sigma_threshold`` exactly.
+    """
+    r = np.abs(_valid_prefix(np.asarray(trace_random, dtype=float)))
+    o = np.abs(_valid_prefix(np.asarray(trace_ordered, dtype=float)))
+
+    n = min(len(r), len(o))
+    if n < 8:
+        return False
+    r = r[:n]
+    o = o[:n]
+
+    r_sm = _moving_average(r, smooth_window)
+    o_sm = _moving_average(o, smooth_window)
+    m = min(len(r_sm), len(o_sm))
+    if m < 8:
+        return False
+    r_sm = r_sm[:m]
+    o_sm = o_sm[:m]
+
+    half = m // 2
+    tail_r = r_sm[half:]
+    tail_o = o_sm[half:]
+
+    raw_sig_r = float(tail_r.std())
+    raw_sig_o = float(tail_o.std())
+
+    effective_threshold = (
+        qs_sigma_threshold * _QS_SIGMA_REF_L / lattice_size
+        if lattice_size is not None
+        else qs_sigma_threshold
+    )
+    # Guard on the ordered trace only: it is the reliable anchor.
+    # The random trace in a stuck multi-domain state has domain-wall fluctuations
+    # of similar amplitude to thermal noise in the disordered phase, making
+    # raw_sig_r an unreliable discriminator between stuck and thermalized.
+    if raw_sig_o >= effective_threshold:
+        return False
+
+    mu_r = float(tail_r.mean())
+    mu_o = float(tail_o.mean())
+    sig_r = max(raw_sig_r, sigma_floor)
+    sig_o = max(raw_sig_o, sigma_floor)
+
+    random_inside_ordered_band = abs(mu_r - mu_o) <= k * sig_o
+    ordered_inside_random_band = abs(mu_o - mu_r) <= k * sig_r
+    mutually_inside = random_inside_ordered_band and ordered_inside_random_band
+
+    return not mutually_inside

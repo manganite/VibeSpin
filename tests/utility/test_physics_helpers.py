@@ -812,3 +812,163 @@ def test_estimate_relaxation_time_two_start_sigma_floor():
     )
     # These traces never meet; should return full trace length
     assert tau == n
+
+
+def test_detect_quasi_steady_stuck_true_for_separated_plateaus():
+    """Should flag stuck when both traces are flat but separated."""
+    from utils.physics_helpers import _detect_quasi_steady_stuck
+
+    n = 240
+    rng = np.random.default_rng(7)
+    trace_ordered = np.ones(n) + rng.normal(0, 1e-3, n)
+    trace_random = np.full(n, 0.55) + rng.normal(0, 1e-3, n)
+
+    assert _detect_quasi_steady_stuck(
+        trace_random=trace_random,
+        trace_ordered=trace_ordered,
+        k=1.0,
+        smooth_window=20,
+        qs_sigma_threshold=0.02,
+        sigma_floor=0.02,
+    )
+
+
+def test_detect_quasi_steady_stuck_false_for_converged_plateaus():
+    """Should not flag stuck when flat traces are already mutually inside bands."""
+    from utils.physics_helpers import _detect_quasi_steady_stuck
+
+    n = 240
+    rng = np.random.default_rng(13)
+    trace_ordered = np.full(n, 0.82) + rng.normal(0, 1e-3, n)
+    trace_random = np.full(n, 0.83) + rng.normal(0, 1e-3, n)
+
+    assert not _detect_quasi_steady_stuck(
+        trace_random=trace_random,
+        trace_ordered=trace_ordered,
+        k=1.0,
+        smooth_window=20,
+        qs_sigma_threshold=0.02,
+        sigma_floor=0.02,
+    )
+
+
+def test_detect_quasi_steady_stuck_false_for_high_variance_traces():
+    """Should not flag stuck when both traces have converged with large critical fluctuations.
+
+    At or near Tc both starts settle to the same equilibrium mean with large
+    thermal fluctuations.  When means agree the cross-band check always passes
+    regardless of variance, so stuck is correctly not declared.
+    """
+    from utils.physics_helpers import _detect_quasi_steady_stuck
+
+    n = 240
+    rng = np.random.default_rng(19)
+    # Both traces at the same equilibrium mean - models two-start convergence near Tc
+    trace_ordered = 0.65 + rng.normal(0, 0.15, n)
+    trace_random  = 0.65 + rng.normal(0, 0.15, n)
+
+    assert not _detect_quasi_steady_stuck(
+        trace_random=trace_random,
+        trace_ordered=trace_ordered,
+        k=1.0,
+        smooth_window=20,
+        qs_sigma_threshold=0.02,
+        sigma_floor=0.02,
+    )
+
+
+def test_detect_quasi_steady_stuck_large_L_domain_fluctuations():
+    """Should detect stuck even when random-trace variance exceeds flat threshold.
+
+    At large L the random-start trace in a multi-domain metastable state has
+    domain-wall fluctuations sig_r ~ 0.07, which would exceed the default flat
+    threshold=0.05 and block detection under the old both-traces guard.
+    The new ordered-trace-only guard must still fire because sig_o ~ 0.
+    """
+    from utils.physics_helpers import _detect_quasi_steady_stuck
+
+    n = 300
+    rng = np.random.default_rng(41)
+    # Ordered trace: deep ordered phase, near-zero variance
+    trace_ordered = np.ones(n) + rng.normal(0, 1e-4, n)
+    # Random trace: stuck in multi-domain state with domain-wall fluctuations
+    # sig_r ~ 0.07, well above the flat threshold of 0.05
+    trace_random = np.full(n, 0.15) + rng.normal(0, 0.07, n)
+
+    assert _detect_quasi_steady_stuck(
+        trace_random=trace_random,
+        trace_ordered=trace_ordered,
+        k=1.0,
+        smooth_window=20,
+        qs_sigma_threshold=0.05,
+        sigma_floor=0.02,
+    )
+
+
+def test_detect_quasi_steady_stuck_l_scaling_prevents_false_positive():
+    """L-scaling must maintain safety margin between threshold and thermal variance.
+
+    At large L (e.g. L=128) the ordered trace in the disordered phase has
+    thermal variance sig_o ~ c/L, which may fall below the flat threshold=0.05.
+    With L-scaling the effective threshold shrinks proportionally, keeping a
+    constant safety margin.  The cross-band check then correctly reports
+    not-stuck because both traces share the same equilibrium mean.
+    """
+    from utils.physics_helpers import _detect_quasi_steady_stuck
+
+    n = 300
+    rng = np.random.default_rng(53)
+    L = 128
+    # Thermalized disordered phase at large L: both traces near same low mean
+    sigma_thermal = 0.07 * 64 / L  # ~ 0.035
+    mu_eq = 0.045
+    trace_ordered = mu_eq + rng.normal(0, sigma_thermal, n)
+    trace_random  = mu_eq + rng.normal(0, sigma_thermal, n)
+
+    # Without L-scaling: cross-band check still finds gap ~ 0, returns not-stuck.
+    assert not _detect_quasi_steady_stuck(
+        trace_random=trace_random,
+        trace_ordered=trace_ordered,
+        k=1.0,
+        smooth_window=20,
+        qs_sigma_threshold=0.05,
+        sigma_floor=0.02,
+    )
+
+    # With L-scaling: same result, gap still zero.
+    assert not _detect_quasi_steady_stuck(
+        trace_random=trace_random,
+        trace_ordered=trace_ordered,
+        k=1.0,
+        smooth_window=20,
+        qs_sigma_threshold=0.05,
+        sigma_floor=0.02,
+        lattice_size=L,
+    )
+
+
+def test_detect_quasi_steady_stuck_l_scaling_true_for_low_t_stuck():
+    """L-scaled threshold must still detect deep-ordered-phase stuck state.
+
+    Even with L-scaling reducing the effective threshold, the ordered trace at
+    low T has sig_o ~ 0, which always satisfies the guard.
+    The large gap then triggers the cross-band failure.
+    """
+    from utils.physics_helpers import _detect_quasi_steady_stuck
+
+    n = 300
+    rng = np.random.default_rng(67)
+    L = 64
+    trace_ordered = np.ones(n) + rng.normal(0, 1e-4, n)
+    # Random trace stuck with domain-wall fluctuations sig_r > flat threshold
+    trace_random = np.full(n, 0.12) + rng.normal(0, 0.07, n)
+
+    assert _detect_quasi_steady_stuck(
+        trace_random=trace_random,
+        trace_ordered=trace_ordered,
+        k=1.0,
+        smooth_window=20,
+        qs_sigma_threshold=0.05,
+        sigma_floor=0.02,
+        lattice_size=L,
+    )
