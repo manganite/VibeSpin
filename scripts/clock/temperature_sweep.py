@@ -176,8 +176,24 @@ def _build_uncertainty_bundle(
             'ci_low': np.array(res_low),
             'ci_high': np.array(res_high),
         }
-        tau_int = np.nanmean(tau_by_seed, axis=1)
-        n_eff = np.nanmean(n_eff_by_seed, axis=1)
+
+        # Calculate ensemble-averaged diagnostics, avoiding RuntimeWarning for all-NaN rows
+        nan_mask = np.all(np.isnan(tau_by_seed), axis=1)
+        tau_int = np.full(nan_mask.shape, np.nan)
+        n_eff = np.full(nan_mask.shape, np.nan)
+
+        if not np.all(nan_mask):
+            with np.errstate(all='ignore'):
+                tau_int[~nan_mask] = np.nanmean(tau_by_seed[~nan_mask], axis=1)
+                n_eff[~nan_mask] = np.nanmean(n_eff_by_seed[~nan_mask], axis=1)
+
+        if np.any(nan_mask):
+            logger = logging.getLogger('vibespin')
+            logger.warning(
+                f"Autocorrelation diagnostics are undefined for {np.sum(nan_mask)} "
+                "temperature points (all seeds returned NaN). This is expected in "
+                "the deep ordered/frozen phase."
+            )
     else:
         res = {
             'value': values_by_seed[:, 0],

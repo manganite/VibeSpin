@@ -181,8 +181,24 @@ def _build_uncertainty_bundle(
             'ci_low': np.array(res_low),
             'ci_high': np.array(res_high),
         }
-        tau_int = np.nanmean(tau_by_seed, axis=1)
-        n_eff = np.nanmean(n_eff_by_seed, axis=1)
+
+        # Calculate ensemble-averaged diagnostics, avoiding RuntimeWarning for all-NaN rows
+        nan_mask = np.all(np.isnan(tau_by_seed), axis=1)
+        tau_int = np.full(nan_mask.shape, np.nan)
+        n_eff = np.full(nan_mask.shape, np.nan)
+
+        if not np.all(nan_mask):
+            with np.errstate(all='ignore'):
+                tau_int[~nan_mask] = np.nanmean(tau_by_seed[~nan_mask], axis=1)
+                n_eff[~nan_mask] = np.nanmean(n_eff_by_seed[~nan_mask], axis=1)
+
+        if np.any(nan_mask):
+            logger = logging.getLogger('vibespin')
+            logger.warning(
+                f"Autocorrelation diagnostics are undefined for {np.sum(nan_mask)} "
+                "temperature points (all seeds returned NaN). This is expected in "
+                "the deep ordered/frozen phase."
+            )
     else:
         # Fallback to single-seed blocking results
         res = {
@@ -190,74 +206,6 @@ def _build_uncertainty_bundle(
             'err': errors_by_seed[:, 0],
             'ci_low': values_by_seed[:, 0] - errors_by_seed[:, 0],
             'ci_high': values_by_seed[:, 0] + errors_by_seed[:, 0],
-        }
-        tau_int = tau_by_seed[:, 0]
-        n_eff = n_eff_by_seed[:, 0]
-
-    return {
-        'value': res['value'],
-        'err': res['err'],
-        'ci_low': res['ci_low'],
-        'ci_high': res['ci_high'],
-        'tau_int': tau_int,
-        'n_eff': n_eff,
-        'samples': values_by_seed.astype(np.float64),
-    }
-
-
-def _build_asymmetric_uncertainty_bundle(
-    *,
-    values_by_seed: np.ndarray,
-    ci_low_by_seed: np.ndarray,
-    ci_high_by_seed: np.ndarray,
-    tau_by_seed: np.ndarray,
-    n_eff_by_seed: np.ndarray,
-    confidence: float,
-) -> dict[str, np.ndarray]:
-    """Calculate combined asymmetric uncertainty (like tau_int) across seeds."""
-    n_seeds = values_by_seed.shape[1]
-    if n_seeds > 1:
-        # Hierarchical aggregation: between-seed + within-seed
-        res_values = []
-        res_errors = []
-        res_low = []
-        res_high = []
-
-        within_seed_errors = (ci_high_by_seed - ci_low_by_seed) / 2.0
-
-        for t in range(values_by_seed.shape[0]):
-            mask = ~np.isnan(values_by_seed[t])
-            if not np.any(mask):
-                res_values.append(np.nan)
-                res_errors.append(np.nan)
-                res_low.append(np.nan)
-                res_high.append(np.nan)
-                continue
-
-            summary = summarize_seed_ensemble(
-                values=values_by_seed[t, mask],
-                within_seed_errors=within_seed_errors[t, mask],
-                confidence=confidence
-            )
-            res_values.append(summary['value'])
-            res_errors.append(summary['err'])
-            res_low.append(summary['ci_low'])
-            res_high.append(summary['ci_high'])
-
-        res = {
-            'value': np.array(res_values),
-            'err': np.array(res_errors),
-            'ci_low': np.array(res_low),
-            'ci_high': np.array(res_high),
-        }
-        tau_int = np.nanmean(tau_by_seed, axis=1)
-        n_eff = np.nanmean(n_eff_by_seed, axis=1)
-    else:
-        res = {
-            'value': values_by_seed[:, 0],
-            'err': (ci_high_by_seed[:, 0] - ci_low_by_seed[:, 0]) / 2.0,
-            'ci_low': ci_low_by_seed[:, 0],
-            'ci_high': ci_high_by_seed[:, 0],
         }
         tau_int = tau_by_seed[:, 0]
         n_eff = n_eff_by_seed[:, 0]
