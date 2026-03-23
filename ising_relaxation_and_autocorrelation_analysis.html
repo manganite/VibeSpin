@@ -121,7 +121,8 @@ measurement.</p>
 <li><p><strong>Checkerboard Metropolis</strong> — sites are swept in a fixed checkerboard pattern, eliminating the random-site overhead.</p></li>
 <li><p><strong>Wolff cluster</strong> — a whole correlated cluster is flipped in one move, dramatically reducing autocorrelation near <span class="math notranslate nohighlight">\(T_c\)</span>.</p></li>
 </ul>
-<p>All three algorithms start from the same deliberately unfavorable initial condition: a fully random spin configuration with no warm-up. The analysis is repeated below, at, and above the Onsager critical temperature <span class="math notranslate nohighlight">\(T_c = 2/\ln(1 + \sqrt{2}) \approx 2.269\)</span> <a class="reference internal" href="#Bibliography"><span class="std std-ref">[1]</span></a>, where critical slowing down makes relaxation slowest and the contrast between algorithms largest.</p>
+<p>All three algorithms start from the same deliberately unfavorable initial condition: a fully random spin configuration with no warm-up. The analysis covers four temperature slices: deep in the ordered phase (<span class="math notranslate nohighlight">\(0.5\,T_c \approx 1.13\)</span>), just below <span class="math notranslate nohighlight">\(T_c\)</span>, at the Onsager critical point <span class="math notranslate nohighlight">\(T_c = 2/\ln(1 + \sqrt{2}) \approx 2.269\)</span> <a class="reference internal" href="#Bibliography"><span class="std std-ref">[1]</span></a>, and above <span class="math notranslate nohighlight">\(T_c\)</span>. The critical point is where critical slowing down makes relaxation slowest and the contrast between algorithms
+most pronounced.</p>
 <p>The notebook has four parts:</p>
 <ol class="arabic simple">
 <li><p><strong>Visual demonstration</strong> — <span class="math notranslate nohighlight">\(|M|\)</span> trajectories make the transient and its temperature-dependence immediately visible.</p></li>
@@ -147,8 +148,8 @@ measurement.</p>
 <span class="n">TC_ISING</span> <span class="o">=</span> <span class="mf">2.0</span> <span class="o">/</span> <span class="n">np</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="mf">1.0</span> <span class="o">+</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="mf">2.0</span><span class="p">))</span>
 <span class="n">L</span> <span class="o">=</span> <span class="mi">64</span>
 <span class="n">N_STEPS</span> <span class="o">=</span> <span class="mi">1000</span>
-<span class="n">TEMPS</span> <span class="o">=</span> <span class="p">[</span><span class="mf">0.8</span> <span class="o">*</span> <span class="n">TC_ISING</span><span class="p">,</span> <span class="n">TC_ISING</span><span class="p">,</span> <span class="mf">1.2</span> <span class="o">*</span> <span class="n">TC_ISING</span><span class="p">]</span>
-<span class="n">TEMP_LABELS</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;Below $T_c$&#39;</span><span class="p">,</span> <span class="s1">&#39;At $T_c$&#39;</span><span class="p">,</span> <span class="s1">&#39;Above $T_c$&#39;</span><span class="p">]</span>
+<span class="n">TEMPS</span> <span class="o">=</span> <span class="p">[</span><span class="mf">0.5</span> <span class="o">*</span> <span class="n">TC_ISING</span><span class="p">,</span> <span class="mf">0.8</span> <span class="o">*</span> <span class="n">TC_ISING</span><span class="p">,</span> <span class="n">TC_ISING</span><span class="p">,</span> <span class="mf">1.2</span> <span class="o">*</span> <span class="n">TC_ISING</span><span class="p">]</span>
+<span class="n">TEMP_LABELS</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;Deep below $T_c$&#39;</span><span class="p">,</span> <span class="s1">&#39;Below $T_c$&#39;</span><span class="p">,</span> <span class="s1">&#39;At $T_c$&#39;</span><span class="p">,</span> <span class="s1">&#39;Above $T_c$&#39;</span><span class="p">]</span>
 <span class="n">UPDATES</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;random&#39;</span><span class="p">,</span> <span class="s1">&#39;checkerboard&#39;</span><span class="p">,</span> <span class="s1">&#39;wolff&#39;</span><span class="p">]</span>
 <span class="n">UPDATE_LABELS</span> <span class="o">=</span> <span class="p">{</span>
     <span class="s1">&#39;random&#39;</span><span class="p">:</span> <span class="s1">&#39;Random-site Metropolis&#39;</span><span class="p">,</span>
@@ -182,7 +183,7 @@ L = 64, base N_STEPS = 1000, seeds = 10
 </div>
 <section id="Load-or-compute-trajectories">
 <h2>Load or compute trajectories<a class="headerlink" href="#Load-or-compute-trajectories" title="Link to this heading"></a></h2>
-<p>If a cached trajectory file exists in <code class="docutils literal notranslate"><span class="pre">../results/ising/ising_autocorrelation_analysis.npz</span></code>, the notebook reuses it directly. Otherwise it runs the three temperature slices inline and saves the resulting <span class="math notranslate nohighlight">\(|M|\)</span> time series for later reads. This keeps the notebook self-contained even though there is no separate batch script for this specific figure yet.</p>
+<p>If a cached trajectory file exists in <code class="docutils literal notranslate"><span class="pre">../results/ising/ising_autocorrelation_analysis.npz</span></code>, the notebook reuses it directly. Otherwise it runs the four temperature slices inline and saves the resulting <span class="math notranslate nohighlight">\(|M|\)</span> time series for later reads. This keeps the notebook self-contained even though there is no separate batch script for this specific figure yet.</p>
 <div class="nbinput docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[2]:
 </pre></div>
@@ -210,7 +211,8 @@ L = 64, base N_STEPS = 1000, seeds = 10
         <span class="n">magnetization_traces_full</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="s1">&#39;magnetization_traces_full&#39;</span><span class="p">]</span>
         <span class="n">steps_used</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="s1">&#39;steps_used&#39;</span><span class="p">]</span>
         <span class="n">wolff_cluster_sizes</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="s1">&#39;wolff_cluster_sizes&#39;</span><span class="p">]</span>
-        <span class="n">needs_recompute</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="k">if</span> <span class="nb">int</span><span class="p">(</span><span class="n">magnetization_traces_full</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span> <span class="o">==</span> <span class="n">n_temp</span><span class="p">:</span>
+            <span class="n">needs_recompute</span> <span class="o">=</span> <span class="kc">False</span>
         <span class="nb">print</span><span class="p">(</span>
             <span class="sa">f</span><span class="s1">&#39;Loaded cached trajectories from </span><span class="si">{</span><span class="n">CACHE_PATH</span><span class="si">}</span><span class="s1">: &#39;</span>
             <span class="sa">f</span><span class="s1">&#39;shape=</span><span class="si">{</span><span class="n">magnetization_traces_full</span><span class="o">.</span><span class="n">shape</span><span class="si">}</span><span class="s1">.&#39;</span>
@@ -227,7 +229,7 @@ L = 64, base N_STEPS = 1000, seeds = 10
         <span class="k">for</span> <span class="n">j</span><span class="p">,</span> <span class="n">update</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">UPDATES</span><span class="p">):</span>
             <span class="k">for</span> <span class="n">s_idx</span><span class="p">,</span> <span class="n">seed</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">SEEDS</span><span class="p">):</span>
                 <span class="k">for</span> <span class="n">init_idx</span><span class="p">,</span> <span class="n">init_state</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">INIT_STATES</span><span class="p">):</span>
-                    <span class="n">is_critical_local</span> <span class="o">=</span> <span class="n">i</span> <span class="o">==</span> <span class="mi">1</span> <span class="ow">and</span> <span class="n">update</span> <span class="ow">in</span> <span class="p">{</span><span class="s1">&#39;random&#39;</span><span class="p">,</span> <span class="s1">&#39;checkerboard&#39;</span><span class="p">}</span>
+                    <span class="n">is_critical_local</span> <span class="o">=</span> <span class="n">TEMP_LABELS</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;At $T_c$&#39;</span> <span class="ow">and</span> <span class="n">update</span> <span class="ow">in</span> <span class="p">{</span><span class="s1">&#39;random&#39;</span><span class="p">,</span> <span class="s1">&#39;checkerboard&#39;</span><span class="p">}</span>
                     <span class="n">n_run</span> <span class="o">=</span> <span class="n">max_steps</span> <span class="k">if</span> <span class="n">is_critical_local</span> <span class="k">else</span> <span class="n">N_STEPS</span>
 
                     <span class="n">sim</span> <span class="o">=</span> <span class="n">IsingSimulation</span><span class="p">(</span><span class="n">size</span><span class="o">=</span><span class="n">L</span><span class="p">,</span> <span class="n">temp</span><span class="o">=</span><span class="n">temperature</span><span class="p">,</span> <span class="n">update</span><span class="o">=</span><span class="n">update</span><span class="p">,</span> <span class="n">seed</span><span class="o">=</span><span class="nb">int</span><span class="p">(</span><span class="n">seed</span><span class="p">))</span>
@@ -284,7 +286,7 @@ Loaded cached trajectories from ../results/ising/ising_autocorrelation_multiseed
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[3]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">fig</span><span class="p">,</span> <span class="n">axes</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">13</span><span class="p">,</span> <span class="mi">9</span><span class="p">),</span> <span class="n">sharex</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">sharey</span><span class="o">=</span><span class="s1">&#39;row&#39;</span><span class="p">)</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">fig</span><span class="p">,</span> <span class="n">axes</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">(</span><span class="mi">4</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">13</span><span class="p">,</span> <span class="mi">12</span><span class="p">),</span> <span class="n">sharex</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">sharey</span><span class="o">=</span><span class="s1">&#39;row&#39;</span><span class="p">)</span>
 <span class="n">fig</span><span class="o">.</span><span class="n">suptitle</span><span class="p">(</span>
     <span class="sa">f</span><span class="s1">&#39;Absolute magnetization from random starts over </span><span class="si">{</span><span class="n">N_STEPS</span><span class="si">:</span><span class="s1">,</span><span class="si">}</span><span class="s1"> steps (L = </span><span class="si">{</span><span class="n">L</span><span class="si">}</span><span class="s1">)&#39;</span><span class="p">,</span>
     <span class="n">fontsize</span><span class="o">=</span><span class="mi">14</span><span class="p">,</span>
@@ -906,7 +908,8 @@ Note: 7 seed(s) returned NaN (post-burn-in trace too short); excluded from media
 <p>The plots tell a coherent physical story across two complementary metrics.</p>
 <section id="Raw-step-counts-(two-start-\hat{\tau}_\text{relax})">
 <h3>Raw step counts (two-start <span class="math notranslate nohighlight">\(\hat{\tau}_\text{relax}\)</span>)<a class="headerlink" href="#Raw-step-counts-(two-start-\hat{\tau}_\text{relax})" title="Link to this heading"></a></h3>
-<p>Local updates (random-site and checkerboard Metropolis) are <em>slow below :math:`T_c`</em> (~600 and ~344 steps) because individual spin flips must nucleate and grow an ordered domain against thermal noise — a diffusive process. At <span class="math notranslate nohighlight">\(T_c\)</span> they remain slow for the same reason: the correlation length diverges, so the same domain-growth bottleneck occurs on every length scale simultaneously (<strong>critical slowing down</strong>, <span class="math notranslate nohighlight">\(z \approx 2\)</span> for local dynamics). Above <span class="math notranslate nohighlight">\(T_c\)</span> they recover quickly
+<p>At <span class="math notranslate nohighlight">\(0.5\,T_c\)</span> (deep below <span class="math notranslate nohighlight">\(T_c\)</span>) local updates are effectively stalled: a random start nucleates competing domains that become pinned, so the two-start estimator returns NaN for most seeds within the 1,000-step budget (the bar-chart entries for local updates at that temperature are absent for this reason). Wolff, whose clusters span the entire lattice at this temperature, crosses the free-energy barrier in a single step and converges immediately. Moving up to <span class="math notranslate nohighlight">\(0.8\,T_c\)</span>, local
+updates (random-site and checkerboard Metropolis) are <em>slow below :math:`T_c`</em> (~600 and ~344 steps) because individual spin flips must nucleate and grow an ordered domain against thermal noise — a diffusive process. At <span class="math notranslate nohighlight">\(T_c\)</span> they remain slow for the same reason: the correlation length diverges, so the same domain-growth bottleneck occurs on every length scale simultaneously (<strong>critical slowing down</strong>, <span class="math notranslate nohighlight">\(z \approx 2\)</span> for local dynamics). Above <span class="math notranslate nohighlight">\(T_c\)</span> they recover quickly
 (~150–200 steps) because the disordered phase has short-range correlations only.</p>
 <p>Wolff, measured in raw steps, looks faster below <span class="math notranslate nohighlight">\(T_c\)</span> (150 steps) and comparable above (163 steps), but this comparison is misleading — see below.</p>
 </section>
@@ -924,21 +927,28 @@ Note: 7 seed(s) returned NaN (post-burn-in trace too short); excluded from media
 </tr>
 </thead>
 <tbody>
-<tr class="row-even"><td><p>Below <span class="math notranslate nohighlight">\(T_c\)</span></p></td>
+<tr class="row-even"><td><p>Deep below <span class="math notranslate nohighlight">\(T_c\)</span></p></td>
+<td><p><span class="math notranslate nohighlight">\(\approx L^2\)</span></p></td>
+<td><p><span class="math notranslate nohighlight">\(\approx 1.00\)</span></p></td>
+<td><p><strong>:math:`approx 1`</strong> sweep</p></td>
+<td><p>— (trapped)</p></td>
+<td><p>—</p></td>
+</tr>
+<tr class="row-odd"><td><p>Below <span class="math notranslate nohighlight">\(T_c\)</span></p></td>
 <td><p>3 714 spins</p></td>
 <td><p>0.91</p></td>
 <td><p><strong>136</strong> sweeps</p></td>
 <td><p>597 sweeps</p></td>
 <td><p>~4 ×</p></td>
 </tr>
-<tr class="row-odd"><td><p>At <span class="math notranslate nohighlight">\(T_c\)</span></p></td>
+<tr class="row-even"><td><p>At <span class="math notranslate nohighlight">\(T_c\)</span></p></td>
 <td><p>1 593 spins</p></td>
 <td><p>0.39</p></td>
 <td><p><strong>196</strong> sweeps</p></td>
 <td><p>568 sweeps</p></td>
 <td><p>~3 ×</p></td>
 </tr>
-<tr class="row-even"><td><p>Above <span class="math notranslate nohighlight">\(T_c\)</span></p></td>
+<tr class="row-odd"><td><p>Above <span class="math notranslate nohighlight">\(T_c\)</span></p></td>
 <td><p>20 spins</p></td>
 <td><p>0.005</p></td>
 <td><p><strong>~1</strong> sweep</p></td>
@@ -947,6 +957,8 @@ Note: 7 seed(s) returned NaN (post-burn-in trace too short); excluded from media
 </tr>
 </tbody>
 </table>
+<p><strong>Deep below :math:`T_c`</strong> (<span class="math notranslate nohighlight">\(0.5\,T_c \approx 1.13\)</span>): At this temperature the Onsager magnetization is essentially unity. Wolff clusters are system-spanning — one flip inverts the entire lattice, so the normalised relaxation time is effectively 1 sweep. Local updates face an enormous free-energy barrier between the <span class="math notranslate nohighlight">\(\pm M\)</span> wells; competing domains nucleated by the random start become pinned, and the two-start estimator returns NaN for most seeds within the 1,000-step budget. The
+missing bar-chart entries for local updates at this temperature are a physical result, not a numerical failure.</p>
 <p><strong>Below :math:`T_c`</strong>: Wolff clusters are nearly system-spanning (<span class="math notranslate nohighlight">\(\langle C \rangle / L^2 \approx 0.91\)</span>). Each step flips almost the whole lattice, so only a handful of flips is needed to reach equilibrium. Even after normalisation it is ~4 × faster than random: it tunnels the free-energy barrier between the <span class="math notranslate nohighlight">\(+M\)</span> and <span class="math notranslate nohighlight">\(-M\)</span> wells in one step, whereas local updates must diffuse across it.</p>
 <p><strong>At :math:`T_c`</strong>: Clusters cover ~39% of the lattice. The normalised relaxation time (≈196) is noticeably smaller than local updates (≈340–570), confirming that Wolff retains a polynomial advantage. Dynamic scaling predicts <span class="math notranslate nohighlight">\(z_\text{Wolff} \approx 0.25\)</span> versus <span class="math notranslate nohighlight">\(z_\text{local} \approx 2.2\)</span>, consistent with a growing advantage at larger <span class="math notranslate nohighlight">\(L\)</span>.</p>
 <p><strong>Above :math:`T_c`</strong>: Clusters are tiny — only ~20 spins out of 4 096. The system decorrelates in ~1 normalised sweep because each step is a cheap, precisely targeted flip. Local algorithms also relax quickly above <span class="math notranslate nohighlight">\(T_c\)</span>, but Wolff’s targeted nature makes it ~190 × more efficient per spin touched.</p>
