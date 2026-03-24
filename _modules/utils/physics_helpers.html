@@ -1235,8 +1235,12 @@
 
 <span class="sd">    Returns</span>
 <span class="sd">    -------</span>
-<span class="sd">        Estimated relaxation time in MC steps.  Returns the full trace length</span>
-<span class="sd">        if no convergence is detected, or 0 for very short traces.</span>
+<span class="sd">        Estimated relaxation time as a 0-indexed position in the original input</span>
+<span class="sd">        traces (i.e. a sweep count minus one).  The first index at which both</span>
+<span class="sd">        smoothed traces have been mutually inside each other&#39;s band for</span>
+<span class="sd">        ``dwell_window`` steps is mapped back to the corresponding raw-trace</span>
+<span class="sd">        position as ``hits[0] + smooth_window - 1``.  Returns ``n`` (full trace</span>
+<span class="sd">        length) if no convergence is detected, or ``0`` for very short traces.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="k">if</span> <span class="n">skip_validation</span><span class="p">:</span>
         <span class="n">r</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">trace_random</span><span class="p">)</span>
@@ -1277,7 +1281,7 @@
     <span class="p">)</span>
 
     <span class="n">hits</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">sustained_fraction</span> <span class="o">&gt;=</span> <span class="n">min_fraction_inside</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
-    <span class="k">return</span> <span class="nb">int</span><span class="p">(</span><span class="n">hits</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span> <span class="k">if</span> <span class="n">hits</span><span class="o">.</span><span class="n">size</span> <span class="k">else</span> <span class="n">n</span></div>
+    <span class="k">return</span> <span class="nb">int</span><span class="p">(</span><span class="n">hits</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span> <span class="o">+</span> <span class="n">smooth_window</span> <span class="o">-</span> <span class="mi">1</span> <span class="k">if</span> <span class="n">hits</span><span class="o">.</span><span class="n">size</span> <span class="k">else</span> <span class="n">n</span></div>
 
 
 
