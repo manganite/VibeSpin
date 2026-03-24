@@ -1096,8 +1096,12 @@ def estimate_relaxation_time_two_start(
 
     Returns
     -------
-        Estimated relaxation time in MC steps.  Returns the full trace length
-        if no convergence is detected, or 0 for very short traces.
+        Estimated relaxation time as a 0-indexed position in the original input
+        traces (i.e. a sweep count minus one).  The first index at which both
+        smoothed traces have been mutually inside each other's band for
+        ``dwell_window`` steps is mapped back to the corresponding raw-trace
+        position as ``hits[0] + smooth_window - 1``.  Returns ``n`` (full trace
+        length) if no convergence is detected, or ``0`` for very short traces.
     """
     if skip_validation:
         r = np.abs(trace_random)
@@ -1138,7 +1142,7 @@ def estimate_relaxation_time_two_start(
     )
 
     hits = np.where(sustained_fraction >= min_fraction_inside)[0]
-    return int(hits[0]) if hits.size else n
+    return int(hits[0]) + smooth_window - 1 if hits.size else n
 
 
 _QS_SIGMA_REF_L: int = 32

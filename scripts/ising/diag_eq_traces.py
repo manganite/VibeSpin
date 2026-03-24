@@ -25,13 +25,18 @@ import matplotlib.ticker as mticker
 
 from models.ising_model import IsingSimulation as IsingModel
 from utils.cli_helpers import parse_args_compat
+from utils.physics_helpers import estimate_relaxation_time_two_start
 from utils.system_helpers import setup_logging
 
 #: Exact Onsager critical temperature for the 2D nearest-neighbour Ising model.
 TC_ISING: float = 2.0 / np.log(1.0 + np.sqrt(2.0))
 
-#: Colors used for different seed trajectories.
-SEED_COLORS: list[str] = ["#2166ac", "#d6604d", "#4dac26", "#984ea3", "#ff7f00", "#a65628"]
+#: Color palette for traces.
+PALETTE: dict[str, str] = {
+    'random': '#4878CF',
+    'ordered': '#D65F5F',
+    'convergence': '#888888',
+}
 
 
 def collect_trace(
@@ -145,22 +150,21 @@ def main() -> None:
     logger.info(f"  Stuck seeds (|M|<0.5 after {args.scan_steps} sweeps): {stuck_seeds[:6]}")
     logger.info(f"  Ordering seeds: {ordering_seeds[:6]}")
 
-    # Select seeds for display: up to 3 stuck and 3 ordering
+    # Select seeds for display: 6 seeds across all temperatures
     seeds_stuck = stuck_seeds[:3]
     seeds_ordering = ordering_seeds[:3]
-    seeds_low_t = sorted(set(seeds_stuck + seeds_ordering))
-    seeds_other = [1, 2, 3]
+    seeds_all = sorted(set(seeds_stuck + seeds_ordering))[:6]
 
-    logger.info(f"  Using seeds for T=0.5 panel: stuck={seeds_stuck}, ordering={seeds_ordering}")
+    logger.info(f"  Using 6 seeds across all temperatures: {seeds_all}")
 
-    fig, axes = plt.subplots(2, 2, figsize=(12, 8))
-    axes_flat = axes.flat
+    fig, axes = plt.subplots(4, 6, figsize=(20, 13), sharey='row')
     sweeps = np.arange(1, max_steps + 1)
+    smooth_window = 120
 
-    for ax, temp, label in zip(axes_flat, temperatures, t_labels, strict=True):
-        seeds_to_use = seeds_low_t if temp == st_temp else seeds_other
-        for idx, seed in enumerate(seeds_to_use):
-            color = SEED_COLORS[idx % len(SEED_COLORS)]
+    for t_idx, (temp, label) in enumerate(zip(temperatures, t_labels, strict=True)):
+        for s_idx, seed in enumerate(seeds_all):
+            ax = axes[t_idx, s_idx]
+
             tr = collect_trace(
                 size=size,
                 temp=temp,
@@ -178,47 +182,217 @@ def main() -> None:
                 chunk_size=chunk_size,
             )
 
-            stuck_tag = " ★stuck" if (temp == st_temp and seed in seeds_stuck) else ""
-            ax.plot(
-                sweeps, np.abs(tr), color=color, lw=0.7, alpha=0.65,
-                label=f"seed {seed}{stuck_tag} (rand)" if temp == st_temp else None,
-            )
-            ax.plot(
-                sweeps, to, color=color, lw=0.7, alpha=0.65, linestyle='--',
-                label=f"seed {seed}{stuck_tag} (ord)" if temp == st_temp else None,
+            # Convert to numpy arrays for processing
+            tr = np.asarray(tr, dtype=float)
+            to = np.asarray(to, dtype=float)
+
+            # Calculate smoothed traces
+            tr_smooth = np.convolve(tr, np.ones(smooth_window) / smooth_window, mode='valid')
+            to_smooth = np.convolve(to, np.ones(smooth_window) / smooth_window, mode='valid')
+
+            # Estimate convergence time
+            tau_est = estimate_relaxation_time_two_start(
+                tr, to, smooth_window=smooth_window, dwell_window=smooth_window,
             )
 
-        ax.set_title(label, fontsize=11)
-        ax.set_xlabel("MC sweep", fontsize=9)
-        ax.set_ylabel(r"$|M|$", fontsize=10)
-        ax.set_ylim(-0.02, 1.05)
+            # Plot raw data with low alpha as background
+            ax.plot(
+                sweeps, np.abs(tr), color=PALETTE['random'], alpha=0.15, lw=0.5,
+            )
+            ax.plot(
+                sweeps, np.abs(to), color=PALETTE['ordered'], alpha=0.15, lw=0.5,
+            )
+
+            # Plot smoothed data
+            smooth_start = smooth_window - 1
+            ax.plot(
+                sweeps[smooth_start:], np.abs(tr_smooth), color=PALETTE['random'],
+                lw=1.8, alpha=0.85, label="random start" if (t_idx == 0 and s_idx == 0) else None,
+            )
+            ax.plot(
+                sweeps[smooth_start:], np.abs(to_smooth), color=PALETTE['ordered'],
+                lw=1.8, alpha=0.85, label="ordered start" if (t_idx == 0 and s_idx == 0) else None,
+            )
+
+            # Mark convergence point if detected
+            if tau_est < max_steps:
+                ax.axvline(
+                    sweeps[tau_est], color=PALETTE['convergence'],
+                    linestyle='--', lw=1.2, alpha=0.6,
+                )
+                ax.text(
+                    sweeps[tau_est], 0.97, f"{int(sweeps[tau_est])}",
+                    transform=ax.get_xaxis_transform(),
+                    ha='center', va='top', fontsize=6, color=PALETTE['convergence'],
+                    bbox=dict(boxstyle='round,pad=0.1', fc='white', ec='none', alpha=0.7),
+                )
+
+            # Row labels (temperatures) on the left
+            if s_idx == 0:
+                ax.set_ylabel(label, fontsize=10, fontweight='bold')
+
+            # Column labels (seeds) on top
+            if t_idx == 0:
+                stuck_marker = " ★" if seed in seeds_stuck else ""
+                ax.set_title(f"seed {seed}{stuck_marker}", fontsize=9, fontweight='semibold')
+
+            ax.set_xlim(0, max_steps)
+            ax.set_ylim(-0.02, 1.05)
+
+            def x_fmt(x: float, _: Any) -> str:
+                return f"{x/1000:.0f}k" if x >= 1000 else f"{x:.0f}"
+
+            ax.xaxis.set_major_formatter(mticker.FuncFormatter(x_fmt))
+            ax.yaxis.set_major_locator(mticker.MultipleLocator(0.2))
+            ax.grid(True, linewidth=0.4, alpha=0.25)
+            ax.tick_params(labelsize=7)
+
+            # Add legend only to the first subplot
+            if t_idx == 0 and s_idx == 0:
+                ax.legend(fontsize=7, loc='upper right', framealpha=0.9)
+
+    fig.suptitle(
+        rf"Two-start Equilibration Traces  ·  Ising $L={size}$  ·  6 Seeds × 4 Temperatures",
+        fontsize=13, y=0.995,
+    )
+
+    # Add common x-label for bottom row
+    fig.text(0.5, 0.02, 'MC sweep', ha='center', fontsize=10)
+
+    plt.tight_layout(rect=(0, 0.035, 1, 0.985))
+    os.makedirs(args.output_dir, exist_ok=True)
+    outpath = os.path.join(args.output_dir, f"diagnostic_eq_traces_L{size}.png")
+    fig.savefig(outpath, dpi=150, bbox_inches="tight")
+    logger.info(f"Saved visualization → {outpath}")
+
+    # Second panel: T = 2.00 detailed view in 2×3 grid.
+    # Styled after the Two-Start Convergence Example in the notebook:
+    # faint raw traces, bold smoothed traces, mutual cross-bands, and tau marker.
+    t200_temp = temperatures[1]  # T = 2.00
+    t200_label = t_labels[1]
+
+    TOLERANCE_K: float = 1.0
+    SIGMA_FLOOR: float = 0.02
+
+    fig2, axes2 = plt.subplots(2, 3, figsize=(14, 8), sharey=True)
+    axes2_flat = axes2.flatten()
+
+    for s_idx, seed in enumerate(seeds_all):
+        ax = axes2_flat[s_idx]
+
+        tr = collect_trace(
+            size=size,
+            temp=t200_temp,
+            seed=seed,
+            init_state='random',
+            n_chunks=n_chunks,
+            chunk_size=chunk_size,
+        )
+        to = collect_trace(
+            size=size,
+            temp=t200_temp,
+            seed=seed,
+            init_state='ordered',
+            n_chunks=n_chunks,
+            chunk_size=chunk_size,
+        )
+
+        tr = np.asarray(np.abs(tr), dtype=float)
+        to = np.asarray(np.abs(to), dtype=float)
+
+        # Smoothed traces aligned to the right edge of the rolling window
+        tr_smooth = np.convolve(tr, np.ones(smooth_window) / smooth_window, mode='valid')
+        to_smooth = np.convolve(to, np.ones(smooth_window) / smooth_window, mode='valid')
+        n_sm = min(len(tr_smooth), len(to_smooth))
+        tr_smooth = tr_smooth[:n_sm]
+        to_smooth = to_smooth[:n_sm]
+        steps_sm = sweeps[smooth_window - 1: smooth_window - 1 + n_sm]
+
+        # Mutual cross-band criterion: tail statistics from the second half
+        half = n_sm // 2
+        mu_r = float(tr_smooth[half:].mean())
+        mu_o = float(to_smooth[half:].mean())
+        sig_r = max(float(tr_smooth[half:].std()), SIGMA_FLOOR)
+        sig_o = max(float(to_smooth[half:].std()), SIGMA_FLOOR)
+        band_r = TOLERANCE_K * sig_r   # ordered must enter random's band
+        band_o = TOLERANCE_K * sig_o   # random must enter ordered's band
+
+        # Estimate convergence time (index into smoothed array)
+        tau_est = estimate_relaxation_time_two_start(
+            tr, to, smooth_window=smooth_window, dwell_window=smooth_window,
+        )
+
+        # Raw traces (faint background)
+        ax.plot(
+            sweeps, tr, color=PALETTE['random'], alpha=0.2, lw=0.6, label='Random start (raw)',
+        )
+        ax.plot(
+            sweeps, to, color=PALETTE['ordered'], alpha=0.2, lw=0.6, label='Ordered start (raw)',
+        )
+
+        # Smoothed traces (bold)
+        ax.plot(
+            steps_sm, tr_smooth, color=PALETTE['random'], lw=2.0, label='Random start (smoothed)',
+        )
+        ax.plot(
+            steps_sm, to_smooth, color=PALETTE['ordered'], lw=2.0, label='Ordered start (smoothed)',
+        )
+
+        # Ordered-start band: random must enter (centred on ordered tail mean)
+        ax.axhline(mu_o, color=PALETTE['ordered'], linestyle='--', alpha=0.7,
+                   label=f'Ordered tail mean ({mu_o:.3f})')
+        ax.axhspan(mu_o - band_o, mu_o + band_o, color=PALETTE['ordered'], alpha=0.12,
+                   label=r'Ordered band ($\pm k\sigma_o$)')
+
+        # Random-start band: ordered must enter (centred on random tail mean)
+        ax.axhline(mu_r, color=PALETTE['random'], linestyle='--', alpha=0.7,
+                   label=f'Random tail mean ({mu_r:.3f})')
+        ax.axhspan(mu_r - band_r, mu_r + band_r, color=PALETTE['random'], alpha=0.12,
+                   label=r'Random band ($\pm k\sigma_r$)')
+
+        # Convergence marker mapped onto the original sweep axis
+        if tau_est < max_steps:
+            x_tau = int(sweeps[tau_est])
+            ax.axvline(
+                x_tau, color='green', linewidth=2, linestyle=':',
+                label=rf'$\hat{{\tau}}_\mathrm{{relax}} \approx {x_tau}$',
+            )
+            ax.text(
+                x_tau, 0.97, f"{x_tau}",
+                transform=ax.get_xaxis_transform(),
+                ha='center', va='top', fontsize=8, color='green',
+                bbox=dict(boxstyle='round,pad=0.15', fc='white', ec='none', alpha=0.7),
+            )
+
+        stuck_marker = " ★" if seed in seeds_stuck else ""
+        ax.set_title(f"seed {seed}{stuck_marker}", fontsize=10, fontweight='semibold')
         ax.set_xlim(0, max_steps)
+        ax.set_ylim(0, 1.05)
 
         def x_fmt(x: float, _: Any) -> str:
             return f"{x/1000:.0f}k" if x >= 1000 else f"{x:.0f}"
 
         ax.xaxis.set_major_formatter(mticker.FuncFormatter(x_fmt))
         ax.yaxis.set_major_locator(mticker.MultipleLocator(0.2))
-        ax.grid(True, linewidth=0.4, alpha=0.5)
+        ax.grid(axis='y', alpha=0.3)
+        ax.tick_params(labelsize=8)
 
-    # Global legend
-    handles, labels = axes_flat[0].get_legend_handles_labels()
-    fig.legend(
-        handles, labels, loc='lower center', ncol=6, fontsize=8,
-        title="solid = random start  |  dashed = ordered start",
-        title_fontsize=8, frameon=True, bbox_to_anchor=(0.5, -0.02),
+        if s_idx >= 3:
+            ax.set_xlabel('MC Steps', fontsize=9)
+
+        if s_idx == 0:
+            ax.set_ylabel(r'Absolute Magnetization $|M|$', fontsize=10)
+            ax.legend(loc='lower right', fontsize=7, framealpha=0.9)
+
+    fig2.suptitle(
+        rf"Two-start Equilibration Traces  ·  Ising $L={size}$  ·  {t200_label}",
+        fontsize=13, y=0.995,
     )
 
-    fig.suptitle(
-        rf"Two-start equilibration traces  ·  Ising $L={size}$  ·  Representative Seeds",
-        fontsize=13, y=1.01,
-    )
-
-    plt.tight_layout()
-    os.makedirs(args.output_dir, exist_ok=True)
-    outpath = os.path.join(args.output_dir, f"diagnostic_eq_traces_L{size}.png")
-    fig.savefig(outpath, dpi=150, bbox_inches="tight")
-    logger.info(f"Saved visualization → {outpath}")
+    plt.tight_layout(rect=(0, 0, 1, 0.985))
+    outpath2 = os.path.join(args.output_dir, f"diagnostic_eq_traces_T200_L{size}.png")
+    fig2.savefig(outpath2, dpi=150, bbox_inches="tight")
+    logger.info(f"Saved detailed T=2.00 visualization → {outpath2}")
 
 
 if __name__ == '__main__':
