@@ -170,7 +170,7 @@ def test_plot_temperature_sweep(temp_dir):
     temps = np.array([1.0, 2.0])
     data = [0.5, 0.6]
 
-    with patch('utils.system_helpers.save_plot') as mock_save:
+    with patch('utils.plotting.save_plot') as mock_save:
         plot_temperature_sweep(
             temperatures=temps,
             avg_m=data,
@@ -211,7 +211,7 @@ def test_plot_ordering_kinetics(temp_dir):
     prefactors = {'R_sk': 1.0, 'xi': 1.0}
     mask = np.ones_like(t, dtype=bool)
 
-    with patch('utils.system_helpers.save_plot') as mock_save:
+    with patch('utils.plotting.save_plot') as mock_save:
         plot_ordering_kinetics(
             t=t,
             R_sk=R,
@@ -258,7 +258,7 @@ def test_plot_ordering_evolution(temp_dir):
     snapshots = [np.ones((16, 16)), np.ones((16, 16))]
     gr_data = [(np.arange(8), np.ones(8)), (np.arange(8), np.ones(8))]
 
-    with patch('utils.system_helpers.save_plot') as mock_save:
+    with patch('utils.plotting.save_plot') as mock_save:
         plot_ordering_evolution(
             targets=targets,
             snapshots=snapshots,
@@ -393,7 +393,7 @@ def test_convergence_equilibrate_warns_on_max_steps(caplog):
             return np.ones(n_steps), np.zeros(n_steps)
 
     caplog.set_level('WARNING', logger='vibespin')
-    with patch('utils.physics_helpers.estimate_relaxation_time_two_start', return_value=1000):
+    with patch('utils.equilibration.estimate_relaxation_time_two_start', return_value=1000):
         from utils.system_helpers import convergence_equilibrate
 
         total = convergence_equilibrate(
@@ -414,7 +414,7 @@ def test_convergence_equilibrate_with_status_reports_success():
         def run(self, *, n_steps: int) -> tuple[np.ndarray, np.ndarray]:
             return np.ones(n_steps), np.zeros(n_steps)
 
-    with patch('utils.physics_helpers.estimate_relaxation_time_two_start', return_value=75):
+    with patch('utils.equilibration.estimate_relaxation_time_two_start', return_value=75):
         from utils.system_helpers import convergence_equilibrate_with_status
 
         total, converged = convergence_equilibrate_with_status(
@@ -436,7 +436,7 @@ def test_convergence_equilibrate_with_status_reports_failure(caplog):
             return np.ones(n_steps), np.zeros(n_steps)
 
     caplog.set_level('WARNING', logger='vibespin')
-    with patch('utils.physics_helpers.estimate_relaxation_time_two_start', return_value=1000):
+    with patch('utils.equilibration.estimate_relaxation_time_two_start', return_value=1000):
         from utils.system_helpers import convergence_equilibrate_with_status
 
         total, converged = convergence_equilibrate_with_status(
@@ -465,7 +465,7 @@ def test_convergence_equilibrate_with_status_exits_early_when_stuck(caplog):
             return np.ones(n_steps), np.zeros(n_steps)
 
     caplog.set_level('WARNING', logger='vibespin')
-    with patch('utils.physics_helpers.estimate_relaxation_time_two_start', return_value=1000):
+    with patch('utils.equilibration.estimate_relaxation_time_two_start', return_value=1000):
         from utils.system_helpers import convergence_equilibrate_with_status
 
         total, converged = convergence_equilibrate_with_status(
@@ -498,7 +498,7 @@ def test_convergence_equilibrate_with_status_gate_blocks_stuck_detection(caplog)
             return np.ones(n_steps), np.zeros(n_steps)
 
     caplog.set_level('WARNING', logger='vibespin')
-    with patch('utils.physics_helpers.estimate_relaxation_time_two_start', return_value=1000):
+    with patch('utils.equilibration.estimate_relaxation_time_two_start', return_value=1000):
         from utils.system_helpers import convergence_equilibrate_with_status
 
         # qs_min_steps=10_000 means stuck detection can never fire in this run
@@ -523,7 +523,7 @@ def test_plot_temperature_sweep_with_entropy_only(temp_dir):
     """Optional panel layout should handle entropy-only inputs."""
     temps = np.array([1.0, 2.0])
     data = np.array([0.5, 0.6])
-    with patch('utils.system_helpers.save_plot') as mock_save:
+    with patch('utils.plotting.save_plot') as mock_save:
         plot_temperature_sweep(
             temperatures=temps,
             avg_m=data,
@@ -550,7 +550,7 @@ def test_plot_temperature_sweep_with_tau_only(temp_dir):
     """Optional panel layout should handle tau-only inputs."""
     temps = np.array([1.0, 2.0])
     data = np.array([0.5, 0.6])
-    with patch('utils.system_helpers.save_plot') as mock_save:
+    with patch('utils.plotting.save_plot') as mock_save:
         plot_temperature_sweep(
             temperatures=temps,
             avg_m=data,
@@ -580,7 +580,7 @@ def test_plot_temperature_sweep_with_tau_invalid_band(temp_dir):
     tau = np.array([2.0, 2.5, 3.0])
     tau_lo = np.array([1.5, np.nan, 2.4])
     tau_hi = np.array([2.7, np.nan, 3.7])
-    with patch('utils.system_helpers.save_plot') as mock_save:
+    with patch('utils.plotting.save_plot') as mock_save:
         plot_temperature_sweep(
             temperatures=temps,
             avg_m=data,
@@ -613,7 +613,7 @@ def test_plot_temperature_sweep_with_entropy_band_saves_diagnostics(temp_dir):
     entropy = np.array([0.1, 0.2, 0.35])
     entropy_lo = np.array([0.08, 0.16, 0.3])
     entropy_hi = np.array([0.13, 0.24, 0.4])
-    with patch('utils.system_helpers.save_plot') as mock_save:
+    with patch('utils.plotting.save_plot') as mock_save:
         plot_temperature_sweep(
             temperatures=temps,
             avg_m=data,
@@ -642,7 +642,7 @@ def test_plot_temperature_sweep_with_transition_guides(temp_dir):
     temps = np.array([1.0, 1.5, 2.0, 2.5])
     data = np.array([0.2, 0.5, 0.9, 0.6])
     tau = np.array([1.0, 1.3, 2.5, 1.8])
-    with patch('utils.system_helpers.save_plot') as mock_save:
+    with patch('utils.plotting.save_plot') as mock_save:
         plot_temperature_sweep(
             temperatures=temps,
             avg_m=data,
@@ -673,7 +673,7 @@ def test_plot_temperature_sweep_with_low_effective_sample_flags(temp_dir):
     data = np.array([0.2, 0.4, 0.8, 0.5])
     low_eff = np.array([0.0, 1.0, 0.0, 1.0])
     tau = np.array([1.0, 1.2, 1.8, 1.4])
-    with patch('utils.system_helpers.save_plot') as mock_save:
+    with patch('utils.plotting.save_plot') as mock_save:
         plot_temperature_sweep(
             temperatures=temps,
             avg_m=data,
@@ -701,7 +701,7 @@ def test_plot_temperature_sweep_with_metadata_and_quality_summary(temp_dir):
     temps = np.array([1.0, 1.5, 2.0, 2.5])
     data = np.array([0.2, 0.4, 0.8, 0.5])
     tau = np.array([1.0, 1.2, 1.8, 1.4])
-    with patch('utils.system_helpers.save_plot') as mock_save:
+    with patch('utils.plotting.save_plot') as mock_save:
         plot_temperature_sweep(
             temperatures=temps,
             avg_m=data,
@@ -737,7 +737,7 @@ def test_plot_temperature_sweep_with_entropy_reference(temp_dir):
     temps = np.array([1.0, 1.5, 2.0, 2.5])
     data = np.array([0.2, 0.4, 0.8, 0.5])
     entropy = np.array([0.1, 0.2, 0.35, 0.45])
-    with patch('utils.system_helpers.save_plot') as mock_save:
+    with patch('utils.plotting.save_plot') as mock_save:
         plot_temperature_sweep(
             temperatures=temps,
             avg_m=data,
@@ -764,7 +764,7 @@ def test_plot_ordering_kinetics_without_third_metric(temp_dir):
     """Second panel should be disabled cleanly when no third metric is provided."""
     t = np.array([1, 10])
     R = np.array([1.0, 2.0])
-    with patch('utils.system_helpers.save_plot') as mock_save:
+    with patch('utils.plotting.save_plot') as mock_save:
         plot_ordering_kinetics(
             t=t,
             R_sk=R,
@@ -794,7 +794,7 @@ def test_plot_ordering_evolution_vector_vorticity_with_xi_marker(temp_dir):
     g = np.array([1.0, 0.8, 0.5, 0.3, 0.2, 0.1, 0.08, 0.05])
     gr_data = [(r, g), (r, g)]
 
-    with patch('utils.system_helpers.save_plot') as mock_save:
+    with patch('utils.plotting.save_plot') as mock_save:
         plot_ordering_evolution(
             targets=targets,
             snapshots=snapshots,
