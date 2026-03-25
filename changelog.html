@@ -55,6 +55,8 @@
 <li class="toctree-l2"><a class="reference internal" href="#unreleased">Unreleased</a><ul>
 <li class="toctree-l3"><a class="reference internal" href="#performance">Performance</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#changed">Changed</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#fixed">Fixed</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#test">Test</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#chores">Chores</a></li>
 </ul>
 </li>
@@ -62,7 +64,7 @@
 <li class="toctree-l3"><a class="reference internal" href="#added">Added</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#id2">Performance</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#id3">Changed</a></li>
-<li class="toctree-l3"><a class="reference internal" href="#fixed">Fixed</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#id4">Fixed</a></li>
 </ul>
 </li>
 </ul>
@@ -122,6 +124,23 @@
 <h3>Changed<a class="headerlink" href="#changed" title="Link to this heading"></a></h3>
 <ul class="simple">
 <li><p>Removed deprecated <code class="docutils literal notranslate"><span class="pre">system_helpers.py</span></code> re-exports (<code class="docutils literal notranslate"><span class="pre">ensure_results_dir</span></code>, <code class="docutils literal notranslate"><span class="pre">adaptive_equilibrate</span></code>, etc.). All tests and Jupyter notebooks have been updated to explicitly import from <code class="docutils literal notranslate"><span class="pre">utils.equilibration</span></code> and <code class="docutils literal notranslate"><span class="pre">utils.plotting</span></code> directly.</p></li>
+<li><p>Renamed <code class="docutils literal notranslate"><span class="pre">run_scaling_benchmark()</span></code> to <code class="docutils literal notranslate"><span class="pre">main()</span></code> in <code class="docutils literal notranslate"><span class="pre">scripts/benchmarks/throughput.py</span></code> for consistency with other analysis scripts.</p></li>
+</ul>
+</section>
+<section id="fixed">
+<h3>Fixed<a class="headerlink" href="#fixed" title="Link to this heading"></a></h3>
+<ul class="simple">
+<li><p>Improved robustness of <code class="docutils literal notranslate"><span class="pre">blocking_error</span></code> and <code class="docutils literal notranslate"><span class="pre">summarize_primary_observable</span></code> in <code class="docutils literal notranslate"><span class="pre">utils/physics_helpers.py</span></code> when handling all-NaN time series.</p></li>
+<li><p>Fixed indentation in <code class="docutils literal notranslate"><span class="pre">tests/style/test_docstring_style.py</span></code> that caused test collection failures.</p></li>
+</ul>
+</section>
+<section id="test">
+<h3>Test<a class="headerlink" href="#test" title="Link to this heading"></a></h3>
+<ul class="simple">
+<li><p>Increased project test coverage from 63% to 75% by adding integration tests for the <code class="docutils literal notranslate"><span class="pre">main()</span></code> entry points of numerous analysis scripts (ordering kinetics, evolution, throughput, BKT transition, and helicity modulus).</p></li>
+<li><p>Expanded coverage of <code class="docutils literal notranslate"><span class="pre">utils/plotting.py</span></code> by exercising optional diagnostics and error-marking paths in <code class="docutils literal notranslate"><span class="pre">plot_temperature_sweep</span></code>.</p></li>
+<li><p>Strengthened <code class="docutils literal notranslate"><span class="pre">utils/physics_helpers.py</span></code> validation by adding tests for invalid parameter ranges and edge-case physical conditions.</p></li>
+<li><p>Enforced NumPy-style docstring sections and docstring presence for all public core modules in <code class="docutils literal notranslate"><span class="pre">tests/style/test_docstring_style.py</span></code>.</p></li>
 </ul>
 </section>
 <section id="chores">
@@ -178,8 +197,8 @@
 <li><p>Equilibration and plotting logic extracted from <code class="docutils literal notranslate"><span class="pre">utils/system_helpers.py</span></code> into dedicated <code class="docutils literal notranslate"><span class="pre">utils/equilibration.py</span></code> and <code class="docutils literal notranslate"><span class="pre">utils/plotting.py</span></code> modules; re-exports maintained in <code class="docutils literal notranslate"><span class="pre">system_helpers.py</span></code> for backward compatibility.</p></li>
 </ul>
 </section>
-<section id="fixed">
-<h3>Fixed<a class="headerlink" href="#fixed" title="Link to this heading"></a></h3>
+<section id="id4">
+<h3>Fixed<a class="headerlink" href="#id4" title="Link to this heading"></a></h3>
 <ul class="simple">
 <li><p>Diagnostics header/title overlap in temperature-sweep diagnostic plots.</p></li>
 <li><p>Restored notebook JSON after corruption; ensured stuck-detection prose and figures are consistent.</p></li>

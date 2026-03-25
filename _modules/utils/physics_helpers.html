@@ -640,6 +640,17 @@
         <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;min_block_size must be &gt;= 2, got </span><span class="si">{</span><span class="n">min_block_size</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
     <span class="k">if</span> <span class="n">max_block_size</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
         <span class="n">max_block_size</span> <span class="o">=</span> <span class="n">arr</span><span class="o">.</span><span class="n">size</span> <span class="o">//</span> <span class="mi">2</span>
+
+    <span class="c1"># Handle all-NaN series gracefully (e.g. from failed measurements)</span>
+    <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">isnan</span><span class="p">(</span><span class="n">arr</span><span class="p">)</span><span class="o">.</span><span class="n">all</span><span class="p">():</span>
+        <span class="k">return</span> <span class="p">{</span>
+            <span class="s1">&#39;stderr&#39;</span><span class="p">:</span> <span class="nb">float</span><span class="p">(</span><span class="s1">&#39;nan&#39;</span><span class="p">),</span>
+            <span class="s1">&#39;stderr_naive&#39;</span><span class="p">:</span> <span class="nb">float</span><span class="p">(</span><span class="s1">&#39;nan&#39;</span><span class="p">),</span>
+            <span class="s1">&#39;block_size&#39;</span><span class="p">:</span> <span class="nb">float</span><span class="p">(</span><span class="s1">&#39;nan&#39;</span><span class="p">),</span>
+            <span class="s1">&#39;n_blocks&#39;</span><span class="p">:</span> <span class="mf">0.0</span><span class="p">,</span>
+            <span class="s1">&#39;tau_int_from_blocking&#39;</span><span class="p">:</span> <span class="nb">float</span><span class="p">(</span><span class="s1">&#39;nan&#39;</span><span class="p">),</span>
+        <span class="p">}</span>
+
     <span class="k">if</span> <span class="n">max_block_size</span> <span class="o">&lt;</span> <span class="n">min_block_size</span><span class="p">:</span>
         <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
             <span class="sa">f</span><span class="s1">&#39;max_block_size must be &gt;= min_block_size, got </span><span class="si">{</span><span class="n">max_block_size</span><span class="si">}</span><span class="s1"> &lt; </span><span class="si">{</span><span class="n">min_block_size</span><span class="si">}</span><span class="s1">&#39;</span>
