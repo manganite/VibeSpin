@@ -176,8 +176,8 @@ class TestSweepHelpersContract:
         )
         required = {'value', 'err', 'ci_low', 'ci_high', 'tau_int', 'n_eff', 'samples'}
         assert required <= set(bundle.keys())
-        assert cast(np.ndarray, bundle['value']).shape == (2,)
-        assert cast(np.ndarray, bundle['samples']).shape == (2, 2)
+        assert bundle['value'].shape == (2,)
+        assert bundle['samples'].shape == (2, 2)
 
 
 class TestTemperatureSweepWorkerPayloads:
@@ -340,7 +340,7 @@ class TestTemperatureSweepMainPayloads:
             for field in expected_fields:
                 assert hasattr(payload, field)
             if expected_eq_max_steps is not None:
-                assert int(payload.eq_max_steps) == expected_eq_max_steps
+                assert int(cast(Any, payload).eq_max_steps) == expected_eq_max_steps
 
     def test_ising_main_builds_typed_sweep_payloads(self, monkeypatch: Any) -> None:
         """Ising temperature sweep main should build Ising SeedSweepPoint payloads."""
@@ -455,21 +455,13 @@ class TestTemperatureSweepUncertaintySchema:
             confidence=0.68,
         )
 
-        value = cast(np.ndarray, bundle['value'])
-        err = cast(np.ndarray, bundle['err'])
-        ci_low = cast(np.ndarray, bundle['ci_low'])
-        ci_high = cast(np.ndarray, bundle['ci_high'])
-        tau_bundle = cast(np.ndarray, bundle['tau_int'])
-        n_eff = cast(np.ndarray, bundle['n_eff'])
-        samples = cast(np.ndarray, bundle['samples'])
-
-        assert value.shape == (3,)
-        assert err.shape == (3,)
-        assert ci_low.shape == (3,)
-        assert ci_high.shape == (3,)
-        assert tau_bundle.shape == (3,)
-        assert n_eff.shape == (3,)
-        assert samples.shape == (3, 2)
+        assert bundle['value'].shape == (3,)
+        assert bundle['err'].shape == (3,)
+        assert bundle['ci_low'].shape == (3,)
+        assert bundle['ci_high'].shape == (3,)
+        assert bundle['tau_int'].shape == (3,)
+        assert bundle['n_eff'].shape == (3,)
+        assert bundle['samples'].shape == (3, 2)
 
     def test_ising_main_writes_uncertainty_npz(self, monkeypatch: Any) -> None:
         """Ising sweep main should persist additive uncertainty schema keys."""
