@@ -12,6 +12,14 @@ utils.cli\_helpers module
    :show-inheritance:
    :undoc-members:
 
+utils.equilibration module
+--------------------------
+
+.. automodule:: utils.equilibration
+   :members:
+   :show-inheritance:
+   :undoc-members:
+
 utils.exceptions module
 -----------------------
 
@@ -24,6 +32,14 @@ utils.physics\_helpers module
 -----------------------------
 
 .. automodule:: utils.physics_helpers
+   :members:
+   :show-inheritance:
+   :undoc-members:
+
+utils.plotting module
+---------------------
+
+.. automodule:: utils.plotting
    :members:
    :show-inheritance:
    :undoc-members:
