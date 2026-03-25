@@ -44,6 +44,14 @@ utils.plotting module
    :show-inheritance:
    :undoc-members:
 
+utils.sweep\_helpers module
+---------------------------
+
+.. automodule:: utils.sweep_helpers
+   :members:
+   :show-inheritance:
+   :undoc-members:
+
 utils.system\_helpers module
 ----------------------------
 

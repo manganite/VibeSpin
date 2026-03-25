@@ -8,6 +8,13 @@ All notable changes to VibeSpin are documented here. The format follows [Keep a 
 
 ## [Unreleased]
 
+### Added
+- `utils/sweep_helpers.py`: new shared module providing the two-layer temperature-sweep worker infrastructure used by all three model sweep scripts. Exports `ThermoPoint` (typed NamedTuple worker payload), `RawThermoData` (raw measurement arrays), `simulate_at_temperature` (Layer 1: physics and equilibration), `compute_thermo_observables` (Layer 2: statistical summarization), `simulate_thermo_point` (convenience wrapper), `build_uncertainty_bundle`, and `build_quality_flags`.
+
+### Changed
+- Refactored `scripts/ising/temperature_sweep.py`, `scripts/xy/temperature_sweep.py`, and `scripts/clock/temperature_sweep.py` to delegate all worker, uncertainty-bundle, and quality-flag logic to `utils/sweep_helpers`. Removed ~300 lines of duplicated private code (`_SeedSweepPoint`, `_simulate_seed_temperature`, `_build_uncertainty_bundle`, `_build_quality_flags`, `_WORKER_*` globals) from all three scripts. Statistical configuration (`confidence`, `derived_method`, `bootstrap_resamples`) is now embedded as `ThermoPoint` fields rather than module-level globals, making worker payloads fully self-contained for multiprocessing.
+- Updated integration tests in `tests/integration/test_script_infrastructure.py` to import from `utils.sweep_helpers` rather than private script symbols. Added `TestSweepHelpersContract` class covering picklability, required return keys, and bundle schema shapes.
+
 ### Performance
 - Fixed excessive memory allocation in `wolff_step_numba` across Ising, XY, and Clock models by pre-allocating the cluster mask and stack buffers once per simulation run, significantly lowering garbage collection overhead during large sweeps.
 

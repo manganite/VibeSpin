@@ -28,26 +28,13 @@ from scripts.ising.measure_z import (
 )
 
 try:
-    from scripts.clock.temperature_sweep import (
-        _SeedSweepPoint as _ClockSweepPoint,
-    )
-    from scripts.clock.temperature_sweep import (
-        _simulate_seed_temperature as simulate_clock_temperature,
-    )
-    from scripts.ising.temperature_sweep import (
-        _build_uncertainty_bundle as build_ising_uncertainty_bundle,
-    )
-    from scripts.ising.temperature_sweep import (
-        _SeedSweepPoint as _IsingSweepPoint,
-    )
-    from scripts.ising.temperature_sweep import (
-        _simulate_seed_temperature as simulate_ising_temperature,
-    )
-    from scripts.xy.temperature_sweep import (
-        _SeedSweepPoint as _XYSweepPoint,
-    )
-    from scripts.xy.temperature_sweep import (
-        _simulate_seed_temperature as simulate_xy_temperature,
+    from models.clock_model import ClockSimulation
+    from models.ising_model import IsingSimulation
+    from models.xy_model import XYSimulation
+    from utils.sweep_helpers import (
+        ThermoPoint,
+        build_uncertainty_bundle,
+        simulate_thermo_point,
     )
     HAS_TEMPERATURE_SWEEP = True
 except ImportError:
@@ -110,6 +97,89 @@ class TestMeasureTauPoint:
         assert res_w['tau_int'] < res_m['tau_int']
 
 
+class TestSweepHelpersContract:
+    """Verify the utils.sweep_helpers public API contracts."""
+
+    def test_thermo_point_is_picklable(self) -> None:
+        """ThermoPoint must be picklable for multiprocessing worker dispatch."""
+        if not HAS_TEMPERATURE_SWEEP:
+            pytest.skip("sweep_helpers not available")
+        import pickle
+        pt = ThermoPoint(
+            temperature=2.0,
+            size=8,
+            meas_steps=50,
+            seed=1,
+            temperature_index=0,
+            seed_index=0,
+            eq_probe_steps=50,
+            eq_max_steps=500,
+            eq_qs_sigma_threshold=0.05,
+            eq_qs_min_steps=500,
+            qs_allow_stuck=False,
+            prefer_ordered_start=False,
+            model_cls=IsingSimulation,
+            model_kwargs={},
+            confidence=0.68,
+            derived_method='blocking',
+            bootstrap_resamples=100,
+        )
+        restored = pickle.loads(pickle.dumps(pt))
+        assert restored.temperature == pt.temperature
+        assert restored.model_cls is IsingSimulation
+
+    def test_simulate_thermo_point_returns_required_keys(self) -> None:
+        """simulate_thermo_point must return all standard thermodynamic keys."""
+        if not HAS_TEMPERATURE_SWEEP:
+            pytest.skip("sweep_helpers not available")
+        pt = ThermoPoint(
+            temperature=2.0,
+            size=8,
+            meas_steps=50,
+            seed=7,
+            temperature_index=0,
+            seed_index=0,
+            eq_probe_steps=50,
+            eq_max_steps=500,
+            eq_qs_sigma_threshold=0.05,
+            eq_qs_min_steps=500,
+            qs_allow_stuck=False,
+            prefer_ordered_start=False,
+            model_cls=IsingSimulation,
+            model_kwargs={},
+            confidence=0.68,
+            derived_method='blocking',
+            bootstrap_resamples=100,
+        )
+        result = simulate_thermo_point(pt)
+        required = {
+            'temperature_index', 'seed_index', 'equilibrated_flag',
+            'avg_m_value', 'avg_m_err', 'avg_e_value', 'avg_e_err',
+            'susc_value', 'susc_err', 'spec_h_value', 'spec_h_err',
+        }
+        assert required <= set(result.keys())
+
+    def test_build_uncertainty_bundle_returns_required_keys(self) -> None:
+        """build_uncertainty_bundle must return all expected schema keys."""
+        if not HAS_TEMPERATURE_SWEEP:
+            pytest.skip("sweep_helpers not available")
+        values = np.array([[1.0, 1.1], [2.0, 2.1]])
+        errors = np.array([[0.1, 0.1], [0.2, 0.2]])
+        tau = np.array([[3.0, 4.0], [2.0, 2.5]])
+        n_eff = np.array([[10.0, 9.0], [12.0, 11.0]])
+        bundle = build_uncertainty_bundle(
+            values_by_seed=values,
+            errors_by_seed=errors,
+            tau_by_seed=tau,
+            n_eff_by_seed=n_eff,
+            confidence=0.68,
+        )
+        required = {'value', 'err', 'ci_low', 'ci_high', 'tau_int', 'n_eff', 'samples'}
+        assert required <= set(bundle.keys())
+        assert cast(np.ndarray, bundle['value']).shape == (2,)
+        assert cast(np.ndarray, bundle['samples']).shape == (2, 2)
+
+
 class TestTemperatureSweepWorkerPayloads:
     """Verify that temperature-sweep workers follow the typed payload contract."""
 
@@ -129,19 +199,26 @@ class TestTemperatureSweepWorkerPayloads:
             import pytest
             pytest.skip("Temperature sweep modules not available")
 
-        payload = _IsingSweepPoint(
+        payload = ThermoPoint(
             temperature=2.0,
             size=8,
             meas_steps=100,
+            seed=42,
+            temperature_index=0,
+            seed_index=0,
             eq_probe_steps=100,
             eq_max_steps=1000,
             eq_qs_sigma_threshold=0.05,
             eq_qs_min_steps=1500,
-            temperature_index=0,
-            seed_index=0,
-            seed=42,
+            qs_allow_stuck=False,
+            prefer_ordered_start=False,
+            model_cls=IsingSimulation,
+            model_kwargs={},
+            confidence=0.68,
+            derived_method='blocking',
+            bootstrap_resamples=1000,
         )
-        result = simulate_ising_temperature(payload)
+        result = simulate_thermo_point(payload)
         self._assert_valid_thermo_result(result)
 
     def test_xy_worker_accepts_typed_payload(self) -> None:
@@ -150,17 +227,26 @@ class TestTemperatureSweepWorkerPayloads:
             import pytest
             pytest.skip("Temperature sweep modules not available")
 
-        payload = _XYSweepPoint(
+        payload = ThermoPoint(
             temperature=0.9,
             size=8,
             meas_steps=100,
-            eq_probe_steps=100,
-            eq_max_steps=1000,
+            seed=42,
             temperature_index=0,
             seed_index=0,
-            seed=42,
+            eq_probe_steps=100,
+            eq_max_steps=1000,
+            eq_qs_sigma_threshold=0.05,
+            eq_qs_min_steps=1500,
+            qs_allow_stuck=False,
+            prefer_ordered_start=False,
+            model_cls=XYSimulation,
+            model_kwargs={},
+            confidence=0.68,
+            derived_method='blocking',
+            bootstrap_resamples=1000,
         )
-        result = simulate_xy_temperature(payload)
+        result = simulate_thermo_point(payload)
         self._assert_valid_thermo_result(result)
 
     def test_clock_worker_accepts_typed_payload(self) -> None:
@@ -169,20 +255,26 @@ class TestTemperatureSweepWorkerPayloads:
             import pytest
             pytest.skip("Temperature sweep modules not available")
 
-        payload = _ClockSweepPoint(
+        payload = ThermoPoint(
             temperature=0.9,
             size=8,
-            q=6,
-            aniso=0.0,
             meas_steps=100,
-            eq_probe_steps=100,
-            eq_max_steps=1000,
-            discrete=True,
+            seed=42,
             temperature_index=0,
             seed_index=0,
-            seed=42,
+            eq_probe_steps=100,
+            eq_max_steps=1000,
+            eq_qs_sigma_threshold=0.05,
+            eq_qs_min_steps=1500,
+            qs_allow_stuck=False,
+            prefer_ordered_start=False,
+            model_cls=ClockSimulation,
+            model_kwargs={'q': 6, 'A': 0.0},
+            confidence=0.68,
+            derived_method='blocking',
+            bootstrap_resamples=1000,
         )
-        result = simulate_clock_temperature(payload)
+        result = simulate_thermo_point(payload)
         self._assert_valid_thermo_result(result)
 
 
@@ -298,9 +390,13 @@ class TestTemperatureSweepMainPayloads:
                 'meas_steps',
                 'eq_probe_steps',
                 'eq_max_steps',
+                'eq_qs_sigma_threshold',
+                'eq_qs_min_steps',
                 'temperature_index',
                 'seed_index',
                 'seed',
+                'model_cls',
+                'model_kwargs',
             ),
             ['xy_temperature_sweep', '--size', '8', '--meas-steps', '20', '--t-points', '2'],
             expected_len=2,
@@ -320,15 +416,16 @@ class TestTemperatureSweepMainPayloads:
             (
                 'temperature',
                 'size',
-                'q',
-                'aniso',
                 'meas_steps',
                 'eq_probe_steps',
                 'eq_max_steps',
-                'discrete',
+                'eq_qs_sigma_threshold',
+                'eq_qs_min_steps',
                 'temperature_index',
                 'seed_index',
                 'seed',
+                'model_cls',
+                'model_kwargs',
             ),
             ['clock_temperature_sweep', '--size', '8', '--meas-steps', '20', '--t-points', '2'],
             expected_len=2,
@@ -350,7 +447,7 @@ class TestTemperatureSweepUncertaintySchema:
         tau_by_seed = np.array([[5.0, 4.5], [np.nan, 3.0], [2.0, 2.5]])
         n_eff_by_seed = np.array([[10.0, 12.0], [8.0, 9.0], [15.0, 16.0]])
 
-        bundle = build_ising_uncertainty_bundle(
+        bundle = build_uncertainty_bundle(
             values_by_seed=values_by_seed,
             errors_by_seed=errors_by_seed,
             tau_by_seed=tau_by_seed,

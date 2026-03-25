@@ -64,6 +64,26 @@ The canonical implementation lives in `utils/physics_helpers.py`. The key public
 
 The schema is written additively: new standardized keys are always appended rather than replacing the legacy layout. This allows existing notebooks and downstream loaders to continue reading the pre-schema keys while new code targets the standardized ones. All constants (`DEFAULT_CONFIDENCE_LEVEL`, `UNCERTAINTY_METHOD_BLOCKING`, `UNCERTAINTY_METHOD_BOOTSTRAP`, `UNCERTAINTY_FIELDS`, `UNCERTAINTY_METADATA_FIELDS`) are defined at module level in `utils/physics_helpers.py` and imported by all scripts, ensuring a single authoritative source for the contract.
 
+### Sweep Worker Infrastructure
+
+The three temperature-sweep scripts (Ising, XY, Clock) share a two-layer worker architecture defined in `utils/sweep_helpers.py`. This module eliminates the ~300 lines of previously duplicated per-model worker code and centralizes the equilibration, measurement, and statistical summarization logic.
+
+The input to the worker is a `ThermoPoint` named tuple. It carries all configuration needed for one `(temperature, seed)` point: lattice size, measurement steps, equilibration parameters, model dispatch information (`model_cls` and `model_kwargs`), and statistical config (`confidence`, `derived_method`, `bootstrap_resamples`). Embedding statistical config as fields rather than module-level globals makes the payload fully self-contained and safe for multiprocessing dispatch, since workers receive all their configuration through the pickled payload rather than relying on shared global state.
+
+The worker logic is split into two explicit layers. Layer 1, `simulate_at_temperature`, owns the physics: it instantiates the simulation, runs the two-start convergence equilibration, executes the measurement sweep, and returns a `RawThermoData` named tuple containing the raw magnetization and energy arrays alongside equilibration diagnostics. Layer 2, `compute_thermo_observables`, owns the statistics: it calls the appropriate `utils/physics_helpers.py` summarizers on the raw arrays and returns a flat `dict[str, float]` in the standard schema format. This separation means that the measurement and summarization concerns can be tested, profiled, and reasoned about independently. The `simulate_thermo_point` function chains both layers and is the function passed to `parallel_sweep` in all three sweep scripts.
+
+Two post-processing helpers, `build_uncertainty_bundle` and `build_quality_flags`, aggregate per-seed per-temperature scalar results into the full `(T,)` and `(T, S)` arrays required by the NPZ schema. These were previously duplicated identically in all three scripts and are now the shared canonical implementations.
+
+### Sweep Worker Infrastructure
+
+The three temperature-sweep scripts (Ising, XY, Clock) share a two-layer worker architecture defined in `utils/sweep_helpers.py`. This module eliminates the ~300 lines of previously duplicated per-model worker code and centralizes the equilibration, measurement, and statistical summarization logic.
+
+The input to the worker is a `ThermoPoint` named tuple. It carries all configuration needed for one `(temperature, seed)` point: lattice size, measurement steps, equilibration parameters, model dispatch information (`model_cls` and `model_kwargs`), and statistical config (`confidence`, `derived_method`, `bootstrap_resamples`). Embedding statistical config as fields rather than module-level globals makes the payload fully self-contained and safe for multiprocessing dispatch, since workers receive all their configuration through the pickled payload rather than relying on shared global state.
+
+The worker logic is split into two explicit layers. Layer 1, `simulate_at_temperature`, owns the physics: it instantiates the simulation, runs the two-start convergence equilibration, executes the measurement sweep, and returns a `RawThermoData` named tuple containing the raw magnetization and energy arrays alongside equilibration diagnostics. Layer 2, `compute_thermo_observables`, owns the statistics: it calls the appropriate `utils/physics_helpers.py` summarizers on the raw arrays and returns a flat `dict[str, float]` in the standard schema format. This separation means that the measurement and summarization concerns can be tested, profiled, and reasoned about independently. The `simulate_thermo_point` function chains both layers and is the function passed to `parallel_sweep` in all three sweep scripts.
+
+Two post-processing helpers, `build_uncertainty_bundle` and `build_quality_flags`, aggregate per-seed per-temperature scalar results into the full `(T,)` and `(T, S)` arrays required by the NPZ schema. These were previously duplicated identically in all three scripts and are now the shared canonical implementations.
+
 ## Bibliography
 
 The engineering and algorithmic choices in VibeSpin are grounded in standard practices for scientific computing and statistical physics. For a comprehensive list of all references used in the project, see [BIBLIOGRAPHY.md](./bibliography.md).

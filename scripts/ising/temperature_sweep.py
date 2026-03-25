@@ -7,240 +7,28 @@ from __future__ import annotations
 import argparse
 import logging
 import os
-from typing import Any, NamedTuple, cast
+from typing import Any, cast
 
 import numpy as np
 
 from models.ising_model import IsingSimulation
 from utils.cli_helpers import parse_args_compat
-from utils.equilibration import convergence_equilibrate_with_status
 from utils.physics_helpers import (
     DEFAULT_CONFIDENCE_LEVEL,
     UNCERTAINTY_METHOD_BLOCKING,
     UNCERTAINTY_METHOD_BOOTSTRAP,
-    summarize_derived_observable,
     summarize_entropy_observable,
-    summarize_primary_observable,
-    summarize_seed_ensemble,
 )
 from utils.plotting import plot_temperature_sweep
+from utils.sweep_helpers import (
+    ThermoPoint,
+    build_quality_flags,
+    build_uncertainty_bundle,
+    simulate_thermo_point,
+)
 from utils.system_helpers import parallel_sweep, setup_logging
 
-_WORKER_CONFIDENCE_LEVEL = DEFAULT_CONFIDENCE_LEVEL
-_WORKER_DERIVED_METHOD = UNCERTAINTY_METHOD_BLOCKING
-_WORKER_DERIVED_BOOTSTRAP_RESAMPLES = 0
 _TC_ISING_THEORY = 2.26918531421
-
-
-class _SeedSweepPoint(NamedTuple):
-    """Typed worker payload for one temperature/seed point in the sweep."""
-
-    temperature: float
-    size: int
-    meas_steps: int
-    eq_probe_steps: int
-    eq_max_steps: int
-    eq_qs_sigma_threshold: float
-    eq_qs_min_steps: int
-    temperature_index: int
-    seed_index: int
-    seed: int
-
-
-def _simulate_seed_temperature(params: _SeedSweepPoint) -> dict[str, float]:
-    """Run one seeded sweep point and return summary statistics for all observables."""
-    T = params.temperature
-    L = params.size
-    meas_steps = params.meas_steps
-
-    sim_r = IsingSimulation(size=L, temp=T, init_state='random', seed=params.seed)
-    sim_o = IsingSimulation(size=L, temp=T, init_state='ordered', seed=params.seed)
-    total_steps, converged = convergence_equilibrate_with_status(
-        sim_r,
-        sim_o,
-        chunk_size=params.eq_probe_steps,
-        max_steps=params.eq_max_steps,
-        qs_sigma_threshold=params.eq_qs_sigma_threshold,
-        qs_min_steps=params.eq_qs_min_steps,
-        qs_allow_stuck=(T < _TC_ISING_THEORY),
-    )
-
-    if not converged:
-        return {
-            'temperature_index': float(params.temperature_index),
-            'seed_index': float(params.seed_index),
-            'equilibrated_flag': 0.0,
-            'equilibration_steps': float(total_steps),
-        }
-
-    # Select the cleanly ordered simulation for measurements at low T
-    active_sim = sim_r
-    if T < _TC_ISING_THEORY:
-        m_r = float(np.abs(sim_r._get_magnetization()))
-        m_o = float(np.abs(sim_o._get_magnetization()))
-        if m_o > m_r + 0.2:
-            active_sim = sim_o
-
-    mags, engs = active_sim.run(n_steps=meas_steps)
-    mags_arr = np.asarray(mags, dtype=np.float64)
-    engs_arr = np.asarray(engs, dtype=np.float64)
-
-    mag = summarize_primary_observable(
-        time_series=mags_arr,
-        confidence=_WORKER_CONFIDENCE_LEVEL,
-    )
-    eng = summarize_primary_observable(
-        time_series=engs_arr,
-        confidence=_WORKER_CONFIDENCE_LEVEL,
-    )
-    chi = summarize_derived_observable(
-        magnetization_series=mags_arr,
-        temperature=T,
-        L=L,
-        observable='chi',
-        method=_WORKER_DERIVED_METHOD,
-        confidence=_WORKER_CONFIDENCE_LEVEL,
-        bootstrap_resamples=_WORKER_DERIVED_BOOTSTRAP_RESAMPLES,
-    )
-    cv = summarize_derived_observable(
-        energy_series=engs_arr,
-        temperature=T,
-        L=L,
-        observable='cv',
-        method=_WORKER_DERIVED_METHOD,
-        confidence=_WORKER_CONFIDENCE_LEVEL,
-        bootstrap_resamples=_WORKER_DERIVED_BOOTSTRAP_RESAMPLES,
-    )
-
-    return {
-        'temperature_index': float(params.temperature_index),
-        'seed_index': float(params.seed_index),
-        'equilibrated_flag': 1.0,
-        'equilibration_steps': float(total_steps),
-        'avg_m_value': float(mag['value']),
-        'avg_m_err': float(mag['err']),
-        'avg_m_tau_int': float(mag['tau_int']),
-        'avg_m_n_eff': float(mag['n_eff']),
-        'avg_e_value': float(eng['value']),
-        'avg_e_err': float(eng['err']),
-        'avg_e_tau_int': float(eng['tau_int']),
-        'avg_e_n_eff': float(eng['n_eff']),
-        'susc_value': float(chi['value']),
-        'susc_err': float(chi['err']),
-        'susc_tau_int': float(chi['tau_int']),
-        'susc_n_eff': float(chi['n_eff']),
-        'spec_h_value': float(cv['value']),
-        'spec_h_err': float(cv['err']),
-        'spec_h_tau_int': float(cv['tau_int']),
-        'spec_h_n_eff': float(cv['n_eff']),
-    }
-
-
-def _build_uncertainty_bundle(
-    *,
-    values_by_seed: np.ndarray,
-    errors_by_seed: np.ndarray,
-    tau_by_seed: np.ndarray,
-    n_eff_by_seed: np.ndarray,
-    confidence: float,
-) -> dict[str, np.ndarray]:
-    """Calculate combined uncertainty across multiple seeds for one observable."""
-    n_seeds = values_by_seed.shape[1]
-    if n_seeds > 1:
-        # Hierarchical aggregation: between-seed + within-seed
-        res_values = []
-        res_errors = []
-        res_low = []
-        res_high = []
-
-        for t in range(values_by_seed.shape[0]):
-            mask = ~np.isnan(values_by_seed[t])
-            if not np.any(mask):
-                res_values.append(np.nan)
-                res_errors.append(np.nan)
-                res_low.append(np.nan)
-                res_high.append(np.nan)
-                continue
-
-            summary = summarize_seed_ensemble(
-                values=values_by_seed[t, mask],
-                within_seed_errors=errors_by_seed[t, mask],
-                confidence=confidence
-            )
-            res_values.append(summary['value'])
-            res_errors.append(summary['err'])
-            res_low.append(summary['ci_low'])
-            res_high.append(summary['ci_high'])
-
-        res = {
-            'value': np.array(res_values),
-            'err': np.array(res_errors),
-            'ci_low': np.array(res_low),
-            'ci_high': np.array(res_high),
-        }
-
-        # Calculate ensemble-averaged diagnostics, avoiding RuntimeWarning for all-NaN rows
-        nan_mask = np.all(np.isnan(tau_by_seed), axis=1)
-        tau_int = np.full(nan_mask.shape, np.nan)
-        n_eff = np.full(nan_mask.shape, np.nan)
-
-        if not np.all(nan_mask):
-            with np.errstate(all='ignore'):
-                tau_int[~nan_mask] = np.nanmean(tau_by_seed[~nan_mask], axis=1)
-                n_eff[~nan_mask] = np.nanmean(n_eff_by_seed[~nan_mask], axis=1)
-
-        if np.any(nan_mask):
-            logger = logging.getLogger('vibespin')
-            logger.warning(
-                f"Autocorrelation diagnostics are undefined for {np.sum(nan_mask)} "
-                "temperature points (all seeds returned NaN). This is expected in "
-                "the deep ordered/frozen phase."
-            )
-    else:
-        # Fallback to single-seed blocking results
-        res = {
-            'value': values_by_seed[:, 0],
-            'err': errors_by_seed[:, 0],
-            'ci_low': values_by_seed[:, 0] - errors_by_seed[:, 0],
-            'ci_high': values_by_seed[:, 0] + errors_by_seed[:, 0],
-        }
-        tau_int = tau_by_seed[:, 0]
-        n_eff = n_eff_by_seed[:, 0]
-
-    return {
-        'value': res['value'],
-        'err': res['err'],
-        'ci_low': res['ci_low'],
-        'ci_high': res['ci_high'],
-        'tau_int': tau_int,
-        'n_eff': n_eff,
-        'samples': values_by_seed.astype(np.float64),
-    }
-
-
-def _build_quality_flags(
-    *,
-    tau_int: np.ndarray,
-    ci_low: np.ndarray,
-    ci_high: np.ndarray,
-    n_eff: np.ndarray,
-    min_effective_samples: float,
-    max_tau_relative_width: float,
-) -> dict[str, np.ndarray]:
-    """Build per-temperature diagnostics for uncertainty quality."""
-    undefined_autocorr = ~np.isfinite(tau_int)
-    low_effective_sample = np.isfinite(n_eff) & (n_eff < min_effective_samples)
-
-    tau_span = ci_high - ci_low
-    denom = np.maximum(np.abs(tau_int), 1e-12)
-    rel_width = tau_span / denom
-    tau_interval_unstable = np.isfinite(rel_width) & (rel_width > max_tau_relative_width)
-
-    return {
-        'undefined_autocorr_flag': undefined_autocorr.astype(np.uint8),
-        'low_effective_sample_flag': low_effective_sample.astype(np.uint8),
-        'tau_interval_unstable_flag': tau_interval_unstable.astype(np.uint8),
-    }
 
 
 def main() -> None:
@@ -375,13 +163,6 @@ def main() -> None:
             'derived-uncertainty-method=bootstrap'
         )
 
-    global _WORKER_CONFIDENCE_LEVEL
-    global _WORKER_DERIVED_METHOD
-    global _WORKER_DERIVED_BOOTSTRAP_RESAMPLES
-    _WORKER_CONFIDENCE_LEVEL = float(args.confidence_level)
-    _WORKER_DERIVED_METHOD = str(args.derived_uncertainty_method)
-    _WORKER_DERIVED_BOOTSTRAP_RESAMPLES = int(args.derived_bootstrap_resamples)
-
     # Configure logging
     log_level = logging.DEBUG if args.verbose else logging.INFO
     logger = setup_logging(level=log_level, log_file=args.log_file)
@@ -424,17 +205,25 @@ def main() -> None:
                 for _ in range(needed):
                     seed_idx = attempts_per_temp[t]
                     seed = t * 100_000 + seed_idx * 1_000
-                    points_to_calculate.append(_SeedSweepPoint(
-                        temperature=float(temperatures[t]),
+                    T_val = float(temperatures[t])
+                    points_to_calculate.append(ThermoPoint(
+                        temperature=T_val,
                         size=L,
                         meas_steps=args.meas_steps,
                         eq_probe_steps=args.eq_probe_steps,
                         eq_max_steps=args.eq_max_steps,
                         eq_qs_sigma_threshold=args.eq_qs_sigma_threshold,
                         eq_qs_min_steps=args.eq_qs_min_steps,
+                        qs_allow_stuck=(T_val < _TC_ISING_THEORY),
+                        prefer_ordered_start=(T_val < _TC_ISING_THEORY),
                         temperature_index=t,
                         seed_index=seed_idx,
-                        seed=seed
+                        seed=seed,
+                        model_cls=IsingSimulation,
+                        model_kwargs={},
+                        confidence=float(args.confidence_level),
+                        derived_method=str(args.derived_uncertainty_method),
+                        bootstrap_resamples=int(args.derived_bootstrap_resamples),
                     ))
                     attempts_per_temp[t] += 1
 
@@ -444,7 +233,7 @@ def main() -> None:
 
         # Run the missing points in parallel
         batch_results = parallel_sweep(
-            worker_func=_simulate_seed_temperature,
+            worker_func=simulate_thermo_point,
             params=points_to_calculate,
         )
 
@@ -505,28 +294,28 @@ def main() -> None:
     spec_h_tau = extract_grid('spec_h_tau_int')
     spec_h_n_eff = extract_grid('spec_h_n_eff')
 
-    mag_bundle = _build_uncertainty_bundle(
+    mag_bundle = build_uncertainty_bundle(
         values_by_seed=avg_m_values,
         errors_by_seed=avg_m_errors,
         tau_by_seed=avg_m_tau,
         n_eff_by_seed=avg_m_n_eff,
         confidence=float(args.confidence_level),
     )
-    eng_bundle = _build_uncertainty_bundle(
+    eng_bundle = build_uncertainty_bundle(
         values_by_seed=avg_e_values,
         errors_by_seed=avg_e_errors,
         tau_by_seed=avg_e_tau,
         n_eff_by_seed=avg_e_n_eff,
         confidence=float(args.confidence_level),
     )
-    susc_bundle = _build_uncertainty_bundle(
+    susc_bundle = build_uncertainty_bundle(
         values_by_seed=susc_values,
         errors_by_seed=susc_errors,
         tau_by_seed=susc_tau,
         n_eff_by_seed=susc_n_eff,
         confidence=float(args.confidence_level),
     )
-    spec_h_bundle = _build_uncertainty_bundle(
+    spec_h_bundle = build_uncertainty_bundle(
         values_by_seed=spec_h_values,
         errors_by_seed=spec_h_errors,
         tau_by_seed=spec_h_tau,
@@ -545,7 +334,7 @@ def main() -> None:
     )
 
     # Combined quality flags
-    quality = _build_quality_flags(
+    quality = build_quality_flags(
         tau_int=mag_bundle['tau_int'],
         ci_low=mag_bundle['ci_low'],
         ci_high=mag_bundle['ci_high'],
