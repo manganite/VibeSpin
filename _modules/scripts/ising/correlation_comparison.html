@@ -48,6 +48,7 @@
 <li class="toctree-l1"><a class="reference internal" href="../../../scripts.html">Scripts Catalog: VibeSpin</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../agents.html">Agent Instruction Guide: VibeSpin</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../bibliography.html">Project Bibliography: VibeSpin</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../changelog.html">Changelog</a></li>
 </ul>
 <p class="caption" role="heading"><span class="caption-text">Research &amp; Analysis:</span></p>
 <ul>
@@ -102,7 +103,8 @@
 <span class="kn">from</span><span class="w"> </span><span class="nn">models.ising_model</span><span class="w"> </span><span class="kn">import</span> <span class="n">IsingSimulation</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">utils.cli_helpers</span><span class="w"> </span><span class="kn">import</span> <span class="n">parse_args_compat</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">utils.physics_helpers</span><span class="w"> </span><span class="kn">import</span> <span class="n">get_averaged_correlation</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">utils.system_helpers</span><span class="w"> </span><span class="kn">import</span> <span class="n">ensure_results_dir</span><span class="p">,</span> <span class="n">parallel_sweep</span><span class="p">,</span> <span class="n">save_plot</span><span class="p">,</span> <span class="n">setup_logging</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">utils.plotting</span><span class="w"> </span><span class="kn">import</span> <span class="n">ensure_results_dir</span><span class="p">,</span> <span class="n">save_plot</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">utils.system_helpers</span><span class="w"> </span><span class="kn">import</span> <span class="n">parallel_sweep</span><span class="p">,</span> <span class="n">setup_logging</span>
 
 
 <div class="viewcode-block" id="simulate_correlation">

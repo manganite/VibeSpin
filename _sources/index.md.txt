@@ -16,6 +16,7 @@ code
 scripts
 agents
 bibliography
+changelog
 ```
 
 ```{toctree}

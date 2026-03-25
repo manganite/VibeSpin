@@ -48,6 +48,7 @@
 <li class="toctree-l1"><a class="reference internal" href="../../../scripts.html">Scripts Catalog: VibeSpin</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../agents.html">Agent Instruction Guide: VibeSpin</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../bibliography.html">Project Bibliography: VibeSpin</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../changelog.html">Changelog</a></li>
 </ul>
 <p class="caption" role="heading"><span class="caption-text">Research &amp; Analysis:</span></p>
 <ul>
@@ -102,6 +103,7 @@
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">models.ising_model</span><span class="w"> </span><span class="kn">import</span> <span class="n">IsingSimulation</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">utils.cli_helpers</span><span class="w"> </span><span class="kn">import</span> <span class="n">parse_args_compat</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">utils.equilibration</span><span class="w"> </span><span class="kn">import</span> <span class="n">convergence_equilibrate_with_status</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">utils.physics_helpers</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
     <span class="n">DEFAULT_CONFIDENCE_LEVEL</span><span class="p">,</span>
     <span class="n">UNCERTAINTY_METHOD_BLOCKING</span><span class="p">,</span>
@@ -111,12 +113,8 @@
     <span class="n">summarize_primary_observable</span><span class="p">,</span>
     <span class="n">summarize_seed_ensemble</span><span class="p">,</span>
 <span class="p">)</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">utils.system_helpers</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
-    <span class="n">convergence_equilibrate_with_status</span><span class="p">,</span>
-    <span class="n">parallel_sweep</span><span class="p">,</span>
-    <span class="n">plot_temperature_sweep</span><span class="p">,</span>
-    <span class="n">setup_logging</span><span class="p">,</span>
-<span class="p">)</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">utils.plotting</span><span class="w"> </span><span class="kn">import</span> <span class="n">plot_temperature_sweep</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">utils.system_helpers</span><span class="w"> </span><span class="kn">import</span> <span class="n">parallel_sweep</span><span class="p">,</span> <span class="n">setup_logging</span>
 
 <span class="n">_WORKER_CONFIDENCE_LEVEL</span> <span class="o">=</span> <span class="n">DEFAULT_CONFIDENCE_LEVEL</span>
 <span class="n">_WORKER_DERIVED_METHOD</span> <span class="o">=</span> <span class="n">UNCERTAINTY_METHOD_BLOCKING</span>

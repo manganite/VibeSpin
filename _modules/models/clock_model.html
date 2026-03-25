@@ -48,6 +48,7 @@
 <li class="toctree-l1"><a class="reference internal" href="../../scripts.html">Scripts Catalog: VibeSpin</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../agents.html">Agent Instruction Guide: VibeSpin</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../bibliography.html">Project Bibliography: VibeSpin</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../changelog.html">Changelog</a></li>
 </ul>
 <p class="caption" role="heading"><span class="caption-text">Research &amp; Analysis:</span></p>
 <ul>
@@ -89,6 +90,13 @@
   <h1>Source code for models.clock_model</h1><div class="highlight"><pre>
 <span></span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">2D q-state Clock Model simulation using Metropolis-Hastings and Wolff cluster algorithms.</span>
+
+<span class="sd">NOTE: ``ClockSimulation`` (continuous XY-plus-anisotropy form) and</span>
+<span class="sd">``DiscreteClockSimulation`` (integer state indices with cosine lookup tables) are</span>
+<span class="sd">collocated here for convenience.  When either class grows beyond roughly 400 lines</span>
+<span class="sd">of unique logic, split them into ``clock_model_continuous.py`` and</span>
+<span class="sd">``clock_model_discrete.py`` and keep this file as a re-export shim, following the</span>
+<span class="sd">existing ``utils/system_helpers.py`` pattern.</span>
 <span class="sd">&quot;&quot;&quot;</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">__future__</span><span class="w"> </span><span class="kn">import</span> <span class="n">annotations</span>
 

@@ -112,6 +112,7 @@ Optimize for four outcomes: correct statistical-physics behavior, high simulatio
     -   `test(ising): add tests for Wolff algorithm`
     -   `phys(clock): implement discrete speedup for q-state models`
 - **GitHub Sync**: After a successful local commit, ask the user if they wish to push to the remote repository.
+- **Changelog Updates**: For every commit or pull request that changes user-facing behavior (physics, CLI, NPZ schema, or public API), add an entry under the `[Unreleased]` heading in `CHANGELOG.md`. When cutting a release, move all `[Unreleased]` entries to a new dated version block following the existing format.
 
 ### 6. Documentation & Knowledge Management
 - **Docstring Compliance**: All new classes, methods, and kernels MUST include **NumPy-style docstrings**. This is mandatory for automated Sphinx API generation (`sphinx-apidoc`).
