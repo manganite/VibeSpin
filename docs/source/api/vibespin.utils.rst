@@ -20,10 +20,26 @@ utils.equilibration module
    :show-inheritance:
    :undoc-members:
 
+utils.evolution\_helpers module
+-------------------------------
+
+.. automodule:: utils.evolution_helpers
+   :members:
+   :show-inheritance:
+   :undoc-members:
+
 utils.exceptions module
 -----------------------
 
 .. automodule:: utils.exceptions
+   :members:
+   :show-inheritance:
+   :undoc-members:
+
+utils.kinetics\_helpers module
+------------------------------
+
+.. automodule:: utils.kinetics_helpers
    :members:
    :show-inheritance:
    :undoc-members:

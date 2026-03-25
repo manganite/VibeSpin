@@ -84,6 +84,16 @@ The worker logic is split into two explicit layers. Layer 1, `simulate_at_temper
 
 Two post-processing helpers, `build_uncertainty_bundle` and `build_quality_flags`, aggregate per-seed per-temperature scalar results into the full `(T,)` and `(T, S)` arrays required by the NPZ schema. These were previously duplicated identically in all three scripts and are now the shared canonical implementations.
 
+### Ordering Kinetics and Evolution Helper Infrastructure
+
+The three ordering-kinetics scripts (Ising, XY, Clock) and the three ordering-evolution scripts share simulation loops that were previously duplicated across each model. These loops are now centralized in two utility modules.
+
+`utils/kinetics_helpers.py` exports `compute_mean_intercept_length` and `run_ordering_kinetics`. `compute_mean_intercept_length` estimates the domain size of a scalar-spin lattice via the stereological mean intercept length: it counts domain-wall crossings along every row and column (including the periodic wrap-around) and divides the total line length by the crossing count. `run_ordering_kinetics` owns the full kinetics loop: it builds logarithmically spaced step targets, instantiates the model, steps the simulation forward, calls `compute_kinetics_metrics` and a caller-supplied `third_metric_fn` at each target, fits power laws via `power_fit`, and writes the two-panel figure with `plot_ordering_kinetics`. The `third_metric_fn` parameter is a `Callable[[Any], float]` that allows each script to supply a model-specific scalar metric (mean intercept length for Ising, vortex density for XY and Clock) without any branching inside the helper. `model_kwargs` is forwarded to the constructor, enabling the Clock model to pass `q` and `A` as keyword arguments.
+
+`utils/evolution_helpers.py` exports `run_ordering_evolution`. It accepts a `capture_vorticity` flag that governs whether vorticity maps are collected and forwarded to `plot_ordering_evolution`. When `True` (XY and Clock), the function captures `_calculate_vorticity()` at each snapshot and logs the instantaneous vortex density; when `False` (Ising), those calls are skipped and `vorticity_data=None` is passed to the plotter, which falls back to a structure-factor panel. The `step_targets` list is sorted internally so callers need not pre-sort it.
+
+The three kinetics scripts and three evolution scripts are now thin wrappers: each constructs its argument parser, configures logging, and calls the corresponding helper with model-specific constants and labels.
+
 ## Bibliography
 
 The engineering and algorithmic choices in VibeSpin are grounded in standard practices for scientific computing and statistical physics. For a comprehensive list of all references used in the project, see [BIBLIOGRAPHY.md](./bibliography.md).

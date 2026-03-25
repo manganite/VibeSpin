@@ -761,6 +761,137 @@ class TestOrderingEvolutionMain:
         clock_evolution.main()
 
 
+class TestOrderingKineticsHelpers:
+    """Verify shared ordering-kinetics helper infrastructure in utils/kinetics_helpers."""
+
+    def test_compute_mean_intercept_length_returns_float(self) -> None:
+        """compute_mean_intercept_length returns a positive float for Ising lattice."""
+        from models.ising_model import IsingSimulation
+        from utils.kinetics_helpers import compute_mean_intercept_length
+
+        sim = IsingSimulation(size=8, temp=1.5)
+        result = compute_mean_intercept_length(sim)
+        assert isinstance(result, float)
+        assert result > 0.0
+
+    def test_run_ordering_kinetics_ising(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        """run_ordering_kinetics completes for IsingSimulation with small parameters."""
+        from models.ising_model import IsingSimulation
+        from utils.kinetics_helpers import compute_mean_intercept_length, run_ordering_kinetics
+
+        monkeypatch.setattr('matplotlib.pyplot.savefig', lambda *args, **kwargs: None)
+        monkeypatch.setattr('matplotlib.pyplot.close', lambda *args, **kwargs: None)
+        monkeypatch.setattr('os.makedirs', lambda *args, **kwargs: None)
+
+        run_ordering_kinetics(
+            model_cls=IsingSimulation,
+            model_kwargs={},
+            third_metric_fn=compute_mean_intercept_length,
+            third_metric_label='MIL',
+            title='Test Ising Kinetics',
+            left_title='Coarsening',
+            right_title='MIL Decay',
+            size=16,
+            temp=2.0,
+            max_steps=5,
+            samples=3,
+            fit_min=2,
+            output_dir='results/ising',
+        )
+
+    def test_run_ordering_kinetics_xy(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        """run_ordering_kinetics completes for XYSimulation using vortex density."""
+        from models.xy_model import XYSimulation
+        from utils.kinetics_helpers import run_ordering_kinetics
+
+        monkeypatch.setattr('matplotlib.pyplot.savefig', lambda *args, **kwargs: None)
+        monkeypatch.setattr('matplotlib.pyplot.close', lambda *args, **kwargs: None)
+        monkeypatch.setattr('os.makedirs', lambda *args, **kwargs: None)
+
+        run_ordering_kinetics(
+            model_cls=XYSimulation,
+            model_kwargs={},
+            third_metric_fn=lambda sim: sim._get_vortex_density(),
+            third_metric_label='Vortex Density',
+            title='Test XY Kinetics',
+            left_title='Coarsening',
+            right_title='Vortex Decay',
+            size=16,
+            temp=0.5,
+            max_steps=5,
+            samples=3,
+            fit_min=2,
+            output_dir='results/xy',
+        )
+
+
+class TestOrderingEvolutionHelpers:
+    """Verify shared ordering-evolution helper infrastructure in utils/evolution_helpers."""
+
+    def test_run_ordering_evolution_ising(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        """run_ordering_evolution completes for IsingSimulation (no vorticity)."""
+        from models.ising_model import IsingSimulation
+        from utils.evolution_helpers import run_ordering_evolution
+
+        monkeypatch.setattr('matplotlib.pyplot.savefig', lambda *args, **kwargs: None)
+        monkeypatch.setattr('matplotlib.pyplot.close', lambda *args, **kwargs: None)
+        monkeypatch.setattr('os.makedirs', lambda *args, **kwargs: None)
+
+        run_ordering_evolution(
+            model_cls=IsingSimulation,
+            model_kwargs={},
+            capture_vorticity=False,
+            title='Test Ising Evolution',
+            size=16,
+            temp=2.0,
+            step_targets=[1, 2],
+            output_dir='results/ising',
+        )
+
+    def test_run_ordering_evolution_xy(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        """run_ordering_evolution completes for XYSimulation with vorticity capture."""
+        from models.xy_model import XYSimulation
+        from utils.evolution_helpers import run_ordering_evolution
+
+        monkeypatch.setattr('matplotlib.pyplot.savefig', lambda *args, **kwargs: None)
+        monkeypatch.setattr('matplotlib.pyplot.close', lambda *args, **kwargs: None)
+        monkeypatch.setattr('os.makedirs', lambda *args, **kwargs: None)
+
+        run_ordering_evolution(
+            model_cls=XYSimulation,
+            model_kwargs={},
+            capture_vorticity=True,
+            title='Test XY Evolution',
+            size=16,
+            temp=0.5,
+            step_targets=[1, 2],
+            output_dir='results/xy',
+        )
+
+    def test_run_ordering_evolution_unsorted_targets(
+        self, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """run_ordering_evolution sorts step_targets internally."""
+        from models.ising_model import IsingSimulation
+        from utils.evolution_helpers import run_ordering_evolution
+
+        monkeypatch.setattr('matplotlib.pyplot.savefig', lambda *args, **kwargs: None)
+        monkeypatch.setattr('matplotlib.pyplot.close', lambda *args, **kwargs: None)
+        monkeypatch.setattr('os.makedirs', lambda *args, **kwargs: None)
+
+        # Pass targets out of order; should not raise
+        run_ordering_evolution(
+            model_cls=IsingSimulation,
+            model_kwargs={},
+            capture_vorticity=False,
+            title='Test Ising Evolution Unsorted',
+            size=16,
+            temp=2.0,
+            step_targets=[3, 1, 2],
+            output_dir='results/ising',
+        )
+
+
 class TestMiscScriptsMain:
     """Verify that miscellaneous analysis scripts run through their main() loop."""
 
