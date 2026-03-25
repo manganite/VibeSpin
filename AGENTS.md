@@ -112,7 +112,8 @@ Optimize for four outcomes: correct statistical-physics behavior, high simulatio
     -   `test(ising): add tests for Wolff algorithm`
     -   `phys(clock): implement discrete speedup for q-state models`
 - **GitHub Sync**: After a successful local commit, ask the user if they wish to push to the remote repository.
-- **Changelog Updates**: For every commit or pull request that changes user-facing behavior (physics, CLI, NPZ schema, or public API), add an entry under the `[Unreleased]` heading in `CHANGELOG.md`. When cutting a release, move all `[Unreleased]` entries to a new dated version block following the existing format.
+- **Changelog Updates**: You must proactively and automatically update `CHANGELOG.md` whenever you complete a task that alters user-facing behavior (physics, new features, CLI changes, bug fixes, breaking API changes, or NPZ schemas). Add an entry describing your work under the `[Unreleased]` heading, grouping it appropriately (e.g., Added, Changed, Deprecated, Removed, Fixed, Security). Never wait for the user to ask for changelog updates; treat this as an integral part of completing any behavior-altering change.
+- **Versioning Policy**: The project follows Semantic Versioning (`MAJOR.MINOR.PATCH`). When instructed to prepare a release, automatically transition all `[Unreleased]` entries in `CHANGELOG.md` to a new version block (e.g., `## [1.2.0] - YYYY-MM-DD`). Propose the appropriate version increment based on the types of changes in the unreleased section (MAJOR for breaking changes, MINOR for new features, PATCH for bug fixes).
 
 ### 6. Documentation & Knowledge Management
 - **Docstring Compliance**: All new classes, methods, and kernels MUST include **NumPy-style docstrings**. This is mandatory for automated Sphinx API generation (`sphinx-apidoc`).
