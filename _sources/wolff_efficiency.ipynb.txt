@@ -203,7 +203,7 @@
     "    from models.ising_model import IsingSimulation\n",
     "    from utils.exceptions import ZeroVarianceAutocorrelationError\n",
     "    from utils.physics_helpers import calculate_autocorr, calculate_thermodynamics\n",
-    "    from utils.system_helpers import convergence_equilibrate\n",
+    "    from utils.equilibration import convergence_equilibrate\n",
     "\n",
     "    L = 16\n",
     "    temperatures = np.linspace(1.8, 3.2, 8)\n",

@@ -105,30 +105,6 @@
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">tqdm</span><span class="w"> </span><span class="kn">import</span> <span class="n">tqdm</span>
 
-<span class="c1"># ---------------------------------------------------------------------------</span>
-<span class="c1"># Deprecated re-exports — import directly from utils.equilibration or</span>
-<span class="c1"># utils.plotting instead. These shims are preserved for backward compatibility</span>
-<span class="c1"># (e.g. test_system_helpers.py tests the full system_helpers API surface)</span>
-<span class="c1"># but should not be used in new code.</span>
-<span class="c1"># TODO(cleanup): Remove these re-exports once all import sites are migrated.</span>
-<span class="c1"># ---------------------------------------------------------------------------</span>
-<span class="c1"># Equilibration logic lives in utils.equilibration; re-exported here for compatibility.</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">utils.equilibration</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>  <span class="c1"># noqa: F401</span>
-    <span class="n">_Sim</span><span class="p">,</span>
-    <span class="n">adaptive_equilibrate</span><span class="p">,</span>
-    <span class="n">convergence_equilibrate</span><span class="p">,</span>
-    <span class="n">convergence_equilibrate_with_status</span><span class="p">,</span>
-<span class="p">)</span>
-
-<span class="c1"># Domain plotting and file-output helpers live in utils.plotting; re-exported for compatibility.</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">utils.plotting</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>  <span class="c1"># noqa: F401</span>
-    <span class="n">ensure_results_dir</span><span class="p">,</span>
-    <span class="n">plot_ordering_evolution</span><span class="p">,</span>
-    <span class="n">plot_ordering_kinetics</span><span class="p">,</span>
-    <span class="n">plot_temperature_sweep</span><span class="p">,</span>
-    <span class="n">save_plot</span><span class="p">,</span>
-<span class="p">)</span>
-
 
 <div class="viewcode-block" id="setup_logging">
 <a class="viewcode-back" href="../../api/vibespin.utils.html#utils.system_helpers.setup_logging">[docs]</a>
@@ -161,7 +137,7 @@
 
         <span class="c1"># File handler</span>
         <span class="k">if</span> <span class="n">log_file</span><span class="p">:</span>
-            <span class="n">ensure_results_dir</span><span class="p">(</span><span class="n">directory</span><span class="o">=</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">dirname</span><span class="p">(</span><span class="n">log_file</span><span class="p">))</span>
+            <span class="n">os</span><span class="o">.</span><span class="n">makedirs</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">dirname</span><span class="p">(</span><span class="n">log_file</span><span class="p">),</span> <span class="n">exist_ok</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
             <span class="n">fh</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">FileHandler</span><span class="p">(</span><span class="n">log_file</span><span class="p">)</span>
             <span class="n">fh</span><span class="o">.</span><span class="n">setFormatter</span><span class="p">(</span><span class="n">formatter</span><span class="p">)</span>
             <span class="n">logger</span><span class="o">.</span><span class="n">addHandler</span><span class="p">(</span><span class="n">fh</span><span class="p">)</span>

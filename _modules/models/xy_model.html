@@ -336,8 +336,16 @@
 <a class="viewcode-back" href="../../api/vibespin.models.html#models.xy_model.xy_wolff_step_numba">[docs]</a>
 <span class="nd">@njit</span><span class="p">(</span><span class="n">cache</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">fastmath</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 <span class="k">def</span><span class="w"> </span><span class="nf">xy_wolff_step_numba</span><span class="p">(</span>
-    <span class="o">*</span><span class="p">,</span> <span class="n">spins</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">beta</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">J</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">idx_next</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">idx_prev</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span>
-<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
+    <span class="o">*</span><span class="p">,</span>
+    <span class="n">spins</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
+    <span class="n">beta</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
+    <span class="n">J</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
+    <span class="n">idx_next</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
+    <span class="n">idx_prev</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
+    <span class="n">in_cluster</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
+    <span class="n">stack</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
+    <span class="n">cluster_spins</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Perform one Wolff cluster flip on the XY lattice (Wolff-Evertz reflection).</span>
 
@@ -359,10 +367,14 @@
 <span class="sd">        J: Coupling constant.</span>
 <span class="sd">        idx_next: Pre-calculated next-neighbor indices (PBC).</span>
 <span class="sd">        idx_prev: Pre-calculated previous-neighbor indices (PBC).</span>
+<span class="sd">        in_cluster: Pre-allocated (N, N) boolean array for cluster membership mask.</span>
+<span class="sd">        stack: Pre-allocated (N*N) int64 array for DFS stack.</span>
+<span class="sd">        cluster_spins: Pre-allocated (N*N) int64 array to track cluster elements.</span>
 
 <span class="sd">    Returns</span>
 <span class="sd">    -------</span>
-<span class="sd">        Updated spins array.</span>
+<span class="sd">        spins: Updated spins array.</span>
+<span class="sd">        cluster_size: Number of spins flipped in this step.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="n">N</span> <span class="o">=</span> <span class="n">spins</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
 
@@ -375,12 +387,14 @@
     <span class="n">si</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">randint</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">N</span><span class="p">)</span>
     <span class="n">sj</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">randint</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">N</span><span class="p">)</span>
 
-    <span class="c1"># Pre-allocate cluster membership mask and DFS stack</span>
-    <span class="n">in_cluster</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="n">N</span><span class="p">,</span> <span class="n">N</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">bool_</span><span class="p">)</span>
-    <span class="n">stack</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">empty</span><span class="p">(</span><span class="n">N</span> <span class="o">*</span> <span class="n">N</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">int64</span><span class="p">)</span>
+    <span class="c1"># Setup DFS from seed</span>
+    <span class="n">seed_flat</span> <span class="o">=</span> <span class="n">si</span> <span class="o">*</span> <span class="n">N</span> <span class="o">+</span> <span class="n">sj</span>
     <span class="n">in_cluster</span><span class="p">[</span><span class="n">si</span><span class="p">,</span> <span class="n">sj</span><span class="p">]</span> <span class="o">=</span> <span class="kc">True</span>
-    <span class="n">stack</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="n">si</span> <span class="o">*</span> <span class="n">N</span> <span class="o">+</span> <span class="n">sj</span>
+    <span class="n">stack</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="n">seed_flat</span>
     <span class="n">stack_top</span> <span class="o">=</span> <span class="mi">1</span>
+
+    <span class="n">cluster_spins</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="n">seed_flat</span>
+    <span class="n">cluster_size</span> <span class="o">=</span> <span class="mi">1</span>
 
     <span class="k">while</span> <span class="n">stack_top</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
         <span class="n">stack_top</span> <span class="o">-=</span> <span class="mi">1</span>
@@ -402,8 +416,11 @@
                 <span class="n">p_add</span> <span class="o">=</span> <span class="mf">1.0</span> <span class="o">-</span> <span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="o">-</span><span class="mf">2.0</span> <span class="o">*</span> <span class="n">beta</span> <span class="o">*</span> <span class="n">J</span> <span class="o">*</span> <span class="n">prod</span><span class="p">)</span>
                 <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">random</span><span class="p">()</span> <span class="o">&lt;</span> <span class="n">p_add</span><span class="p">:</span>
                     <span class="n">in_cluster</span><span class="p">[</span><span class="n">iprv</span><span class="p">,</span> <span class="n">cj</span><span class="p">]</span> <span class="o">=</span> <span class="kc">True</span>
-                    <span class="n">stack</span><span class="p">[</span><span class="n">stack_top</span><span class="p">]</span> <span class="o">=</span> <span class="n">iprv</span> <span class="o">*</span> <span class="n">N</span> <span class="o">+</span> <span class="n">cj</span>
+                    <span class="n">new_idx</span> <span class="o">=</span> <span class="n">iprv</span> <span class="o">*</span> <span class="n">N</span> <span class="o">+</span> <span class="n">cj</span>
+                    <span class="n">stack</span><span class="p">[</span><span class="n">stack_top</span><span class="p">]</span> <span class="o">=</span> <span class="n">new_idx</span>
                     <span class="n">stack_top</span> <span class="o">+=</span> <span class="mi">1</span>
+                    <span class="n">cluster_spins</span><span class="p">[</span><span class="n">cluster_size</span><span class="p">]</span> <span class="o">=</span> <span class="n">new_idx</span>
+                    <span class="n">cluster_size</span> <span class="o">+=</span> <span class="mi">1</span>
         <span class="c1"># South</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="n">in_cluster</span><span class="p">[</span><span class="n">inxt</span><span class="p">,</span> <span class="n">cj</span><span class="p">]:</span>
             <span class="n">proj_n</span> <span class="o">=</span> <span class="n">spins</span><span class="p">[</span><span class="n">inxt</span><span class="p">,</span> <span class="n">cj</span><span class="p">,</span> <span class="mi">0</span><span class="p">]</span> <span class="o">*</span> <span class="n">rx</span> <span class="o">+</span> <span class="n">spins</span><span class="p">[</span><span class="n">inxt</span><span class="p">,</span> <span class="n">cj</span><span class="p">,</span> <span class="mi">1</span><span class="p">]</span> <span class="o">*</span> <span class="n">ry</span>
@@ -412,8 +429,11 @@
                 <span class="n">p_add</span> <span class="o">=</span> <span class="mf">1.0</span> <span class="o">-</span> <span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="o">-</span><span class="mf">2.0</span> <span class="o">*</span> <span class="n">beta</span> <span class="o">*</span> <span class="n">J</span> <span class="o">*</span> <span class="n">prod</span><span class="p">)</span>
                 <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">random</span><span class="p">()</span> <span class="o">&lt;</span> <span class="n">p_add</span><span class="p">:</span>
                     <span class="n">in_cluster</span><span class="p">[</span><span class="n">inxt</span><span class="p">,</span> <span class="n">cj</span><span class="p">]</span> <span class="o">=</span> <span class="kc">True</span>
-                    <span class="n">stack</span><span class="p">[</span><span class="n">stack_top</span><span class="p">]</span> <span class="o">=</span> <span class="n">inxt</span> <span class="o">*</span> <span class="n">N</span> <span class="o">+</span> <span class="n">cj</span>
+                    <span class="n">new_idx</span> <span class="o">=</span> <span class="n">inxt</span> <span class="o">*</span> <span class="n">N</span> <span class="o">+</span> <span class="n">cj</span>
+                    <span class="n">stack</span><span class="p">[</span><span class="n">stack_top</span><span class="p">]</span> <span class="o">=</span> <span class="n">new_idx</span>
                     <span class="n">stack_top</span> <span class="o">+=</span> <span class="mi">1</span>
+                    <span class="n">cluster_spins</span><span class="p">[</span><span class="n">cluster_size</span><span class="p">]</span> <span class="o">=</span> <span class="n">new_idx</span>
+                    <span class="n">cluster_size</span> <span class="o">+=</span> <span class="mi">1</span>
         <span class="c1"># West</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="n">in_cluster</span><span class="p">[</span><span class="n">ci</span><span class="p">,</span> <span class="n">jprv</span><span class="p">]:</span>
             <span class="n">proj_n</span> <span class="o">=</span> <span class="n">spins</span><span class="p">[</span><span class="n">ci</span><span class="p">,</span> <span class="n">jprv</span><span class="p">,</span> <span class="mi">0</span><span class="p">]</span> <span class="o">*</span> <span class="n">rx</span> <span class="o">+</span> <span class="n">spins</span><span class="p">[</span><span class="n">ci</span><span class="p">,</span> <span class="n">jprv</span><span class="p">,</span> <span class="mi">1</span><span class="p">]</span> <span class="o">*</span> <span class="n">ry</span>
@@ -422,8 +442,11 @@
                 <span class="n">p_add</span> <span class="o">=</span> <span class="mf">1.0</span> <span class="o">-</span> <span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="o">-</span><span class="mf">2.0</span> <span class="o">*</span> <span class="n">beta</span> <span class="o">*</span> <span class="n">J</span> <span class="o">*</span> <span class="n">prod</span><span class="p">)</span>
                 <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">random</span><span class="p">()</span> <span class="o">&lt;</span> <span class="n">p_add</span><span class="p">:</span>
                     <span class="n">in_cluster</span><span class="p">[</span><span class="n">ci</span><span class="p">,</span> <span class="n">jprv</span><span class="p">]</span> <span class="o">=</span> <span class="kc">True</span>
-                    <span class="n">stack</span><span class="p">[</span><span class="n">stack_top</span><span class="p">]</span> <span class="o">=</span> <span class="n">ci</span> <span class="o">*</span> <span class="n">N</span> <span class="o">+</span> <span class="n">jprv</span>
+                    <span class="n">new_idx</span> <span class="o">=</span> <span class="n">ci</span> <span class="o">*</span> <span class="n">N</span> <span class="o">+</span> <span class="n">jprv</span>
+                    <span class="n">stack</span><span class="p">[</span><span class="n">stack_top</span><span class="p">]</span> <span class="o">=</span> <span class="n">new_idx</span>
                     <span class="n">stack_top</span> <span class="o">+=</span> <span class="mi">1</span>
+                    <span class="n">cluster_spins</span><span class="p">[</span><span class="n">cluster_size</span><span class="p">]</span> <span class="o">=</span> <span class="n">new_idx</span>
+                    <span class="n">cluster_size</span> <span class="o">+=</span> <span class="mi">1</span>
         <span class="c1"># East</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="n">in_cluster</span><span class="p">[</span><span class="n">ci</span><span class="p">,</span> <span class="n">jnxt</span><span class="p">]:</span>
             <span class="n">proj_n</span> <span class="o">=</span> <span class="n">spins</span><span class="p">[</span><span class="n">ci</span><span class="p">,</span> <span class="n">jnxt</span><span class="p">,</span> <span class="mi">0</span><span class="p">]</span> <span class="o">*</span> <span class="n">rx</span> <span class="o">+</span> <span class="n">spins</span><span class="p">[</span><span class="n">ci</span><span class="p">,</span> <span class="n">jnxt</span><span class="p">,</span> <span class="mi">1</span><span class="p">]</span> <span class="o">*</span> <span class="n">ry</span>
@@ -432,18 +455,23 @@
                 <span class="n">p_add</span> <span class="o">=</span> <span class="mf">1.0</span> <span class="o">-</span> <span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="o">-</span><span class="mf">2.0</span> <span class="o">*</span> <span class="n">beta</span> <span class="o">*</span> <span class="n">J</span> <span class="o">*</span> <span class="n">prod</span><span class="p">)</span>
                 <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">random</span><span class="p">()</span> <span class="o">&lt;</span> <span class="n">p_add</span><span class="p">:</span>
                     <span class="n">in_cluster</span><span class="p">[</span><span class="n">ci</span><span class="p">,</span> <span class="n">jnxt</span><span class="p">]</span> <span class="o">=</span> <span class="kc">True</span>
-                    <span class="n">stack</span><span class="p">[</span><span class="n">stack_top</span><span class="p">]</span> <span class="o">=</span> <span class="n">ci</span> <span class="o">*</span> <span class="n">N</span> <span class="o">+</span> <span class="n">jnxt</span>
+                    <span class="n">new_idx</span> <span class="o">=</span> <span class="n">ci</span> <span class="o">*</span> <span class="n">N</span> <span class="o">+</span> <span class="n">jnxt</span>
+                    <span class="n">stack</span><span class="p">[</span><span class="n">stack_top</span><span class="p">]</span> <span class="o">=</span> <span class="n">new_idx</span>
                     <span class="n">stack_top</span> <span class="o">+=</span> <span class="mi">1</span>
+                    <span class="n">cluster_spins</span><span class="p">[</span><span class="n">cluster_size</span><span class="p">]</span> <span class="o">=</span> <span class="n">new_idx</span>
+                    <span class="n">cluster_size</span> <span class="o">+=</span> <span class="mi">1</span>
 
-    <span class="c1"># Reflect all cluster spins through the plane perpendicular to r\u0302</span>
-    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">N</span><span class="p">):</span>
-        <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">N</span><span class="p">):</span>
-            <span class="k">if</span> <span class="n">in_cluster</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="n">j</span><span class="p">]:</span>
-                <span class="n">proj</span> <span class="o">=</span> <span class="n">spins</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="n">j</span><span class="p">,</span> <span class="mi">0</span><span class="p">]</span> <span class="o">*</span> <span class="n">rx</span> <span class="o">+</span> <span class="n">spins</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="n">j</span><span class="p">,</span> <span class="mi">1</span><span class="p">]</span> <span class="o">*</span> <span class="n">ry</span>
-                <span class="n">spins</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="n">j</span><span class="p">,</span> <span class="mi">0</span><span class="p">]</span> <span class="o">-=</span> <span class="mf">2.0</span> <span class="o">*</span> <span class="n">proj</span> <span class="o">*</span> <span class="n">rx</span>
-                <span class="n">spins</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="n">j</span><span class="p">,</span> <span class="mi">1</span><span class="p">]</span> <span class="o">-=</span> <span class="mf">2.0</span> <span class="o">*</span> <span class="n">proj</span> <span class="o">*</span> <span class="n">ry</span>
+    <span class="c1"># Reflect all cluster spins in-place and reset in_cluster mask</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">cluster_size</span><span class="p">):</span>
+        <span class="n">flat</span> <span class="o">=</span> <span class="n">cluster_spins</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+        <span class="n">ci</span> <span class="o">=</span> <span class="n">flat</span> <span class="o">//</span> <span class="n">N</span>
+        <span class="n">cj</span> <span class="o">=</span> <span class="n">flat</span> <span class="o">%</span> <span class="n">N</span>
+        <span class="n">proj</span> <span class="o">=</span> <span class="n">spins</span><span class="p">[</span><span class="n">ci</span><span class="p">,</span> <span class="n">cj</span><span class="p">,</span> <span class="mi">0</span><span class="p">]</span> <span class="o">*</span> <span class="n">rx</span> <span class="o">+</span> <span class="n">spins</span><span class="p">[</span><span class="n">ci</span><span class="p">,</span> <span class="n">cj</span><span class="p">,</span> <span class="mi">1</span><span class="p">]</span> <span class="o">*</span> <span class="n">ry</span>
+        <span class="n">spins</span><span class="p">[</span><span class="n">ci</span><span class="p">,</span> <span class="n">cj</span><span class="p">,</span> <span class="mi">0</span><span class="p">]</span> <span class="o">-=</span> <span class="mf">2.0</span> <span class="o">*</span> <span class="n">proj</span> <span class="o">*</span> <span class="n">rx</span>
+        <span class="n">spins</span><span class="p">[</span><span class="n">ci</span><span class="p">,</span> <span class="n">cj</span><span class="p">,</span> <span class="mi">1</span><span class="p">]</span> <span class="o">-=</span> <span class="mf">2.0</span> <span class="o">*</span> <span class="n">proj</span> <span class="o">*</span> <span class="n">ry</span>
+        <span class="n">in_cluster</span><span class="p">[</span><span class="n">ci</span><span class="p">,</span> <span class="n">cj</span><span class="p">]</span> <span class="o">=</span> <span class="kc">False</span>
 
-    <span class="k">return</span> <span class="n">spins</span></div>
+    <span class="k">return</span> <span class="n">spins</span><span class="p">,</span> <span class="n">cluster_size</span></div>
 
 
 
@@ -524,12 +552,15 @@
                     <span class="n">idx_prev</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">idx_prev</span><span class="p">,</span>
                 <span class="p">)</span>
             <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">update</span> <span class="o">==</span> <span class="s1">&#39;wolff&#39;</span><span class="p">:</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">spins</span> <span class="o">=</span> <span class="n">xy_wolff_step_numba</span><span class="p">(</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">spins</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">last_cluster_size</span> <span class="o">=</span> <span class="n">xy_wolff_step_numba</span><span class="p">(</span>
                     <span class="n">spins</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">spins</span><span class="p">,</span>
                     <span class="n">beta</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">beta</span><span class="p">,</span>
                     <span class="n">J</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">J</span><span class="p">,</span>
                     <span class="n">idx_next</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">idx_next</span><span class="p">,</span>
                     <span class="n">idx_prev</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">idx_prev</span><span class="p">,</span>
+                    <span class="n">in_cluster</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_wolff_cluster_mask</span><span class="p">,</span>
+                    <span class="n">stack</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_wolff_stack</span><span class="p">,</span>
+                    <span class="n">cluster_spins</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_wolff_cluster_spins</span><span class="p">,</span>
                 <span class="p">)</span>
             <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">parallel</span><span class="p">:</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">spins</span> <span class="o">=</span> <span class="n">xy_step_parallel_numba</span><span class="p">(</span>

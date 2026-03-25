@@ -53,13 +53,15 @@
 <li class="toctree-l1"><a class="reference internal" href="bibliography.html">Project Bibliography: VibeSpin</a></li>
 <li class="toctree-l1 current"><a class="current reference internal" href="#">Changelog</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="#unreleased">Unreleased</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#performance">Performance</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#changed">Changed</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#chores">Chores</a></li>
 </ul>
 </li>
 <li class="toctree-l2"><a class="reference internal" href="#id1">0.1.0 — 2026-03-25</a><ul>
 <li class="toctree-l3"><a class="reference internal" href="#added">Added</a></li>
-<li class="toctree-l3"><a class="reference internal" href="#performance">Performance</a></li>
-<li class="toctree-l3"><a class="reference internal" href="#changed">Changed</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#id2">Performance</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#id3">Changed</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#fixed">Fixed</a></li>
 </ul>
 </li>
@@ -110,6 +112,18 @@
 <hr class="docutils" />
 <section id="unreleased">
 <h2><a class="reference external" href="https://github.com/manganite/VibeSpin/compare/v0.1.0...HEAD">Unreleased</a><a class="headerlink" href="#unreleased" title="Link to this heading"></a></h2>
+<section id="performance">
+<h3>Performance<a class="headerlink" href="#performance" title="Link to this heading"></a></h3>
+<ul class="simple">
+<li><p>Fixed excessive memory allocation in <code class="docutils literal notranslate"><span class="pre">wolff_step_numba</span></code> across Ising, XY, and Clock models by pre-allocating the cluster mask and stack buffers once per simulation run, significantly lowering garbage collection overhead during large sweeps.</p></li>
+</ul>
+</section>
+<section id="changed">
+<h3>Changed<a class="headerlink" href="#changed" title="Link to this heading"></a></h3>
+<ul class="simple">
+<li><p>Removed deprecated <code class="docutils literal notranslate"><span class="pre">system_helpers.py</span></code> re-exports (<code class="docutils literal notranslate"><span class="pre">ensure_results_dir</span></code>, <code class="docutils literal notranslate"><span class="pre">adaptive_equilibrate</span></code>, etc.). All tests and Jupyter notebooks have been updated to explicitly import from <code class="docutils literal notranslate"><span class="pre">utils.equilibration</span></code> and <code class="docutils literal notranslate"><span class="pre">utils.plotting</span></code> directly.</p></li>
+</ul>
+</section>
 <section id="chores">
 <h3>Chores<a class="headerlink" href="#chores" title="Link to this heading"></a></h3>
 <ul class="simple">
@@ -146,8 +160,8 @@
 <li><p><strong>Hierarchical multi-seed uncertainty</strong> combining within-seed blocking error with between-seed spread.</p></li>
 </ul>
 </section>
-<section id="performance">
-<h3>Performance<a class="headerlink" href="#performance" title="Link to this heading"></a></h3>
+<section id="id2">
+<h3>Performance<a class="headerlink" href="#id2" title="Link to this heading"></a></h3>
 <ul class="simple">
 <li><p>Numba JIT (<code class="docutils literal notranslate"><span class="pre">&#64;njit(cache=True,</span> <span class="pre">fastmath=True)</span></code>) on all simulation kernels; <code class="docutils literal notranslate"><span class="pre">parallel=True</span></code> + <code class="docutils literal notranslate"><span class="pre">prange</span></code> on checkerboard kernels.</p></li>
 <li><p>Pre-calculated neighbor index arrays (<code class="docutils literal notranslate"><span class="pre">idx_next</span></code>, <code class="docutils literal notranslate"><span class="pre">idx_prev</span></code>) replace modulo for periodic boundary conditions.</p></li>
@@ -155,8 +169,8 @@
 <li><p>Vectorized angle extraction for vorticity calculation; radial mask pre-computation for correlation functions.</p></li>
 </ul>
 </section>
-<section id="changed">
-<h3>Changed<a class="headerlink" href="#changed" title="Link to this heading"></a></h3>
+<section id="id3">
+<h3>Changed<a class="headerlink" href="#id3" title="Link to this heading"></a></h3>
 <ul class="simple">
 <li><p><code class="docutils literal notranslate"><span class="pre">ordering_kinetics</span></code> scripts unified and refactored; renamed from <code class="docutils literal notranslate"><span class="pre">domain_growth</span></code>.</p></li>
 <li><p><code class="docutils literal notranslate"><span class="pre">ordering_evolution</span></code> scripts unified from earlier <code class="docutils literal notranslate"><span class="pre">domain_snapshots</span></code>.</p></li>
