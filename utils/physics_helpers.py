@@ -530,6 +530,17 @@ def blocking_error(
         raise ValueError(f'min_block_size must be >= 2, got {min_block_size}')
     if max_block_size is None:
         max_block_size = arr.size // 2
+
+    # Handle all-NaN series gracefully (e.g. from failed measurements)
+    if np.isnan(arr).all():
+        return {
+            'stderr': float('nan'),
+            'stderr_naive': float('nan'),
+            'block_size': float('nan'),
+            'n_blocks': 0.0,
+            'tau_int_from_blocking': float('nan'),
+        }
+
     if max_block_size < min_block_size:
         raise ValueError(
             f'max_block_size must be >= min_block_size, got {max_block_size} < {min_block_size}'

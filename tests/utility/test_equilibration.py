@@ -105,6 +105,63 @@ def test_setup_logging_with_file(temp_dir):
             logger.addHandler(handler)
 
 
+def test_plot_temperature_sweep_full_features(test_results_dir):
+    """Exercise many optional and edge-case paths in plot_temperature_sweep."""
+    t = np.linspace(1.0, 3.0, 5)
+    avg_m = np.zeros(5)
+    avg_e = np.zeros(5)
+    susc = np.zeros(5)
+    spec_h = np.zeros(5)
+
+    # Include some NaNs in error to trigger _mark_invalid
+    avg_m_err = np.array([0.1, np.nan, 0.1, 0.1, 0.1])
+
+    # Include extra diagnostics
+    entropy = np.zeros(5)
+    tau_int = np.array([1.0, 2.0, 1.5, 1.2, 1.1])
+    tau_int_ci_low = tau_int - 0.1
+    tau_int_ci_high = tau_int + 0.1
+    # Trigger low effective samples mark
+    low_eff_flag = np.array([0, 1, 0, 0, 0])
+    # Trigger unstable tau mark
+    tau_unstable_flag = np.array([0, 0, 1, 0, 0])
+
+    quality_summary = {
+        'total_points': 5,
+        'well_conditioned_count': 3,
+        'low_effective_count': 1,
+        'unstable_interval_count': 1,
+        'undefined_count': 0,
+    }
+
+    plot_temperature_sweep(
+        temperatures=t,
+        avg_m=avg_m,
+        avg_e=avg_e,
+        susc=susc,
+        spec_h=spec_h,
+        title='Coverage Test',
+        filename='full_sweep.png',
+        directory=test_results_dir,
+        avg_m_err=avg_m_err,
+        entropy=entropy,
+        tau_int=tau_int,
+        tau_int_ci_low=tau_int_ci_low,
+        tau_int_ci_high=tau_int_ci_high,
+        low_effective_sample_flag=low_eff_flag,
+        tau_unstable_flag=tau_unstable_flag,
+        quality_summary=quality_summary,
+        diagnostics_note='Test diagnostics note',
+        run_metadata_note='Test metadata',
+        transition_temperatures={'Tc': 2.269},
+        transition_window=(2.1, 2.4),
+        entropy_reference=('S_ref', 1.0),
+    )
+
+    assert os.path.exists(os.path.join(test_results_dir, 'full_sweep.png'))
+    assert os.path.exists(os.path.join(test_results_dir, 'full_sweep_diagnostics.png'))
+
+
 def test_ensure_results_dir_empty_string():
     """ensure_results_dir should be a no-op for empty directory strings."""
     with patch('utils.system_helpers.os.makedirs') as mock_makedirs:

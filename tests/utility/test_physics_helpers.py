@@ -972,3 +972,42 @@ def test_detect_quasi_steady_stuck_l_scaling_true_for_low_t_stuck():
         sigma_floor=0.02,
         lattice_size=L,
     )
+
+
+class TestPhysicsHelpersValidation:
+    """Verify error handling for invalid inputs in physics_helpers.py."""
+
+    def test_validate_confidence_errors(self) -> None:
+        """Should raise ValueError for confidence outside (0, 1)."""
+        from utils.physics_helpers import _validate_confidence
+        with pytest.raises(ValueError, match='confidence must satisfy'):
+            _validate_confidence(confidence=0.0)
+        with pytest.raises(ValueError, match='confidence must satisfy'):
+            _validate_confidence(confidence=1.0)
+        with pytest.raises(ValueError, match='confidence must satisfy'):
+            _validate_confidence(confidence=1.5)
+
+    def test_as_1d_float_array_errors(self) -> None:
+        """Should raise ValueError for non-1D or too small arrays."""
+        from utils.physics_helpers import _as_1d_float_array
+        # 2D array
+        with pytest.raises(ValueError, match='must be 1-D'):
+            _as_1d_float_array(time_series=np.zeros((2, 2)), name='test')
+        # Too small
+        with pytest.raises(ValueError, match='at least 2 elements'):
+            _as_1d_float_array(time_series=np.array([1.0]), name='test')
+
+    def test_blocking_error_zero_variance(self) -> None:
+        """blocking_error should handle zero-variance input by returning 0 error."""
+        x = np.ones(100)
+        res = blocking_error(time_series=x)
+        assert res['stderr'] == 0.0
+        assert np.isnan(res['tau_int_from_blocking'])
+
+    def test_summarize_primary_observable_empty_or_nan(self) -> None:
+        """summarize_primary_observable should handle all-NaN series."""
+        x = np.array([np.nan, np.nan, np.nan])
+        # It calls _as_1d_float_array which is fine, but np.nanmean etc will return NaN
+        summary = summarize_primary_observable(time_series=x)
+        assert np.isnan(summary['value'])
+        assert np.isnan(summary['err'])

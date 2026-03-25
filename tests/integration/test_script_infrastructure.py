@@ -21,6 +21,7 @@ from pathlib import Path
 from typing import Any, cast
 
 import numpy as np
+import pytest
 
 from scripts.ising.measure_z import (
     _measure_tau_point,
@@ -589,3 +590,156 @@ class TestTemperatureSweepPlotPayloads:
             dict[str, float] | None, captured_plot_kwargs.get('transition_temperatures')
         )
         assert transitions is None
+
+
+class TestOrderingKineticsMain:
+    """Verify that ordering kinetics scripts run through their main() loop."""
+
+    def test_ising_kinetics_main(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        """Ising ordering kinetics main() execution with mocked I/O."""
+        import scripts.ising.ordering_kinetics as ising_kinetics
+        monkeypatch.setattr('matplotlib.pyplot.savefig', lambda *args, **kwargs: None)
+        monkeypatch.setattr('matplotlib.pyplot.close', lambda *args, **kwargs: None)
+        monkeypatch.setattr('os.makedirs', lambda *args, **kwargs: None)
+        monkeypatch.setattr(
+            'sys.argv',
+            ['ising_kinetics.py', '--size', '16', '--max-steps', '5', '--samples', '2'],
+        )
+        ising_kinetics.main()
+
+    def test_xy_kinetics_main(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        """XY ordering kinetics main() execution with mocked I/O."""
+        import scripts.xy.ordering_kinetics as xy_kinetics
+        monkeypatch.setattr('matplotlib.pyplot.savefig', lambda *args, **kwargs: None)
+        monkeypatch.setattr('matplotlib.pyplot.close', lambda *args, **kwargs: None)
+        monkeypatch.setattr('os.makedirs', lambda *args, **kwargs: None)
+        monkeypatch.setattr(
+            'sys.argv',
+            ['xy_kinetics.py', '--size', '16', '--max-steps', '5', '--samples', '2'],
+        )
+        xy_kinetics.main()
+
+    def test_clock_kinetics_main(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        """Clock ordering kinetics main() execution with mocked I/O."""
+        import scripts.clock.ordering_kinetics as clock_kinetics
+        monkeypatch.setattr('matplotlib.pyplot.savefig', lambda *args, **kwargs: None)
+        monkeypatch.setattr('matplotlib.pyplot.close', lambda *args, **kwargs: None)
+        monkeypatch.setattr('os.makedirs', lambda *args, **kwargs: None)
+        monkeypatch.setattr(
+            'sys.argv',
+            ['clock_kinetics.py', '--size', '16', '--max-steps', '5', '--samples', '2'],
+        )
+        clock_kinetics.main()
+
+
+class TestOrderingEvolutionMain:
+    """Verify that ordering evolution scripts run through their main() loop."""
+
+    def test_ising_evolution_main(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        """Ising ordering evolution main() execution with mocked I/O."""
+        import scripts.ising.ordering_evolution as ising_evolution
+        monkeypatch.setattr('matplotlib.pyplot.savefig', lambda *args, **kwargs: None)
+        monkeypatch.setattr('matplotlib.pyplot.close', lambda *args, **kwargs: None)
+        monkeypatch.setattr('os.makedirs', lambda *args, **kwargs: None)
+        monkeypatch.setattr(
+            'sys.argv',
+            ['ising_evolution.py', '--size', '16', '--targets', '1', '2'],
+        )
+        ising_evolution.main()
+
+    def test_xy_evolution_main(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        """XY ordering evolution main() execution with mocked I/O."""
+        import scripts.xy.ordering_evolution as xy_evolution
+        monkeypatch.setattr('matplotlib.pyplot.savefig', lambda *args, **kwargs: None)
+        monkeypatch.setattr('matplotlib.pyplot.close', lambda *args, **kwargs: None)
+        monkeypatch.setattr('os.makedirs', lambda *args, **kwargs: None)
+        monkeypatch.setattr(
+            'sys.argv',
+            ['xy_evolution.py', '--size', '16', '--targets', '1', '2'],
+        )
+        xy_evolution.main()
+
+    def test_clock_evolution_main(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        """Clock ordering evolution main() execution with mocked I/O."""
+        import scripts.clock.ordering_evolution as clock_evolution
+        monkeypatch.setattr('matplotlib.pyplot.savefig', lambda *args, **kwargs: None)
+        monkeypatch.setattr('matplotlib.pyplot.close', lambda *args, **kwargs: None)
+        monkeypatch.setattr('os.makedirs', lambda *args, **kwargs: None)
+        monkeypatch.setattr(
+            'sys.argv',
+            ['clock_evolution.py', '--size', '16', '--targets', '1', '2'],
+        )
+        clock_evolution.main()
+
+
+class TestMiscScriptsMain:
+    """Verify that miscellaneous analysis scripts run through their main() loop."""
+
+    def test_throughput_benchmark_main(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        """Throughput benchmark main() execution."""
+        import scripts.benchmarks.throughput as throughput
+        monkeypatch.setattr('matplotlib.pyplot.savefig', lambda *args, **kwargs: None)
+        monkeypatch.setattr('matplotlib.pyplot.close', lambda *args, **kwargs: None)
+        monkeypatch.setattr('os.makedirs', lambda *args, **kwargs: None)
+        monkeypatch.setattr(
+            'sys.argv',
+            ['throughput.py', '--sizes', '4', '--sweeps', '2'],
+        )
+        throughput.main()
+
+    def test_wolff_efficiency_main(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        """Ising Wolff efficiency main() execution."""
+        import scripts.ising.wolff_efficiency as wolff_efficiency
+        monkeypatch.setattr('matplotlib.pyplot.savefig', lambda *args, **kwargs: None)
+        monkeypatch.setattr('matplotlib.pyplot.close', lambda *args, **kwargs: None)
+        monkeypatch.setattr('os.makedirs', lambda *args, **kwargs: None)
+        # Use a very small number of points and steps
+        monkeypatch.setattr(
+            'sys.argv',
+            [
+                'wolff_efficiency.py',
+                '--size', '8',
+                '--t-min', '2.0',
+                '--t-max', '2.5',
+                '--t-points', '2',
+                '--meas-steps', '5',
+                '--eq-max-steps', '10',
+            ],
+        )
+        wolff_efficiency.main()
+
+    def test_bkt_transition_main(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        """XY BKT transition main() execution."""
+        import scripts.xy.bkt_transition as bkt
+        monkeypatch.setattr('matplotlib.pyplot.savefig', lambda *args, **kwargs: None)
+        monkeypatch.setattr('matplotlib.pyplot.close', lambda *args, **kwargs: None)
+        monkeypatch.setattr('os.makedirs', lambda *args, **kwargs: None)
+        monkeypatch.setattr(
+            'sys.argv',
+            ['bkt_transition.py', '--size', '8', '--meas-steps', '5', '--t-points', '2'],
+        )
+        bkt.main()
+
+    def test_helicity_modulus_main(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        """XY helicity modulus main() execution."""
+        import scripts.xy.helicity_modulus as helicity
+        monkeypatch.setattr('matplotlib.pyplot.savefig', lambda *args, **kwargs: None)
+        monkeypatch.setattr('matplotlib.pyplot.close', lambda *args, **kwargs: None)
+        monkeypatch.setattr('os.makedirs', lambda *args, **kwargs: None)
+        monkeypatch.setattr(
+            'sys.argv',
+            ['helicity_modulus.py', '--size', '8', '--meas-steps', '5', '--t-points', '2'],
+        )
+        helicity.main()
+
+    def test_ising_correlation_comparison_main(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        """Ising correlation comparison main() execution."""
+        import scripts.ising.correlation_comparison as corr_comp
+        monkeypatch.setattr('matplotlib.pyplot.savefig', lambda *args, **kwargs: None)
+        monkeypatch.setattr('matplotlib.pyplot.close', lambda *args, **kwargs: None)
+        monkeypatch.setattr('os.makedirs', lambda *args, **kwargs: None)
+        monkeypatch.setattr(
+            'sys.argv',
+            ['correlation_comparison.py', '--size', '16', '--steps', '5'],
+        )
+        corr_comp.main()

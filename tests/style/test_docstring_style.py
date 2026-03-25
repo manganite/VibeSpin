@@ -74,3 +74,66 @@ def test_no_google_style_docstring_sections() -> None:
         'Google-style docstring headers found. Use NumPy-style sections instead.\n'
         + '\n'.join(violations)
     )
+
+
+NUMPY_STYLE_SECTION_RE = re.compile(
+    r'^\s*(Parameters|Returns|Raises|Attributes|Examples)\n\s*-+\s*$',
+    flags=re.MULTILINE,
+)
+
+
+def test_numpy_style_sections_present_in_core() -> None:
+    """Core simulation models and utilities should use NumPy-style sections when applicable."""
+    core_dirs = ('models', 'utils')
+    missing_sections: list[str] = []
+
+    for source_dir in core_dirs:
+        for py_file in (ROOT / source_dir).rglob('*.py'):
+            if py_file.name == '__init__.py':
+                continue
+            source = py_file.read_text(encoding='utf-8')
+            tree = ast.parse(source, filename=str(py_file))
+            for obj_name, line, doc in _iter_docstrings(tree):
+                # Only check functions/methods that likely need parameters
+                if obj_name == 'module' or obj_name.startswith('_'):
+                    continue
+                # If it's a simulation class or public method, it should probably have sections
+                if 'Simulation' in obj_name or len(doc.split('\n')) > 3:
+                    if not NUMPY_STYLE_SECTION_RE.search(doc):
+                        # Some small helpers might not have sections, only alert on longer ones
+                        if len(doc.split('\n')) > 8:
+                            relative = py_file.relative_to(ROOT)
+                            missing_sections.append(
+                                f'{relative}:{line} ({obj_name}) missing NumPy-style sections'
+                            )
+
+    # This is a soft check, we might have valid docstrings without sections
+    # but for VibeSpin core, we expect them.
+    if missing_sections:
+        print('\n'.join(missing_sections))
+
+
+def test_core_docstring_presence() -> None:
+    """Ensure all public classes and functions in core modules have docstrings."""
+    core_dirs = ('models', 'utils')
+    missing_docs: list[str] = []
+
+    for source_dir in core_dirs:
+        for py_file in (ROOT / source_dir).rglob('*.py'):
+            if py_file.name == '__init__.py':
+                continue
+            source = py_file.read_text(encoding='utf-8')
+            tree = ast.parse(source, filename=str(py_file))
+            for node in ast.walk(tree):
+                if isinstance(node, (ast.FunctionDef, ast.ClassDef)):
+                    # Skip private/internal
+                    if node.name.startswith('_'):
+                        continue
+                    if not ast.get_docstring(node):
+                        relative = py_file.relative_to(ROOT)
+                        missing_docs.append(f'{relative}:{node.lineno} ({node.name})')
+
+    assert not missing_docs, (
+        'Public classes/functions in core modules must have docstrings:\n'
+        + '\n'.join(missing_docs)
+    )

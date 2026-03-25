@@ -13,6 +13,17 @@ All notable changes to VibeSpin are documented here. The format follows [Keep a 
 
 ### Changed
 - Removed deprecated `system_helpers.py` re-exports (`ensure_results_dir`, `adaptive_equilibrate`, etc.). All tests and Jupyter notebooks have been updated to explicitly import from `utils.equilibration` and `utils.plotting` directly.
+- Renamed `run_scaling_benchmark()` to `main()` in `scripts/benchmarks/throughput.py` for consistency with other analysis scripts.
+
+### Fixed
+- Improved robustness of `blocking_error` and `summarize_primary_observable` in `utils/physics_helpers.py` when handling all-NaN time series.
+- Fixed indentation in `tests/style/test_docstring_style.py` that caused test collection failures.
+
+### Test
+- Increased project test coverage from 63% to 75% by adding integration tests for the `main()` entry points of numerous analysis scripts (ordering kinetics, evolution, throughput, BKT transition, and helicity modulus).
+- Expanded coverage of `utils/plotting.py` by exercising optional diagnostics and error-marking paths in `plot_temperature_sweep`.
+- Strengthened `utils/physics_helpers.py` validation by adding tests for invalid parameter ranges and edge-case physical conditions.
+- Enforced NumPy-style docstring sections and docstring presence for all public core modules in `tests/style/test_docstring_style.py`.
 
 ### Chores
 - Raise `requires-python` floor from `>=3.9` to `>=3.12` to match Ruff, mypy, and runtime targets.

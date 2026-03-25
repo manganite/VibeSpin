@@ -96,7 +96,7 @@ def measure_performance(
     }
 
 
-def run_scaling_benchmark() -> None:
+def main() -> None:
     parser = argparse.ArgumentParser(description='Scaling Benchmark')
     parser.add_argument(
         '--sizes',
@@ -286,4 +286,4 @@ def run_scaling_benchmark() -> None:
 
 
 if __name__ == '__main__':
-    run_scaling_benchmark()
+    main()
