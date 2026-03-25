@@ -8,6 +8,12 @@ All notable changes to VibeSpin are documented here. The format follows [Keep a 
 
 ## [Unreleased]
 
+### Performance
+- Fixed excessive memory allocation in `wolff_step_numba` across Ising, XY, and Clock models by pre-allocating the cluster mask and stack buffers once per simulation run, significantly lowering garbage collection overhead during large sweeps.
+
+### Changed
+- Removed deprecated `system_helpers.py` re-exports (`ensure_results_dir`, `adaptive_equilibrate`, etc.). All tests and Jupyter notebooks have been updated to explicitly import from `utils.equilibration` and `utils.plotting` directly.
+
 ### Chores
 - Raise `requires-python` floor from `>=3.9` to `>=3.12` to match Ruff, mypy, and runtime targets.
 - Add `scripts/` to pytest coverage tracking (`--cov=scripts`) and `[tool.coverage.run]` source list.
