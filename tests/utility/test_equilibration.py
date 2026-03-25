@@ -21,15 +21,17 @@ matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 
 from models.ising_model import IsingSimulation
+from utils.equilibration import adaptive_equilibrate
 from utils.exceptions import ZeroVarianceAutocorrelationError
-from utils.system_helpers import (
-    adaptive_equilibrate,
+from utils.plotting import (
     ensure_results_dir,
-    parallel_sweep,
     plot_ordering_evolution,
     plot_ordering_kinetics,
     plot_temperature_sweep,
     save_plot,
+)
+from utils.system_helpers import (
+    parallel_sweep,
     setup_logging,
 )
 
@@ -390,7 +392,7 @@ def test_convergence_equilibrate_warns_on_max_steps(caplog):
 
     caplog.set_level('WARNING', logger='vibespin')
     with patch('utils.equilibration.estimate_relaxation_time_two_start', return_value=1000):
-        from utils.system_helpers import convergence_equilibrate
+        from utils.equilibration import convergence_equilibrate
 
         total = convergence_equilibrate(
             _ConvergenceStub(),
@@ -411,7 +413,7 @@ def test_convergence_equilibrate_with_status_reports_success():
             return np.ones(n_steps), np.zeros(n_steps)
 
     with patch('utils.equilibration.estimate_relaxation_time_two_start', return_value=75):
-        from utils.system_helpers import convergence_equilibrate_with_status
+        from utils.equilibration import convergence_equilibrate_with_status
 
         total, converged = convergence_equilibrate_with_status(
             _ConvergenceStub(),
@@ -433,7 +435,7 @@ def test_convergence_equilibrate_with_status_reports_failure(caplog):
 
     caplog.set_level('WARNING', logger='vibespin')
     with patch('utils.equilibration.estimate_relaxation_time_two_start', return_value=1000):
-        from utils.system_helpers import convergence_equilibrate_with_status
+        from utils.equilibration import convergence_equilibrate_with_status
 
         total, converged = convergence_equilibrate_with_status(
             _ConvergenceStub(),
@@ -462,7 +464,7 @@ def test_convergence_equilibrate_with_status_exits_early_when_stuck(caplog):
 
     caplog.set_level('WARNING', logger='vibespin')
     with patch('utils.equilibration.estimate_relaxation_time_two_start', return_value=1000):
-        from utils.system_helpers import convergence_equilibrate_with_status
+        from utils.equilibration import convergence_equilibrate_with_status
 
         total, converged = convergence_equilibrate_with_status(
             _ConvergenceStubRandom(),
@@ -495,7 +497,7 @@ def test_convergence_equilibrate_with_status_gate_blocks_stuck_detection(caplog)
 
     caplog.set_level('WARNING', logger='vibespin')
     with patch('utils.equilibration.estimate_relaxation_time_two_start', return_value=1000):
-        from utils.system_helpers import convergence_equilibrate_with_status
+        from utils.equilibration import convergence_equilibrate_with_status
 
         # qs_min_steps=10_000 means stuck detection can never fire in this run
         total, converged = convergence_equilibrate_with_status(
