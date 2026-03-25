@@ -190,7 +190,15 @@ def ising_step_random_numba(
 
 @njit(cache=True, fastmath=True)
 def ising_wolff_step_numba(
-    *, spins: np.ndarray, beta: float, J: float, idx_next: np.ndarray, idx_prev: np.ndarray
+    *,
+    spins: np.ndarray,
+    beta: float,
+    J: float,
+    idx_next: np.ndarray,
+    idx_prev: np.ndarray,
+    in_cluster: np.ndarray,
+    stack: np.ndarray,
+    cluster_spins: np.ndarray
 ) -> tuple:
     """
     Perform one Wolff cluster flip on the Ising lattice.
@@ -213,6 +221,9 @@ def ising_wolff_step_numba(
         J: Coupling constant.
         idx_next: Pre-calculated next-neighbor indices (PBC).
         idx_prev: Pre-calculated previous-neighbor indices (PBC).
+        in_cluster: Pre-allocated (N, N) boolean array for cluster membership mask.
+        stack: Pre-allocated (N*N) int64 array for DFS stack.
+        cluster_spins: Pre-allocated (N*N) int64 array to track cluster elements.
 
     Returns
     -------
@@ -227,12 +238,14 @@ def ising_wolff_step_numba(
     sj = np.random.randint(0, N)
     seed_spin = spins[si, sj]
 
-    # Pre-allocate cluster membership mask and DFS stack
-    in_cluster = np.zeros((N, N), dtype=np.bool_)
-    stack = np.empty(N * N, dtype=np.int64)
+    # Setup DFS from seed
+    # Notice: in_cluster is assumed to be fully False upon entry!
+    seed_flat = si * N + sj
     in_cluster[si, sj] = True
-    stack[0] = si * N + sj
+    stack[0] = seed_flat
     stack_top = 1
+
+    cluster_spins[0] = seed_flat
     cluster_size = 1  # seed site already in cluster
 
     while stack_top > 0:
@@ -250,36 +263,46 @@ def ising_wolff_step_numba(
         if not in_cluster[iprv, cj] and spins[iprv, cj] == seed_spin:
             if np.random.random() < p_add:
                 in_cluster[iprv, cj] = True
-                stack[stack_top] = iprv * N + cj
+                new_idx = iprv * N + cj
+                stack[stack_top] = new_idx
                 stack_top += 1
+                cluster_spins[cluster_size] = new_idx
                 cluster_size += 1
         # South
         if not in_cluster[inxt, cj] and spins[inxt, cj] == seed_spin:
             if np.random.random() < p_add:
                 in_cluster[inxt, cj] = True
-                stack[stack_top] = inxt * N + cj
+                new_idx = inxt * N + cj
+                stack[stack_top] = new_idx
                 stack_top += 1
+                cluster_spins[cluster_size] = new_idx
                 cluster_size += 1
         # West
         if not in_cluster[ci, jprv] and spins[ci, jprv] == seed_spin:
             if np.random.random() < p_add:
                 in_cluster[ci, jprv] = True
-                stack[stack_top] = ci * N + jprv
+                new_idx = ci * N + jprv
+                stack[stack_top] = new_idx
                 stack_top += 1
+                cluster_spins[cluster_size] = new_idx
                 cluster_size += 1
         # East
         if not in_cluster[ci, jnxt] and spins[ci, jnxt] == seed_spin:
             if np.random.random() < p_add:
                 in_cluster[ci, jnxt] = True
-                stack[stack_top] = ci * N + jnxt
+                new_idx = ci * N + jnxt
+                stack[stack_top] = new_idx
                 stack_top += 1
+                cluster_spins[cluster_size] = new_idx
                 cluster_size += 1
 
-    # Flip all cluster spins in-place
-    for i in range(N):
-        for j in range(N):
-            if in_cluster[i, j]:
-                spins[i, j] *= -1
+    # Flip all cluster spins in-place and reset in_cluster mask to False cleanly
+    for i in range(cluster_size):
+        flat = cluster_spins[i]
+        ci = flat // N
+        cj = flat % N
+        spins[ci, cj] *= -1
+        in_cluster[ci, cj] = False
 
     return spins, cluster_size
 
@@ -364,6 +387,9 @@ class IsingSimulation(MonteCarloSimulation):
                     J=self.J,
                     idx_next=self.idx_next,
                     idx_prev=self.idx_prev,
+                    in_cluster=self._wolff_cluster_mask,
+                    stack=self._wolff_stack,
+                    cluster_spins=self._wolff_cluster_spins,
                 )
             elif self.parallel:
                 self.spins = ising_step_parallel_numba(

@@ -155,6 +155,11 @@ class MonteCarloSimulation(ABC):
         self.idx_next = np.roll(np.arange(size), -1)
         self.idx_prev = np.roll(np.arange(size), 1)
 
+        # Pre-allocated buffers for Wolff cluster algorithms
+        self._wolff_cluster_mask = np.zeros((size, size), dtype=np.bool_)
+        self._wolff_stack = np.empty(size * size, dtype=np.int64)
+        self._wolff_cluster_spins = np.empty(size * size, dtype=np.int64)
+
         # Pre-calculate radial distance bins for correlation analysis
         center = size // 2
         iy, ix = np.indices((size, size))

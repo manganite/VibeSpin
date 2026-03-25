@@ -190,7 +190,7 @@ def test_xy_step_uses_wolff_kernel(monkeypatch) -> None:
 
     def _fake_wolff(**kwargs):
         calls.append('wolff')
-        return kwargs['spins']
+        return kwargs['spins'], 5
 
     monkeypatch.setattr(xy_model, 'xy_wolff_step_numba', _fake_wolff)
 
