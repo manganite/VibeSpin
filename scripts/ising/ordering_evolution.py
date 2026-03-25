@@ -14,7 +14,8 @@ import numpy as np
 
 from models.ising_model import IsingSimulation
 from utils.cli_helpers import parse_args_compat
-from utils.system_helpers import ensure_results_dir, plot_ordering_evolution, setup_logging
+from utils.plotting import ensure_results_dir, plot_ordering_evolution
+from utils.system_helpers import setup_logging
 
 
 def main() -> None:

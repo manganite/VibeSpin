@@ -49,14 +49,10 @@ def temp_dir():
 
 @pytest.fixture
 def test_results_dir():
-    """Fixture to manage a clean test results directory."""
-    test_dir = 'test_results'
-    if os.path.exists(test_dir):
-        shutil.rmtree(test_dir)
-    os.makedirs(test_dir)
+    """Fixture providing a temporary directory for test output."""
+    test_dir = tempfile.mkdtemp()
     yield test_dir
-    if os.path.exists(test_dir):
-        shutil.rmtree(test_dir)
+    shutil.rmtree(test_dir)
 
 
 # ---- Directory and logging ----
@@ -185,7 +181,7 @@ def test_plot_temperature_sweep(temp_dir):
     plt.close('all')
 
 
-def test_plot_temperature_sweep_runs():
+def test_plot_temperature_sweep_runs(tmp_path):
     """plot_temperature_sweep smoke test with real save."""
     temps = np.array([1.0, 2.0])
     data = np.array([0.5, 0.5])
@@ -198,7 +194,7 @@ def test_plot_temperature_sweep_runs():
         spec_h=data_seq,
         title='Test',
         filename='_ts.png',
-        directory='test_results',
+        directory=str(tmp_path),
     )
     plt.close('all')
 
@@ -229,7 +225,7 @@ def test_plot_ordering_kinetics(temp_dir):
     plt.close('all')
 
 
-def test_plot_ordering_kinetics_runs():
+def test_plot_ordering_kinetics_runs(tmp_path):
     """plot_ordering_kinetics smoke test with real save."""
     t = np.array([1, 10, 100])
     r = np.array([1, 2, 3])
@@ -247,7 +243,7 @@ def test_plot_ordering_kinetics_runs():
         fit_mask=mask,
         title='Title',
         filename='_kin.png',
-        directory='test_results',
+        directory=str(tmp_path),
     )
     plt.close('all')
 
@@ -273,7 +269,7 @@ def test_plot_ordering_evolution(temp_dir):
     plt.close('all')
 
 
-def test_plot_ordering_evolution_runs():
+def test_plot_ordering_evolution_runs(tmp_path):
     """plot_ordering_evolution smoke test with real save."""
     targets = [1, 10]
     snapshots = [np.ones((16, 16)), np.ones((16, 16))]
@@ -285,7 +281,7 @@ def test_plot_ordering_evolution_runs():
         vorticity_data=None,
         title='Title',
         filename='_evol.png',
-        directory='test_results',
+        directory=str(tmp_path),
         is_vector=False,
     )
     plt.close('all')

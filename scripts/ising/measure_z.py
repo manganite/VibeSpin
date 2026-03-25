@@ -18,6 +18,7 @@ from typing import Any
 import numpy as np
 
 from models.ising_model import IsingSimulation
+from utils.equilibration import convergence_equilibrate
 from utils.exceptions import ZeroVarianceAutocorrelationError
 from utils.physics_helpers import (
     DEFAULT_CONFIDENCE_LEVEL,
@@ -25,11 +26,7 @@ from utils.physics_helpers import (
     calculate_autocorr,
     summarize_replicate_samples,
 )
-from utils.system_helpers import (
-    convergence_equilibrate,
-    parallel_sweep,
-    setup_logging,
-)
+from utils.system_helpers import parallel_sweep, setup_logging
 
 #: Exact Onsager critical temperature for the 2D nearest-neighbour Ising model.
 TC_ISING: float = 2.0 / np.log(1.0 + np.sqrt(2.0))

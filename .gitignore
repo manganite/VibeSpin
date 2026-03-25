@@ -95,5 +95,4 @@ Thumbs.db
 results/
 **/results/
 
-test_results/
 *.code-workspace

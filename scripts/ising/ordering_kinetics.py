@@ -15,12 +15,8 @@ from tqdm import tqdm
 from models.ising_model import IsingSimulation
 from utils.cli_helpers import parse_args_compat
 from utils.physics_helpers import compute_kinetics_metrics, power_fit
-from utils.system_helpers import (
-    _BAR_FORMAT,
-    ensure_results_dir,
-    plot_ordering_kinetics,
-    setup_logging,
-)
+from utils.plotting import ensure_results_dir, plot_ordering_kinetics
+from utils.system_helpers import _BAR_FORMAT, setup_logging
 
 
 def compute_mean_intercept_length(sim: IsingSimulation) -> float:

@@ -13,7 +13,8 @@ import numpy as np
 from models.ising_model import IsingSimulation
 from utils.cli_helpers import parse_args_compat
 from utils.physics_helpers import get_averaged_correlation
-from utils.system_helpers import ensure_results_dir, parallel_sweep, save_plot, setup_logging
+from utils.plotting import ensure_results_dir, save_plot
+from utils.system_helpers import parallel_sweep, setup_logging
 
 
 def simulate_correlation(params: tuple[float, int, int, int, int]) -> tuple[np.ndarray, np.ndarray]:

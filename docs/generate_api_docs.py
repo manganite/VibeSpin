@@ -95,6 +95,7 @@ def _render_package(package: str) -> str:
     content += '   :members:\n'
     content += '   :show-inheritance:\n'
     content += '   :undoc-members:\n'
+    content += '   :no-index:\n'
     return content
 
 

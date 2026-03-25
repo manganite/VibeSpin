@@ -15,6 +15,13 @@ from multiprocessing import Pool
 
 from tqdm import tqdm
 
+# ---------------------------------------------------------------------------
+# Deprecated re-exports — import directly from utils.equilibration or
+# utils.plotting instead. These shims are preserved for backward compatibility
+# (e.g. test_system_helpers.py tests the full system_helpers API surface)
+# but should not be used in new code.
+# TODO(cleanup): Remove these re-exports once all import sites are migrated.
+# ---------------------------------------------------------------------------
 # Equilibration logic lives in utils.equilibration; re-exported here for compatibility.
 from utils.equilibration import (  # noqa: F401
     _Sim,

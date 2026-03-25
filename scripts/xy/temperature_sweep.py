@@ -13,6 +13,7 @@ import numpy as np
 
 from models.xy_model import XYSimulation
 from utils.cli_helpers import parse_args_compat
+from utils.equilibration import convergence_equilibrate_with_status
 from utils.physics_helpers import (
     DEFAULT_CONFIDENCE_LEVEL,
     UNCERTAINTY_METHOD_BLOCKING,
@@ -22,12 +23,8 @@ from utils.physics_helpers import (
     summarize_primary_observable,
     summarize_seed_ensemble,
 )
-from utils.system_helpers import (
-    convergence_equilibrate_with_status,
-    parallel_sweep,
-    plot_temperature_sweep,
-    setup_logging,
-)
+from utils.plotting import plot_temperature_sweep
+from utils.system_helpers import parallel_sweep, setup_logging
 
 _WORKER_CONFIDENCE_LEVEL = DEFAULT_CONFIDENCE_LEVEL
 _WORKER_DERIVED_METHOD = UNCERTAINTY_METHOD_BLOCKING

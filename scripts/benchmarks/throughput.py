@@ -23,7 +23,7 @@ from models.clock_model import ClockSimulation, DiscreteClockSimulation
 from models.ising_model import IsingSimulation
 from models.simulation_base import MonteCarloSimulation
 from models.xy_model import XYSimulation
-from utils.system_helpers import ensure_results_dir, save_plot
+from utils.plotting import ensure_results_dir, save_plot
 
 
 def measure_performance(

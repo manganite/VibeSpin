@@ -1,5 +1,12 @@
 """
 2D q-state Clock Model simulation using Metropolis-Hastings and Wolff cluster algorithms.
+
+NOTE: ``ClockSimulation`` (continuous XY-plus-anisotropy form) and
+``DiscreteClockSimulation`` (integer state indices with cosine lookup tables) are
+collocated here for convenience.  When either class grows beyond roughly 400 lines
+of unique logic, split them into ``clock_model_continuous.py`` and
+``clock_model_discrete.py`` and keep this file as a re-export shim, following the
+existing ``utils/system_helpers.py`` pattern.
 """
 from __future__ import annotations
 

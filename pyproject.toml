@@ -7,7 +7,7 @@ name = "vibespin"
 version = "0.1.0"
 description = "Vibe-coded simulation of statistical mechanics spin models: A Vibe-Coded Journey through Statistical Mechanics"
 readme = "README.md"
-requires-python = ">=3.9"
+requires-python = ">=3.12"
 dependencies = [
     "numpy",
     "matplotlib",
@@ -45,11 +45,11 @@ include = ["models*", "utils*", "scripts*"]
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 python_files = "test_*.py"
-addopts = "-ra --showlocals --cov=models --cov=utils --cov-report=term-missing"
+addopts = "-ra --showlocals --cov=models --cov=utils --cov=scripts --cov-report=term-missing"
 
 [tool.coverage.run]
 branch = true
-source = ["models", "utils"]
+source = ["models", "utils", "scripts"]
 
 [tool.coverage.report]
 show_missing = true
