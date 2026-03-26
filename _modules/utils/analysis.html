@@ -5,7 +5,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>utils.physics_helpers &mdash; VibeSpin 0.1.0 documentation</title>
+  <title>utils.analysis &mdash; VibeSpin 0.1.0 documentation</title>
       <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=b86133f3" />
       <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=9edc463e" />
 
@@ -78,7 +78,7 @@
   <ul class="wy-breadcrumbs">
       <li><a href="../../index.html" class="icon icon-home" aria-label="Home"></a></li>
           <li class="breadcrumb-item"><a href="../index.html">Module code</a></li>
-      <li class="breadcrumb-item active">utils.physics_helpers</li>
+      <li class="breadcrumb-item active">utils.analysis</li>
       <li class="wy-breadcrumbs-aside">
       </li>
   </ul>
@@ -87,7 +87,7 @@
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
            <div itemprop="articleBody">
              
-  <h1>Source code for utils.physics_helpers</h1><div class="highlight"><pre>
+  <h1>Source code for utils.analysis</h1><div class="highlight"><pre>
 <span></span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">Physics-related utility functions for calculating thermodynamic observables and correlations.</span>
 <span class="sd">&quot;&quot;&quot;</span>
@@ -179,7 +179,7 @@
 
 
 <div class="viewcode-block" id="calculate_thermodynamics">
-<a class="viewcode-back" href="../../api/vibespin.utils.html#utils.physics_helpers.calculate_thermodynamics">[docs]</a>
+<a class="viewcode-back" href="../../api/vibespin.utils.html#utils.analysis.calculate_thermodynamics">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">calculate_thermodynamics</span><span class="p">(</span>
     <span class="o">*</span><span class="p">,</span> <span class="n">mags</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">engs</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">T</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">L</span><span class="p">:</span> <span class="nb">int</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">float</span><span class="p">,</span> <span class="nb">float</span><span class="p">,</span> <span class="nb">float</span><span class="p">,</span> <span class="nb">float</span><span class="p">]:</span>
@@ -220,7 +220,7 @@
 
 
 <div class="viewcode-block" id="calculate_entropy">
-<a class="viewcode-back" href="../../api/vibespin.utils.html#utils.physics_helpers.calculate_entropy">[docs]</a>
+<a class="viewcode-back" href="../../api/vibespin.utils.html#utils.analysis.calculate_entropy">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">calculate_entropy</span><span class="p">(</span>
     <span class="o">*</span><span class="p">,</span>
     <span class="n">temperatures</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
@@ -336,7 +336,7 @@
 
 
 <div class="viewcode-block" id="summarize_entropy_observable">
-<a class="viewcode-back" href="../../api/vibespin.utils.html#utils.physics_helpers.summarize_entropy_observable">[docs]</a>
+<a class="viewcode-back" href="../../api/vibespin.utils.html#utils.analysis.summarize_entropy_observable">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">summarize_entropy_observable</span><span class="p">(</span>
     <span class="o">*</span><span class="p">,</span>
     <span class="n">temperatures</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
@@ -476,7 +476,7 @@
 
 
 <div class="viewcode-block" id="summarize_asymmetric_replicate_uncertainty">
-<a class="viewcode-back" href="../../api/vibespin.utils.html#utils.physics_helpers.summarize_asymmetric_replicate_uncertainty">[docs]</a>
+<a class="viewcode-back" href="../../api/vibespin.utils.html#utils.analysis.summarize_asymmetric_replicate_uncertainty">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">summarize_asymmetric_replicate_uncertainty</span><span class="p">(</span>
     <span class="o">*</span><span class="p">,</span>
     <span class="n">samples</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
@@ -535,7 +535,7 @@
 
 
 <div class="viewcode-block" id="calculate_autocorr">
-<a class="viewcode-back" href="../../api/vibespin.utils.html#utils.physics_helpers.calculate_autocorr">[docs]</a>
+<a class="viewcode-back" href="../../api/vibespin.utils.html#utils.analysis.calculate_autocorr">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">calculate_autocorr</span><span class="p">(</span>
     <span class="o">*</span><span class="p">,</span>
     <span class="n">time_series</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
@@ -608,7 +608,7 @@
 
 
 <div class="viewcode-block" id="estimate_effective_sample_size">
-<a class="viewcode-back" href="../../api/vibespin.utils.html#utils.physics_helpers.estimate_effective_sample_size">[docs]</a>
+<a class="viewcode-back" href="../../api/vibespin.utils.html#utils.analysis.estimate_effective_sample_size">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">estimate_effective_sample_size</span><span class="p">(</span>
     <span class="o">*</span><span class="p">,</span>
     <span class="n">time_series</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
@@ -627,7 +627,7 @@
 
 
 <div class="viewcode-block" id="blocking_error">
-<a class="viewcode-back" href="../../api/vibespin.utils.html#utils.physics_helpers.blocking_error">[docs]</a>
+<a class="viewcode-back" href="../../api/vibespin.utils.html#utils.analysis.blocking_error">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">blocking_error</span><span class="p">(</span>
     <span class="o">*</span><span class="p">,</span>
     <span class="n">time_series</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
@@ -710,7 +710,7 @@
 
 
 <div class="viewcode-block" id="summarize_primary_observable">
-<a class="viewcode-back" href="../../api/vibespin.utils.html#utils.physics_helpers.summarize_primary_observable">[docs]</a>
+<a class="viewcode-back" href="../../api/vibespin.utils.html#utils.analysis.summarize_primary_observable">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">summarize_primary_observable</span><span class="p">(</span>
     <span class="o">*</span><span class="p">,</span>
     <span class="n">time_series</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
@@ -762,7 +762,7 @@
 
 
 <div class="viewcode-block" id="summarize_derived_observable">
-<a class="viewcode-back" href="../../api/vibespin.utils.html#utils.physics_helpers.summarize_derived_observable">[docs]</a>
+<a class="viewcode-back" href="../../api/vibespin.utils.html#utils.analysis.summarize_derived_observable">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">summarize_derived_observable</span><span class="p">(</span>
     <span class="o">*</span><span class="p">,</span>
     <span class="n">magnetization_series</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
@@ -871,7 +871,7 @@
 
 
 <div class="viewcode-block" id="summarize_replicate_samples">
-<a class="viewcode-back" href="../../api/vibespin.utils.html#utils.physics_helpers.summarize_replicate_samples">[docs]</a>
+<a class="viewcode-back" href="../../api/vibespin.utils.html#utils.analysis.summarize_replicate_samples">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">summarize_replicate_samples</span><span class="p">(</span>
     <span class="o">*</span><span class="p">,</span>
     <span class="n">samples</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
@@ -910,7 +910,7 @@
 
 
 <div class="viewcode-block" id="summarize_seed_ensemble">
-<a class="viewcode-back" href="../../api/vibespin.utils.html#utils.physics_helpers.summarize_seed_ensemble">[docs]</a>
+<a class="viewcode-back" href="../../api/vibespin.utils.html#utils.analysis.summarize_seed_ensemble">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">summarize_seed_ensemble</span><span class="p">(</span>
     <span class="o">*</span><span class="p">,</span>
     <span class="n">values</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
@@ -981,7 +981,7 @@
 
 
 <div class="viewcode-block" id="get_averaged_correlation">
-<a class="viewcode-back" href="../../api/vibespin.utils.html#utils.physics_helpers.get_averaged_correlation">[docs]</a>
+<a class="viewcode-back" href="../../api/vibespin.utils.html#utils.analysis.get_averaged_correlation">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">get_averaged_correlation</span><span class="p">(</span>
     <span class="o">*</span><span class="p">,</span> <span class="n">sim</span><span class="p">:</span> <span class="n">MonteCarloSimulation</span><span class="p">,</span> <span class="n">total_steps</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">sample_interval</span><span class="p">:</span> <span class="nb">int</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">]:</span>
@@ -1033,7 +1033,7 @@
 
 
 <div class="viewcode-block" id="radial_average_sk">
-<a class="viewcode-back" href="../../api/vibespin.utils.html#utils.physics_helpers.radial_average_sk">[docs]</a>
+<a class="viewcode-back" href="../../api/vibespin.utils.html#utils.analysis.radial_average_sk">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">radial_average_sk</span><span class="p">(</span><span class="o">*</span><span class="p">,</span> <span class="n">spins</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">]:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Compute the circularly averaged structure factor :math:`S(|k|)`.</span>
 
@@ -1079,7 +1079,7 @@
 
 
 <div class="viewcode-block" id="pair_correlation_x">
-<a class="viewcode-back" href="../../api/vibespin.utils.html#utils.physics_helpers.pair_correlation_x">[docs]</a>
+<a class="viewcode-back" href="../../api/vibespin.utils.html#utils.analysis.pair_correlation_x">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">pair_correlation_x</span><span class="p">(</span><span class="o">*</span><span class="p">,</span> <span class="n">spins</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">]:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Compute the real-space spin-spin pair correlation G(r) along x.</span>
 
@@ -1122,7 +1122,7 @@
 
 
 <div class="viewcode-block" id="compute_kinetics_metrics">
-<a class="viewcode-back" href="../../api/vibespin.utils.html#utils.physics_helpers.compute_kinetics_metrics">[docs]</a>
+<a class="viewcode-back" href="../../api/vibespin.utils.html#utils.analysis.compute_kinetics_metrics">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">compute_kinetics_metrics</span><span class="p">(</span><span class="o">*</span><span class="p">,</span> <span class="n">sim</span><span class="p">:</span> <span class="n">MonteCarloSimulation</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">float</span><span class="p">]:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Calculate common kinetics metrics (R_sk, xi) for a simulation state.</span>
@@ -1164,7 +1164,7 @@
 
 
 <div class="viewcode-block" id="power_fit">
-<a class="viewcode-back" href="../../api/vibespin.utils.html#utils.physics_helpers.power_fit">[docs]</a>
+<a class="viewcode-back" href="../../api/vibespin.utils.html#utils.analysis.power_fit">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">power_fit</span><span class="p">(</span>
     <span class="o">*</span><span class="p">,</span> <span class="n">t_arr</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">y_arr</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">mask</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">float</span><span class="p">,</span> <span class="nb">float</span><span class="p">]</span> <span class="o">|</span> <span class="nb">tuple</span><span class="p">[</span><span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">]:</span>
@@ -1190,14 +1190,6 @@
 
 
 
-<span class="c1"># Relaxation diagnostics have moved to utils.equilibration; re-exported here for compatibility.</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">utils.equilibration</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>  <span class="c1"># noqa: F401, E402</span>
-    <span class="n">_QS_SIGMA_REF_L</span><span class="p">,</span>
-    <span class="n">_detect_quasi_steady_stuck</span><span class="p">,</span>
-    <span class="n">_moving_average</span><span class="p">,</span>
-    <span class="n">_valid_prefix</span><span class="p">,</span>
-    <span class="n">estimate_relaxation_time_two_start</span><span class="p">,</span>
-<span class="p">)</span>
 </pre></div>
 
            </div>

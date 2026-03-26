@@ -215,8 +215,23 @@
 </li>
 <li class="toctree-l1"><a class="reference internal" href="vibespin.utils.html">vibespin.utils package</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="vibespin.utils.html#submodules">Submodules</a></li>
-<li class="toctree-l2"><a class="reference internal" href="vibespin.utils.html#module-utils.cli_helpers">utils.cli_helpers module</a><ul>
-<li class="toctree-l3"><a class="reference internal" href="vibespin.utils.html#utils.cli_helpers.parse_args_compat"><code class="docutils literal notranslate"><span class="pre">parse_args_compat()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="vibespin.utils.html#module-utils.analysis">utils.analysis module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="vibespin.utils.html#utils.analysis.blocking_error"><code class="docutils literal notranslate"><span class="pre">blocking_error()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="vibespin.utils.html#utils.analysis.calculate_autocorr"><code class="docutils literal notranslate"><span class="pre">calculate_autocorr()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="vibespin.utils.html#utils.analysis.calculate_entropy"><code class="docutils literal notranslate"><span class="pre">calculate_entropy()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="vibespin.utils.html#utils.analysis.calculate_thermodynamics"><code class="docutils literal notranslate"><span class="pre">calculate_thermodynamics()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="vibespin.utils.html#utils.analysis.compute_kinetics_metrics"><code class="docutils literal notranslate"><span class="pre">compute_kinetics_metrics()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="vibespin.utils.html#utils.analysis.estimate_effective_sample_size"><code class="docutils literal notranslate"><span class="pre">estimate_effective_sample_size()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="vibespin.utils.html#utils.analysis.get_averaged_correlation"><code class="docutils literal notranslate"><span class="pre">get_averaged_correlation()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="vibespin.utils.html#utils.analysis.pair_correlation_x"><code class="docutils literal notranslate"><span class="pre">pair_correlation_x()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="vibespin.utils.html#utils.analysis.power_fit"><code class="docutils literal notranslate"><span class="pre">power_fit()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="vibespin.utils.html#utils.analysis.radial_average_sk"><code class="docutils literal notranslate"><span class="pre">radial_average_sk()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="vibespin.utils.html#utils.analysis.summarize_asymmetric_replicate_uncertainty"><code class="docutils literal notranslate"><span class="pre">summarize_asymmetric_replicate_uncertainty()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="vibespin.utils.html#utils.analysis.summarize_derived_observable"><code class="docutils literal notranslate"><span class="pre">summarize_derived_observable()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="vibespin.utils.html#utils.analysis.summarize_entropy_observable"><code class="docutils literal notranslate"><span class="pre">summarize_entropy_observable()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="vibespin.utils.html#utils.analysis.summarize_primary_observable"><code class="docutils literal notranslate"><span class="pre">summarize_primary_observable()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="vibespin.utils.html#utils.analysis.summarize_replicate_samples"><code class="docutils literal notranslate"><span class="pre">summarize_replicate_samples()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="vibespin.utils.html#utils.analysis.summarize_seed_ensemble"><code class="docutils literal notranslate"><span class="pre">summarize_seed_ensemble()</span></code></a></li>
 </ul>
 </li>
 <li class="toctree-l2"><a class="reference internal" href="vibespin.utils.html#module-utils.equilibration">utils.equilibration module</a><ul>
@@ -226,29 +241,19 @@
 <li class="toctree-l3"><a class="reference internal" href="vibespin.utils.html#utils.equilibration.estimate_relaxation_time_two_start"><code class="docutils literal notranslate"><span class="pre">estimate_relaxation_time_two_start()</span></code></a></li>
 </ul>
 </li>
+<li class="toctree-l2"><a class="reference internal" href="vibespin.utils.html#module-utils.evolution_helpers">utils.evolution_helpers module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="vibespin.utils.html#utils.evolution_helpers.run_ordering_evolution"><code class="docutils literal notranslate"><span class="pre">run_ordering_evolution()</span></code></a></li>
+</ul>
+</li>
 <li class="toctree-l2"><a class="reference internal" href="vibespin.utils.html#module-utils.exceptions">utils.exceptions module</a><ul>
 <li class="toctree-l3"><a class="reference internal" href="vibespin.utils.html#utils.exceptions.NumericalAnalysisError"><code class="docutils literal notranslate"><span class="pre">NumericalAnalysisError</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="vibespin.utils.html#utils.exceptions.VibeSpinError"><code class="docutils literal notranslate"><span class="pre">VibeSpinError</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="vibespin.utils.html#utils.exceptions.ZeroVarianceAutocorrelationError"><code class="docutils literal notranslate"><span class="pre">ZeroVarianceAutocorrelationError</span></code></a></li>
 </ul>
 </li>
-<li class="toctree-l2"><a class="reference internal" href="vibespin.utils.html#module-utils.physics_helpers">utils.physics_helpers module</a><ul>
-<li class="toctree-l3"><a class="reference internal" href="vibespin.utils.html#utils.physics_helpers.blocking_error"><code class="docutils literal notranslate"><span class="pre">blocking_error()</span></code></a></li>
-<li class="toctree-l3"><a class="reference internal" href="vibespin.utils.html#utils.physics_helpers.calculate_autocorr"><code class="docutils literal notranslate"><span class="pre">calculate_autocorr()</span></code></a></li>
-<li class="toctree-l3"><a class="reference internal" href="vibespin.utils.html#utils.physics_helpers.calculate_entropy"><code class="docutils literal notranslate"><span class="pre">calculate_entropy()</span></code></a></li>
-<li class="toctree-l3"><a class="reference internal" href="vibespin.utils.html#utils.physics_helpers.calculate_thermodynamics"><code class="docutils literal notranslate"><span class="pre">calculate_thermodynamics()</span></code></a></li>
-<li class="toctree-l3"><a class="reference internal" href="vibespin.utils.html#utils.physics_helpers.compute_kinetics_metrics"><code class="docutils literal notranslate"><span class="pre">compute_kinetics_metrics()</span></code></a></li>
-<li class="toctree-l3"><a class="reference internal" href="vibespin.utils.html#utils.physics_helpers.estimate_effective_sample_size"><code class="docutils literal notranslate"><span class="pre">estimate_effective_sample_size()</span></code></a></li>
-<li class="toctree-l3"><a class="reference internal" href="vibespin.utils.html#utils.physics_helpers.get_averaged_correlation"><code class="docutils literal notranslate"><span class="pre">get_averaged_correlation()</span></code></a></li>
-<li class="toctree-l3"><a class="reference internal" href="vibespin.utils.html#utils.physics_helpers.pair_correlation_x"><code class="docutils literal notranslate"><span class="pre">pair_correlation_x()</span></code></a></li>
-<li class="toctree-l3"><a class="reference internal" href="vibespin.utils.html#utils.physics_helpers.power_fit"><code class="docutils literal notranslate"><span class="pre">power_fit()</span></code></a></li>
-<li class="toctree-l3"><a class="reference internal" href="vibespin.utils.html#utils.physics_helpers.radial_average_sk"><code class="docutils literal notranslate"><span class="pre">radial_average_sk()</span></code></a></li>
-<li class="toctree-l3"><a class="reference internal" href="vibespin.utils.html#utils.physics_helpers.summarize_asymmetric_replicate_uncertainty"><code class="docutils literal notranslate"><span class="pre">summarize_asymmetric_replicate_uncertainty()</span></code></a></li>
-<li class="toctree-l3"><a class="reference internal" href="vibespin.utils.html#utils.physics_helpers.summarize_derived_observable"><code class="docutils literal notranslate"><span class="pre">summarize_derived_observable()</span></code></a></li>
-<li class="toctree-l3"><a class="reference internal" href="vibespin.utils.html#utils.physics_helpers.summarize_entropy_observable"><code class="docutils literal notranslate"><span class="pre">summarize_entropy_observable()</span></code></a></li>
-<li class="toctree-l3"><a class="reference internal" href="vibespin.utils.html#utils.physics_helpers.summarize_primary_observable"><code class="docutils literal notranslate"><span class="pre">summarize_primary_observable()</span></code></a></li>
-<li class="toctree-l3"><a class="reference internal" href="vibespin.utils.html#utils.physics_helpers.summarize_replicate_samples"><code class="docutils literal notranslate"><span class="pre">summarize_replicate_samples()</span></code></a></li>
-<li class="toctree-l3"><a class="reference internal" href="vibespin.utils.html#utils.physics_helpers.summarize_seed_ensemble"><code class="docutils literal notranslate"><span class="pre">summarize_seed_ensemble()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="vibespin.utils.html#module-utils.kinetics_helpers">utils.kinetics_helpers module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="vibespin.utils.html#utils.kinetics_helpers.compute_mean_intercept_length"><code class="docutils literal notranslate"><span class="pre">compute_mean_intercept_length()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="vibespin.utils.html#utils.kinetics_helpers.run_ordering_kinetics"><code class="docutils literal notranslate"><span class="pre">run_ordering_kinetics()</span></code></a></li>
 </ul>
 </li>
 <li class="toctree-l2"><a class="reference internal" href="vibespin.utils.html#module-utils.plotting">utils.plotting module</a><ul>
@@ -259,9 +264,49 @@
 <li class="toctree-l3"><a class="reference internal" href="vibespin.utils.html#utils.plotting.save_plot"><code class="docutils literal notranslate"><span class="pre">save_plot()</span></code></a></li>
 </ul>
 </li>
-<li class="toctree-l2"><a class="reference internal" href="vibespin.utils.html#module-utils.system_helpers">utils.system_helpers module</a><ul>
-<li class="toctree-l3"><a class="reference internal" href="vibespin.utils.html#utils.system_helpers.parallel_sweep"><code class="docutils literal notranslate"><span class="pre">parallel_sweep()</span></code></a></li>
-<li class="toctree-l3"><a class="reference internal" href="vibespin.utils.html#utils.system_helpers.setup_logging"><code class="docutils literal notranslate"><span class="pre">setup_logging()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="vibespin.utils.html#module-utils.sweep_helpers">utils.sweep_helpers module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="vibespin.utils.html#utils.sweep_helpers.RawThermoData"><code class="docutils literal notranslate"><span class="pre">RawThermoData</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="vibespin.utils.html#utils.sweep_helpers.RawThermoData.engs_arr"><code class="docutils literal notranslate"><span class="pre">RawThermoData.engs_arr</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="vibespin.utils.html#utils.sweep_helpers.RawThermoData.equilibrated_flag"><code class="docutils literal notranslate"><span class="pre">RawThermoData.equilibrated_flag</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="vibespin.utils.html#utils.sweep_helpers.RawThermoData.equilibration_steps"><code class="docutils literal notranslate"><span class="pre">RawThermoData.equilibration_steps</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="vibespin.utils.html#utils.sweep_helpers.RawThermoData.mags_arr"><code class="docutils literal notranslate"><span class="pre">RawThermoData.mags_arr</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="vibespin.utils.html#utils.sweep_helpers.RawThermoData.seed_index"><code class="docutils literal notranslate"><span class="pre">RawThermoData.seed_index</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="vibespin.utils.html#utils.sweep_helpers.RawThermoData.size"><code class="docutils literal notranslate"><span class="pre">RawThermoData.size</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="vibespin.utils.html#utils.sweep_helpers.RawThermoData.temperature"><code class="docutils literal notranslate"><span class="pre">RawThermoData.temperature</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="vibespin.utils.html#utils.sweep_helpers.RawThermoData.temperature_index"><code class="docutils literal notranslate"><span class="pre">RawThermoData.temperature_index</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="vibespin.utils.html#utils.sweep_helpers.ThermoPoint"><code class="docutils literal notranslate"><span class="pre">ThermoPoint</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="vibespin.utils.html#utils.sweep_helpers.ThermoPoint.bootstrap_resamples"><code class="docutils literal notranslate"><span class="pre">ThermoPoint.bootstrap_resamples</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="vibespin.utils.html#utils.sweep_helpers.ThermoPoint.confidence"><code class="docutils literal notranslate"><span class="pre">ThermoPoint.confidence</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="vibespin.utils.html#utils.sweep_helpers.ThermoPoint.derived_method"><code class="docutils literal notranslate"><span class="pre">ThermoPoint.derived_method</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="vibespin.utils.html#utils.sweep_helpers.ThermoPoint.eq_max_steps"><code class="docutils literal notranslate"><span class="pre">ThermoPoint.eq_max_steps</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="vibespin.utils.html#utils.sweep_helpers.ThermoPoint.eq_probe_steps"><code class="docutils literal notranslate"><span class="pre">ThermoPoint.eq_probe_steps</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="vibespin.utils.html#utils.sweep_helpers.ThermoPoint.eq_qs_min_steps"><code class="docutils literal notranslate"><span class="pre">ThermoPoint.eq_qs_min_steps</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="vibespin.utils.html#utils.sweep_helpers.ThermoPoint.eq_qs_sigma_threshold"><code class="docutils literal notranslate"><span class="pre">ThermoPoint.eq_qs_sigma_threshold</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="vibespin.utils.html#utils.sweep_helpers.ThermoPoint.meas_steps"><code class="docutils literal notranslate"><span class="pre">ThermoPoint.meas_steps</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="vibespin.utils.html#utils.sweep_helpers.ThermoPoint.model_cls"><code class="docutils literal notranslate"><span class="pre">ThermoPoint.model_cls</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="vibespin.utils.html#utils.sweep_helpers.ThermoPoint.model_kwargs"><code class="docutils literal notranslate"><span class="pre">ThermoPoint.model_kwargs</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="vibespin.utils.html#utils.sweep_helpers.ThermoPoint.prefer_ordered_start"><code class="docutils literal notranslate"><span class="pre">ThermoPoint.prefer_ordered_start</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="vibespin.utils.html#utils.sweep_helpers.ThermoPoint.qs_allow_stuck"><code class="docutils literal notranslate"><span class="pre">ThermoPoint.qs_allow_stuck</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="vibespin.utils.html#utils.sweep_helpers.ThermoPoint.seed"><code class="docutils literal notranslate"><span class="pre">ThermoPoint.seed</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="vibespin.utils.html#utils.sweep_helpers.ThermoPoint.seed_index"><code class="docutils literal notranslate"><span class="pre">ThermoPoint.seed_index</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="vibespin.utils.html#utils.sweep_helpers.ThermoPoint.size"><code class="docutils literal notranslate"><span class="pre">ThermoPoint.size</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="vibespin.utils.html#utils.sweep_helpers.ThermoPoint.temperature"><code class="docutils literal notranslate"><span class="pre">ThermoPoint.temperature</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="vibespin.utils.html#utils.sweep_helpers.ThermoPoint.temperature_index"><code class="docutils literal notranslate"><span class="pre">ThermoPoint.temperature_index</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="vibespin.utils.html#utils.sweep_helpers.build_quality_flags"><code class="docutils literal notranslate"><span class="pre">build_quality_flags()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="vibespin.utils.html#utils.sweep_helpers.build_uncertainty_bundle"><code class="docutils literal notranslate"><span class="pre">build_uncertainty_bundle()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="vibespin.utils.html#utils.sweep_helpers.compute_thermo_observables"><code class="docutils literal notranslate"><span class="pre">compute_thermo_observables()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="vibespin.utils.html#utils.sweep_helpers.simulate_at_temperature"><code class="docutils literal notranslate"><span class="pre">simulate_at_temperature()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="vibespin.utils.html#utils.sweep_helpers.simulate_thermo_point"><code class="docutils literal notranslate"><span class="pre">simulate_thermo_point()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="vibespin.utils.html#module-utils.system">utils.system module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="vibespin.utils.html#utils.system.parallel_sweep"><code class="docutils literal notranslate"><span class="pre">parallel_sweep()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="vibespin.utils.html#utils.system.parse_args_compat"><code class="docutils literal notranslate"><span class="pre">parse_args_compat()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="vibespin.utils.html#utils.system.setup_logging"><code class="docutils literal notranslate"><span class="pre">setup_logging()</span></code></a></li>
 </ul>
 </li>
 <li class="toctree-l2"><a class="reference internal" href="vibespin.utils.html#module-contents">Module contents</a></li>

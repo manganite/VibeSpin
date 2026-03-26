@@ -39,7 +39,7 @@
     "\n",
     "from models.ising_model import IsingSimulation\n",
     "from utils.exceptions import ZeroVarianceAutocorrelationError\n",
-    "from utils.physics_helpers import (\n",
+    "from utils.analysis import (\n",
     "    DEFAULT_CONFIDENCE_LEVEL,\n",
     "    _detect_quasi_steady_stuck,\n",
     "    calculate_autocorr,\n",

@@ -93,7 +93,7 @@
 <span class="sd">Groups the filesystem output helper (:func:`save_plot`,</span>
 <span class="sd">:func:`ensure_results_dir`) together with the three domain-specific</span>
 <span class="sd">visualisation functions that were previously embedded in</span>
-<span class="sd">``utils.system_helpers``.  Keeping visualisation logic here makes</span>
+<span class="sd">``utils.system``.  Keeping visualisation logic here makes</span>
 <span class="sd">``system_helpers`` a pure infrastructure module (logging, parallelism) with</span>
 <span class="sd">no matplotlib dependency.</span>
 <span class="sd">&quot;&quot;&quot;</span>
@@ -874,7 +874,7 @@
             <span class="k">if</span> <span class="n">col</span> <span class="o">==</span> <span class="n">n_cols</span> <span class="o">-</span> <span class="mi">1</span><span class="p">:</span>
                 <span class="n">plt</span><span class="o">.</span><span class="n">colorbar</span><span class="p">(</span><span class="n">im_v</span><span class="p">,</span> <span class="n">ax</span><span class="o">=</span><span class="n">ax_mid</span><span class="p">,</span> <span class="n">ticks</span><span class="o">=</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">],</span> <span class="n">label</span><span class="o">=</span><span class="s1">&#39;Winding No.&#39;</span><span class="p">,</span> <span class="n">shrink</span><span class="o">=</span><span class="mf">0.8</span><span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
-            <span class="kn">from</span><span class="w"> </span><span class="nn">.physics_helpers</span><span class="w"> </span><span class="kn">import</span> <span class="n">radial_average_sk</span>
+            <span class="kn">from</span><span class="w"> </span><span class="nn">.analysis</span><span class="w"> </span><span class="kn">import</span> <span class="n">radial_average_sk</span>
 
             <span class="n">k_vals</span><span class="p">,</span> <span class="n">S_radial</span> <span class="o">=</span> <span class="n">radial_average_sk</span><span class="p">(</span><span class="n">spins</span><span class="o">=</span><span class="n">spins</span><span class="p">)</span>
             <span class="n">ax_mid</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">k_vals</span><span class="p">[</span><span class="mi">1</span><span class="p">:],</span> <span class="n">S_radial</span><span class="p">[</span><span class="mi">1</span><span class="p">:],</span> <span class="n">linewidth</span><span class="o">=</span><span class="mf">1.2</span><span class="p">)</span>

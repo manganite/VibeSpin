@@ -110,13 +110,251 @@
 <section id="submodules">
 <h2>Submodules<a class="headerlink" href="#submodules" title="Link to this heading"></a></h2>
 </section>
-<section id="module-utils.cli_helpers">
-<span id="utils-cli-helpers-module"></span><h2>utils.cli_helpers module<a class="headerlink" href="#module-utils.cli_helpers" title="Link to this heading"></a></h2>
-<p>CLI helper utilities shared by script entry points.</p>
+<section id="module-utils.analysis">
+<span id="utils-analysis-module"></span><h2>utils.analysis module<a class="headerlink" href="#module-utils.analysis" title="Link to this heading"></a></h2>
+<p>Physics-related utility functions for calculating thermodynamic observables and correlations.</p>
 <dl class="py function">
-<dt class="sig sig-object py" id="utils.cli_helpers.parse_args_compat">
-<span class="sig-prename descclassname"><span class="pre">utils.cli_helpers.</span></span><span class="sig-name descname"><span class="pre">parse_args_compat</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">parser</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ArgumentParser</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Namespace</span></span></span><a class="reference internal" href="../_modules/utils/cli_helpers.html#parse_args_compat"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#utils.cli_helpers.parse_args_compat" title="Link to this definition"></a></dt>
-<dd><p>Parse CLI args with compatibility for parser wrappers used by some runners.</p>
+<dt class="sig sig-object py" id="utils.analysis.blocking_error">
+<span class="sig-prename descclassname"><span class="pre">utils.analysis.</span></span><span class="sig-name descname"><span class="pre">blocking_error</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">time_series</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">min_block_size</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">2</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">max_block_size</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">float</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="../_modules/utils/analysis.html#blocking_error"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#utils.analysis.blocking_error" title="Link to this definition"></a></dt>
+<dd><p>Estimate standard error using standard blocking/binning analysis.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="utils.analysis.calculate_autocorr">
+<span class="sig-prename descclassname"><span class="pre">utils.analysis.</span></span><span class="sig-name descname"><span class="pre">calculate_autocorr</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">time_series</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">max_lag</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">window_constant</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">6.0</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">ndarray</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">float</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="../_modules/utils/analysis.html#calculate_autocorr"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#utils.analysis.calculate_autocorr" title="Link to this definition"></a></dt>
+<dd><p>Compute the normalized autocorrelation function and integrated autocorrelation time.</p>
+<p>Uses an FFT-based estimator for C(t): zero-pads to 2N, computes the power
+spectrum, IFFTs, and normalizes by variance and the number of pairs at each
+lag.  Applies the Madras-Sokal automatic windowing rule to stop integration
+at the lag W where W = <code class="docutils literal notranslate"><span class="pre">window_constant</span></code> * tau_int, preventing the estimator
+from accumulating noise at large lags.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>time_series</strong> (<em>1-D array</em><em> of </em><em>sequential measurements</em><em> (</em><em>e.g. magnetization</em><em>)</em><em>.</em>)</p></li>
+<li><p><strong>max_lag</strong> (Maximum lag to compute.  Defaults to <code class="docutils literal notranslate"><span class="pre">len(time_series)</span> <span class="pre">//</span> <span class="pre">2</span></code>.)</p></li>
+<li><p><strong>window_constant</strong> (<em>Multiplier for the Madras-Sokal window</em><em> (</em><em>default 6.0</em><em>)</em><em>.</em>)</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><ul class="simple">
+<li><p>A tuple <code class="docutils literal notranslate"><span class="pre">(C_t,</span> <span class="pre">tau_int)</span></code> where <code class="docutils literal notranslate"><span class="pre">C_t</span></code> is the normalized autocorrelation</p></li>
+<li><p>array truncated at the window endpoint, and <code class="docutils literal notranslate"><span class="pre">tau_int</span></code> is the integrated</p></li>
+<li><p><em>autocorrelation time (scalar).</em></p></li>
+</ul>
+</p>
+</dd>
+<dt class="field-odd">Raises<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>ValueError</strong> – If <code class="docutils literal notranslate"><span class="pre">time_series</span></code> has fewer than 3 elements.:</p></li>
+<li><p><a class="reference internal" href="#utils.exceptions.ZeroVarianceAutocorrelationError" title="utils.exceptions.ZeroVarianceAutocorrelationError"><strong>ZeroVarianceAutocorrelationError</strong></a> – If <code class="docutils literal notranslate"><span class="pre">time_series</span></code> has zero variance.:</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="utils.analysis.calculate_entropy">
+<span class="sig-prename descclassname"><span class="pre">utils.analysis.</span></span><span class="sig-name descname"><span class="pre">calculate_entropy</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">temperatures</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">specific_heat</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">s_ref</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.0</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">ndarray</span></span></span><a class="reference internal" href="../_modules/utils/analysis.html#calculate_entropy"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#utils.analysis.calculate_entropy" title="Link to this definition"></a></dt>
+<dd><p>Compute entropy by integrating specific heat over a temperature sweep.</p>
+<p>Integrates C(T)/T from high temperature downward so that
+S(T_max) = <code class="docutils literal notranslate"><span class="pre">s_ref</span></code> and S(T) = s_ref - integral from T to T_max of C/T dT’.
+This avoids the C/T divergence near T = 0 and anchors the result at the
+high-temperature limit where the entropy is analytically known.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>temperatures</strong> (<em>1-D array</em><em> of </em><em>temperature values. Need not be sorted.</em>)</p></li>
+<li><p><strong>specific_heat</strong> (<em>Specific heat C_v at each temperature</em><em> (</em><em>same length</em><em>)</em><em>.</em>)</p></li>
+<li><p><strong>s_ref</strong> (Reference entropy at the highest temperature. Pass <code class="docutils literal notranslate"><span class="pre">0.0</span></code>) – for relative entropy or <code class="docutils literal notranslate"><span class="pre">np.log(q)</span></code> (per site, in units of
+k_B) for absolute entropy of a q-state model.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><ul class="simple">
+<li><p><em>1-D array of entropy values, one per temperature, in the original</em></p></li>
+<li><p>unsorted order of <code class="docutils literal notranslate"><span class="pre">temperatures</span></code>.</p></li>
+</ul>
+</p>
+</dd>
+<dt class="field-odd">Raises<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>ValueError</strong> – If arrays differ in length, contain fewer than 2 points,: or include non-positive temperatures.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="utils.analysis.calculate_thermodynamics">
+<span class="sig-prename descclassname"><span class="pre">utils.analysis.</span></span><span class="sig-name descname"><span class="pre">calculate_thermodynamics</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">mags</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">engs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">T</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">L</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">float</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">float</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">float</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">float</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="../_modules/utils/analysis.html#calculate_thermodynamics"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#utils.analysis.calculate_thermodynamics" title="Link to this definition"></a></dt>
+<dd><p>Calculate average magnetization, energy, susceptibility, and specific heat.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>mags</strong> (<em>Array</em><em> of </em><em>magnetization measurements.</em>)</p></li>
+<li><p><strong>engs</strong> (<em>Array</em><em> of </em><em>energy measurements.</em>)</p></li>
+<li><p><strong>T</strong> (<em>Temperature.</em>)</p></li>
+<li><p><strong>L</strong> (<em>Linear lattice size.</em>)</p></li>
+</ul>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>A tuple of (avg_mag, avg_eng, susceptibility, specific_heat).</p>
+</dd>
+<dt class="field-odd">Raises<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>ValueError</strong> – If <code class="docutils literal notranslate"><span class="pre">T</span></code> is not positive or <code class="docutils literal notranslate"><span class="pre">L</span></code> is not a positive integer.:</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="utils.analysis.compute_kinetics_metrics">
+<span class="sig-prename descclassname"><span class="pre">utils.analysis.</span></span><span class="sig-name descname"><span class="pre">compute_kinetics_metrics</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">sim</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="vibespin.models.html#models.simulation_base.MonteCarloSimulation" title="models.simulation_base.MonteCarloSimulation"><span class="pre">MonteCarloSimulation</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">float</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="../_modules/utils/analysis.html#compute_kinetics_metrics"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#utils.analysis.compute_kinetics_metrics" title="Link to this definition"></a></dt>
+<dd><p>Calculate common kinetics metrics (R_sk, xi) for a simulation state.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>sim</strong> (<em>MonteCarloSimulation instance.</em>)</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>Dictionary containing ‘R_sk’ and ‘xi’.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="utils.analysis.estimate_effective_sample_size">
+<span class="sig-prename descclassname"><span class="pre">utils.analysis.</span></span><span class="sig-name descname"><span class="pre">estimate_effective_sample_size</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">time_series</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tau_int</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">float</span></span></span><a class="reference internal" href="../_modules/utils/analysis.html#estimate_effective_sample_size"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#utils.analysis.estimate_effective_sample_size" title="Link to this definition"></a></dt>
+<dd><p>Estimate effective sample size from integrated autocorrelation time.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="utils.analysis.get_averaged_correlation">
+<span class="sig-prename descclassname"><span class="pre">utils.analysis.</span></span><span class="sig-name descname"><span class="pre">get_averaged_correlation</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">sim</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="vibespin.models.html#models.simulation_base.MonteCarloSimulation" title="models.simulation_base.MonteCarloSimulation"><span class="pre">MonteCarloSimulation</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">total_steps</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sample_interval</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">ndarray</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">ndarray</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="../_modules/utils/analysis.html#get_averaged_correlation"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#utils.analysis.get_averaged_correlation" title="Link to this definition"></a></dt>
+<dd><p>Run simulation and average the correlation function over multiple configurations.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>sim</strong> (<em>An instance</em><em> of </em><em>MonteCarloSimulation.</em>)</p></li>
+<li><p><strong>total_steps</strong> (<em>Total number</em><em> of </em><em>MC steps to run.</em>)</p></li>
+<li><p><strong>sample_interval</strong> (<em>Interval between correlation samples. Must be ≥ 1.</em>)</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><ul class="simple">
+<li><p><strong>r</strong> (<em>Radial distances.</em>)</p></li>
+<li><p><strong>G_r_avg</strong> (<em>Averaged correlation values.</em>)</p></li>
+</ul>
+</p>
+</dd>
+<dt class="field-odd">Raises<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>ValueError</strong> – If <code class="docutils literal notranslate"><span class="pre">sample_interval</span></code> is less than 1 or <code class="docutils literal notranslate"><span class="pre">total_steps</span></code> is negative.:</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="utils.analysis.pair_correlation_x">
+<span class="sig-prename descclassname"><span class="pre">utils.analysis.</span></span><span class="sig-name descname"><span class="pre">pair_correlation_x</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">spins</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">ndarray</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">ndarray</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="../_modules/utils/analysis.html#pair_correlation_x"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#utils.analysis.pair_correlation_x" title="Link to this definition"></a></dt>
+<dd><p>Compute the real-space spin-spin pair correlation G(r) along x.</p>
+<p>Uses the Wiener-Khinchin theorem: the autocorrelation of each row is the
+inverse FFT of the row’s power spectrum.  Results are averaged over all
+rows (y positions) and normalised so G(0) = 1.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>spins</strong> (<em>(</em><em>N</em><em>, </em><em>N</em><em>) or </em><em>(</em><em>N</em><em>, </em><em>N</em><em>, </em><em>2</em><em>) </em><em>spin array.</em>)</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><ul class="simple">
+<li><p><strong>r_vals</strong> (<em>Lag distances r = 0 … N//2 in lattice units.</em>)</p></li>
+<li><p><strong>G</strong> (<em>Normalised pair correlation G(r) / G(0).</em>)</p></li>
+</ul>
+</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="utils.analysis.power_fit">
+<span class="sig-prename descclassname"><span class="pre">utils.analysis.</span></span><span class="sig-name descname"><span class="pre">power_fit</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">t_arr</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">y_arr</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mask</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">float</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">float</span><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">None</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">None</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="../_modules/utils/analysis.html#power_fit"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#utils.analysis.power_fit" title="Link to this definition"></a></dt>
+<dd><p>Fit a power law y = prefactor * t^exponent via log-log linear regression.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>t_arr</strong> (<em>Independent variable array</em><em> (</em><em>e.g.</em><em>, </em><em>time</em><em> or </em><em>length scale</em><em>)</em><em>.</em>)</p></li>
+<li><p><strong>y_arr</strong> (<em>Dependent variable array; only positive values are used in the fit.</em>)</p></li>
+<li><p><strong>mask</strong> (<em>Boolean mask selecting the subset</em><em> of </em><em>points to include.</em>)</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><ul class="simple">
+<li><p><strong>exponent</strong> (<em>Fitted power-law exponent, or None if fewer than 3 valid points.</em>)</p></li>
+<li><p><strong>prefactor</strong> (<em>Fitted prefactor, or None if fewer than 3 valid points.</em>)</p></li>
+</ul>
+</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="utils.analysis.radial_average_sk">
+<span class="sig-prename descclassname"><span class="pre">utils.analysis.</span></span><span class="sig-name descname"><span class="pre">radial_average_sk</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">spins</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">ndarray</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">ndarray</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="../_modules/utils/analysis.html#radial_average_sk"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#utils.analysis.radial_average_sk" title="Link to this definition"></a></dt>
+<dd><p>Compute the circularly averaged structure factor <span class="math notranslate nohighlight">\(S(|k|)\)</span>.</p>
+<p>Bins <span class="math notranslate nohighlight">\(S(k)\)</span> by integer pixel radius from the DC centre of the shifted FFT,
+then averages within each annular bin.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>spins</strong> (<em>(</em><em>N</em><em>, </em><em>N</em><em>) or </em><em>(</em><em>N</em><em>, </em><em>N</em><em>, </em><em>2</em><em>) </em><em>spin array.</em>)</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><ul class="simple">
+<li><p><strong>k_vals</strong> (<em>Wavevector magnitudes in units of 2π/N (reciprocal lattice).</em>)</p></li>
+<li><p><strong>S_radial</strong> (<em>Mean S(k) value for each annular bin.</em>)</p></li>
+</ul>
+</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="utils.analysis.summarize_asymmetric_replicate_uncertainty">
+<span class="sig-prename descclassname"><span class="pre">utils.analysis.</span></span><span class="sig-name descname"><span class="pre">summarize_asymmetric_replicate_uncertainty</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">samples</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">confidence</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.68</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">float</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="../_modules/utils/analysis.html#summarize_asymmetric_replicate_uncertainty"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#utils.analysis.summarize_asymmetric_replicate_uncertainty" title="Link to this definition"></a></dt>
+<dd><p>Summarize 1-D replicate samples with asymmetric percentile intervals.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="utils.analysis.summarize_derived_observable">
+<span class="sig-prename descclassname"><span class="pre">utils.analysis.</span></span><span class="sig-name descname"><span class="pre">summarize_derived_observable</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">magnetization_series</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">energy_series</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">temperature</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">L</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">observable</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">method</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'blocking'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">confidence</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.68</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">bootstrap_resamples</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">float</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="../_modules/utils/analysis.html#summarize_derived_observable"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#utils.analysis.summarize_derived_observable" title="Link to this definition"></a></dt>
+<dd><p>Summarize derived observables (chi, Cv) with uncertainty estimates.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="utils.analysis.summarize_entropy_observable">
+<span class="sig-prename descclassname"><span class="pre">utils.analysis.</span></span><span class="sig-name descname"><span class="pre">summarize_entropy_observable</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">temperatures</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">specific_heat_samples</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">confidence</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.68</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">s_ref</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">specific_heat_err</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">method</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'bootstrap'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">bootstrap_resamples</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">400</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rng_seed</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">ndarray</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="../_modules/utils/analysis.html#summarize_entropy_observable"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#utils.analysis.summarize_entropy_observable" title="Link to this definition"></a></dt>
+<dd><p>Summarize entropy from replicate specific-heat curves.</p>
+<p>Each replicate column is converted to an entropy curve via
+<a class="reference internal" href="#utils.analysis.calculate_entropy" title="utils.analysis.calculate_entropy"><code class="xref py py-func docutils literal notranslate"><span class="pre">calculate_entropy()</span></code></a>, then uncertainty is computed either via
+replicate spread (blocking-like) or bootstrap over replicate curves.
+For a single finite replicate, uncertainty is reported as NaN unless
+<code class="docutils literal notranslate"><span class="pre">specific_heat_err</span></code> is provided, in which case entropy uncertainty is
+propagated from pointwise specific-heat errors.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="utils.analysis.summarize_primary_observable">
+<span class="sig-prename descclassname"><span class="pre">utils.analysis.</span></span><span class="sig-name descname"><span class="pre">summarize_primary_observable</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">time_series</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">confidence</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.68</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">float</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="../_modules/utils/analysis.html#summarize_primary_observable"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#utils.analysis.summarize_primary_observable" title="Link to this definition"></a></dt>
+<dd><p>Summarize a primary observable with blocking-based uncertainty.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="utils.analysis.summarize_replicate_samples">
+<span class="sig-prename descclassname"><span class="pre">utils.analysis.</span></span><span class="sig-name descname"><span class="pre">summarize_replicate_samples</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">samples</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">confidence</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.68</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">ndarray</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">float</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="../_modules/utils/analysis.html#summarize_replicate_samples"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#utils.analysis.summarize_replicate_samples" title="Link to this definition"></a></dt>
+<dd><p>Summarize replicate samples using NaN-safe median and percentile bands.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="utils.analysis.summarize_seed_ensemble">
+<span class="sig-prename descclassname"><span class="pre">utils.analysis.</span></span><span class="sig-name descname"><span class="pre">summarize_seed_ensemble</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">values</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">within_seed_errors</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">confidence</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.68</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">float</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="../_modules/utils/analysis.html#summarize_seed_ensemble"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#utils.analysis.summarize_seed_ensemble" title="Link to this definition"></a></dt>
+<dd><p>Aggregate per-seed estimates into one mean with hierarchical uncertainty.</p>
+<p>The total variance combines between-seed and within-seed components:
+Var(mean) = Var_between / n_seeds + mean(Var_within) / n_seeds.</p>
 </dd></dl>
 
 </section>
@@ -126,7 +364,7 @@
 <p>Provides adaptive and two-start convergence equilibration routines, together
 with the underlying relaxation-time estimation and quasi-steady-state detection
 helpers that support them.  These algorithms were previously split between
-<code class="docutils literal notranslate"><span class="pre">utils.system_helpers</span></code> (equilibrate functions) and <code class="docutils literal notranslate"><span class="pre">utils.physics_helpers</span></code>
+<code class="docutils literal notranslate"><span class="pre">utils.system</span></code> (equilibrate functions) and <code class="docutils literal notranslate"><span class="pre">utils.analysis</span></code>
 (relaxation diagnostic helpers), which required a lazy cross-import to avoid
 circular dependencies.  Unifying them here eliminates that workaround.</p>
 <dl class="py function">
@@ -264,6 +502,41 @@ nearly variance-free (e.g. in the deep ordered phase near T=0).</p>
 </dd></dl>
 
 </section>
+<section id="module-utils.evolution_helpers">
+<span id="utils-evolution-helpers-module"></span><h2>utils.evolution_helpers module<a class="headerlink" href="#module-utils.evolution_helpers" title="Link to this heading"></a></h2>
+<p>Shared infrastructure for ordering evolution visualisation scripts.</p>
+<p>Provides the snapshot loop and figure generation shared by the Ising, XY,
+and Clock ordering-evolution scripts.</p>
+<dl class="py function">
+<dt class="sig sig-object py" id="utils.evolution_helpers.run_ordering_evolution">
+<span class="sig-prename descclassname"><span class="pre">utils.evolution_helpers.</span></span><span class="sig-name descname"><span class="pre">run_ordering_evolution</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">model_cls</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">type</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">model_kwargs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">capture_vorticity</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">title</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">size</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">temp</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">step_targets</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">list</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">output_dir</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">logger</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Logger</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="../_modules/utils/evolution_helpers.html#run_ordering_evolution"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#utils.evolution_helpers.run_ordering_evolution" title="Link to this definition"></a></dt>
+<dd><p>Run an ordering evolution simulation and save the multi-panel figure.</p>
+<p>Quenches the model to <code class="docutils literal notranslate"><span class="pre">temp</span></code>, advances to each step in
+<code class="docutils literal notranslate"><span class="pre">step_targets</span></code>, captures spin configurations and correlation functions,
+optionally captures vorticity maps, and writes the figure to
+<code class="docutils literal notranslate"><span class="pre">output_dir</span></code>.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>model_cls</strong> (<em>type</em>) – Simulation class to instantiate (e.g. <code class="docutils literal notranslate"><span class="pre">XYSimulation</span></code>).</p></li>
+<li><p><strong>model_kwargs</strong> (<em>dict</em><em>[</em><em>str</em><em>, </em><em>Any</em><em>]</em>) – Extra keyword arguments forwarded to the constructor beyond <code class="docutils literal notranslate"><span class="pre">size</span></code>,
+<code class="docutils literal notranslate"><span class="pre">temp</span></code>, and <code class="docutils literal notranslate"><span class="pre">update='random'</span></code>.</p></li>
+<li><p><strong>capture_vorticity</strong> (<em>bool</em>) – Whether to record vorticity maps at each snapshot. Pass <code class="docutils literal notranslate"><span class="pre">True</span></code> for
+vector-spin models (XY, Clock) and <code class="docutils literal notranslate"><span class="pre">False</span></code> for scalar models
+(Ising). Controls <code class="docutils literal notranslate"><span class="pre">is_vector</span></code> in the output figure.</p></li>
+<li><p><strong>title</strong> (<em>str</em>) – Figure-level suptitle.</p></li>
+<li><p><strong>size</strong> (<em>int</em>) – Linear lattice size L.</p></li>
+<li><p><strong>temp</strong> (<em>float</em>) – Quench temperature T.</p></li>
+<li><p><strong>step_targets</strong> (<em>list</em><em>[</em><em>int</em><em>]</em>) – MC step counts at which to capture snapshots. Need not be sorted;
+the function sorts them internally.</p></li>
+<li><p><strong>output_dir</strong> (<em>str</em>) – Directory in which to write the output figure.</p></li>
+<li><p><strong>logger</strong> (<em>logging.Logger</em><em>, </em><em>optional</em>) – Logger to use; creates a module-level logger if not provided.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+</section>
 <section id="module-utils.exceptions">
 <span id="utils-exceptions-module"></span><h2>utils.exceptions module<a class="headerlink" href="#module-utils.exceptions" title="Link to this heading"></a></h2>
 <p>Project-specific exception types for analysis and runtime failures.</p>
@@ -289,251 +562,66 @@ nearly variance-free (e.g. in the deep ordered phase near T=0).</p>
 </dd></dl>
 
 </section>
-<section id="module-utils.physics_helpers">
-<span id="utils-physics-helpers-module"></span><h2>utils.physics_helpers module<a class="headerlink" href="#module-utils.physics_helpers" title="Link to this heading"></a></h2>
-<p>Physics-related utility functions for calculating thermodynamic observables and correlations.</p>
+<section id="module-utils.kinetics_helpers">
+<span id="utils-kinetics-helpers-module"></span><h2>utils.kinetics_helpers module<a class="headerlink" href="#module-utils.kinetics_helpers" title="Link to this heading"></a></h2>
+<p>Shared infrastructure for ordering kinetics analysis scripts.</p>
+<p>Provides the simulation loop, power-law fitting, and result plotting
+shared by the Ising, XY, and Clock ordering-kinetics scripts. The
+<code class="docutils literal notranslate"><span class="pre">compute_mean_intercept_length</span></code> function is also placed here as a
+reusable domain-size estimator for scalar-spin models.</p>
 <dl class="py function">
-<dt class="sig sig-object py" id="utils.physics_helpers.blocking_error">
-<span class="sig-prename descclassname"><span class="pre">utils.physics_helpers.</span></span><span class="sig-name descname"><span class="pre">blocking_error</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">time_series</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">min_block_size</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">2</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">max_block_size</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">float</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="../_modules/utils/physics_helpers.html#blocking_error"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#utils.physics_helpers.blocking_error" title="Link to this definition"></a></dt>
-<dd><p>Estimate standard error using standard blocking/binning analysis.</p>
+<dt class="sig sig-object py" id="utils.kinetics_helpers.compute_mean_intercept_length">
+<span class="sig-prename descclassname"><span class="pre">utils.kinetics_helpers.</span></span><span class="sig-name descname"><span class="pre">compute_mean_intercept_length</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">sim</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Any</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">float</span></span></span><a class="reference internal" href="../_modules/utils/kinetics_helpers.html#compute_mean_intercept_length"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#utils.kinetics_helpers.compute_mean_intercept_length" title="Link to this definition"></a></dt>
+<dd><p>Estimate domain size via the stereological mean intercept length (MIL).</p>
+<p>Counts domain-wall crossings along every row and column of the lattice,
+including the periodic wrap-around crossing, then divides the total line
+length by the crossing count to obtain the mean intercept length.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>sim</strong> (<em>Any</em>) – A simulation instance with a <code class="docutils literal notranslate"><span class="pre">spins</span></code> attribute (an integer-sign
+array) and a <code class="docutils literal notranslate"><span class="pre">size</span></code> property giving the linear lattice dimension.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Estimated domain size in lattice units. Returns <code class="docutils literal notranslate"><span class="pre">float(size)</span></code> when
+there are no domain walls (fully ordered state).</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>float</p>
+</dd>
+</dl>
 </dd></dl>
 
 <dl class="py function">
-<dt class="sig sig-object py" id="utils.physics_helpers.calculate_autocorr">
-<span class="sig-prename descclassname"><span class="pre">utils.physics_helpers.</span></span><span class="sig-name descname"><span class="pre">calculate_autocorr</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">time_series</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">max_lag</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">window_constant</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">6.0</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">ndarray</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">float</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="../_modules/utils/physics_helpers.html#calculate_autocorr"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#utils.physics_helpers.calculate_autocorr" title="Link to this definition"></a></dt>
-<dd><p>Compute the normalized autocorrelation function and integrated autocorrelation time.</p>
-<p>Uses an FFT-based estimator for C(t): zero-pads to 2N, computes the power
-spectrum, IFFTs, and normalizes by variance and the number of pairs at each
-lag.  Applies the Madras-Sokal automatic windowing rule to stop integration
-at the lag W where W = <code class="docutils literal notranslate"><span class="pre">window_constant</span></code> * tau_int, preventing the estimator
-from accumulating noise at large lags.</p>
+<dt class="sig sig-object py" id="utils.kinetics_helpers.run_ordering_kinetics">
+<span class="sig-prename descclassname"><span class="pre">utils.kinetics_helpers.</span></span><span class="sig-name descname"><span class="pre">run_ordering_kinetics</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">model_cls</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">type</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">model_kwargs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">third_metric_fn</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Callable</span><span class="p"><span class="pre">[</span></span><span class="p"><span class="pre">[</span></span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">float</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">third_metric_label</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">title</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">left_title</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">right_title</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">size</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">temp</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">max_steps</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">samples</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">fit_min</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">output_dir</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">y_label</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'Characteristic</span> <span class="pre">Length</span> <span class="pre">Scale</span> <span class="pre">$L(t)$</span> <span class="pre">(lattice</span> <span class="pre">units)'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">logger</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Logger</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="../_modules/utils/kinetics_helpers.html#run_ordering_kinetics"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#utils.kinetics_helpers.run_ordering_kinetics" title="Link to this definition"></a></dt>
+<dd><p>Run an ordering kinetics simulation and save the two-panel kinetics figure.</p>
+<p>Quenches the model to <code class="docutils literal notranslate"><span class="pre">temp</span></code>, steps forward to each of <code class="docutils literal notranslate"><span class="pre">samples</span></code>
+logarithmically spaced targets up to <code class="docutils literal notranslate"><span class="pre">max_steps</span></code>, measures growth
+scales and a model-specific third metric, fits power laws, and writes
+the figure to <code class="docutils literal notranslate"><span class="pre">output_dir</span></code>.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>time_series</strong> (<em>1-D array</em><em> of </em><em>sequential measurements</em><em> (</em><em>e.g. magnetization</em><em>)</em><em>.</em>)</p></li>
-<li><p><strong>max_lag</strong> (Maximum lag to compute.  Defaults to <code class="docutils literal notranslate"><span class="pre">len(time_series)</span> <span class="pre">//</span> <span class="pre">2</span></code>.)</p></li>
-<li><p><strong>window_constant</strong> (<em>Multiplier for the Madras-Sokal window</em><em> (</em><em>default 6.0</em><em>)</em><em>.</em>)</p></li>
-</ul>
-</dd>
-<dt class="field-even">Returns<span class="colon">:</span></dt>
-<dd class="field-even"><p><ul class="simple">
-<li><p>A tuple <code class="docutils literal notranslate"><span class="pre">(C_t,</span> <span class="pre">tau_int)</span></code> where <code class="docutils literal notranslate"><span class="pre">C_t</span></code> is the normalized autocorrelation</p></li>
-<li><p>array truncated at the window endpoint, and <code class="docutils literal notranslate"><span class="pre">tau_int</span></code> is the integrated</p></li>
-<li><p><em>autocorrelation time (scalar).</em></p></li>
-</ul>
-</p>
-</dd>
-<dt class="field-odd">Raises<span class="colon">:</span></dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>ValueError</strong> – If <code class="docutils literal notranslate"><span class="pre">time_series</span></code> has fewer than 3 elements.:</p></li>
-<li><p><a class="reference internal" href="#utils.exceptions.ZeroVarianceAutocorrelationError" title="utils.exceptions.ZeroVarianceAutocorrelationError"><strong>ZeroVarianceAutocorrelationError</strong></a> – If <code class="docutils literal notranslate"><span class="pre">time_series</span></code> has zero variance.:</p></li>
+<li><p><strong>model_cls</strong> (<em>type</em>) – Simulation class to instantiate (e.g. <code class="docutils literal notranslate"><span class="pre">IsingSimulation</span></code>).</p></li>
+<li><p><strong>model_kwargs</strong> (<em>dict</em><em>[</em><em>str</em><em>, </em><em>Any</em><em>]</em>) – Extra keyword arguments forwarded to the constructor beyond <code class="docutils literal notranslate"><span class="pre">size</span></code>,
+<code class="docutils literal notranslate"><span class="pre">temp</span></code>, and <code class="docutils literal notranslate"><span class="pre">update='random'</span></code>.</p></li>
+<li><p><strong>third_metric_fn</strong> (<em>Callable</em><em>[</em><em>[</em><em>Any</em><em>]</em><em>, </em><em>float</em><em>]</em>) – Called with the live simulation instance at each measurement step;
+returns a scalar third metric (e.g. vortex density or MIL).</p></li>
+<li><p><strong>third_metric_label</strong> (<em>str</em>) – Y-axis label for the third-metric panel.</p></li>
+<li><p><strong>title</strong> (<em>str</em>) – Figure-level suptitle.</p></li>
+<li><p><strong>left_title</strong> (<em>str</em>) – Title for the left (growth-scale) subplot.</p></li>
+<li><p><strong>right_title</strong> (<em>str</em>) – Title for the right (third-metric) subplot.</p></li>
+<li><p><strong>size</strong> (<em>int</em>) – Linear lattice size L.</p></li>
+<li><p><strong>temp</strong> (<em>float</em>) – Quench temperature T.</p></li>
+<li><p><strong>max_steps</strong> (<em>int</em>) – Total MC steps to run.</p></li>
+<li><p><strong>samples</strong> (<em>int</em>) – Number of logarithmically spaced measurement points.</p></li>
+<li><p><strong>fit_min</strong> (<em>int</em>) – Minimum MC step used for power-law fitting.</p></li>
+<li><p><strong>output_dir</strong> (<em>str</em>) – Directory in which to write the output figure.</p></li>
+<li><p><strong>y_label</strong> (<em>str</em><em>, </em><em>optional</em>) – Y-axis label for the growth-scale panel.</p></li>
+<li><p><strong>logger</strong> (<em>logging.Logger</em><em>, </em><em>optional</em>) – Logger to use; creates a module-level logger if not provided.</p></li>
 </ul>
 </dd>
 </dl>
-</dd></dl>
-
-<dl class="py function">
-<dt class="sig sig-object py" id="utils.physics_helpers.calculate_entropy">
-<span class="sig-prename descclassname"><span class="pre">utils.physics_helpers.</span></span><span class="sig-name descname"><span class="pre">calculate_entropy</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">temperatures</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">specific_heat</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">s_ref</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.0</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">ndarray</span></span></span><a class="reference internal" href="../_modules/utils/physics_helpers.html#calculate_entropy"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#utils.physics_helpers.calculate_entropy" title="Link to this definition"></a></dt>
-<dd><p>Compute entropy by integrating specific heat over a temperature sweep.</p>
-<p>Integrates C(T)/T from high temperature downward so that
-S(T_max) = <code class="docutils literal notranslate"><span class="pre">s_ref</span></code> and S(T) = s_ref - integral from T to T_max of C/T dT’.
-This avoids the C/T divergence near T = 0 and anchors the result at the
-high-temperature limit where the entropy is analytically known.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>temperatures</strong> (<em>1-D array</em><em> of </em><em>temperature values. Need not be sorted.</em>)</p></li>
-<li><p><strong>specific_heat</strong> (<em>Specific heat C_v at each temperature</em><em> (</em><em>same length</em><em>)</em><em>.</em>)</p></li>
-<li><p><strong>s_ref</strong> (Reference entropy at the highest temperature. Pass <code class="docutils literal notranslate"><span class="pre">0.0</span></code>) – for relative entropy or <code class="docutils literal notranslate"><span class="pre">np.log(q)</span></code> (per site, in units of
-k_B) for absolute entropy of a q-state model.</p></li>
-</ul>
-</dd>
-<dt class="field-even">Returns<span class="colon">:</span></dt>
-<dd class="field-even"><p><ul class="simple">
-<li><p><em>1-D array of entropy values, one per temperature, in the original</em></p></li>
-<li><p>unsorted order of <code class="docutils literal notranslate"><span class="pre">temperatures</span></code>.</p></li>
-</ul>
-</p>
-</dd>
-<dt class="field-odd">Raises<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>ValueError</strong> – If arrays differ in length, contain fewer than 2 points,: or include non-positive temperatures.</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py function">
-<dt class="sig sig-object py" id="utils.physics_helpers.calculate_thermodynamics">
-<span class="sig-prename descclassname"><span class="pre">utils.physics_helpers.</span></span><span class="sig-name descname"><span class="pre">calculate_thermodynamics</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">mags</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">engs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">T</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">L</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">float</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">float</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">float</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">float</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="../_modules/utils/physics_helpers.html#calculate_thermodynamics"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#utils.physics_helpers.calculate_thermodynamics" title="Link to this definition"></a></dt>
-<dd><p>Calculate average magnetization, energy, susceptibility, and specific heat.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>mags</strong> (<em>Array</em><em> of </em><em>magnetization measurements.</em>)</p></li>
-<li><p><strong>engs</strong> (<em>Array</em><em> of </em><em>energy measurements.</em>)</p></li>
-<li><p><strong>T</strong> (<em>Temperature.</em>)</p></li>
-<li><p><strong>L</strong> (<em>Linear lattice size.</em>)</p></li>
-</ul>
-</dd>
-<dt class="field-even">Return type<span class="colon">:</span></dt>
-<dd class="field-even"><p>A tuple of (avg_mag, avg_eng, susceptibility, specific_heat).</p>
-</dd>
-<dt class="field-odd">Raises<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>ValueError</strong> – If <code class="docutils literal notranslate"><span class="pre">T</span></code> is not positive or <code class="docutils literal notranslate"><span class="pre">L</span></code> is not a positive integer.:</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py function">
-<dt class="sig sig-object py" id="utils.physics_helpers.compute_kinetics_metrics">
-<span class="sig-prename descclassname"><span class="pre">utils.physics_helpers.</span></span><span class="sig-name descname"><span class="pre">compute_kinetics_metrics</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">sim</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="vibespin.models.html#models.simulation_base.MonteCarloSimulation" title="models.simulation_base.MonteCarloSimulation"><span class="pre">MonteCarloSimulation</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">float</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="../_modules/utils/physics_helpers.html#compute_kinetics_metrics"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#utils.physics_helpers.compute_kinetics_metrics" title="Link to this definition"></a></dt>
-<dd><p>Calculate common kinetics metrics (R_sk, xi) for a simulation state.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>sim</strong> (<em>MonteCarloSimulation instance.</em>)</p>
-</dd>
-<dt class="field-even">Return type<span class="colon">:</span></dt>
-<dd class="field-even"><p>Dictionary containing ‘R_sk’ and ‘xi’.</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py function">
-<dt class="sig sig-object py" id="utils.physics_helpers.estimate_effective_sample_size">
-<span class="sig-prename descclassname"><span class="pre">utils.physics_helpers.</span></span><span class="sig-name descname"><span class="pre">estimate_effective_sample_size</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">time_series</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tau_int</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">float</span></span></span><a class="reference internal" href="../_modules/utils/physics_helpers.html#estimate_effective_sample_size"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#utils.physics_helpers.estimate_effective_sample_size" title="Link to this definition"></a></dt>
-<dd><p>Estimate effective sample size from integrated autocorrelation time.</p>
-</dd></dl>
-
-<dl class="py function">
-<dt class="sig sig-object py" id="utils.physics_helpers.get_averaged_correlation">
-<span class="sig-prename descclassname"><span class="pre">utils.physics_helpers.</span></span><span class="sig-name descname"><span class="pre">get_averaged_correlation</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">sim</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="vibespin.models.html#models.simulation_base.MonteCarloSimulation" title="models.simulation_base.MonteCarloSimulation"><span class="pre">MonteCarloSimulation</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">total_steps</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sample_interval</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">ndarray</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">ndarray</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="../_modules/utils/physics_helpers.html#get_averaged_correlation"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#utils.physics_helpers.get_averaged_correlation" title="Link to this definition"></a></dt>
-<dd><p>Run simulation and average the correlation function over multiple configurations.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>sim</strong> (<em>An instance</em><em> of </em><em>MonteCarloSimulation.</em>)</p></li>
-<li><p><strong>total_steps</strong> (<em>Total number</em><em> of </em><em>MC steps to run.</em>)</p></li>
-<li><p><strong>sample_interval</strong> (<em>Interval between correlation samples. Must be ≥ 1.</em>)</p></li>
-</ul>
-</dd>
-<dt class="field-even">Returns<span class="colon">:</span></dt>
-<dd class="field-even"><p><ul class="simple">
-<li><p><strong>r</strong> (<em>Radial distances.</em>)</p></li>
-<li><p><strong>G_r_avg</strong> (<em>Averaged correlation values.</em>)</p></li>
-</ul>
-</p>
-</dd>
-<dt class="field-odd">Raises<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>ValueError</strong> – If <code class="docutils literal notranslate"><span class="pre">sample_interval</span></code> is less than 1 or <code class="docutils literal notranslate"><span class="pre">total_steps</span></code> is negative.:</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py function">
-<dt class="sig sig-object py" id="utils.physics_helpers.pair_correlation_x">
-<span class="sig-prename descclassname"><span class="pre">utils.physics_helpers.</span></span><span class="sig-name descname"><span class="pre">pair_correlation_x</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">spins</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">ndarray</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">ndarray</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="../_modules/utils/physics_helpers.html#pair_correlation_x"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#utils.physics_helpers.pair_correlation_x" title="Link to this definition"></a></dt>
-<dd><p>Compute the real-space spin-spin pair correlation G(r) along x.</p>
-<p>Uses the Wiener-Khinchin theorem: the autocorrelation of each row is the
-inverse FFT of the row’s power spectrum.  Results are averaged over all
-rows (y positions) and normalised so G(0) = 1.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>spins</strong> (<em>(</em><em>N</em><em>, </em><em>N</em><em>) or </em><em>(</em><em>N</em><em>, </em><em>N</em><em>, </em><em>2</em><em>) </em><em>spin array.</em>)</p>
-</dd>
-<dt class="field-even">Returns<span class="colon">:</span></dt>
-<dd class="field-even"><p><ul class="simple">
-<li><p><strong>r_vals</strong> (<em>Lag distances r = 0 … N//2 in lattice units.</em>)</p></li>
-<li><p><strong>G</strong> (<em>Normalised pair correlation G(r) / G(0).</em>)</p></li>
-</ul>
-</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py function">
-<dt class="sig sig-object py" id="utils.physics_helpers.power_fit">
-<span class="sig-prename descclassname"><span class="pre">utils.physics_helpers.</span></span><span class="sig-name descname"><span class="pre">power_fit</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">t_arr</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">y_arr</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mask</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">float</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">float</span><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">None</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">None</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="../_modules/utils/physics_helpers.html#power_fit"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#utils.physics_helpers.power_fit" title="Link to this definition"></a></dt>
-<dd><p>Fit a power law y = prefactor * t^exponent via log-log linear regression.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>t_arr</strong> (<em>Independent variable array</em><em> (</em><em>e.g.</em><em>, </em><em>time</em><em> or </em><em>length scale</em><em>)</em><em>.</em>)</p></li>
-<li><p><strong>y_arr</strong> (<em>Dependent variable array; only positive values are used in the fit.</em>)</p></li>
-<li><p><strong>mask</strong> (<em>Boolean mask selecting the subset</em><em> of </em><em>points to include.</em>)</p></li>
-</ul>
-</dd>
-<dt class="field-even">Returns<span class="colon">:</span></dt>
-<dd class="field-even"><p><ul class="simple">
-<li><p><strong>exponent</strong> (<em>Fitted power-law exponent, or None if fewer than 3 valid points.</em>)</p></li>
-<li><p><strong>prefactor</strong> (<em>Fitted prefactor, or None if fewer than 3 valid points.</em>)</p></li>
-</ul>
-</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py function">
-<dt class="sig sig-object py" id="utils.physics_helpers.radial_average_sk">
-<span class="sig-prename descclassname"><span class="pre">utils.physics_helpers.</span></span><span class="sig-name descname"><span class="pre">radial_average_sk</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">spins</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">ndarray</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">ndarray</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="../_modules/utils/physics_helpers.html#radial_average_sk"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#utils.physics_helpers.radial_average_sk" title="Link to this definition"></a></dt>
-<dd><p>Compute the circularly averaged structure factor <span class="math notranslate nohighlight">\(S(|k|)\)</span>.</p>
-<p>Bins <span class="math notranslate nohighlight">\(S(k)\)</span> by integer pixel radius from the DC centre of the shifted FFT,
-then averages within each annular bin.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>spins</strong> (<em>(</em><em>N</em><em>, </em><em>N</em><em>) or </em><em>(</em><em>N</em><em>, </em><em>N</em><em>, </em><em>2</em><em>) </em><em>spin array.</em>)</p>
-</dd>
-<dt class="field-even">Returns<span class="colon">:</span></dt>
-<dd class="field-even"><p><ul class="simple">
-<li><p><strong>k_vals</strong> (<em>Wavevector magnitudes in units of 2π/N (reciprocal lattice).</em>)</p></li>
-<li><p><strong>S_radial</strong> (<em>Mean S(k) value for each annular bin.</em>)</p></li>
-</ul>
-</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py function">
-<dt class="sig sig-object py" id="utils.physics_helpers.summarize_asymmetric_replicate_uncertainty">
-<span class="sig-prename descclassname"><span class="pre">utils.physics_helpers.</span></span><span class="sig-name descname"><span class="pre">summarize_asymmetric_replicate_uncertainty</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">samples</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">confidence</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.68</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">float</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="../_modules/utils/physics_helpers.html#summarize_asymmetric_replicate_uncertainty"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#utils.physics_helpers.summarize_asymmetric_replicate_uncertainty" title="Link to this definition"></a></dt>
-<dd><p>Summarize 1-D replicate samples with asymmetric percentile intervals.</p>
-</dd></dl>
-
-<dl class="py function">
-<dt class="sig sig-object py" id="utils.physics_helpers.summarize_derived_observable">
-<span class="sig-prename descclassname"><span class="pre">utils.physics_helpers.</span></span><span class="sig-name descname"><span class="pre">summarize_derived_observable</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">magnetization_series</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">energy_series</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">temperature</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">L</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">observable</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">method</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'blocking'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">confidence</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.68</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">bootstrap_resamples</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">float</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="../_modules/utils/physics_helpers.html#summarize_derived_observable"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#utils.physics_helpers.summarize_derived_observable" title="Link to this definition"></a></dt>
-<dd><p>Summarize derived observables (chi, Cv) with uncertainty estimates.</p>
-</dd></dl>
-
-<dl class="py function">
-<dt class="sig sig-object py" id="utils.physics_helpers.summarize_entropy_observable">
-<span class="sig-prename descclassname"><span class="pre">utils.physics_helpers.</span></span><span class="sig-name descname"><span class="pre">summarize_entropy_observable</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">temperatures</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">specific_heat_samples</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">confidence</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.68</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">s_ref</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">specific_heat_err</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">method</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'bootstrap'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">bootstrap_resamples</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">400</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rng_seed</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">ndarray</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="../_modules/utils/physics_helpers.html#summarize_entropy_observable"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#utils.physics_helpers.summarize_entropy_observable" title="Link to this definition"></a></dt>
-<dd><p>Summarize entropy from replicate specific-heat curves.</p>
-<p>Each replicate column is converted to an entropy curve via
-<a class="reference internal" href="#utils.physics_helpers.calculate_entropy" title="utils.physics_helpers.calculate_entropy"><code class="xref py py-func docutils literal notranslate"><span class="pre">calculate_entropy()</span></code></a>, then uncertainty is computed either via
-replicate spread (blocking-like) or bootstrap over replicate curves.
-For a single finite replicate, uncertainty is reported as NaN unless
-<code class="docutils literal notranslate"><span class="pre">specific_heat_err</span></code> is provided, in which case entropy uncertainty is
-propagated from pointwise specific-heat errors.</p>
-</dd></dl>
-
-<dl class="py function">
-<dt class="sig sig-object py" id="utils.physics_helpers.summarize_primary_observable">
-<span class="sig-prename descclassname"><span class="pre">utils.physics_helpers.</span></span><span class="sig-name descname"><span class="pre">summarize_primary_observable</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">time_series</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">confidence</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.68</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">float</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="../_modules/utils/physics_helpers.html#summarize_primary_observable"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#utils.physics_helpers.summarize_primary_observable" title="Link to this definition"></a></dt>
-<dd><p>Summarize a primary observable with blocking-based uncertainty.</p>
-</dd></dl>
-
-<dl class="py function">
-<dt class="sig sig-object py" id="utils.physics_helpers.summarize_replicate_samples">
-<span class="sig-prename descclassname"><span class="pre">utils.physics_helpers.</span></span><span class="sig-name descname"><span class="pre">summarize_replicate_samples</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">samples</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">confidence</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.68</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">ndarray</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">float</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="../_modules/utils/physics_helpers.html#summarize_replicate_samples"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#utils.physics_helpers.summarize_replicate_samples" title="Link to this definition"></a></dt>
-<dd><p>Summarize replicate samples using NaN-safe median and percentile bands.</p>
-</dd></dl>
-
-<dl class="py function">
-<dt class="sig sig-object py" id="utils.physics_helpers.summarize_seed_ensemble">
-<span class="sig-prename descclassname"><span class="pre">utils.physics_helpers.</span></span><span class="sig-name descname"><span class="pre">summarize_seed_ensemble</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">values</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">within_seed_errors</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">confidence</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.68</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">float</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="../_modules/utils/physics_helpers.html#summarize_seed_ensemble"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#utils.physics_helpers.summarize_seed_ensemble" title="Link to this definition"></a></dt>
-<dd><p>Aggregate per-seed estimates into one mean with hierarchical uncertainty.</p>
-<p>The total variance combines between-seed and within-seed components:
-Var(mean) = Var_between / n_seeds + mean(Var_within) / n_seeds.</p>
 </dd></dl>
 
 </section>
@@ -543,7 +631,7 @@ Var(mean) = Var_between / n_seeds + mean(Var_within) / n_seeds.</p>
 <p>Groups the filesystem output helper (<a class="reference internal" href="#utils.plotting.save_plot" title="utils.plotting.save_plot"><code class="xref py py-func docutils literal notranslate"><span class="pre">save_plot()</span></code></a>,
 <a class="reference internal" href="#utils.plotting.ensure_results_dir" title="utils.plotting.ensure_results_dir"><code class="xref py py-func docutils literal notranslate"><span class="pre">ensure_results_dir()</span></code></a>) together with the three domain-specific
 visualisation functions that were previously embedded in
-<code class="docutils literal notranslate"><span class="pre">utils.system_helpers</span></code>.  Keeping visualisation logic here makes
+<code class="docutils literal notranslate"><span class="pre">utils.system</span></code>.  Keeping visualisation logic here makes
 <code class="docutils literal notranslate"><span class="pre">system_helpers</span></code> a pure infrastructure module (logging, parallelism) with
 no matplotlib dependency.</p>
 <dl class="py function">
@@ -671,15 +759,360 @@ saved alongside the main figure.</p>
 </dd></dl>
 
 </section>
-<section id="module-utils.system_helpers">
-<span id="utils-system-helpers-module"></span><h2>utils.system_helpers module<a class="headerlink" href="#module-utils.system_helpers" title="Link to this heading"></a></h2>
-<p>Technical infrastructure for logging, filesystem operations, and parallel execution.</p>
-<p>Domain plots and their file-output helpers live in <a class="reference internal" href="#module-utils.plotting" title="utils.plotting"><code class="xref py py-mod docutils literal notranslate"><span class="pre">utils.plotting</span></code></a>;
-equilibration algorithms live in <a class="reference internal" href="#module-utils.equilibration" title="utils.equilibration"><code class="xref py py-mod docutils literal notranslate"><span class="pre">utils.equilibration</span></code></a>.  Both are
-re-exported here so that existing call sites require no changes.</p>
+<section id="module-utils.sweep_helpers">
+<span id="utils-sweep-helpers-module"></span><h2>utils.sweep_helpers module<a class="headerlink" href="#module-utils.sweep_helpers" title="Link to this heading"></a></h2>
+<p>Shared infrastructure for per-temperature Monte Carlo sweep workers.</p>
+<p>This module provides the two-layer decomposition used by all three model
+temperature sweeps (Ising, XY, Clock).</p>
+<p><code class="docutils literal notranslate"><span class="pre">simulate_at_temperature</span></code> owns equilibration and raw measurement.
+<code class="docutils literal notranslate"><span class="pre">compute_thermo_observables</span></code> owns statistical summarization.
+<code class="docutils literal notranslate"><span class="pre">simulate_thermo_point</span></code> chains both layers and is the worker function passed
+to <code class="docutils literal notranslate"><span class="pre">parallel_sweep</span></code>.</p>
+<p>Post-processing helpers <code class="docutils literal notranslate"><span class="pre">build_uncertainty_bundle</span></code> and <code class="docutils literal notranslate"><span class="pre">build_quality_flags</span></code>
+aggregate per-seed results over a full temperature axis and are also shared here,
+eliminating identical copies that previously lived in each sweep script.</p>
+<dl class="py class">
+<dt class="sig sig-object py" id="utils.sweep_helpers.RawThermoData">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">utils.sweep_helpers.</span></span><span class="sig-name descname"><span class="pre">RawThermoData</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">temperature_index</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">seed_index</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">equilibrated_flag</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">equilibration_steps</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">temperature</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">size</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mags_arr</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">np.ndarray</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">engs_arr</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">np.ndarray</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/utils/sweep_helpers.html#RawThermoData"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#utils.sweep_helpers.RawThermoData" title="Link to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">NamedTuple</span></code></p>
+<p>Raw simulation output from one (temperature, seed) equilibration + measurement.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>temperature_index</strong> (<em>int</em>) – Index of this temperature in the sweep’s temperature array.</p></li>
+<li><p><strong>seed_index</strong> (<em>int</em>) – Replica index within the multi-seed ensemble for this temperature.</p></li>
+<li><p><strong>equilibrated_flag</strong> (<em>float</em>) – 1.0 if equilibration converged, 0.0 otherwise.</p></li>
+<li><p><strong>equilibration_steps</strong> (<em>float</em>) – Total equilibration steps taken (for diagnostics).</p></li>
+<li><p><strong>temperature</strong> (<em>float</em>) – Temperature at which the simulation was run.</p></li>
+<li><p><strong>size</strong> (<em>int</em>) – Linear lattice dimension L.</p></li>
+<li><p><strong>mags_arr</strong> (<em>np.ndarray</em><em> or </em><em>None</em>) – Magnetisation time series of length <code class="docutils literal notranslate"><span class="pre">meas_steps</span></code>.
+<code class="docutils literal notranslate"><span class="pre">None</span></code> when equilibration did not converge.</p></li>
+<li><p><strong>engs_arr</strong> (<em>np.ndarray</em><em> or </em><em>None</em>) – Energy per site time series of length <code class="docutils literal notranslate"><span class="pre">meas_steps</span></code>.
+<code class="docutils literal notranslate"><span class="pre">None</span></code> when equilibration did not converge.</p></li>
+</ul>
+</dd>
+</dl>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="utils.sweep_helpers.RawThermoData.engs_arr">
+<span class="sig-name descname"><span class="pre">engs_arr</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">ndarray</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><a class="headerlink" href="#utils.sweep_helpers.RawThermoData.engs_arr" title="Link to this definition"></a></dt>
+<dd><p>Alias for field number 7</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="utils.sweep_helpers.RawThermoData.equilibrated_flag">
+<span class="sig-name descname"><span class="pre">equilibrated_flag</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">float</span></span><a class="headerlink" href="#utils.sweep_helpers.RawThermoData.equilibrated_flag" title="Link to this definition"></a></dt>
+<dd><p>Alias for field number 2</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="utils.sweep_helpers.RawThermoData.equilibration_steps">
+<span class="sig-name descname"><span class="pre">equilibration_steps</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">float</span></span><a class="headerlink" href="#utils.sweep_helpers.RawThermoData.equilibration_steps" title="Link to this definition"></a></dt>
+<dd><p>Alias for field number 3</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="utils.sweep_helpers.RawThermoData.mags_arr">
+<span class="sig-name descname"><span class="pre">mags_arr</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">ndarray</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><a class="headerlink" href="#utils.sweep_helpers.RawThermoData.mags_arr" title="Link to this definition"></a></dt>
+<dd><p>Alias for field number 6</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="utils.sweep_helpers.RawThermoData.seed_index">
+<span class="sig-name descname"><span class="pre">seed_index</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">int</span></span><a class="headerlink" href="#utils.sweep_helpers.RawThermoData.seed_index" title="Link to this definition"></a></dt>
+<dd><p>Alias for field number 1</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="utils.sweep_helpers.RawThermoData.size">
+<span class="sig-name descname"><span class="pre">size</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">int</span></span><a class="headerlink" href="#utils.sweep_helpers.RawThermoData.size" title="Link to this definition"></a></dt>
+<dd><p>Alias for field number 5</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="utils.sweep_helpers.RawThermoData.temperature">
+<span class="sig-name descname"><span class="pre">temperature</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">float</span></span><a class="headerlink" href="#utils.sweep_helpers.RawThermoData.temperature" title="Link to this definition"></a></dt>
+<dd><p>Alias for field number 4</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="utils.sweep_helpers.RawThermoData.temperature_index">
+<span class="sig-name descname"><span class="pre">temperature_index</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">int</span></span><a class="headerlink" href="#utils.sweep_helpers.RawThermoData.temperature_index" title="Link to this definition"></a></dt>
+<dd><p>Alias for field number 0</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="utils.sweep_helpers.ThermoPoint">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">utils.sweep_helpers.</span></span><span class="sig-name descname"><span class="pre">ThermoPoint</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">temperature</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">size</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">meas_steps</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">eq_probe_steps</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">eq_max_steps</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">eq_qs_sigma_threshold</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">eq_qs_min_steps</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">qs_allow_stuck</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">prefer_ordered_start</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">temperature_index</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">seed_index</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">seed</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">model_cls</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">type</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">model_kwargs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">confidence</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">derived_method</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">bootstrap_resamples</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/utils/sweep_helpers.html#ThermoPoint"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#utils.sweep_helpers.ThermoPoint" title="Link to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">NamedTuple</span></code></p>
+<p>Typed worker payload for one (temperature, seed) point in a sweep.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>temperature</strong> (<em>float</em>) – Simulation temperature T.</p></li>
+<li><p><strong>size</strong> (<em>int</em>) – Linear lattice dimension L.</p></li>
+<li><p><strong>meas_steps</strong> (<em>int</em>) – Number of Monte Carlo sweeps to record after equilibration.</p></li>
+<li><p><strong>eq_probe_steps</strong> (<em>int</em>) – Chunk size passed to <code class="docutils literal notranslate"><span class="pre">convergence_equilibrate_with_status</span></code>.</p></li>
+<li><p><strong>eq_max_steps</strong> (<em>int</em>) – Hard cap on total equilibration steps.</p></li>
+<li><p><strong>eq_qs_sigma_threshold</strong> (<em>float</em>) – Tail-std threshold for quasi-steady stuck-state detection.</p></li>
+<li><p><strong>eq_qs_min_steps</strong> (<em>int</em>) – Minimum steps before stuck detection is allowed to fire.</p></li>
+<li><p><strong>qs_allow_stuck</strong> (<em>bool</em>) – If True, a quasi-steady stuck state counts as convergence (Ising low-T).</p></li>
+<li><p><strong>prefer_ordered_start</strong> (<em>bool</em>) – If True, switch to the ordered-start simulation when its magnetisation
+substantially exceeds the random-start value.  Appropriate for Ising below T_c.</p></li>
+<li><p><strong>temperature_index</strong> (<em>int</em>) – Index of this temperature in the sweep’s temperature array.</p></li>
+<li><p><strong>seed_index</strong> (<em>int</em>) – Replica index within the multi-seed ensemble for this temperature.</p></li>
+<li><p><strong>seed</strong> (<em>int</em>) – RNG seed for both the random- and ordered-start simulations.</p></li>
+<li><p><strong>model_cls</strong> (<em>type</em>) – Simulation class to instantiate (e.g. <code class="docutils literal notranslate"><span class="pre">IsingSimulation</span></code>). Must be
+importable by its qualified name so it survives multiprocessing pickle.</p></li>
+<li><p><strong>model_kwargs</strong> (<em>dict</em><em>[</em><em>str</em><em>, </em><em>Any</em><em>]</em>) – Extra keyword arguments forwarded to the model constructor beyond
+<code class="docutils literal notranslate"><span class="pre">size</span></code>, <code class="docutils literal notranslate"><span class="pre">temp</span></code>, <code class="docutils literal notranslate"><span class="pre">init_state</span></code>, and <code class="docutils literal notranslate"><span class="pre">seed</span></code>.  Empty dict for
+Ising and XY; carries <code class="docutils literal notranslate"><span class="pre">{'q':</span> <span class="pre">q,</span> <span class="pre">'A':</span> <span class="pre">aniso}</span></code> for Clock.</p></li>
+<li><p><strong>confidence</strong> (<em>float</em>) – Two-sided confidence level for uncertainty intervals (0 &lt; c &lt; 1).</p></li>
+<li><p><strong>derived_method</strong> (<em>str</em>) – Uncertainty method for susceptibility and specific heat
+(<code class="docutils literal notranslate"><span class="pre">'blocking'</span></code> or <code class="docutils literal notranslate"><span class="pre">'bootstrap'</span></code>).</p></li>
+<li><p><strong>bootstrap_resamples</strong> (<em>int</em>) – Bootstrap resamples used when <code class="docutils literal notranslate"><span class="pre">derived_method='bootstrap'</span></code>.</p></li>
+</ul>
+</dd>
+</dl>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="utils.sweep_helpers.ThermoPoint.bootstrap_resamples">
+<span class="sig-name descname"><span class="pre">bootstrap_resamples</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">int</span></span><a class="headerlink" href="#utils.sweep_helpers.ThermoPoint.bootstrap_resamples" title="Link to this definition"></a></dt>
+<dd><p>Alias for field number 16</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="utils.sweep_helpers.ThermoPoint.confidence">
+<span class="sig-name descname"><span class="pre">confidence</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">float</span></span><a class="headerlink" href="#utils.sweep_helpers.ThermoPoint.confidence" title="Link to this definition"></a></dt>
+<dd><p>Alias for field number 14</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="utils.sweep_helpers.ThermoPoint.derived_method">
+<span class="sig-name descname"><span class="pre">derived_method</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">str</span></span><a class="headerlink" href="#utils.sweep_helpers.ThermoPoint.derived_method" title="Link to this definition"></a></dt>
+<dd><p>Alias for field number 15</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="utils.sweep_helpers.ThermoPoint.eq_max_steps">
+<span class="sig-name descname"><span class="pre">eq_max_steps</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">int</span></span><a class="headerlink" href="#utils.sweep_helpers.ThermoPoint.eq_max_steps" title="Link to this definition"></a></dt>
+<dd><p>Alias for field number 4</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="utils.sweep_helpers.ThermoPoint.eq_probe_steps">
+<span class="sig-name descname"><span class="pre">eq_probe_steps</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">int</span></span><a class="headerlink" href="#utils.sweep_helpers.ThermoPoint.eq_probe_steps" title="Link to this definition"></a></dt>
+<dd><p>Alias for field number 3</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="utils.sweep_helpers.ThermoPoint.eq_qs_min_steps">
+<span class="sig-name descname"><span class="pre">eq_qs_min_steps</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">int</span></span><a class="headerlink" href="#utils.sweep_helpers.ThermoPoint.eq_qs_min_steps" title="Link to this definition"></a></dt>
+<dd><p>Alias for field number 6</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="utils.sweep_helpers.ThermoPoint.eq_qs_sigma_threshold">
+<span class="sig-name descname"><span class="pre">eq_qs_sigma_threshold</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">float</span></span><a class="headerlink" href="#utils.sweep_helpers.ThermoPoint.eq_qs_sigma_threshold" title="Link to this definition"></a></dt>
+<dd><p>Alias for field number 5</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="utils.sweep_helpers.ThermoPoint.meas_steps">
+<span class="sig-name descname"><span class="pre">meas_steps</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">int</span></span><a class="headerlink" href="#utils.sweep_helpers.ThermoPoint.meas_steps" title="Link to this definition"></a></dt>
+<dd><p>Alias for field number 2</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="utils.sweep_helpers.ThermoPoint.model_cls">
+<span class="sig-name descname"><span class="pre">model_cls</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">type</span></span><a class="headerlink" href="#utils.sweep_helpers.ThermoPoint.model_cls" title="Link to this definition"></a></dt>
+<dd><p>Alias for field number 12</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="utils.sweep_helpers.ThermoPoint.model_kwargs">
+<span class="sig-name descname"><span class="pre">model_kwargs</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span></span><a class="headerlink" href="#utils.sweep_helpers.ThermoPoint.model_kwargs" title="Link to this definition"></a></dt>
+<dd><p>Alias for field number 13</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="utils.sweep_helpers.ThermoPoint.prefer_ordered_start">
+<span class="sig-name descname"><span class="pre">prefer_ordered_start</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">bool</span></span><a class="headerlink" href="#utils.sweep_helpers.ThermoPoint.prefer_ordered_start" title="Link to this definition"></a></dt>
+<dd><p>Alias for field number 8</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="utils.sweep_helpers.ThermoPoint.qs_allow_stuck">
+<span class="sig-name descname"><span class="pre">qs_allow_stuck</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">bool</span></span><a class="headerlink" href="#utils.sweep_helpers.ThermoPoint.qs_allow_stuck" title="Link to this definition"></a></dt>
+<dd><p>Alias for field number 7</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="utils.sweep_helpers.ThermoPoint.seed">
+<span class="sig-name descname"><span class="pre">seed</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">int</span></span><a class="headerlink" href="#utils.sweep_helpers.ThermoPoint.seed" title="Link to this definition"></a></dt>
+<dd><p>Alias for field number 11</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="utils.sweep_helpers.ThermoPoint.seed_index">
+<span class="sig-name descname"><span class="pre">seed_index</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">int</span></span><a class="headerlink" href="#utils.sweep_helpers.ThermoPoint.seed_index" title="Link to this definition"></a></dt>
+<dd><p>Alias for field number 10</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="utils.sweep_helpers.ThermoPoint.size">
+<span class="sig-name descname"><span class="pre">size</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">int</span></span><a class="headerlink" href="#utils.sweep_helpers.ThermoPoint.size" title="Link to this definition"></a></dt>
+<dd><p>Alias for field number 1</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="utils.sweep_helpers.ThermoPoint.temperature">
+<span class="sig-name descname"><span class="pre">temperature</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">float</span></span><a class="headerlink" href="#utils.sweep_helpers.ThermoPoint.temperature" title="Link to this definition"></a></dt>
+<dd><p>Alias for field number 0</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="utils.sweep_helpers.ThermoPoint.temperature_index">
+<span class="sig-name descname"><span class="pre">temperature_index</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">int</span></span><a class="headerlink" href="#utils.sweep_helpers.ThermoPoint.temperature_index" title="Link to this definition"></a></dt>
+<dd><p>Alias for field number 9</p>
+</dd></dl>
+
+</dd></dl>
+
 <dl class="py function">
-<dt class="sig sig-object py" id="utils.system_helpers.parallel_sweep">
-<span class="sig-prename descclassname"><span class="pre">utils.system_helpers.</span></span><span class="sig-name descname"><span class="pre">parallel_sweep</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">worker_func</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Callable</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">params</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Iterable</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">num_processes</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">list</span></span></span><a class="reference internal" href="../_modules/utils/system_helpers.html#parallel_sweep"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#utils.system_helpers.parallel_sweep" title="Link to this definition"></a></dt>
+<dt class="sig sig-object py" id="utils.sweep_helpers.build_quality_flags">
+<span class="sig-prename descclassname"><span class="pre">utils.sweep_helpers.</span></span><span class="sig-name descname"><span class="pre">build_quality_flags</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">tau_int</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ci_low</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ci_high</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_eff</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">min_effective_samples</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">max_tau_relative_width</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">ndarray</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="../_modules/utils/sweep_helpers.html#build_quality_flags"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#utils.sweep_helpers.build_quality_flags" title="Link to this definition"></a></dt>
+<dd><p>Build per-temperature diagnostic flags for uncertainty quality.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>tau_int</strong> (<em>np.ndarray</em>) – Shape <code class="docutils literal notranslate"><span class="pre">(n_temps,)</span></code>.  Integrated autocorrelation time estimates.</p></li>
+<li><p><strong>ci_low</strong> (<em>np.ndarray</em>) – Shape <code class="docutils literal notranslate"><span class="pre">(n_temps,)</span></code>.  Lower CI bound on <code class="docutils literal notranslate"><span class="pre">tau_int</span></code>.</p></li>
+<li><p><strong>ci_high</strong> (<em>np.ndarray</em>) – Shape <code class="docutils literal notranslate"><span class="pre">(n_temps,)</span></code>.  Upper CI bound on <code class="docutils literal notranslate"><span class="pre">tau_int</span></code>.</p></li>
+<li><p><strong>n_eff</strong> (<em>np.ndarray</em>) – Shape <code class="docutils literal notranslate"><span class="pre">(n_temps,)</span></code>.  Effective sample size estimates.</p></li>
+<li><p><strong>min_effective_samples</strong> (<em>float</em>) – Threshold below which a point is flagged as low-N_eff.</p></li>
+<li><p><strong>max_tau_relative_width</strong> (<em>float</em>) – CI-width-to-tau ratio above which the tau estimate is considered
+unstable.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Keys: <code class="docutils literal notranslate"><span class="pre">'undefined_autocorr_flag'</span></code>, <code class="docutils literal notranslate"><span class="pre">'low_effective_sample_flag'</span></code>,
+<code class="docutils literal notranslate"><span class="pre">'tau_interval_unstable_flag'</span></code>.  All uint8 arrays of length
+<code class="docutils literal notranslate"><span class="pre">n_temps</span></code>.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>dict[str, np.ndarray]</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="utils.sweep_helpers.build_uncertainty_bundle">
+<span class="sig-prename descclassname"><span class="pre">utils.sweep_helpers.</span></span><span class="sig-name descname"><span class="pre">build_uncertainty_bundle</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">values_by_seed</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">errors_by_seed</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tau_by_seed</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_eff_by_seed</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">confidence</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">ndarray</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="../_modules/utils/sweep_helpers.html#build_uncertainty_bundle"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#utils.sweep_helpers.build_uncertainty_bundle" title="Link to this definition"></a></dt>
+<dd><p>Aggregate per-seed results for one observable across a temperature axis.</p>
+<p>For multi-seed sweeps, applies hierarchical seed-ensemble aggregation via
+<code class="docutils literal notranslate"><span class="pre">summarize_seed_ensemble</span></code>.  Falls back to direct single-seed blocking
+results when only one seed is available.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>values_by_seed</strong> (<em>np.ndarray</em>) – Shape <code class="docutils literal notranslate"><span class="pre">(n_temps,</span> <span class="pre">n_seeds)</span></code>.  Per-seed point estimates.</p></li>
+<li><p><strong>errors_by_seed</strong> (<em>np.ndarray</em>) – Shape <code class="docutils literal notranslate"><span class="pre">(n_temps,</span> <span class="pre">n_seeds)</span></code>.  Per-seed within-seed uncertainties.</p></li>
+<li><p><strong>tau_by_seed</strong> (<em>np.ndarray</em>) – Shape <code class="docutils literal notranslate"><span class="pre">(n_temps,</span> <span class="pre">n_seeds)</span></code>.  Per-seed integrated autocorrelation times.</p></li>
+<li><p><strong>n_eff_by_seed</strong> (<em>np.ndarray</em>) – Shape <code class="docutils literal notranslate"><span class="pre">(n_temps,</span> <span class="pre">n_seeds)</span></code>.  Per-seed effective sample sizes.</p></li>
+<li><p><strong>confidence</strong> (<em>float</em>) – Two-sided confidence level for the returned CI bounds.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Keys: <code class="docutils literal notranslate"><span class="pre">'value'</span></code>, <code class="docutils literal notranslate"><span class="pre">'err'</span></code>, <code class="docutils literal notranslate"><span class="pre">'ci_low'</span></code>, <code class="docutils literal notranslate"><span class="pre">'ci_high'</span></code>,
+<code class="docutils literal notranslate"><span class="pre">'tau_int'</span></code>, <code class="docutils literal notranslate"><span class="pre">'n_eff'</span></code>, <code class="docutils literal notranslate"><span class="pre">'samples'</span></code>.
+All arrays have length <code class="docutils literal notranslate"><span class="pre">n_temps</span></code> except <code class="docutils literal notranslate"><span class="pre">'samples'</span></code> which has
+shape <code class="docutils literal notranslate"><span class="pre">(n_temps,</span> <span class="pre">n_seeds)</span></code>.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>dict[str, np.ndarray]</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="utils.sweep_helpers.compute_thermo_observables">
+<span class="sig-prename descclassname"><span class="pre">utils.sweep_helpers.</span></span><span class="sig-name descname"><span class="pre">compute_thermo_observables</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">raw</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#utils.sweep_helpers.RawThermoData" title="utils.sweep_helpers.RawThermoData"><span class="pre">RawThermoData</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">point</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#utils.sweep_helpers.ThermoPoint" title="utils.sweep_helpers.ThermoPoint"><span class="pre">ThermoPoint</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">float</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="../_modules/utils/sweep_helpers.html#compute_thermo_observables"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#utils.sweep_helpers.compute_thermo_observables" title="Link to this definition"></a></dt>
+<dd><p>Compute blocked/summarized thermodynamic observables from raw time series.</p>
+<p>Takes the raw output of <code class="docutils literal notranslate"><span class="pre">simulate_at_temperature</span></code> and applies
+autocorrelation-aware blocking (primary observables) and variance-based
+summarization (derived observables) to produce the standard per-point
+result dictionary.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>raw</strong> (<a class="reference internal" href="#utils.sweep_helpers.RawThermoData" title="utils.sweep_helpers.RawThermoData"><em>RawThermoData</em></a>) – Raw time series from <code class="docutils literal notranslate"><span class="pre">simulate_at_temperature</span></code>.</p></li>
+<li><p><strong>point</strong> (<a class="reference internal" href="#utils.sweep_helpers.ThermoPoint" title="utils.sweep_helpers.ThermoPoint"><em>ThermoPoint</em></a>) – Originating worker payload; provides temperature, size, and statistical
+configuration (confidence, derived_method, bootstrap_resamples).</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Keys: <code class="docutils literal notranslate"><span class="pre">temperature_index</span></code>, <code class="docutils literal notranslate"><span class="pre">seed_index</span></code>, <code class="docutils literal notranslate"><span class="pre">equilibrated_flag</span></code>,
+<code class="docutils literal notranslate"><span class="pre">equilibration_steps</span></code>, and — when equilibrated — <code class="docutils literal notranslate"><span class="pre">avg_m_*</span></code>,
+<code class="docutils literal notranslate"><span class="pre">avg_e_*</span></code>, <code class="docutils literal notranslate"><span class="pre">susc_*</span></code>, <code class="docutils literal notranslate"><span class="pre">spec_h_*</span></code> with suffixes <code class="docutils literal notranslate"><span class="pre">_value</span></code>,
+<code class="docutils literal notranslate"><span class="pre">_err</span></code>, <code class="docutils literal notranslate"><span class="pre">_tau_int</span></code>, <code class="docutils literal notranslate"><span class="pre">_n_eff</span></code>.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>dict[str, float]</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="utils.sweep_helpers.simulate_at_temperature">
+<span class="sig-prename descclassname"><span class="pre">utils.sweep_helpers.</span></span><span class="sig-name descname"><span class="pre">simulate_at_temperature</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">point</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#utils.sweep_helpers.ThermoPoint" title="utils.sweep_helpers.ThermoPoint"><span class="pre">ThermoPoint</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="#utils.sweep_helpers.RawThermoData" title="utils.sweep_helpers.RawThermoData"><span class="pre">RawThermoData</span></a></span></span><a class="reference internal" href="../_modules/utils/sweep_helpers.html#simulate_at_temperature"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#utils.sweep_helpers.simulate_at_temperature" title="Link to this definition"></a></dt>
+<dd><p>Run equilibration and measurement for one (temperature, seed) point.</p>
+<p>Creates a random-start and an ordered-start simulation with the same seed,
+runs two-start convergence equilibration, then records <code class="docutils literal notranslate"><span class="pre">meas_steps</span></code> sweeps
+on the active simulation.  Returns raw magnetisation and energy time series
+for downstream statistical processing.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>point</strong> (<a class="reference internal" href="#utils.sweep_helpers.ThermoPoint" title="utils.sweep_helpers.ThermoPoint"><em>ThermoPoint</em></a>) – Fully configured worker payload.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Raw time series; <code class="docutils literal notranslate"><span class="pre">mags_arr</span></code> and <code class="docutils literal notranslate"><span class="pre">engs_arr</span></code> are <code class="docutils literal notranslate"><span class="pre">None</span></code> when
+equilibration did not converge.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference internal" href="#utils.sweep_helpers.RawThermoData" title="utils.sweep_helpers.RawThermoData">RawThermoData</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="utils.sweep_helpers.simulate_thermo_point">
+<span class="sig-prename descclassname"><span class="pre">utils.sweep_helpers.</span></span><span class="sig-name descname"><span class="pre">simulate_thermo_point</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">point</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#utils.sweep_helpers.ThermoPoint" title="utils.sweep_helpers.ThermoPoint"><span class="pre">ThermoPoint</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">float</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="../_modules/utils/sweep_helpers.html#simulate_thermo_point"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#utils.sweep_helpers.simulate_thermo_point" title="Link to this definition"></a></dt>
+<dd><p>Run a full (equilibration + measurement + summarization) point.</p>
+<p>Thin wrapper over <code class="docutils literal notranslate"><span class="pre">simulate_at_temperature</span></code> followed by
+<code class="docutils literal notranslate"><span class="pre">compute_thermo_observables</span></code>.  This is the function passed as
+<code class="docutils literal notranslate"><span class="pre">worker_func</span></code> to <code class="docutils literal notranslate"><span class="pre">parallel_sweep</span></code> in temperature-sweep scripts.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>point</strong> (<a class="reference internal" href="#utils.sweep_helpers.ThermoPoint" title="utils.sweep_helpers.ThermoPoint"><em>ThermoPoint</em></a>) – Fully configured worker payload.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Standard per-point result dictionary; see <code class="docutils literal notranslate"><span class="pre">compute_thermo_observables</span></code>
+for the full key set.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>dict[str, float]</p>
+</dd>
+</dl>
+</dd></dl>
+
+</section>
+<section id="module-utils.system">
+<span id="utils-system-module"></span><h2>utils.system module<a class="headerlink" href="#module-utils.system" title="Link to this heading"></a></h2>
+<p>Technical infrastructure for logging, parallel execution, and CLI argument parsing.</p>
+<dl class="py function">
+<dt class="sig sig-object py" id="utils.system.parallel_sweep">
+<span class="sig-prename descclassname"><span class="pre">utils.system.</span></span><span class="sig-name descname"><span class="pre">parallel_sweep</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">worker_func</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Callable</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">params</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Iterable</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">num_processes</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">list</span></span></span><a class="reference internal" href="../_modules/utils/system.html#parallel_sweep"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#utils.system.parallel_sweep" title="Link to this definition"></a></dt>
 <dd><p>Run a parallel sweep over a set of parameters using a worker function.
 Uses multiprocessing.Pool and tqdm for progress tracking.</p>
 <dl class="field-list simple">
@@ -697,8 +1130,14 @@ Uses multiprocessing.Pool and tqdm for progress tracking.</p>
 </dd></dl>
 
 <dl class="py function">
-<dt class="sig sig-object py" id="utils.system_helpers.setup_logging">
-<span class="sig-prename descclassname"><span class="pre">utils.system_helpers.</span></span><span class="sig-name descname"><span class="pre">setup_logging</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">level</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">20</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">log_file</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Logger</span></span></span><a class="reference internal" href="../_modules/utils/system_helpers.html#setup_logging"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#utils.system_helpers.setup_logging" title="Link to this definition"></a></dt>
+<dt class="sig sig-object py" id="utils.system.parse_args_compat">
+<span class="sig-prename descclassname"><span class="pre">utils.system.</span></span><span class="sig-name descname"><span class="pre">parse_args_compat</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">parser</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ArgumentParser</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Namespace</span></span></span><a class="reference internal" href="../_modules/utils/system.html#parse_args_compat"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#utils.system.parse_args_compat" title="Link to this definition"></a></dt>
+<dd><p>Parse CLI args with compatibility for parser wrappers used by some runners.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="utils.system.setup_logging">
+<span class="sig-prename descclassname"><span class="pre">utils.system.</span></span><span class="sig-name descname"><span class="pre">setup_logging</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">level</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">20</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">log_file</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Logger</span></span></span><a class="reference internal" href="../_modules/utils/system.html#setup_logging"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#utils.system.setup_logging" title="Link to this definition"></a></dt>
 <dd><p>Configure project-wide logging.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
@@ -740,31 +1179,31 @@ Uses multiprocessing.Pool and tqdm for progress tracking.</p>
 
 <dl class="py function">
 <dt class="sig sig-object py">
-<span class="sig-prename descclassname"><span class="pre">utils.</span></span><span class="sig-name descname"><span class="pre">blocking_error</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">time_series</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">min_block_size</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">2</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">max_block_size</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">float</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="../_modules/utils/physics_helpers.html#blocking_error"><span class="viewcode-link"><span class="pre">[source]</span></span></a></dt>
+<span class="sig-prename descclassname"><span class="pre">utils.</span></span><span class="sig-name descname"><span class="pre">blocking_error</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">time_series</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">min_block_size</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">2</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">max_block_size</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">float</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="../_modules/utils/analysis.html#blocking_error"><span class="viewcode-link"><span class="pre">[source]</span></span></a></dt>
 <dd><p>Estimate standard error using standard blocking/binning analysis.</p>
 </dd></dl>
 
 <dl class="py function">
 <dt class="sig sig-object py">
-<span class="sig-prename descclassname"><span class="pre">utils.</span></span><span class="sig-name descname"><span class="pre">parse_args_compat</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">parser</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ArgumentParser</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Namespace</span></span></span><a class="reference internal" href="../_modules/utils/cli_helpers.html#parse_args_compat"><span class="viewcode-link"><span class="pre">[source]</span></span></a></dt>
+<span class="sig-prename descclassname"><span class="pre">utils.</span></span><span class="sig-name descname"><span class="pre">parse_args_compat</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">parser</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ArgumentParser</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Namespace</span></span></span><a class="reference internal" href="../_modules/utils/system.html#parse_args_compat"><span class="viewcode-link"><span class="pre">[source]</span></span></a></dt>
 <dd><p>Parse CLI args with compatibility for parser wrappers used by some runners.</p>
 </dd></dl>
 
 <dl class="py function">
 <dt class="sig sig-object py">
-<span class="sig-prename descclassname"><span class="pre">utils.</span></span><span class="sig-name descname"><span class="pre">summarize_derived_observable</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">magnetization_series</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">energy_series</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">temperature</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">L</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">observable</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">method</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'blocking'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">confidence</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.68</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">bootstrap_resamples</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">float</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="../_modules/utils/physics_helpers.html#summarize_derived_observable"><span class="viewcode-link"><span class="pre">[source]</span></span></a></dt>
+<span class="sig-prename descclassname"><span class="pre">utils.</span></span><span class="sig-name descname"><span class="pre">summarize_derived_observable</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">magnetization_series</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">energy_series</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">temperature</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">L</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">observable</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">method</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'blocking'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">confidence</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.68</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">bootstrap_resamples</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">float</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="../_modules/utils/analysis.html#summarize_derived_observable"><span class="viewcode-link"><span class="pre">[source]</span></span></a></dt>
 <dd><p>Summarize derived observables (chi, Cv) with uncertainty estimates.</p>
 </dd></dl>
 
 <dl class="py function">
 <dt class="sig sig-object py">
-<span class="sig-prename descclassname"><span class="pre">utils.</span></span><span class="sig-name descname"><span class="pre">summarize_primary_observable</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">time_series</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">confidence</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.68</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">float</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="../_modules/utils/physics_helpers.html#summarize_primary_observable"><span class="viewcode-link"><span class="pre">[source]</span></span></a></dt>
+<span class="sig-prename descclassname"><span class="pre">utils.</span></span><span class="sig-name descname"><span class="pre">summarize_primary_observable</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">time_series</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">confidence</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.68</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">float</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="../_modules/utils/analysis.html#summarize_primary_observable"><span class="viewcode-link"><span class="pre">[source]</span></span></a></dt>
 <dd><p>Summarize a primary observable with blocking-based uncertainty.</p>
 </dd></dl>
 
 <dl class="py function">
 <dt class="sig sig-object py">
-<span class="sig-prename descclassname"><span class="pre">utils.</span></span><span class="sig-name descname"><span class="pre">summarize_seed_ensemble</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">values</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">within_seed_errors</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">confidence</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.68</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">float</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="../_modules/utils/physics_helpers.html#summarize_seed_ensemble"><span class="viewcode-link"><span class="pre">[source]</span></span></a></dt>
+<span class="sig-prename descclassname"><span class="pre">utils.</span></span><span class="sig-name descname"><span class="pre">summarize_seed_ensemble</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">values</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">within_seed_errors</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">confidence</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.68</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">float</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="../_modules/utils/analysis.html#summarize_seed_ensemble"><span class="viewcode-link"><span class="pre">[source]</span></span></a></dt>
 <dd><p>Aggregate per-seed estimates into one mean with hierarchical uncertainty.</p>
 <p>The total variance combines between-seed and within-seed components:
 Var(mean) = Var_between / n_seeds + mean(Var_within) / n_seeds.</p>

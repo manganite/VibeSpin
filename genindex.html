@@ -100,6 +100,7 @@
  | <a href="#M"><strong>M</strong></a>
  | <a href="#N"><strong>N</strong></a>
  | <a href="#P"><strong>P</strong></a>
+ | <a href="#Q"><strong>Q</strong></a>
  | <a href="#R"><strong>R</strong></a>
  | <a href="#S"><strong>S</strong></a>
  | <a href="#T"><strong>T</strong></a>
@@ -120,7 +121,15 @@
 <h2 id="B">B</h2>
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="api/vibespin.utils.html#utils.physics_helpers.blocking_error">blocking_error() (in module utils.physics_helpers)</a>
+      <li><a href="api/vibespin.utils.html#utils.analysis.blocking_error">blocking_error() (in module utils.analysis)</a>
+</li>
+      <li><a href="api/vibespin.utils.html#utils.sweep_helpers.ThermoPoint.bootstrap_resamples">bootstrap_resamples (utils.sweep_helpers.ThermoPoint attribute)</a>
+</li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="api/vibespin.utils.html#utils.sweep_helpers.build_quality_flags">build_quality_flags() (in module utils.sweep_helpers)</a>
+</li>
+      <li><a href="api/vibespin.utils.html#utils.sweep_helpers.build_uncertainty_bundle">build_uncertainty_bundle() (in module utils.sweep_helpers)</a>
 </li>
   </ul></td>
 </tr></table>
@@ -128,11 +137,11 @@
 <h2 id="C">C</h2>
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="api/vibespin.utils.html#utils.physics_helpers.calculate_autocorr">calculate_autocorr() (in module utils.physics_helpers)</a>
+      <li><a href="api/vibespin.utils.html#utils.analysis.calculate_autocorr">calculate_autocorr() (in module utils.analysis)</a>
 </li>
-      <li><a href="api/vibespin.utils.html#utils.physics_helpers.calculate_entropy">calculate_entropy() (in module utils.physics_helpers)</a>
+      <li><a href="api/vibespin.utils.html#utils.analysis.calculate_entropy">calculate_entropy() (in module utils.analysis)</a>
 </li>
-      <li><a href="api/vibespin.utils.html#utils.physics_helpers.calculate_thermodynamics">calculate_thermodynamics() (in module utils.physics_helpers)</a>
+      <li><a href="api/vibespin.utils.html#utils.analysis.calculate_thermodynamics">calculate_thermodynamics() (in module utils.analysis)</a>
 </li>
       <li><a href="api/vibespin.models.html#models.simulation_base.calculate_vortex_density_numba">calculate_vortex_density_numba() (in module models.simulation_base)</a>
 </li>
@@ -144,19 +153,23 @@
 </li>
       <li><a href="api/vibespin.models.html#models.clock_model.clock_step_parallel_numba">clock_step_parallel_numba() (in module models.clock_model)</a>
 </li>
-  </ul></td>
-  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="api/vibespin.models.html#models.clock_model.clock_step_random_numba">clock_step_random_numba() (in module models.clock_model)</a>
 </li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="api/vibespin.models.html#models.clock_model.clock_wolff_step_numba">clock_wolff_step_numba() (in module models.clock_model)</a>
 </li>
       <li><a href="api/vibespin.models.html#models.clock_model.ClockSimulation">ClockSimulation (class in models.clock_model)</a>
 </li>
       <li><a href="api/vibespin.scripts.ising.html#scripts.ising.diag_eq_traces.collect_trace">collect_trace() (in module scripts.ising.diag_eq_traces)</a>
 </li>
-      <li><a href="api/vibespin.utils.html#utils.physics_helpers.compute_kinetics_metrics">compute_kinetics_metrics() (in module utils.physics_helpers)</a>
+      <li><a href="api/vibespin.utils.html#utils.analysis.compute_kinetics_metrics">compute_kinetics_metrics() (in module utils.analysis)</a>
 </li>
-      <li><a href="api/vibespin.scripts.ising.html#scripts.ising.ordering_kinetics.compute_mean_intercept_length">compute_mean_intercept_length() (in module scripts.ising.ordering_kinetics)</a>
+      <li><a href="api/vibespin.utils.html#utils.kinetics_helpers.compute_mean_intercept_length">compute_mean_intercept_length() (in module utils.kinetics_helpers)</a>
+</li>
+      <li><a href="api/vibespin.utils.html#utils.sweep_helpers.compute_thermo_observables">compute_thermo_observables() (in module utils.sweep_helpers)</a>
+</li>
+      <li><a href="api/vibespin.utils.html#utils.sweep_helpers.ThermoPoint.confidence">confidence (utils.sweep_helpers.ThermoPoint attribute)</a>
 </li>
       <li><a href="api/vibespin.utils.html#utils.equilibration.convergence_equilibrate">convergence_equilibrate() (in module utils.equilibration)</a>
 </li>
@@ -168,6 +181,8 @@
 <h2 id="D">D</h2>
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="api/vibespin.utils.html#utils.sweep_helpers.ThermoPoint.derived_method">derived_method (utils.sweep_helpers.ThermoPoint attribute)</a>
+</li>
       <li><a href="api/vibespin.models.html#models.clock_model.discrete_clock_energy_numba">discrete_clock_energy_numba() (in module models.clock_model)</a>
 </li>
       <li><a href="api/vibespin.models.html#models.clock_model.discrete_clock_step_numba">discrete_clock_step_numba() (in module models.clock_model)</a>
@@ -186,13 +201,27 @@
 <h2 id="E">E</h2>
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="api/vibespin.utils.html#utils.sweep_helpers.RawThermoData.engs_arr">engs_arr (utils.sweep_helpers.RawThermoData attribute)</a>
+</li>
       <li><a href="api/vibespin.utils.html#utils.plotting.ensure_results_dir">ensure_results_dir() (in module utils.plotting)</a>
 </li>
-      <li><a href="api/vibespin.models.html#models.simulation_base.MonteCarloSimulation.equilibrate">equilibrate() (models.simulation_base.MonteCarloSimulation method)</a>
+      <li><a href="api/vibespin.utils.html#utils.sweep_helpers.ThermoPoint.eq_max_steps">eq_max_steps (utils.sweep_helpers.ThermoPoint attribute)</a>
+</li>
+      <li><a href="api/vibespin.utils.html#utils.sweep_helpers.ThermoPoint.eq_probe_steps">eq_probe_steps (utils.sweep_helpers.ThermoPoint attribute)</a>
+</li>
+      <li><a href="api/vibespin.utils.html#utils.sweep_helpers.ThermoPoint.eq_qs_min_steps">eq_qs_min_steps (utils.sweep_helpers.ThermoPoint attribute)</a>
 </li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="api/vibespin.utils.html#utils.physics_helpers.estimate_effective_sample_size">estimate_effective_sample_size() (in module utils.physics_helpers)</a>
+      <li><a href="api/vibespin.utils.html#utils.sweep_helpers.ThermoPoint.eq_qs_sigma_threshold">eq_qs_sigma_threshold (utils.sweep_helpers.ThermoPoint attribute)</a>
+</li>
+      <li><a href="api/vibespin.models.html#models.simulation_base.MonteCarloSimulation.equilibrate">equilibrate() (models.simulation_base.MonteCarloSimulation method)</a>
+</li>
+      <li><a href="api/vibespin.utils.html#utils.sweep_helpers.RawThermoData.equilibrated_flag">equilibrated_flag (utils.sweep_helpers.RawThermoData attribute)</a>
+</li>
+      <li><a href="api/vibespin.utils.html#utils.sweep_helpers.RawThermoData.equilibration_steps">equilibration_steps (utils.sweep_helpers.RawThermoData attribute)</a>
+</li>
+      <li><a href="api/vibespin.utils.html#utils.analysis.estimate_effective_sample_size">estimate_effective_sample_size() (in module utils.analysis)</a>
 </li>
       <li><a href="api/vibespin.utils.html#utils.equilibration.estimate_relaxation_time_two_start">estimate_relaxation_time_two_start() (in module utils.equilibration)</a>
 </li>
@@ -202,7 +231,7 @@
 <h2 id="G">G</h2>
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="api/vibespin.utils.html#utils.physics_helpers.get_averaged_correlation">get_averaged_correlation() (in module utils.physics_helpers)</a>
+      <li><a href="api/vibespin.utils.html#utils.analysis.get_averaged_correlation">get_averaged_correlation() (in module utils.analysis)</a>
 </li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
@@ -236,6 +265,8 @@
 <h2 id="M">M</h2>
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="api/vibespin.utils.html#utils.sweep_helpers.RawThermoData.mags_arr">mags_arr (utils.sweep_helpers.RawThermoData attribute)</a>
+</li>
       <li><a href="api/vibespin.models.html#models.clock_model.main">main() (in module models.clock_model)</a>
 
       <ul>
@@ -278,6 +309,12 @@
         <li><a href="api/vibespin.scripts.xy.html#scripts.xy.temperature_sweep.main">(in module scripts.xy.temperature_sweep)</a>
 </li>
       </ul></li>
+      <li><a href="api/vibespin.utils.html#utils.sweep_helpers.ThermoPoint.meas_steps">meas_steps (utils.sweep_helpers.ThermoPoint attribute)</a>
+</li>
+      <li><a href="api/vibespin.utils.html#utils.sweep_helpers.ThermoPoint.model_cls">model_cls (utils.sweep_helpers.ThermoPoint attribute)</a>
+</li>
+      <li><a href="api/vibespin.utils.html#utils.sweep_helpers.ThermoPoint.model_kwargs">model_kwargs (utils.sweep_helpers.ThermoPoint attribute)</a>
+</li>
       <li>
     models.clock_model
 
@@ -306,6 +343,8 @@
         <li><a href="api/vibespin.models.html#module-models.xy_model">module</a>
 </li>
       </ul></li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
       <li>
     module
 
@@ -354,21 +393,23 @@
 </li>
         <li><a href="api/vibespin.scripts.xy.html#module-scripts.xy.temperature_sweep">scripts.xy.temperature_sweep</a>
 </li>
-        <li><a href="api/vibespin.utils.html#module-utils.cli_helpers">utils.cli_helpers</a>
+        <li><a href="api/vibespin.utils.html#module-utils.analysis">utils.analysis</a>
 </li>
         <li><a href="api/vibespin.utils.html#module-utils.equilibration">utils.equilibration</a>
 </li>
+        <li><a href="api/vibespin.utils.html#module-utils.evolution_helpers">utils.evolution_helpers</a>
+</li>
         <li><a href="api/vibespin.utils.html#module-utils.exceptions">utils.exceptions</a>
 </li>
-        <li><a href="api/vibespin.utils.html#module-utils.physics_helpers">utils.physics_helpers</a>
+        <li><a href="api/vibespin.utils.html#module-utils.kinetics_helpers">utils.kinetics_helpers</a>
 </li>
         <li><a href="api/vibespin.utils.html#module-utils.plotting">utils.plotting</a>
 </li>
-        <li><a href="api/vibespin.utils.html#module-utils.system_helpers">utils.system_helpers</a>
+        <li><a href="api/vibespin.utils.html#module-utils.sweep_helpers">utils.sweep_helpers</a>
+</li>
+        <li><a href="api/vibespin.utils.html#module-utils.system">utils.system</a>
 </li>
       </ul></li>
-  </ul></td>
-  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="api/vibespin.models.html#models.simulation_base.MonteCarloSimulation">MonteCarloSimulation (class in models.simulation_base)</a>
 </li>
   </ul></td>
@@ -385,13 +426,13 @@
 <h2 id="P">P</h2>
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="api/vibespin.utils.html#utils.physics_helpers.pair_correlation_x">pair_correlation_x() (in module utils.physics_helpers)</a>
+      <li><a href="api/vibespin.utils.html#utils.analysis.pair_correlation_x">pair_correlation_x() (in module utils.analysis)</a>
 </li>
       <li><a href="api/vibespin.scripts.ising.html#scripts.ising.diag_eq_traces.PALETTE">PALETTE (in module scripts.ising.diag_eq_traces)</a>
 </li>
-      <li><a href="api/vibespin.utils.html#utils.system_helpers.parallel_sweep">parallel_sweep() (in module utils.system_helpers)</a>
+      <li><a href="api/vibespin.utils.html#utils.system.parallel_sweep">parallel_sweep() (in module utils.system)</a>
 </li>
-      <li><a href="api/vibespin.utils.html#utils.cli_helpers.parse_args_compat">parse_args_compat() (in module utils.cli_helpers)</a>
+      <li><a href="api/vibespin.utils.html#utils.system.parse_args_compat">parse_args_compat() (in module utils.system)</a>
 </li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
@@ -401,7 +442,17 @@
 </li>
       <li><a href="api/vibespin.utils.html#utils.plotting.plot_temperature_sweep">plot_temperature_sweep() (in module utils.plotting)</a>
 </li>
-      <li><a href="api/vibespin.utils.html#utils.physics_helpers.power_fit">power_fit() (in module utils.physics_helpers)</a>
+      <li><a href="api/vibespin.utils.html#utils.analysis.power_fit">power_fit() (in module utils.analysis)</a>
+</li>
+      <li><a href="api/vibespin.utils.html#utils.sweep_helpers.ThermoPoint.prefer_ordered_start">prefer_ordered_start (utils.sweep_helpers.ThermoPoint attribute)</a>
+</li>
+  </ul></td>
+</tr></table>
+
+<h2 id="Q">Q</h2>
+<table style="width: 100%" class="indextable genindextable"><tr>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="api/vibespin.utils.html#utils.sweep_helpers.ThermoPoint.qs_allow_stuck">qs_allow_stuck (utils.sweep_helpers.ThermoPoint attribute)</a>
 </li>
   </ul></td>
 </tr></table>
@@ -409,13 +460,19 @@
 <h2 id="R">R</h2>
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="api/vibespin.utils.html#utils.physics_helpers.radial_average_sk">radial_average_sk() (in module utils.physics_helpers)</a>
+      <li><a href="api/vibespin.utils.html#utils.analysis.radial_average_sk">radial_average_sk() (in module utils.analysis)</a>
+</li>
+      <li><a href="api/vibespin.utils.html#utils.sweep_helpers.RawThermoData">RawThermoData (class in utils.sweep_helpers)</a>
 </li>
       <li><a href="api/vibespin.models.html#models.simulation_base.MonteCarloSimulation.run">run() (models.simulation_base.MonteCarloSimulation method)</a>
 </li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="api/vibespin.scripts.ising.html#scripts.ising.correlation_divergence.run_divergence_analysis">run_divergence_analysis() (in module scripts.ising.correlation_divergence)</a>
+</li>
+      <li><a href="api/vibespin.utils.html#utils.evolution_helpers.run_ordering_evolution">run_ordering_evolution() (in module utils.evolution_helpers)</a>
+</li>
+      <li><a href="api/vibespin.utils.html#utils.kinetics_helpers.run_ordering_kinetics">run_ordering_kinetics() (in module utils.kinetics_helpers)</a>
 </li>
       <li><a href="api/vibespin.models.html#models.ising_model.IsingSimulation.run_with_cluster_sizes">run_with_cluster_sizes() (models.ising_model.IsingSimulation method)</a>
 </li>
@@ -518,8 +575,6 @@
         <li><a href="api/vibespin.scripts.xy.html#module-scripts.xy.bkt_transition">module</a>
 </li>
       </ul></li>
-  </ul></td>
-  <td style="width: 33%; vertical-align: top;"><ul>
       <li>
     scripts.xy.compare_correlations
 
@@ -534,6 +589,8 @@
         <li><a href="api/vibespin.scripts.xy.html#module-scripts.xy.helicity_modulus">module</a>
 </li>
       </ul></li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
       <li>
     scripts.xy.ordering_evolution
 
@@ -555,7 +612,17 @@
         <li><a href="api/vibespin.scripts.xy.html#module-scripts.xy.temperature_sweep">module</a>
 </li>
       </ul></li>
-      <li><a href="api/vibespin.utils.html#utils.system_helpers.setup_logging">setup_logging() (in module utils.system_helpers)</a>
+      <li><a href="api/vibespin.utils.html#utils.sweep_helpers.ThermoPoint.seed">seed (utils.sweep_helpers.ThermoPoint attribute)</a>
+</li>
+      <li><a href="api/vibespin.utils.html#utils.sweep_helpers.RawThermoData.seed_index">seed_index (utils.sweep_helpers.RawThermoData attribute)</a>
+
+      <ul>
+        <li><a href="api/vibespin.utils.html#utils.sweep_helpers.ThermoPoint.seed_index">(utils.sweep_helpers.ThermoPoint attribute)</a>
+</li>
+      </ul></li>
+      <li><a href="api/vibespin.utils.html#utils.system.setup_logging">setup_logging() (in module utils.system)</a>
+</li>
+      <li><a href="api/vibespin.utils.html#utils.sweep_helpers.simulate_at_temperature">simulate_at_temperature() (in module utils.sweep_helpers)</a>
 </li>
       <li><a href="api/vibespin.scripts.xy.html#scripts.xy.bkt_transition.simulate_bkt_point">simulate_bkt_point() (in module scripts.xy.bkt_transition)</a>
 </li>
@@ -567,6 +634,14 @@
       </ul></li>
       <li><a href="api/vibespin.scripts.xy.html#scripts.xy.helicity_modulus.simulate_helicity">simulate_helicity() (in module scripts.xy.helicity_modulus)</a>
 </li>
+      <li><a href="api/vibespin.utils.html#utils.sweep_helpers.simulate_thermo_point">simulate_thermo_point() (in module utils.sweep_helpers)</a>
+</li>
+      <li><a href="api/vibespin.utils.html#utils.sweep_helpers.RawThermoData.size">size (utils.sweep_helpers.RawThermoData attribute)</a>
+
+      <ul>
+        <li><a href="api/vibespin.utils.html#utils.sweep_helpers.ThermoPoint.size">(utils.sweep_helpers.ThermoPoint attribute)</a>
+</li>
+      </ul></li>
       <li><a href="api/vibespin.models.html#models.clock_model.ClockSimulation.step">step() (models.clock_model.ClockSimulation method)</a>
 
       <ul>
@@ -579,17 +654,17 @@
         <li><a href="api/vibespin.models.html#models.xy_model.XYSimulation.step">(models.xy_model.XYSimulation method)</a>
 </li>
       </ul></li>
-      <li><a href="api/vibespin.utils.html#utils.physics_helpers.summarize_asymmetric_replicate_uncertainty">summarize_asymmetric_replicate_uncertainty() (in module utils.physics_helpers)</a>
+      <li><a href="api/vibespin.utils.html#utils.analysis.summarize_asymmetric_replicate_uncertainty">summarize_asymmetric_replicate_uncertainty() (in module utils.analysis)</a>
 </li>
-      <li><a href="api/vibespin.utils.html#utils.physics_helpers.summarize_derived_observable">summarize_derived_observable() (in module utils.physics_helpers)</a>
+      <li><a href="api/vibespin.utils.html#utils.analysis.summarize_derived_observable">summarize_derived_observable() (in module utils.analysis)</a>
 </li>
-      <li><a href="api/vibespin.utils.html#utils.physics_helpers.summarize_entropy_observable">summarize_entropy_observable() (in module utils.physics_helpers)</a>
+      <li><a href="api/vibespin.utils.html#utils.analysis.summarize_entropy_observable">summarize_entropy_observable() (in module utils.analysis)</a>
 </li>
-      <li><a href="api/vibespin.utils.html#utils.physics_helpers.summarize_primary_observable">summarize_primary_observable() (in module utils.physics_helpers)</a>
+      <li><a href="api/vibespin.utils.html#utils.analysis.summarize_primary_observable">summarize_primary_observable() (in module utils.analysis)</a>
 </li>
-      <li><a href="api/vibespin.utils.html#utils.physics_helpers.summarize_replicate_samples">summarize_replicate_samples() (in module utils.physics_helpers)</a>
+      <li><a href="api/vibespin.utils.html#utils.analysis.summarize_replicate_samples">summarize_replicate_samples() (in module utils.analysis)</a>
 </li>
-      <li><a href="api/vibespin.utils.html#utils.physics_helpers.summarize_seed_ensemble">summarize_seed_ensemble() (in module utils.physics_helpers)</a>
+      <li><a href="api/vibespin.utils.html#utils.analysis.summarize_seed_ensemble">summarize_seed_ensemble() (in module utils.analysis)</a>
 </li>
       <li><a href="api/vibespin.scripts.clock.html#scripts.clock.compare_discrete_vs_continuous.sweep_model">sweep_model() (in module scripts.clock.compare_discrete_vs_continuous)</a>
 </li>
@@ -607,6 +682,22 @@
         <li><a href="api/vibespin.scripts.ising.html#scripts.ising.wolff_efficiency.TC_ISING">(in module scripts.ising.wolff_efficiency)</a>
 </li>
       </ul></li>
+      <li><a href="api/vibespin.utils.html#utils.sweep_helpers.RawThermoData.temperature">temperature (utils.sweep_helpers.RawThermoData attribute)</a>
+
+      <ul>
+        <li><a href="api/vibespin.utils.html#utils.sweep_helpers.ThermoPoint.temperature">(utils.sweep_helpers.ThermoPoint attribute)</a>
+</li>
+      </ul></li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="api/vibespin.utils.html#utils.sweep_helpers.RawThermoData.temperature_index">temperature_index (utils.sweep_helpers.RawThermoData attribute)</a>
+
+      <ul>
+        <li><a href="api/vibespin.utils.html#utils.sweep_helpers.ThermoPoint.temperature_index">(utils.sweep_helpers.ThermoPoint attribute)</a>
+</li>
+      </ul></li>
+      <li><a href="api/vibespin.utils.html#utils.sweep_helpers.ThermoPoint">ThermoPoint (class in utils.sweep_helpers)</a>
+</li>
   </ul></td>
 </tr></table>
 
@@ -614,10 +705,10 @@
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%; vertical-align: top;"><ul>
       <li>
-    utils.cli_helpers
+    utils.analysis
 
       <ul>
-        <li><a href="api/vibespin.utils.html#module-utils.cli_helpers">module</a>
+        <li><a href="api/vibespin.utils.html#module-utils.analysis">module</a>
 </li>
       </ul></li>
       <li>
@@ -625,6 +716,13 @@
 
       <ul>
         <li><a href="api/vibespin.utils.html#module-utils.equilibration">module</a>
+</li>
+      </ul></li>
+      <li>
+    utils.evolution_helpers
+
+      <ul>
+        <li><a href="api/vibespin.utils.html#module-utils.evolution_helpers">module</a>
 </li>
       </ul></li>
       <li>
@@ -637,10 +735,10 @@
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
       <li>
-    utils.physics_helpers
+    utils.kinetics_helpers
 
       <ul>
-        <li><a href="api/vibespin.utils.html#module-utils.physics_helpers">module</a>
+        <li><a href="api/vibespin.utils.html#module-utils.kinetics_helpers">module</a>
 </li>
       </ul></li>
       <li>
@@ -651,10 +749,17 @@
 </li>
       </ul></li>
       <li>
-    utils.system_helpers
+    utils.sweep_helpers
 
       <ul>
-        <li><a href="api/vibespin.utils.html#module-utils.system_helpers">module</a>
+        <li><a href="api/vibespin.utils.html#module-utils.sweep_helpers">module</a>
+</li>
+      </ul></li>
+      <li>
+    utils.system
+
+      <ul>
+        <li><a href="api/vibespin.utils.html#module-utils.system">module</a>
 </li>
       </ul></li>
   </ul></td>

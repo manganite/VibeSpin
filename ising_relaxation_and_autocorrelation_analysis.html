@@ -144,7 +144,7 @@ most pronounced.</p>
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">models.ising_model</span><span class="w"> </span><span class="kn">import</span> <span class="n">IsingSimulation</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">utils.exceptions</span><span class="w"> </span><span class="kn">import</span> <span class="n">ZeroVarianceAutocorrelationError</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">utils.physics_helpers</span><span class="w"> </span><span class="kn">import</span> <span class="n">calculate_autocorr</span><span class="p">,</span> <span class="n">estimate_relaxation_time_two_start</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">utils.analysis</span><span class="w"> </span><span class="kn">import</span> <span class="n">calculate_autocorr</span><span class="p">,</span> <span class="n">estimate_relaxation_time_two_start</span>
 
 <span class="n">TC_ISING</span> <span class="o">=</span> <span class="mf">2.0</span> <span class="o">/</span> <span class="n">np</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="mf">1.0</span> <span class="o">+</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="mf">2.0</span><span class="p">))</span>
 <span class="n">L</span> <span class="o">=</span> <span class="mi">64</span>
@@ -340,7 +340,7 @@ Loaded cached trajectories from ../results/ising/ising_autocorrelation_multiseed
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[5]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">utils.physics_helpers</span><span class="w"> </span><span class="kn">import</span> <span class="n">_moving_average</span><span class="p">,</span> <span class="n">_valid_prefix</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">utils.analysis</span><span class="w"> </span><span class="kn">import</span> <span class="n">_moving_average</span><span class="p">,</span> <span class="n">_valid_prefix</span>
 
 <span class="c1"># Extract indices for an illustrative slice: T_c, random, first seed</span>
 <span class="n">idx_t</span> <span class="o">=</span> <span class="n">TEMP_LABELS</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="s1">&#39;At $T_c$&#39;</span><span class="p">)</span>
@@ -743,7 +743,7 @@ Above $T_c$                         196 [ 127,  298]                  110 [  69,
     <span class="n">max_lag</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="n">ACORR_MAX_LAG</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">float</span><span class="p">,</span> <span class="nb">int</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">]:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    Thin wrapper around utils.physics_helpers.calculate_autocorr.</span>
+<span class="sd">    Thin wrapper around utils.analysis.calculate_autocorr.</span>
 
 <span class="sd">    Applies burn-in, strips non-finite values, and returns NaN instead of</span>
 <span class="sd">    raising for degenerate traces.  Returns (tau_int, window_W, rho[0..W]).</span>
