@@ -2,12 +2,12 @@
 Shared infrastructure for per-temperature Monte Carlo sweep workers.
 
 This module provides the two-layer decomposition used by all three model
-temperature sweeps (Ising, XY, Clock):
+temperature sweeps (Ising, XY, Clock).
 
-Layer 1 — ``simulate_at_temperature``: owns equilibration and raw measurement.
-Layer 2 — ``compute_thermo_observables``: owns statistical summarization.
-Wrapper  — ``simulate_thermo_point``: chains both layers; used as the worker
-           function passed to ``parallel_sweep``.
+``simulate_at_temperature`` owns equilibration and raw measurement.
+``compute_thermo_observables`` owns statistical summarization.
+``simulate_thermo_point`` chains both layers and is the worker function passed
+to ``parallel_sweep``.
 
 Post-processing helpers ``build_uncertainty_bundle`` and ``build_quality_flags``
 aggregate per-seed results over a full temperature axis and are also shared here,
@@ -53,8 +53,8 @@ class ThermoPoint(NamedTuple):
     qs_allow_stuck : bool
         If True, a quasi-steady stuck state counts as convergence (Ising low-T).
     prefer_ordered_start : bool
-        If True, switch to the ordered-start simulation when its |M| substantially
-        exceeds the random-start value.  Appropriate for Ising below T_c.
+        If True, switch to the ordered-start simulation when its magnetisation
+        substantially exceeds the random-start value.  Appropriate for Ising below T_c.
     temperature_index : int
         Index of this temperature in the sweep's temperature array.
     seed_index : int
