@@ -770,7 +770,7 @@ def plot_ordering_evolution(
             if col == n_cols - 1:
                 plt.colorbar(im_v, ax=ax_mid, ticks=[-1, 0, 1], label='Winding No.', shrink=0.8)
         else:
-            from .analysis import radial_average_sk
+            from .observables import radial_average_sk
 
             k_vals, S_radial = radial_average_sk(spins=spins)
             ax_mid.plot(k_vals[1:], S_radial[1:], linewidth=1.2)

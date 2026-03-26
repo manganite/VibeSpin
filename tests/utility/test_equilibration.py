@@ -412,7 +412,7 @@ def test_adaptive_equilibrate_warns_on_max_steps(caplog):
             return np.linspace(0.0, 1.0, n_steps), np.zeros(n_steps)
 
     caplog.set_level('WARNING', logger='vibespin')
-    with patch('utils.analysis.calculate_autocorr', return_value=(np.array([0.0]), 1e9)):
+    with patch('utils.statistics.calculate_autocorr', return_value=(np.array([0.0]), 1e9)):
         total = adaptive_equilibrate(
             _RunSim(),
             min_steps=10,

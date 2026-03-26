@@ -18,14 +18,14 @@ from typing import Any
 import numpy as np
 
 from models.ising_model import IsingSimulation
-from utils.analysis import (
+from utils.equilibration import convergence_equilibrate
+from utils.exceptions import ZeroVarianceAutocorrelationError
+from utils.statistics import (
     DEFAULT_CONFIDENCE_LEVEL,
     UNCERTAINTY_METHOD_BLOCKING,
     calculate_autocorr,
     summarize_replicate_samples,
 )
-from utils.equilibration import convergence_equilibrate
-from utils.exceptions import ZeroVarianceAutocorrelationError
 from utils.system import parallel_sweep, setup_logging
 
 #: Exact Onsager critical temperature for the 2D nearest-neighbour Ising model.

@@ -14,6 +14,7 @@ All notable changes to VibeSpin are documented here. The format follows [Keep a 
 - `utils/sweep_helpers.py`: new shared module providing the two-layer temperature-sweep worker infrastructure used by all three model sweep scripts. Exports `ThermoPoint` (typed NamedTuple worker payload), `RawThermoData` (raw measurement arrays), `simulate_at_temperature` (Layer 1: physics and equilibration), `compute_thermo_observables` (Layer 2: statistical summarization), `simulate_thermo_point` (convenience wrapper), `build_uncertainty_bundle`, and `build_quality_flags`.
 
 ### Changed
+- Refactored `utils/analysis.py` into `utils/statistics.py` (domain-agnostic statistical estimators and schemas) and `utils/observables.py` (physics observables and spatial tools).
 - Refactored `scripts/ising/ordering_kinetics.py`, `scripts/xy/ordering_kinetics.py`, and `scripts/clock/ordering_kinetics.py` to delegate the full simulation loop, power-law fitting, and figure generation to `utils/kinetics_helpers.run_ordering_kinetics`. Each script is now a thin argument-parsing wrapper.
 - Refactored `scripts/ising/ordering_evolution.py`, `scripts/xy/ordering_evolution.py`, and `scripts/clock/ordering_evolution.py` to delegate the snapshot loop and figure generation to `utils/evolution_helpers.run_ordering_evolution`. Vorticity capture is controlled by the `capture_vorticity` flag (True for XY and Clock, False for Ising).
 - Refactored `scripts/ising/temperature_sweep.py`, `scripts/xy/temperature_sweep.py`, and `scripts/clock/temperature_sweep.py` to delegate all worker, uncertainty-bundle, and quality-flag logic to `utils/sweep_helpers`.
@@ -23,6 +24,7 @@ All notable changes to VibeSpin are documented here. The format follows [Keep a 
 - Fixed excessive memory allocation in `wolff_step_numba` across Ising, XY, and Clock models by pre-allocating the cluster mask and stack buffers once per simulation run, significantly lowering garbage collection overhead during large sweeps.
 
 ### Changed
+- Refactored `utils/analysis.py` into `utils/statistics.py` (domain-agnostic statistical estimators and schemas) and `utils/observables.py` (physics observables and spatial tools).
 - Removed deprecated `system_helpers.py` re-exports (`ensure_results_dir`, `adaptive_equilibrate`, etc.). All tests and Jupyter notebooks have been updated to explicitly import from `utils.equilibration` and `utils.plotting` directly.
 - Renamed `run_scaling_benchmark()` to `main()` in `scripts/benchmarks/throughput.py` for consistency with other analysis scripts.
 
@@ -74,6 +76,7 @@ This is the baseline release capturing the full initial development history. The
 - Vectorized angle extraction for vorticity calculation; radial mask pre-computation for correlation functions.
 
 ### Changed
+- Refactored `utils/analysis.py` into `utils/statistics.py` (domain-agnostic statistical estimators and schemas) and `utils/observables.py` (physics observables and spatial tools).
 - `ordering_kinetics` scripts unified and refactored; renamed from `domain_growth`.
 - `ordering_evolution` scripts unified from earlier `domain_snapshots`.
 - Test suite reorganized from a flat layout into five layer directories: `algorithm/`, `model/`, `utility/`, `style/`, `integration/`.
@@ -87,3 +90,7 @@ This is the baseline release capturing the full initial development history. The
 
 [Unreleased]: https://github.com/manganite/VibeSpin/compare/v0.1.0...HEAD
 [0.1.0]: https://github.com/manganite/VibeSpin/releases/tag/v0.1.0
+
+## [Unreleased]
+### Refactored
+- `utils/analysis.py` has been split into `utils/statistics.py` (domain-agnostic statistical estimators and NPZ schemas) and `utils/observables.py` (physics observables and spatial analysis) to separate concerns and improve maintainability without introducing subfolders.

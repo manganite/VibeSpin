@@ -12,13 +12,13 @@ from typing import Any, cast
 import numpy as np
 
 from models.ising_model import IsingSimulation
-from utils.analysis import (
+from utils.plotting import plot_temperature_sweep
+from utils.statistics import (
     DEFAULT_CONFIDENCE_LEVEL,
     UNCERTAINTY_METHOD_BLOCKING,
     UNCERTAINTY_METHOD_BOOTSTRAP,
     summarize_entropy_observable,
 )
-from utils.plotting import plot_temperature_sweep
 from utils.sweep_helpers import (
     ThermoPoint,
     build_quality_flags,

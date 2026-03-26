@@ -15,8 +15,9 @@ from typing import Any
 import numpy as np
 from tqdm import tqdm
 
-from utils.analysis import compute_kinetics_metrics, power_fit
+from utils.observables import compute_kinetics_metrics
 from utils.plotting import ensure_results_dir, plot_ordering_kinetics
+from utils.statistics import power_fit
 
 # tqdm bar format that always shows rate as iterations/s (never inverts to s/it).
 _BAR_FORMAT = '{l_bar}{bar}| {n_fmt}/{total_fmt} [{elapsed}<{remaining}, {rate_noinv_fmt}{postfix}]'

@@ -11,7 +11,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 from models.ising_model import IsingSimulation
-from utils.analysis import get_averaged_correlation
+from utils.observables import get_averaged_correlation
 from utils.plotting import ensure_results_dir, save_plot
 from utils.system import parallel_sweep, parse_args_compat, setup_logging
 

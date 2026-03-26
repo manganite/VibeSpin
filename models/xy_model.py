@@ -581,7 +581,7 @@ def main() -> None:
     ax3.set_xscale('log')
 
     # Structure Factor (Radial)
-    from utils.analysis import radial_average_sk
+    from utils.observables import radial_average_sk
 
     if sim.spins is not None:
         k, sk = radial_average_sk(spins=sim.spins)

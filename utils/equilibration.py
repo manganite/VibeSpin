@@ -279,7 +279,7 @@ def adaptive_equilibrate(
     ------
         ValueError: If the adaptive-equilibration parameters are invalid.
     """
-    from utils.analysis import calculate_autocorr  # lazy import; avoids pickle issues
+    from utils.statistics import calculate_autocorr  # lazy import; avoids pickle issues
 
     if min_steps < 0:
         raise ValueError(f'min_steps must be non-negative, got {min_steps}')

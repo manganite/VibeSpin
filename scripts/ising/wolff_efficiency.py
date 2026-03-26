@@ -20,9 +20,10 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 from models.ising_model import IsingSimulation
-from utils.analysis import calculate_autocorr, calculate_thermodynamics
 from utils.equilibration import convergence_equilibrate
 from utils.exceptions import ZeroVarianceAutocorrelationError
+from utils.observables import calculate_thermodynamics
+from utils.statistics import calculate_autocorr
 from utils.system import parallel_sweep, setup_logging
 
 #: Exact Onsager critical temperature for the 2D nearest-neighbour Ising model.
