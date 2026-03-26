@@ -1052,11 +1052,3 @@ def power_fit(
     return float(coeffs[0]), float(np.exp(coeffs[1]))
 
 
-# Relaxation diagnostics have moved to utils.equilibration; re-exported here for compatibility.
-from utils.equilibration import (  # noqa: F401, E402
-    _QS_SIGMA_REF_L,
-    _detect_quasi_steady_stuck,
-    _moving_average,
-    _valid_prefix,
-    estimate_relaxation_time_two_start,
-)

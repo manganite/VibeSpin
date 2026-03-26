@@ -1,9 +1,7 @@
 """Public API for VibeSpin utility and analysis functions."""
 from __future__ import annotations
 
-from utils.cli_helpers import parse_args_compat
-from utils.exceptions import NumericalAnalysisError, VibeSpinError, ZeroVarianceAutocorrelationError
-from utils.physics_helpers import (
+from utils.analysis import (
     DEFAULT_CONFIDENCE_LEVEL,
     UNCERTAINTY_METHOD_BLOCKING,
     UNCERTAINTY_METHOD_BOOTSTRAP,
@@ -12,6 +10,8 @@ from utils.physics_helpers import (
     summarize_primary_observable,
     summarize_seed_ensemble,
 )
+from utils.exceptions import NumericalAnalysisError, VibeSpinError, ZeroVarianceAutocorrelationError
+from utils.system import parse_args_compat
 
 __all__ = [
     'VibeSpinError',

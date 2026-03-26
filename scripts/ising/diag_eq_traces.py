@@ -24,9 +24,8 @@ import matplotlib.pyplot as plt
 import matplotlib.ticker as mticker
 
 from models.ising_model import IsingSimulation as IsingModel
-from utils.cli_helpers import parse_args_compat
-from utils.physics_helpers import estimate_relaxation_time_two_start
-from utils.system_helpers import setup_logging
+from utils.equilibration import estimate_relaxation_time_two_start
+from utils.system import parse_args_compat, setup_logging
 
 #: Exact Onsager critical temperature for the 2D nearest-neighbour Ising model.
 TC_ISING: float = 2.0 / np.log(1.0 + np.sqrt(2.0))

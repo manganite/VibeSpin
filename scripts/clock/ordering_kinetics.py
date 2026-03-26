@@ -10,9 +10,8 @@ import argparse
 import logging
 
 from models.clock_model import ClockSimulation
-from utils.cli_helpers import parse_args_compat
 from utils.kinetics_helpers import run_ordering_kinetics
-from utils.system_helpers import setup_logging
+from utils.system import parse_args_compat, setup_logging
 
 
 def main() -> None:

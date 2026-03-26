@@ -139,13 +139,13 @@ Optimize for four outcomes: correct statistical-physics behavior, high simulatio
 - This ensures that citations are navigable in both local Jupyter environments and rendered Sphinx/nbsphinx documentation.
 
 ### 8. Statistical Uncertainty and NPZ Schema Contract
-- **Default Estimator Policy**: For equilibrium observables derived from autocorrelated Monte Carlo trajectories, use autocorrelation-aware blocking as the default uncertainty estimator. The canonical method constants in `utils/physics_helpers.py` are mandatory defaults: `UNCERTAINTY_METHOD_BLOCKING` and `DEFAULT_CONFIDENCE_LEVEL = 0.68`.
+- **Default Estimator Policy**: For equilibrium observables derived from autocorrelated Monte Carlo trajectories, use autocorrelation-aware blocking as the default uncertainty estimator. The canonical method constants in `utils/analysis.py` are mandatory defaults: `UNCERTAINTY_METHOD_BLOCKING` and `DEFAULT_CONFIDENCE_LEVEL = 0.68`.
 - **Derived Observable Policy**: For nonlinear derived observables (notably susceptibility and specific heat), use `summarize_derived_observable` with blocking by default. Optional block-bootstrap may be exposed only as an additive option and must not replace blocking as the default path unless explicitly requested.
 - **Effective Sample Size Policy**: Report effective sample size as $N_{\mathrm{eff}} = N / (2\tau_{\mathrm{int}})$, bounded by available measurements. If `tau_int` is undefined, non-finite, or non-positive in a context where the estimate is ill-conditioned, store `NaN` for `n_eff` rather than forcing a numeric fallback.
 - **Zero-Variance Policy**: If a trajectory window has zero variance and autocorrelation is undefined, handle `ZeroVarianceAutocorrelationError` explicitly and persist `NaN` for undefined uncertainty fields (`err`, `tau_int`, `n_eff`). Silent coercion to zero is forbidden.
 - **Schema Contract for Script Outputs**: New or updated sweep-style NPZ outputs MUST write per-observable standardized uncertainty fields: `<obs>_value`, `<obs>_err`, `<obs>_ci_low`, `<obs>_ci_high`, `<obs>_tau_int`, `<obs>_n_eff`, `<obs>_samples`. Metadata fields MUST include `uncertainty_method`, `confidence_level`, `n_seeds`, `bootstrap_resamples`, and `nan_or_undefined_count` when applicable.
 - **Compatibility Rule**: NPZ migrations MUST be additive. Preserve legacy keys for existing consumers while adding the standardized keys. Do not remove or rename legacy keys without an explicit migration request.
-- **Single Source of Truth**: Reuse shared uncertainty utilities from `utils/physics_helpers.py` (`blocking_error`, `summarize_primary_observable`, `summarize_derived_observable`, `summarize_replicate_samples`, `summarize_seed_ensemble`) instead of re-implementing ad hoc summary logic in scripts.
+- **Single Source of Truth**: Reuse shared uncertainty utilities from `utils/analysis.py` (`blocking_error`, `summarize_primary_observable`, `summarize_derived_observable`, `summarize_replicate_samples`, `summarize_seed_ensemble`) instead of re-implementing ad hoc summary logic in scripts.
 - **Integration Test Requirement**: For any script-level uncertainty schema addition, add or extend test classes in `tests/integration/test_script_infrastructure.py` (no new standalone script test files) to validate key presence, shape contracts, and additive compatibility behavior.
 
 ## Directory Map for Agents
@@ -168,7 +168,7 @@ The workspace root contains the following key files and directories.
 - `tests/`: High-coverage test suite organized into five conceptual layers, distributed across subfolders that mirror the architecture:
   - **Algorithm** (`algorithm/test_algorithm_integrity.py`): Microscopic validation of Monte Carlo kernels (detailed balance, ergodicity).
   - **Model** (`model/test_models.py`, `model/test_model_extremes.py`, `model/test_model_cli.py`, `model/test_model_control_paths.py`, `model/test_simulation_base.py`): API contracts, CLI behavior, edge cases, control flow, and base simulation infrastructure across all simulation classes.
-  - **Utility** (`utility/test_physics_helpers.py`, `utility/test_system_helpers.py`, `utility/test_cli_helpers.py`): Physics observables, system helpers, and CLI utilities.
+  - **Utility** (`utility/test_analysis.py`, `utility/test_system.py`): Physics observables, system helpers, and CLI utilities.
   - **Style** (`style/test_docstring_style.py`): Code quality and documentation standards.
   - **Integration** (`integration/test_script_infrastructure.py`, `integration/test_reproducibility.py`): Reusable infrastructure patterns for analysis scripts (deterministic seeding, reproducibility, NPZ schemas, typed payloads, aggregation logic). New scripts add test classes here rather than creating separate test files.
 - `scripts/`: Physics experiments and equilibrium/kinetics drivers. Subdirectories: `ising/`, `xy/`, `clock/`, `benchmarks/`.
@@ -181,7 +181,7 @@ The workspace root contains the following key files and directories.
 ### Task: Implement a New Physical Observable
 1. Add the `@njit` kernel to `models/simulation_base.py` or the specific model.
 2. Add a `_get_<name>` method to the Simulation class.
-3. Add a test case in `tests/utility/test_physics_helpers.py` or `tests/utility/test_system_helpers.py` as appropriate.
+3. Add a test case in `tests/utility/test_analysis.py` or `tests/utility/test_system.py` as appropriate.
 4. Verify the physical limits (e.g., ground state) in `tests/model/test_model_extremes.py`.
 
 ### Task: Add a New Analysis Script

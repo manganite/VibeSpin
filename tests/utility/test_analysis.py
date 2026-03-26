@@ -13,8 +13,7 @@ import pytest
 from models.clock_model import ClockSimulation, DiscreteClockSimulation
 from models.ising_model import IsingSimulation
 from models.xy_model import XYSimulation
-from utils.exceptions import ZeroVarianceAutocorrelationError
-from utils.physics_helpers import (
+from utils.analysis import (
     UNCERTAINTY_METHOD_BOOTSTRAP,
     blocking_error,
     calculate_autocorr,
@@ -22,7 +21,6 @@ from utils.physics_helpers import (
     calculate_thermodynamics,
     compute_kinetics_metrics,
     estimate_effective_sample_size,
-    estimate_relaxation_time_two_start,
     get_averaged_correlation,
     pair_correlation_x,
     power_fit,
@@ -34,6 +32,8 @@ from utils.physics_helpers import (
     summarize_replicate_samples,
     summarize_seed_ensemble,
 )
+from utils.equilibration import estimate_relaxation_time_two_start
+from utils.exceptions import ZeroVarianceAutocorrelationError
 
 
 @pytest.fixture
@@ -816,7 +816,7 @@ def test_estimate_relaxation_time_two_start_sigma_floor():
 
 def test_detect_quasi_steady_stuck_true_for_separated_plateaus():
     """Should flag stuck when both traces are flat but separated."""
-    from utils.physics_helpers import _detect_quasi_steady_stuck
+    from utils.equilibration import _detect_quasi_steady_stuck
 
     n = 240
     rng = np.random.default_rng(7)
@@ -835,7 +835,7 @@ def test_detect_quasi_steady_stuck_true_for_separated_plateaus():
 
 def test_detect_quasi_steady_stuck_false_for_converged_plateaus():
     """Should not flag stuck when flat traces are already mutually inside bands."""
-    from utils.physics_helpers import _detect_quasi_steady_stuck
+    from utils.equilibration import _detect_quasi_steady_stuck
 
     n = 240
     rng = np.random.default_rng(13)
@@ -859,7 +859,7 @@ def test_detect_quasi_steady_stuck_false_for_high_variance_traces():
     thermal fluctuations.  When means agree the cross-band check always passes
     regardless of variance, so stuck is correctly not declared.
     """
-    from utils.physics_helpers import _detect_quasi_steady_stuck
+    from utils.equilibration import _detect_quasi_steady_stuck
 
     n = 240
     rng = np.random.default_rng(19)
@@ -885,7 +885,7 @@ def test_detect_quasi_steady_stuck_large_L_domain_fluctuations():
     threshold=0.05 and block detection under the old both-traces guard.
     The new ordered-trace-only guard must still fire because sig_o ~ 0.
     """
-    from utils.physics_helpers import _detect_quasi_steady_stuck
+    from utils.equilibration import _detect_quasi_steady_stuck
 
     n = 300
     rng = np.random.default_rng(41)
@@ -914,7 +914,7 @@ def test_detect_quasi_steady_stuck_l_scaling_prevents_false_positive():
     constant safety margin.  The cross-band check then correctly reports
     not-stuck because both traces share the same equilibrium mean.
     """
-    from utils.physics_helpers import _detect_quasi_steady_stuck
+    from utils.equilibration import _detect_quasi_steady_stuck
 
     n = 300
     rng = np.random.default_rng(53)
@@ -954,7 +954,7 @@ def test_detect_quasi_steady_stuck_l_scaling_true_for_low_t_stuck():
     low T has sig_o ~ 0, which always satisfies the guard.
     The large gap then triggers the cross-band failure.
     """
-    from utils.physics_helpers import _detect_quasi_steady_stuck
+    from utils.equilibration import _detect_quasi_steady_stuck
 
     n = 300
     rng = np.random.default_rng(67)
@@ -979,7 +979,7 @@ class TestPhysicsHelpersValidation:
 
     def test_validate_confidence_errors(self) -> None:
         """Should raise ValueError for confidence outside (0, 1)."""
-        from utils.physics_helpers import _validate_confidence
+        from utils.analysis import _validate_confidence
         with pytest.raises(ValueError, match='confidence must satisfy'):
             _validate_confidence(confidence=0.0)
         with pytest.raises(ValueError, match='confidence must satisfy'):
@@ -989,7 +989,7 @@ class TestPhysicsHelpersValidation:
 
     def test_as_1d_float_array_errors(self) -> None:
         """Should raise ValueError for non-1D or too small arrays."""
-        from utils.physics_helpers import _as_1d_float_array
+        from utils.analysis import _as_1d_float_array
         # 2D array
         with pytest.raises(ValueError, match='must be 1-D'):
             _as_1d_float_array(time_series=np.zeros((2, 2)), name='test')

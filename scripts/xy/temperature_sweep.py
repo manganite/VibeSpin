@@ -12,8 +12,7 @@ from typing import Any, cast
 import numpy as np
 
 from models.xy_model import XYSimulation
-from utils.cli_helpers import parse_args_compat
-from utils.physics_helpers import (
+from utils.analysis import (
     DEFAULT_CONFIDENCE_LEVEL,
     UNCERTAINTY_METHOD_BLOCKING,
     UNCERTAINTY_METHOD_BOOTSTRAP,
@@ -26,7 +25,7 @@ from utils.sweep_helpers import (
     build_uncertainty_bundle,
     simulate_thermo_point,
 )
-from utils.system_helpers import parallel_sweep, setup_logging
+from utils.system import parallel_sweep, parse_args_compat, setup_logging
 
 _TBKT_XY_THEORY = 0.893
 

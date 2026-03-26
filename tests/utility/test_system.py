@@ -4,7 +4,7 @@ from __future__ import annotations
 import argparse
 import sys
 
-from utils.cli_helpers import parse_args_compat
+from utils.system import parse_args_compat
 
 
 class _WrappedParser(argparse.ArgumentParser):

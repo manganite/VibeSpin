@@ -1,17 +1,15 @@
 """
-Technical infrastructure for logging, filesystem operations, and parallel execution.
-
-Domain plots and their file-output helpers live in :mod:`utils.plotting`;
-equilibration algorithms live in :mod:`utils.equilibration`.  Both are
-re-exported here so that existing call sites require no changes.
+Technical infrastructure for logging, parallel execution, and CLI argument parsing.
 """
 from __future__ import annotations
 
+import argparse
 import logging
 import os
 import sys
 from collections.abc import Callable, Iterable, Sized
 from multiprocessing import Pool
+from typing import cast
 
 from tqdm import tqdm
 
@@ -79,3 +77,11 @@ def parallel_sweep(
 
     with Pool(processes=num_processes) as pool:
         return list(tqdm(pool.imap(worker_func, params), total=total_len, bar_format=_BAR_FORMAT))
+
+
+def parse_args_compat(parser: argparse.ArgumentParser) -> argparse.Namespace:
+    """Parse CLI args with compatibility for parser wrappers used by some runners."""
+    parse_arguments = getattr(parser, 'parse_arguments', None)
+    if callable(parse_arguments):
+        return cast(Callable[[], argparse.Namespace], parse_arguments)()
+    return parser.parse_args()

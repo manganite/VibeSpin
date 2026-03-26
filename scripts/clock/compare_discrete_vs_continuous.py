@@ -12,9 +12,9 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 from models.clock_model import ClockSimulation, DiscreteClockSimulation
+from utils.analysis import calculate_thermodynamics
 from utils.equilibration import convergence_equilibrate
-from utils.physics_helpers import calculate_thermodynamics
-from utils.system_helpers import setup_logging
+from utils.system import setup_logging
 
 
 def sweep_model(

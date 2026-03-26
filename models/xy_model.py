@@ -519,7 +519,7 @@ def main() -> None:
     import argparse
     import logging
 
-    from utils.system_helpers import setup_logging
+    from utils.system import setup_logging
 
     parser = argparse.ArgumentParser(description='XY Model Quick Example')
     parser.add_argument('--size', type=int, default=128, help='Lattice size L')
@@ -581,7 +581,7 @@ def main() -> None:
     ax3.set_xscale('log')
 
     # Structure Factor (Radial)
-    from utils.physics_helpers import radial_average_sk
+    from utils.analysis import radial_average_sk
 
     if sim.spins is not None:
         k, sk = radial_average_sk(spins=sim.spins)

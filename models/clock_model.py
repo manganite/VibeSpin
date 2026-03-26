@@ -990,7 +990,7 @@ def main() -> None:
     import argparse
     import logging
 
-    from utils.system_helpers import setup_logging
+    from utils.system import setup_logging
 
     parser = argparse.ArgumentParser(description='Clock Model Quick Example')
     parser.add_argument('--size', type=int, default=128, help='Lattice size L')

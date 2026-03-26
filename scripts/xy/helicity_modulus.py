@@ -11,10 +11,9 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 from models.xy_model import XYSimulation
-from utils.cli_helpers import parse_args_compat
 from utils.equilibration import convergence_equilibrate
 from utils.plotting import save_plot
-from utils.system_helpers import parallel_sweep, setup_logging
+from utils.system import parallel_sweep, parse_args_compat, setup_logging
 
 
 def simulate_helicity(params: tuple[float, int, int, int, int]) -> float:

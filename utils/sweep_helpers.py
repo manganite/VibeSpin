@@ -20,12 +20,12 @@ from typing import Any, NamedTuple
 
 import numpy as np
 
-from utils.equilibration import convergence_equilibrate_with_status
-from utils.physics_helpers import (
+from utils.analysis import (
     summarize_derived_observable,
     summarize_primary_observable,
     summarize_seed_ensemble,
 )
+from utils.equilibration import convergence_equilibrate_with_status
 
 # ---------------------------------------------------------------------------
 # Input type

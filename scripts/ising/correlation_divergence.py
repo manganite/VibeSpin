@@ -11,10 +11,9 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 from models.ising_model import IsingSimulation
-from utils.cli_helpers import parse_args_compat
-from utils.physics_helpers import get_averaged_correlation
+from utils.analysis import get_averaged_correlation
 from utils.plotting import ensure_results_dir, save_plot
-from utils.system_helpers import parallel_sweep, setup_logging
+from utils.system import parallel_sweep, parse_args_compat, setup_logging
 
 
 def get_correlation_length(params: tuple[float, int, int, int, int]) -> tuple[float, float]:

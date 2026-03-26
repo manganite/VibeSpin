@@ -4,10 +4,10 @@ vibespin.utils package
 Submodules
 ----------
 
-utils.cli\_helpers module
--------------------------
+utils.analysis module
+---------------------
 
-.. automodule:: utils.cli_helpers
+.. automodule:: utils.analysis
    :members:
    :show-inheritance:
    :undoc-members:
@@ -44,14 +44,6 @@ utils.kinetics\_helpers module
    :show-inheritance:
    :undoc-members:
 
-utils.physics\_helpers module
------------------------------
-
-.. automodule:: utils.physics_helpers
-   :members:
-   :show-inheritance:
-   :undoc-members:
-
 utils.plotting module
 ---------------------
 
@@ -68,10 +60,10 @@ utils.sweep\_helpers module
    :show-inheritance:
    :undoc-members:
 
-utils.system\_helpers module
-----------------------------
+utils.system module
+-------------------
 
-.. automodule:: utils.system_helpers
+.. automodule:: utils.system
    :members:
    :show-inheritance:
    :undoc-members:

@@ -15,9 +15,11 @@ from typing import Any
 import numpy as np
 from tqdm import tqdm
 
-from utils.physics_helpers import compute_kinetics_metrics, power_fit
+from utils.analysis import compute_kinetics_metrics, power_fit
 from utils.plotting import ensure_results_dir, plot_ordering_kinetics
-from utils.system_helpers import _BAR_FORMAT
+
+# tqdm bar format that always shows rate as iterations/s (never inverts to s/it).
+_BAR_FORMAT = '{l_bar}{bar}| {n_fmt}/{total_fmt} [{elapsed}<{remaining}, {rate_noinv_fmt}{postfix}]'
 
 
 def compute_mean_intercept_length(sim: Any) -> float:

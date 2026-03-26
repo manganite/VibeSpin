@@ -3,7 +3,7 @@
 Provides adaptive and two-start convergence equilibration routines, together
 with the underlying relaxation-time estimation and quasi-steady-state detection
 helpers that support them.  These algorithms were previously split between
-``utils.system_helpers`` (equilibrate functions) and ``utils.physics_helpers``
+``utils.system`` (equilibrate functions) and ``utils.analysis``
 (relaxation diagnostic helpers), which required a lazy cross-import to avoid
 circular dependencies.  Unifying them here eliminates that workaround.
 """
@@ -279,7 +279,7 @@ def adaptive_equilibrate(
     ------
         ValueError: If the adaptive-equilibration parameters are invalid.
     """
-    from utils.physics_helpers import calculate_autocorr  # lazy import; avoids pickle issues
+    from utils.analysis import calculate_autocorr  # lazy import; avoids pickle issues
 
     if min_steps < 0:
         raise ValueError(f'min_steps must be non-negative, got {min_steps}')

@@ -30,7 +30,7 @@ from utils.plotting import (
     plot_temperature_sweep,
     save_plot,
 )
-from utils.system_helpers import (
+from utils.system import (
     parallel_sweep,
     setup_logging,
 )
@@ -164,7 +164,7 @@ def test_plot_temperature_sweep_full_features(test_results_dir):
 
 def test_ensure_results_dir_empty_string():
     """ensure_results_dir should be a no-op for empty directory strings."""
-    with patch('utils.system_helpers.os.makedirs') as mock_makedirs:
+    with patch('utils.system.os.makedirs') as mock_makedirs:
         path = ensure_results_dir(directory='')
     assert path == ''
     mock_makedirs.assert_not_called()
@@ -202,7 +202,7 @@ def test_parallel_sweep_mocked():
         return x * 2
 
     params = [1, 2, 3]
-    with patch('utils.system_helpers.Pool') as mock_pool:
+    with patch('utils.system.Pool') as mock_pool:
         mock_instance = mock_pool.return_value.__enter__.return_value
         mock_instance.imap.return_value = [2, 4, 6]
         results = parallel_sweep(worker_func=worker, params=params, num_processes=1)
@@ -412,7 +412,7 @@ def test_adaptive_equilibrate_warns_on_max_steps(caplog):
             return np.linspace(0.0, 1.0, n_steps), np.zeros(n_steps)
 
     caplog.set_level('WARNING', logger='vibespin')
-    with patch('utils.physics_helpers.calculate_autocorr', return_value=(np.array([0.0]), 1e9)):
+    with patch('utils.analysis.calculate_autocorr', return_value=(np.array([0.0]), 1e9)):
         total = adaptive_equilibrate(
             _RunSim(),
             min_steps=10,
