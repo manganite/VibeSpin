@@ -28,6 +28,10 @@ wolff_efficiency
 dynamic_critical_exponents
 ising_relaxation_and_autocorrelation_analysis
 ising_temperature_sweep
+xy_temperature_sweep
+clock_temperature_sweep
+bkt_transition
+correlation_and_coarsening
 ```
 
 ```{toctree}

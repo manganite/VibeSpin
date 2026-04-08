@@ -3,10 +3,20 @@ Physics-related utility functions for calculating thermodynamic observables and 
 """
 from __future__ import annotations
 
+from typing import Protocol
+
 import numpy as np
 from scipy.integrate import cumulative_trapezoid
 
-from models.simulation_base import MonteCarloSimulation
+
+class _Sim(Protocol):
+    """Structural type for any MonteCarloSimulation; avoids a models/ → utils/ import."""
+
+    spins: np.ndarray | None
+
+    def step(self) -> None: ...
+
+    def _calculate_correlation_function(self) -> tuple[np.ndarray, np.ndarray]: ...
 
 
 def calculate_thermodynamics(
@@ -138,7 +148,7 @@ def calculate_entropy(
 
 
 def get_averaged_correlation(
-    *, sim: MonteCarloSimulation, total_steps: int, sample_interval: int
+    *, sim: _Sim, total_steps: int, sample_interval: int
 ) -> tuple[np.ndarray, np.ndarray]:
     """
     Run simulation and average the correlation function over multiple configurations.
@@ -269,7 +279,7 @@ def pair_correlation_x(*, spins: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
     return r_vals, G
 
 
-def compute_kinetics_metrics(*, sim: MonteCarloSimulation) -> dict[str, float]:
+def compute_kinetics_metrics(*, sim: _Sim) -> dict[str, float]:
     """
     Calculate common kinetics metrics (R_sk, xi) for a simulation state.
 

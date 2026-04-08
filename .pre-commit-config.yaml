@@ -35,7 +35,7 @@ repos:
 
       - id: sphinx-html-warnings
         name: sphinx html warnings guard
-        entry: bash -lc 'cd docs && make html SPHINXOPTS="-W --keep-going"'
+        entry: bash -lc 'cd docs && make html SPHINXOPTS="-W --keep-going" SPHINXBUILD="$PWD/../.venv/bin/sphinx-build"'
         language: system
         pass_filenames: false
         stages: [pre-push]

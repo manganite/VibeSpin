@@ -12,7 +12,7 @@ import numpy as np
 
 from models.xy_model import XYSimulation
 from utils.equilibration import convergence_equilibrate
-from utils.plotting import save_plot
+from utils.plotting import ensure_results_dir, save_plot
 from utils.system import parallel_sweep, parse_args_compat, setup_logging
 
 
@@ -99,7 +99,22 @@ def main() -> None:
     plt.grid(True)
     plt.legend()
 
-    save_plot(filename='bkt_transition.png', directory=args.output_dir)
+    output_dir: str = ensure_results_dir(directory=args.output_dir)
+    save_plot(filename='bkt_transition.png', directory=output_dir)
+
+    # Save data for notebook consumption
+    npz_path = f'{output_dir}/bkt_transition.npz'
+    np.savez_compressed(
+        npz_path,
+        temperatures=temperatures,
+        vortex_densities=np.array(vortex_densities),
+        T_BKT_theoretical=T_BKT_THEORETICAL,
+        L=args.size,
+        eq_probe_steps=args.eq_probe_steps,
+        eq_max_steps=args.eq_max_steps,
+        meas_steps=args.meas_steps,
+    )
+    logger.info(f'Data saved to {npz_path}')
 
 
 if __name__ == '__main__':

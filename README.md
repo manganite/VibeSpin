@@ -163,8 +163,14 @@ For deeper insights, refer to the source guides:
 - {doc}`Scripts Catalog <scripts>`: Comprehensive catalog of entry-point scripts.
 - {doc}`Agent Instruction Guide <agents>`: Mandatory technical constraints for AI Agents.
 - {doc}`Performance Benchmarks <benchmarks>`: Detailed scaling analysis.
-- {doc}`Dynamic Critical Exponents <dynamic_critical_exponents>`: Scaling analysis of autocorrelation times at criticality.
+- {doc}`Ising Temperature Sweep <ising_temperature_sweep>`: Equilibrium thermodynamics of the 2D Ising model across the Onsager transition.
+- {doc}`XY Temperature Sweep <xy_temperature_sweep>`: Thermodynamic sweep across the BKT crossover for the XY model.
+- {doc}`Clock Temperature Sweep <clock_temperature_sweep>`: Temperature sweep for the q-state clock model showing the two-crossover regime structure.
+- {doc}`BKT Transition <bkt_transition>`: Vortex density, helicity modulus, and correlation functions across the BKT transition.
+- {doc}`Correlation and Coarsening <correlation_and_coarsening>`: Equilibrium correlation functions and non-equilibrium coarsening dynamics across all three models.
 - {doc}`Ising Relaxation and Autocorrelation Analysis <ising_relaxation_and_autocorrelation_analysis>`: Comparative analysis of equilibration and autocorrelation across update schemes.
+- {doc}`Dynamic Critical Exponents <dynamic_critical_exponents>`: Scaling analysis of autocorrelation times at criticality.
+- {doc}`Wolff Efficiency <wolff_efficiency>`: Quantitative comparison of Metropolis and Wolff cluster algorithms near criticality.
 
 ## Project Context
 

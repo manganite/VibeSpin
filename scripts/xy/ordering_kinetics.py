@@ -11,6 +11,7 @@ import logging
 
 from models.xy_model import XYSimulation
 from utils.kinetics_helpers import run_ordering_kinetics
+from utils.plotting import ensure_results_dir
 from utils.system import parse_args_compat, setup_logging
 
 
@@ -52,6 +53,7 @@ def main() -> None:
         fit_min=args.fit_min,
         output_dir=args.output_dir,
         logger=logger,
+        npz_path=f'{ensure_results_dir(directory=args.output_dir)}/ordering_kinetics.npz',
     )
 
 

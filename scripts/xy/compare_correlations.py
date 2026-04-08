@@ -89,6 +89,23 @@ def main() -> None:
     output_dir: str = ensure_results_dir(directory=args.output_dir)
     save_plot(filename='correlation_comparison.png', directory=output_dir)
 
+    # Save data for notebook consumption
+    npz_path = f'{output_dir}/correlation_comparison.npz'
+    np.savez_compressed(
+        npz_path,
+        r_low=r_low,
+        G_low=G_low,
+        r_high=r_high,
+        G_high=G_high,
+        T_low=T_LOW,
+        T_high=T_HIGH,
+        L=args.size,
+        steps=args.steps,
+        eq_steps=args.eq_steps,
+        sample_interval=args.interval,
+    )
+    logger.info(f'Data saved to {npz_path}')
+
 
 if __name__ == '__main__':
     main()

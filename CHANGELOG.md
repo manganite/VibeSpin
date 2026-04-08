@@ -9,6 +9,18 @@ All notable changes to VibeSpin are documented here. The format follows [Keep a 
 ## [Unreleased]
 
 ### Added
+- New notebook `notebooks/XY_Temperature_Sweep.ipynb`: full thermodynamic sweep across the BKT crossover for the XY model, with data loading/fallback, convergence diagnostics, and autocorrelation analysis.
+- New notebook `notebooks/Clock_Temperature_Sweep.ipynb`: temperature sweep for the q-state clock model showing the two-crossover regime structure, with entropy reference at ln(q).
+- New notebook `notebooks/BKT_Transition.ipynb`: dedicated notebook examining vortex density, helicity modulus, and correlation function across the BKT transition.
+- New notebook `notebooks/Correlation_and_Coarsening.ipynb`: combined notebook covering equilibrium correlation functions (Ising, XY) and non-equilibrium coarsening dynamics across all three models.
+- NPZ output for `scripts/xy/bkt_transition.py`, `scripts/xy/helicity_modulus.py`, `scripts/xy/compare_correlations.py`, `scripts/ising/correlation_comparison.py`, `scripts/ising/correlation_divergence.py`.
+- Optional `npz_path` parameter in `utils/kinetics_helpers.run_ordering_kinetics` for persisting kinetics data. All three ordering_kinetics scripts now save NPZ output.
+- Data Pipeline mapping table in `SCRIPTS.md` documenting the script-to-NPZ-to-notebook data flow.
+
+### Changed
+- `utils/observables.py`: replaced upward dependency on `models.simulation_base.MonteCarloSimulation` with a structural `Protocol` class `_Sim`, eliminating the utils-to-models import cycle.
+
+### Added
 - `utils/kinetics_helpers.py`: new shared module providing the ordering-kinetics simulation loop for the Ising, XY, and Clock scripts. Exports `compute_mean_intercept_length` (stereological domain-size estimator for scalar-spin lattices) and `run_ordering_kinetics` (loop over logarithmically spaced step targets, power-law fitting, and figure generation).
 - `utils/evolution_helpers.py`: new shared module providing the ordering-evolution snapshot loop for the Ising, XY, and Clock scripts. Exports `run_ordering_evolution`, which captures spin configurations, correlation functions, and (for vector-spin models) vorticity maps at each target step, then writes the multi-panel figure.
 - `utils/sweep_helpers.py`: new shared module providing the two-layer temperature-sweep worker infrastructure used by all three model sweep scripts. Exports `ThermoPoint` (typed NamedTuple worker payload), `RawThermoData` (raw measurement arrays), `simulate_at_temperature` (Layer 1: physics and equilibration), `compute_thermo_observables` (Layer 2: statistical summarization), `simulate_thermo_point` (convenience wrapper), `build_uncertainty_bundle`, and `build_quality_flags`.

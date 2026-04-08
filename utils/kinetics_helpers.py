@@ -72,6 +72,7 @@ def run_ordering_kinetics(
     output_dir: str,
     y_label: str = 'Characteristic Length Scale $L(t)$ (lattice units)',
     logger: logging.Logger | None = None,
+    npz_path: str | None = None,
 ) -> None:
     """Run an ordering kinetics simulation and save the two-panel kinetics figure.
 
@@ -114,6 +115,9 @@ def run_ordering_kinetics(
         Y-axis label for the growth-scale panel.
     logger : logging.Logger, optional
         Logger to use; creates a module-level logger if not provided.
+    npz_path : str, optional
+        If given, save the kinetics data arrays to this ``.npz`` file for
+        notebook consumption.
     """
     _log = logger or logging.getLogger(__name__)
 
@@ -153,6 +157,27 @@ def run_ordering_kinetics(
         exponents[key], prefactors[key] = exp, pre
         if exp:
             _log.info(f'{key} exponent: {exp:.3f}')
+
+    if npz_path is not None:
+        _nan = float('nan')
+        np.savez_compressed(
+            npz_path,
+            t=t,
+            R_sk=R_sk,
+            R_xi=R_xi,
+            third_metric=third,
+            third_metric_label=third_metric_label,
+            exponent_R_sk=exponents.get('R_sk') or _nan,
+            exponent_xi=exponents.get('xi') or _nan,
+            exponent_third=exponents.get('third') or _nan,
+            prefactor_R_sk=prefactors.get('R_sk') or _nan,
+            prefactor_xi=prefactors.get('xi') or _nan,
+            prefactor_third=prefactors.get('third') or _nan,
+            fit_min=fit_min,
+            size=size,
+            temp=temp,
+        )
+        _log.info(f'Kinetics data saved to {npz_path}')
 
     plot_ordering_kinetics(
         t=t,

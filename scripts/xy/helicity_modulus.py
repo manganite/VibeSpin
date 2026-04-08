@@ -12,7 +12,7 @@ import numpy as np
 
 from models.xy_model import XYSimulation
 from utils.equilibration import convergence_equilibrate
-from utils.plotting import save_plot
+from utils.plotting import ensure_results_dir, save_plot
 from utils.system import parallel_sweep, parse_args_compat, setup_logging
 
 
@@ -110,7 +110,21 @@ def main() -> None:
     plt.legend()
     plt.ylim(bottom=0)
 
-    save_plot(filename='helicity_modulus.png', directory=args.output_dir)
+    output_dir: str = ensure_results_dir(directory=args.output_dir)
+    save_plot(filename='helicity_modulus.png', directory=output_dir)
+
+    # Save data for notebook consumption
+    npz_path = f'{output_dir}/helicity_modulus.npz'
+    np.savez_compressed(
+        npz_path,
+        temperatures=temperatures,
+        helicity_modulus=np.array(upsilons),
+        L=args.size,
+        eq_probe_steps=args.eq_probe_steps,
+        eq_max_steps=args.eq_max_steps,
+        meas_steps=args.meas_steps,
+    )
+    logger.info(f'Data saved to {npz_path}')
 
 
 if __name__ == '__main__':
