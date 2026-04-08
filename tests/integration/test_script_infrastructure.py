@@ -901,6 +901,7 @@ class TestMiscScriptsMain:
         monkeypatch.setattr('matplotlib.pyplot.savefig', lambda *args, **kwargs: None)
         monkeypatch.setattr('matplotlib.pyplot.close', lambda *args, **kwargs: None)
         monkeypatch.setattr('os.makedirs', lambda *args, **kwargs: None)
+        monkeypatch.setattr('numpy.savez', lambda *args, **kwargs: None)
         monkeypatch.setattr(
             'sys.argv',
             ['throughput.py', '--sizes', '4', '--sweeps', '2'],
