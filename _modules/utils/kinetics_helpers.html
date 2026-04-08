@@ -152,6 +152,76 @@
 
 
 
+<span class="k">def</span><span class="w"> </span><span class="nf">_run_single_kinetics</span><span class="p">(</span>
+    <span class="o">*</span><span class="p">,</span>
+    <span class="n">model_cls</span><span class="p">:</span> <span class="nb">type</span><span class="p">,</span>
+    <span class="n">model_kwargs</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">],</span>
+    <span class="n">third_metric_fn</span><span class="p">:</span> <span class="n">Callable</span><span class="p">[[</span><span class="n">Any</span><span class="p">],</span> <span class="nb">float</span><span class="p">],</span>
+    <span class="n">size</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+    <span class="n">temp</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
+    <span class="n">step_targets</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
+    <span class="n">seed</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">logger</span><span class="p">:</span> <span class="n">logging</span><span class="o">.</span><span class="n">Logger</span><span class="p">,</span>
+    <span class="n">desc</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">&#39;Simulating&#39;</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">]:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Run a single kinetics trajectory and return (t, R_sk, R_xi, third).</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    model_cls : type</span>
+<span class="sd">        Simulation class to instantiate.</span>
+<span class="sd">    model_kwargs : dict[str, Any]</span>
+<span class="sd">        Extra keyword arguments beyond ``size``, ``temp``, ``update``.</span>
+<span class="sd">    third_metric_fn : Callable[[Any], float]</span>
+<span class="sd">        Model-specific third metric function.</span>
+<span class="sd">    size : int</span>
+<span class="sd">        Linear lattice size.</span>
+<span class="sd">    temp : float</span>
+<span class="sd">        Quench temperature.</span>
+<span class="sd">    step_targets : np.ndarray</span>
+<span class="sd">        Sorted array of MC step targets to measure at.</span>
+<span class="sd">    seed : int or None</span>
+<span class="sd">        Random seed for reproducibility.</span>
+<span class="sd">    logger : logging.Logger</span>
+<span class="sd">        Logger instance.</span>
+<span class="sd">    desc : str</span>
+<span class="sd">        Description for the progress bar.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]</span>
+<span class="sd">        Arrays (t, R_sk, R_xi, third_metric).</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">seed_kwargs</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="k">if</span> <span class="n">seed</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">seed_kwargs</span><span class="p">[</span><span class="s1">&#39;seed&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">seed</span>
+    <span class="n">sim</span> <span class="o">=</span> <span class="n">model_cls</span><span class="p">(</span><span class="n">size</span><span class="o">=</span><span class="n">size</span><span class="p">,</span> <span class="n">temp</span><span class="o">=</span><span class="n">temp</span><span class="p">,</span> <span class="n">update</span><span class="o">=</span><span class="s1">&#39;random&#39;</span><span class="p">,</span> <span class="o">**</span><span class="n">model_kwargs</span><span class="p">,</span> <span class="o">**</span><span class="n">seed_kwargs</span><span class="p">)</span>
+
+    <span class="n">N_data</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">step_targets</span><span class="p">)</span>
+    <span class="n">t</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">N_data</span><span class="p">)</span>
+    <span class="n">R_sk</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">N_data</span><span class="p">)</span>
+    <span class="n">R_xi</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">N_data</span><span class="p">)</span>
+    <span class="n">third</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">N_data</span><span class="p">)</span>
+
+    <span class="n">current_step</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">target</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">tqdm</span><span class="p">(</span><span class="n">step_targets</span><span class="p">,</span> <span class="n">bar_format</span><span class="o">=</span><span class="n">_BAR_FORMAT</span><span class="p">,</span> <span class="n">desc</span><span class="o">=</span><span class="n">desc</span><span class="p">)):</span>
+        <span class="n">steps_to_run</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">target</span><span class="p">)</span> <span class="o">-</span> <span class="n">current_step</span>
+        <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">steps_to_run</span><span class="p">):</span>
+            <span class="n">sim</span><span class="o">.</span><span class="n">step</span><span class="p">()</span>
+        <span class="n">current_step</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">target</span><span class="p">)</span>
+
+        <span class="n">metrics</span> <span class="o">=</span> <span class="n">compute_kinetics_metrics</span><span class="p">(</span><span class="n">sim</span><span class="o">=</span><span class="n">sim</span><span class="p">)</span>
+        <span class="n">t</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">current_step</span><span class="p">)</span>
+        <span class="n">R_sk</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">metrics</span><span class="p">[</span><span class="s1">&#39;R_sk&#39;</span><span class="p">]</span>
+        <span class="n">R_xi</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">metrics</span><span class="p">[</span><span class="s1">&#39;xi&#39;</span><span class="p">]</span>
+        <span class="n">third</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">third_metric_fn</span><span class="p">(</span><span class="n">sim</span><span class="p">)</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span>
+            <span class="sa">f</span><span class="s1">&#39;t=</span><span class="si">{</span><span class="n">current_step</span><span class="si">}</span><span class="s1">: R_sk=</span><span class="si">{</span><span class="n">R_sk</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="si">:</span><span class="s1">.2f</span><span class="si">}</span><span class="s1">, xi=</span><span class="si">{</span><span class="n">R_xi</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="si">:</span><span class="s1">.2f</span><span class="si">}</span><span class="s1">, third=</span><span class="si">{</span><span class="n">third</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="si">:</span><span class="s1">.4f</span><span class="si">}</span><span class="s1">&#39;</span>
+        <span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">t</span><span class="p">,</span> <span class="n">R_sk</span><span class="p">,</span> <span class="n">R_xi</span><span class="p">,</span> <span class="n">third</span>
+
+
 <div class="viewcode-block" id="run_ordering_kinetics">
 <a class="viewcode-back" href="../../api/vibespin.utils.html#utils.kinetics_helpers.run_ordering_kinetics">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">run_ordering_kinetics</span><span class="p">(</span>
@@ -172,6 +242,8 @@
     <span class="n">y_label</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">&#39;Characteristic Length Scale $L(t)$ (lattice units)&#39;</span><span class="p">,</span>
     <span class="n">logger</span><span class="p">:</span> <span class="n">logging</span><span class="o">.</span><span class="n">Logger</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">npz_path</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">n_seeds</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">1</span><span class="p">,</span>
+    <span class="n">base_seed</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">42</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Run an ordering kinetics simulation and save the two-panel kinetics figure.</span>
 
@@ -179,6 +251,11 @@
 <span class="sd">    logarithmically spaced targets up to ``max_steps``, measures growth</span>
 <span class="sd">    scales and a model-specific third metric, fits power laws, and writes</span>
 <span class="sd">    the figure to ``output_dir``.</span>
+
+<span class="sd">    When ``n_seeds &gt; 1``, the simulation is repeated for an ensemble of</span>
+<span class="sd">    seeds.  The median trajectory is used for fitting and plotting, and</span>
+<span class="sd">    per-seed arrays together with IQR-based error bars are saved to the</span>
+<span class="sd">    NPZ file.</span>
 
 <span class="sd">    Parameters</span>
 <span class="sd">    ----------</span>
@@ -217,36 +294,59 @@
 <span class="sd">    npz_path : str, optional</span>
 <span class="sd">        If given, save the kinetics data arrays to this ``.npz`` file for</span>
 <span class="sd">        notebook consumption.</span>
+<span class="sd">    n_seeds : int, optional</span>
+<span class="sd">        Number of independent seeds to run.  Defaults to 1 (legacy</span>
+<span class="sd">        single-trajectory behavior).</span>
+<span class="sd">    base_seed : int, optional</span>
+<span class="sd">        Starting seed; seeds are ``base_seed, base_seed+1, ...``.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="n">_log</span> <span class="o">=</span> <span class="n">logger</span> <span class="ow">or</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span>
 
     <span class="n">step_targets</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">unique</span><span class="p">(</span>
         <span class="n">np</span><span class="o">.</span><span class="n">logspace</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">log10</span><span class="p">(</span><span class="n">max_steps</span><span class="p">),</span> <span class="n">num</span><span class="o">=</span><span class="n">samples</span><span class="p">)</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">int</span><span class="p">)</span>
     <span class="p">)</span>
-    <span class="n">sim</span> <span class="o">=</span> <span class="n">model_cls</span><span class="p">(</span><span class="n">size</span><span class="o">=</span><span class="n">size</span><span class="p">,</span> <span class="n">temp</span><span class="o">=</span><span class="n">temp</span><span class="p">,</span> <span class="n">update</span><span class="o">=</span><span class="s1">&#39;random&#39;</span><span class="p">,</span> <span class="o">**</span><span class="n">model_kwargs</span><span class="p">)</span>
 
+    <span class="k">if</span> <span class="n">n_seeds</span> <span class="o">&lt;</span> <span class="mi">1</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;n_seeds must be &gt;= 1, got </span><span class="si">{</span><span class="n">n_seeds</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
+
+    <span class="c1"># --- Run ensemble ---</span>
     <span class="n">N_data</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">step_targets</span><span class="p">)</span>
-    <span class="n">t</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">N_data</span><span class="p">)</span>
-    <span class="n">R_sk</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">N_data</span><span class="p">)</span>
-    <span class="n">R_xi</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">N_data</span><span class="p">)</span>
-    <span class="n">third</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">N_data</span><span class="p">)</span>
+    <span class="n">all_R_sk</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="n">n_seeds</span><span class="p">,</span> <span class="n">N_data</span><span class="p">))</span>
+    <span class="n">all_R_xi</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="n">n_seeds</span><span class="p">,</span> <span class="n">N_data</span><span class="p">))</span>
+    <span class="n">all_third</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="n">n_seeds</span><span class="p">,</span> <span class="n">N_data</span><span class="p">))</span>
 
-    <span class="n">current_step</span> <span class="o">=</span> <span class="mi">0</span>
-    <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">target</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">tqdm</span><span class="p">(</span><span class="n">step_targets</span><span class="p">,</span> <span class="n">bar_format</span><span class="o">=</span><span class="n">_BAR_FORMAT</span><span class="p">,</span> <span class="n">desc</span><span class="o">=</span><span class="s1">&#39;Simulating&#39;</span><span class="p">)):</span>
-        <span class="n">steps_to_run</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">target</span><span class="p">)</span> <span class="o">-</span> <span class="n">current_step</span>
-        <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">steps_to_run</span><span class="p">):</span>
-            <span class="n">sim</span><span class="o">.</span><span class="n">step</span><span class="p">()</span>
-        <span class="n">current_step</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">target</span><span class="p">)</span>
-
-        <span class="n">metrics</span> <span class="o">=</span> <span class="n">compute_kinetics_metrics</span><span class="p">(</span><span class="n">sim</span><span class="o">=</span><span class="n">sim</span><span class="p">)</span>
-        <span class="n">t</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">current_step</span><span class="p">)</span>
-        <span class="n">R_sk</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">metrics</span><span class="p">[</span><span class="s1">&#39;R_sk&#39;</span><span class="p">]</span>
-        <span class="n">R_xi</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">metrics</span><span class="p">[</span><span class="s1">&#39;xi&#39;</span><span class="p">]</span>
-        <span class="n">third</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">third_metric_fn</span><span class="p">(</span><span class="n">sim</span><span class="p">)</span>
-        <span class="n">_log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span>
-            <span class="sa">f</span><span class="s1">&#39;t=</span><span class="si">{</span><span class="n">current_step</span><span class="si">}</span><span class="s1">: R_sk=</span><span class="si">{</span><span class="n">R_sk</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="si">:</span><span class="s1">.2f</span><span class="si">}</span><span class="s1">, xi=</span><span class="si">{</span><span class="n">R_xi</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="si">:</span><span class="s1">.2f</span><span class="si">}</span><span class="s1">, third=</span><span class="si">{</span><span class="n">third</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="si">:</span><span class="s1">.4f</span><span class="si">}</span><span class="s1">&#39;</span>
+    <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n_seeds</span><span class="p">):</span>
+        <span class="n">seed</span> <span class="o">=</span> <span class="n">base_seed</span> <span class="o">+</span> <span class="n">s</span>
+        <span class="n">desc</span> <span class="o">=</span> <span class="sa">f</span><span class="s1">&#39;Seed </span><span class="si">{</span><span class="n">s</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="mi">1</span><span class="si">}</span><span class="s1">/</span><span class="si">{</span><span class="n">n_seeds</span><span class="si">}</span><span class="s1">&#39;</span> <span class="k">if</span> <span class="n">n_seeds</span> <span class="o">&gt;</span> <span class="mi">1</span> <span class="k">else</span> <span class="s1">&#39;Simulating&#39;</span>
+        <span class="n">t</span><span class="p">,</span> <span class="n">R_sk_s</span><span class="p">,</span> <span class="n">R_xi_s</span><span class="p">,</span> <span class="n">third_s</span> <span class="o">=</span> <span class="n">_run_single_kinetics</span><span class="p">(</span>
+            <span class="n">model_cls</span><span class="o">=</span><span class="n">model_cls</span><span class="p">,</span> <span class="n">model_kwargs</span><span class="o">=</span><span class="n">model_kwargs</span><span class="p">,</span>
+            <span class="n">third_metric_fn</span><span class="o">=</span><span class="n">third_metric_fn</span><span class="p">,</span>
+            <span class="n">size</span><span class="o">=</span><span class="n">size</span><span class="p">,</span> <span class="n">temp</span><span class="o">=</span><span class="n">temp</span><span class="p">,</span> <span class="n">step_targets</span><span class="o">=</span><span class="n">step_targets</span><span class="p">,</span>
+            <span class="n">seed</span><span class="o">=</span><span class="n">seed</span><span class="p">,</span> <span class="n">logger</span><span class="o">=</span><span class="n">_log</span><span class="p">,</span> <span class="n">desc</span><span class="o">=</span><span class="n">desc</span><span class="p">,</span>
         <span class="p">)</span>
+        <span class="n">all_R_sk</span><span class="p">[</span><span class="n">s</span><span class="p">]</span> <span class="o">=</span> <span class="n">R_sk_s</span>
+        <span class="n">all_R_xi</span><span class="p">[</span><span class="n">s</span><span class="p">]</span> <span class="o">=</span> <span class="n">R_xi_s</span>
+        <span class="n">all_third</span><span class="p">[</span><span class="n">s</span><span class="p">]</span> <span class="o">=</span> <span class="n">third_s</span>
 
+    <span class="c1"># Summary statistics: median for robustness against outlier seeds.</span>
+    <span class="n">R_sk</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">median</span><span class="p">(</span><span class="n">all_R_sk</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+    <span class="n">R_xi</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">median</span><span class="p">(</span><span class="n">all_R_xi</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+    <span class="n">third</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">median</span><span class="p">(</span><span class="n">all_third</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+
+    <span class="c1"># IQR-based error: half the interquartile range as a robust ±1σ analogue.</span>
+    <span class="k">if</span> <span class="n">n_seeds</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
+        <span class="n">R_sk_err</span> <span class="o">=</span> <span class="mf">0.5</span> <span class="o">*</span> <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">percentile</span><span class="p">(</span><span class="n">all_R_sk</span><span class="p">,</span> <span class="mi">75</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+                          <span class="o">-</span> <span class="n">np</span><span class="o">.</span><span class="n">percentile</span><span class="p">(</span><span class="n">all_R_sk</span><span class="p">,</span> <span class="mi">25</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">))</span>
+        <span class="n">R_xi_err</span> <span class="o">=</span> <span class="mf">0.5</span> <span class="o">*</span> <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">percentile</span><span class="p">(</span><span class="n">all_R_xi</span><span class="p">,</span> <span class="mi">75</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+                          <span class="o">-</span> <span class="n">np</span><span class="o">.</span><span class="n">percentile</span><span class="p">(</span><span class="n">all_R_xi</span><span class="p">,</span> <span class="mi">25</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">))</span>
+        <span class="n">third_err</span> <span class="o">=</span> <span class="mf">0.5</span> <span class="o">*</span> <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">percentile</span><span class="p">(</span><span class="n">all_third</span><span class="p">,</span> <span class="mi">75</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+                           <span class="o">-</span> <span class="n">np</span><span class="o">.</span><span class="n">percentile</span><span class="p">(</span><span class="n">all_third</span><span class="p">,</span> <span class="mi">25</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">))</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">R_sk_err</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="n">R_xi_err</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="n">third_err</span> <span class="o">=</span> <span class="kc">None</span>
+
+    <span class="c1"># --- Fit power laws to median trajectory ---</span>
     <span class="n">fit_mask</span> <span class="o">=</span> <span class="n">t</span> <span class="o">&gt;=</span> <span class="n">fit_min</span>
     <span class="n">exponents</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">float</span> <span class="o">|</span> <span class="kc">None</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
     <span class="n">prefactors</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">float</span> <span class="o">|</span> <span class="kc">None</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
@@ -257,27 +357,41 @@
         <span class="k">if</span> <span class="n">exp</span><span class="p">:</span>
             <span class="n">_log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">key</span><span class="si">}</span><span class="s1"> exponent: </span><span class="si">{</span><span class="n">exp</span><span class="si">:</span><span class="s1">.3f</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
 
+    <span class="c1"># --- Save NPZ ---</span>
     <span class="k">if</span> <span class="n">npz_path</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
         <span class="n">_nan</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="s1">&#39;nan&#39;</span><span class="p">)</span>
-        <span class="n">np</span><span class="o">.</span><span class="n">savez_compressed</span><span class="p">(</span>
-            <span class="n">npz_path</span><span class="p">,</span>
-            <span class="n">t</span><span class="o">=</span><span class="n">t</span><span class="p">,</span>
-            <span class="n">R_sk</span><span class="o">=</span><span class="n">R_sk</span><span class="p">,</span>
-            <span class="n">R_xi</span><span class="o">=</span><span class="n">R_xi</span><span class="p">,</span>
-            <span class="n">third_metric</span><span class="o">=</span><span class="n">third</span><span class="p">,</span>
-            <span class="n">third_metric_label</span><span class="o">=</span><span class="n">third_metric_label</span><span class="p">,</span>
-            <span class="n">exponent_R_sk</span><span class="o">=</span><span class="n">exponents</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;R_sk&#39;</span><span class="p">)</span> <span class="ow">or</span> <span class="n">_nan</span><span class="p">,</span>
-            <span class="n">exponent_xi</span><span class="o">=</span><span class="n">exponents</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;xi&#39;</span><span class="p">)</span> <span class="ow">or</span> <span class="n">_nan</span><span class="p">,</span>
-            <span class="n">exponent_third</span><span class="o">=</span><span class="n">exponents</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;third&#39;</span><span class="p">)</span> <span class="ow">or</span> <span class="n">_nan</span><span class="p">,</span>
-            <span class="n">prefactor_R_sk</span><span class="o">=</span><span class="n">prefactors</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;R_sk&#39;</span><span class="p">)</span> <span class="ow">or</span> <span class="n">_nan</span><span class="p">,</span>
-            <span class="n">prefactor_xi</span><span class="o">=</span><span class="n">prefactors</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;xi&#39;</span><span class="p">)</span> <span class="ow">or</span> <span class="n">_nan</span><span class="p">,</span>
-            <span class="n">prefactor_third</span><span class="o">=</span><span class="n">prefactors</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;third&#39;</span><span class="p">)</span> <span class="ow">or</span> <span class="n">_nan</span><span class="p">,</span>
-            <span class="n">fit_min</span><span class="o">=</span><span class="n">fit_min</span><span class="p">,</span>
-            <span class="n">size</span><span class="o">=</span><span class="n">size</span><span class="p">,</span>
-            <span class="n">temp</span><span class="o">=</span><span class="n">temp</span><span class="p">,</span>
-        <span class="p">)</span>
-        <span class="n">_log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Kinetics data saved to </span><span class="si">{</span><span class="n">npz_path</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
+        <span class="n">npz_data</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="c1"># Legacy keys (single-trajectory shape, backward compatible).</span>
+            <span class="s1">&#39;t&#39;</span><span class="p">:</span> <span class="n">t</span><span class="p">,</span>
+            <span class="s1">&#39;R_sk&#39;</span><span class="p">:</span> <span class="n">R_sk</span><span class="p">,</span>
+            <span class="s1">&#39;R_xi&#39;</span><span class="p">:</span> <span class="n">R_xi</span><span class="p">,</span>
+            <span class="s1">&#39;third_metric&#39;</span><span class="p">:</span> <span class="n">third</span><span class="p">,</span>
+            <span class="s1">&#39;third_metric_label&#39;</span><span class="p">:</span> <span class="n">third_metric_label</span><span class="p">,</span>
+            <span class="s1">&#39;exponent_R_sk&#39;</span><span class="p">:</span> <span class="n">exponents</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;R_sk&#39;</span><span class="p">)</span> <span class="ow">or</span> <span class="n">_nan</span><span class="p">,</span>
+            <span class="s1">&#39;exponent_xi&#39;</span><span class="p">:</span> <span class="n">exponents</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;xi&#39;</span><span class="p">)</span> <span class="ow">or</span> <span class="n">_nan</span><span class="p">,</span>
+            <span class="s1">&#39;exponent_third&#39;</span><span class="p">:</span> <span class="n">exponents</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;third&#39;</span><span class="p">)</span> <span class="ow">or</span> <span class="n">_nan</span><span class="p">,</span>
+            <span class="s1">&#39;prefactor_R_sk&#39;</span><span class="p">:</span> <span class="n">prefactors</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;R_sk&#39;</span><span class="p">)</span> <span class="ow">or</span> <span class="n">_nan</span><span class="p">,</span>
+            <span class="s1">&#39;prefactor_xi&#39;</span><span class="p">:</span> <span class="n">prefactors</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;xi&#39;</span><span class="p">)</span> <span class="ow">or</span> <span class="n">_nan</span><span class="p">,</span>
+            <span class="s1">&#39;prefactor_third&#39;</span><span class="p">:</span> <span class="n">prefactors</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;third&#39;</span><span class="p">)</span> <span class="ow">or</span> <span class="n">_nan</span><span class="p">,</span>
+            <span class="s1">&#39;fit_min&#39;</span><span class="p">:</span> <span class="n">fit_min</span><span class="p">,</span>
+            <span class="s1">&#39;size&#39;</span><span class="p">:</span> <span class="n">size</span><span class="p">,</span>
+            <span class="s1">&#39;temp&#39;</span><span class="p">:</span> <span class="n">temp</span><span class="p">,</span>
+            <span class="s1">&#39;n_seeds&#39;</span><span class="p">:</span> <span class="n">n_seeds</span><span class="p">,</span>
+            <span class="s1">&#39;base_seed&#39;</span><span class="p">:</span> <span class="n">base_seed</span><span class="p">,</span>
+        <span class="p">}</span>
+        <span class="c1"># Additive ensemble keys (only when n_seeds &gt; 1).</span>
+        <span class="k">if</span> <span class="n">n_seeds</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="n">npz_data</span><span class="p">[</span><span class="s1">&#39;R_sk_err&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">R_sk_err</span>
+            <span class="n">npz_data</span><span class="p">[</span><span class="s1">&#39;R_xi_err&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">R_xi_err</span>
+            <span class="n">npz_data</span><span class="p">[</span><span class="s1">&#39;third_metric_err&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">third_err</span>
+            <span class="n">npz_data</span><span class="p">[</span><span class="s1">&#39;R_sk_seeds&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">all_R_sk</span>
+            <span class="n">npz_data</span><span class="p">[</span><span class="s1">&#39;R_xi_seeds&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">all_R_xi</span>
+            <span class="n">npz_data</span><span class="p">[</span><span class="s1">&#39;third_metric_seeds&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">all_third</span>
 
+        <span class="n">np</span><span class="o">.</span><span class="n">savez_compressed</span><span class="p">(</span><span class="n">npz_path</span><span class="p">,</span> <span class="o">**</span><span class="n">npz_data</span><span class="p">)</span>
+        <span class="n">_log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Kinetics data saved to </span><span class="si">{</span><span class="n">npz_path</span><span class="si">}</span><span class="s1"> (n_seeds=</span><span class="si">{</span><span class="n">n_seeds</span><span class="si">}</span><span class="s1">)&#39;</span><span class="p">)</span>
+
+    <span class="c1"># --- Plot ---</span>
     <span class="n">plot_ordering_kinetics</span><span class="p">(</span>
         <span class="n">t</span><span class="o">=</span><span class="n">t</span><span class="p">,</span>
         <span class="n">R_sk</span><span class="o">=</span><span class="n">R_sk</span><span class="p">,</span>

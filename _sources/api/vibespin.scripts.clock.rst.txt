@@ -12,6 +12,14 @@ scripts.clock.compare\_discrete\_vs\_continuous module
    :show-inheritance:
    :undoc-members:
 
+scripts.clock.correlation\_comparison module
+--------------------------------------------
+
+.. automodule:: scripts.clock.correlation_comparison
+   :members:
+   :show-inheritance:
+   :undoc-members:
+
 scripts.clock.ordering\_evolution module
 ----------------------------------------
 

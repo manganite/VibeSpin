@@ -17,6 +17,9 @@
       <script src="_static/doctools.js?v=fd6eb6e6"></script>
       <script src="_static/sphinx_highlight.js?v=6ffebe34"></script>
       <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+      <script>window.MathJax = {"options": {"processHtmlClass": "tex2jax_process|mathjax_process|math|output_area"}}</script>
+      <script>window.MathJax = {"tex": {"inlineMath": [["$", "$"], ["\\(", "\\)"]], "processEscapes": true}, "options": {"ignoreHtmlClass": "tex2jax_ignore|mathjax_ignore|document", "processHtmlClass": "tex2jax_process|mathjax_process|math|output_area"}}</script>
+      <script defer="defer" src="https://cdn.jsdelivr.net/npm/mathjax@4/tex-mml-chtml.js"></script>
     <script src="_static/js/theme.js"></script>
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
@@ -57,21 +60,26 @@
 <li class="toctree-l3"><a class="reference internal" href="#changed">Changed</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#id1">Added</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#id2">Changed</a></li>
-<li class="toctree-l3"><a class="reference internal" href="#performance">Performance</a></li>
-<li class="toctree-l3"><a class="reference internal" href="#id3">Changed</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#fixed">Fixed</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#id3">Added</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#id4">Changed</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#id5">Added</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#id6">Changed</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#performance">Performance</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#id7">Changed</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#id8">Fixed</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#test">Test</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#chores">Chores</a></li>
 </ul>
 </li>
-<li class="toctree-l2"><a class="reference internal" href="#id4">0.1.0 — 2026-03-25</a><ul>
-<li class="toctree-l3"><a class="reference internal" href="#id5">Added</a></li>
-<li class="toctree-l3"><a class="reference internal" href="#id6">Performance</a></li>
-<li class="toctree-l3"><a class="reference internal" href="#id7">Changed</a></li>
-<li class="toctree-l3"><a class="reference internal" href="#id8">Fixed</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#id9">0.1.0 — 2026-03-25</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#id10">Added</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#id11">Performance</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#id12">Changed</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#id13">Fixed</a></li>
 </ul>
 </li>
-<li class="toctree-l2"><a class="reference internal" href="#id9">Unreleased</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#id14">Unreleased</a><ul>
 <li class="toctree-l3"><a class="reference internal" href="#refactored">Refactored</a></li>
 </ul>
 </li>
@@ -129,6 +137,53 @@
 <section id="added">
 <h3>Added<a class="headerlink" href="#added" title="Link to this heading"></a></h3>
 <ul class="simple">
+<li><p>New script <code class="docutils literal notranslate"><span class="pre">scripts/clock/correlation_comparison.py</span></code>: computes equilibrium <span class="math notranslate nohighlight">\(G(r)\)</span> for the <span class="math notranslate nohighlight">\(q = 6\)</span> clock model in ordered, quasi-ordered, and disordered phases using convergence equilibration. Saves <code class="docutils literal notranslate"><span class="pre">results/clock/correlation_comparison.npz</span></code>.</p></li>
+<li><p>New script <code class="docutils literal notranslate"><span class="pre">scripts/ising/coarsening_analysis.py</span></code>: precomputes quench-depth sensitivity, equilibrium-to-coarsening crossover (<span class="math notranslate nohighlight">\(\xi_{\mathrm{eq}}\)</span> measurement), and stochastic ensemble data for the Ising model. Saves <code class="docutils literal notranslate"><span class="pre">results/ising/coarsening_analysis.npz</span></code>.</p></li>
+<li><p>Multi-seed ensemble support in <code class="docutils literal notranslate"><span class="pre">utils/kinetics_helpers.run_ordering_kinetics</span></code>: new <code class="docutils literal notranslate"><span class="pre">n_seeds</span></code> and <code class="docutils literal notranslate"><span class="pre">base_seed</span></code> parameters produce median trajectories with IQR error bars. Per-seed arrays stored as additive NPZ keys (<code class="docutils literal notranslate"><span class="pre">R_sk_seeds</span></code>, <code class="docutils literal notranslate"><span class="pre">R_xi_seeds</span></code>, <code class="docutils literal notranslate"><span class="pre">third_metric_seeds</span></code>, <code class="docutils literal notranslate"><span class="pre">R_sk_err</span></code>, <code class="docutils literal notranslate"><span class="pre">R_xi_err</span></code>, <code class="docutils literal notranslate"><span class="pre">third_metric_err</span></code>).</p></li>
+<li><p>All three <code class="docutils literal notranslate"><span class="pre">ordering_kinetics.py</span></code> scripts (Ising, XY, Clock) now accept <code class="docutils literal notranslate"><span class="pre">--seeds</span></code> and <code class="docutils literal notranslate"><span class="pre">--base-seed</span></code> CLI arguments for multi-seed runs.</p></li>
+<li><p>Generated <code class="docutils literal notranslate"><span class="pre">results/xy/correlation_comparison.npz</span></code> (<span class="math notranslate nohighlight">\(L = 128\)</span>) from existing <code class="docutils literal notranslate"><span class="pre">scripts/xy/compare_correlations.py</span></code>.</p></li>
+</ul>
+</section>
+<section id="changed">
+<h3>Changed<a class="headerlink" href="#changed" title="Link to this heading"></a></h3>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">notebooks/Correlation_and_Coarsening.ipynb</span></code>: quench-depth (cell 31), crossover (cell 34), and stochastic ensemble (cell 39) cells now load precomputed data from <code class="docutils literal notranslate"><span class="pre">results/ising/coarsening_analysis.npz</span></code> with inline computation as fallback only. Clock correlation cell (cell 13) and XY correlation cell (cell 8) similarly load from cached NPZ files. Methodology section updated to describe multi-seed ensemble averaging.</p></li>
+</ul>
+</section>
+<section id="id1">
+<h3>Added<a class="headerlink" href="#id1" title="Link to this heading"></a></h3>
+<ul class="simple">
+<li><p>Part II of <code class="docutils literal notranslate"><span class="pre">notebooks/Correlation_and_Coarsening.ipynb</span></code> now renders the ordering-evolution snapshot figure inline via a live simulation cell (L=128, T=0.1), showing spin configurations, structure factor, and correlation length <span class="math notranslate nohighlight">\(\xi\)</span> at <span class="math notranslate nohighlight">\(t = 1, 10, 100, 1000\)</span> Monte Carlo sweeps. The figure is no longer loaded from a pre-generated PNG; it is generated reproducibly within the notebook kernel on each run.</p></li>
+<li><p>Part II of <code class="docutils literal notranslate"><span class="pre">notebooks/Correlation_and_Coarsening.ipynb</span></code> now includes a new “Vortex Spacing vs Structure Factor and Correlation Length” subsection for the XY and Clock models, showing <span class="math notranslate nohighlight">\(R_v = n_v^{-1/2}\)</span> (mean vortex spacing) alongside <span class="math notranslate nohighlight">\(R_{S(k)}\)</span> and <span class="math notranslate nohighlight">\(R_\xi\)</span> on log-log axes with Allen-Cahn reference, mirroring the Ising MIL comparison. All three estimators show exponents <span class="math notranslate nohighlight">\(n \approx 0.4\)</span>–<span class="math notranslate nohighlight">\(0.5\)</span>.</p></li>
+<li><p>Part II of <code class="docutils literal notranslate"><span class="pre">notebooks/Correlation_and_Coarsening.ipynb</span></code> now includes a “Domain Coarsening vs Boundary-Wall Decay” subsection with a unified log-log comparison plot overlaying all three coarsening-length estimators (<span class="math notranslate nohighlight">\(R_{S(k)}\)</span>, <span class="math notranslate nohighlight">\(R_\xi\)</span>, <span class="math notranslate nohighlight">\(R_{\mathrm{MIL}}\)</span>) against the Allen-Cahn <span class="math notranslate nohighlight">\(t^{1/2}\)</span> reference line.</p></li>
+<li><p>Kinetics loading cell now exposes <code class="docutils literal notranslate"><span class="pre">pre_third</span></code> (the MIL power-law prefactor) so the boundary-wall proxy fit line can be drawn in the comparison plot.</p></li>
+</ul>
+</section>
+<section id="id2">
+<h3>Changed<a class="headerlink" href="#id2" title="Link to this heading"></a></h3>
+<ul class="simple">
+<li><p>Improved Ising ordering kinetics generation defaults in <code class="docutils literal notranslate"><span class="pre">scripts/ising/ordering_kinetics.py</span></code>: <code class="docutils literal notranslate"><span class="pre">max_steps</span></code> reduced from 1000 to 400, <code class="docutils literal notranslate"><span class="pre">samples</span></code> increased from 10 to 25, <code class="docutils literal notranslate"><span class="pre">fit_min</span></code> reduced from 20 to 5. The regenerated <code class="docutils literal notranslate"><span class="pre">results/ising/ordering_kinetics.npz</span></code> yields fitted exponents <span class="math notranslate nohighlight">\(n \approx 0.490\)</span> (<span class="math notranslate nohighlight">\(R_{S(k)}\)</span>), <span class="math notranslate nohighlight">\(0.487\)</span> (<span class="math notranslate nohighlight">\(R_\xi\)</span>), <span class="math notranslate nohighlight">\(0.517\)</span> (<span class="math notranslate nohighlight">\(R_{\mathrm{MIL}}\)</span>), close to the Allen-Cahn prediction <span class="math notranslate nohighlight">\(n = 1/2\)</span>.</p></li>
+<li><p>Improved XY ordering kinetics generation defaults in <code class="docutils literal notranslate"><span class="pre">scripts/xy/ordering_kinetics.py</span></code>: <code class="docutils literal notranslate"><span class="pre">temp</span></code> changed from 0.1 to 0.5 (well below <span class="math notranslate nohighlight">\(T_{\mathrm{BKT}} \approx 0.893\)</span>, better vortex mobility), <code class="docutils literal notranslate"><span class="pre">max_steps</span></code> increased to 1500, <code class="docutils literal notranslate"><span class="pre">samples</span></code> increased to 30, <code class="docutils literal notranslate"><span class="pre">fit_min</span></code> reduced to 5. Fitted exponents: <span class="math notranslate nohighlight">\(n \approx 0.448\)</span> (<span class="math notranslate nohighlight">\(R_{S(k)}\)</span>), <span class="math notranslate nohighlight">\(0.477\)</span> (<span class="math notranslate nohighlight">\(R_\xi\)</span>).</p></li>
+<li><p>Improved Clock ordering kinetics generation defaults in <code class="docutils literal notranslate"><span class="pre">scripts/clock/ordering_kinetics.py</span></code>: same parameter changes as XY. Fitted exponents: <span class="math notranslate nohighlight">\(n \approx 0.413\)</span> (<span class="math notranslate nohighlight">\(R_{S(k)}\)</span>), <span class="math notranslate nohighlight">\(0.449\)</span> (<span class="math notranslate nohighlight">\(R_\xi\)</span>).</p></li>
+<li><p>Regenerated <code class="docutils literal notranslate"><span class="pre">results/xy/ordering_kinetics.npz</span></code> and <code class="docutils literal notranslate"><span class="pre">results/clock/ordering_kinetics.npz</span></code> with new parameters (L=256, T=0.50). The exponent comparison table in <code class="docutils literal notranslate"><span class="pre">notebooks/Correlation_and_Coarsening.ipynb</span></code> now shows all three models with finite, physically meaningful values instead of NaN.</p></li>
+<li><p>Regenerated <code class="docutils literal notranslate"><span class="pre">results/ising/correlation_comparison.npz</span></code> with <span class="math notranslate nohighlight">\(L=128\)</span> (64 radial points, <span class="math notranslate nohighlight">\(r \in [0, 63]\)</span>) and 10 000 measurement steps. The previous production cache had been overwritten by the test suite with <span class="math notranslate nohighlight">\(L=16\)</span> and only 5 steps. The Part I Ising correlation plot now shows clear separation between the three temperature regimes over more than a decade in <span class="math notranslate nohighlight">\(r\)</span>.</p></li>
+<li><p>Fallback <code class="docutils literal notranslate"><span class="pre">_compute_ising_correlations</span></code> function in <code class="docutils literal notranslate"><span class="pre">notebooks/Correlation_and_Coarsening.ipynb</span></code> updated to use <span class="math notranslate nohighlight">\(L=128\)</span> and 2 000 measurement steps (was <span class="math notranslate nohighlight">\(L=40\)</span>, 1 500 steps).</p></li>
+<li><p><span class="math notranslate nohighlight">\(r^{-1/4}\)</span> guide in the Ising <span class="math notranslate nohighlight">\(G(r)\)</span> plot is now anchored dynamically to the critical data at <span class="math notranslate nohighlight">\(r = 2\)</span> and spans the full data range; previously it was hardcoded to <span class="math notranslate nohighlight">\([1, 15]\)</span> regardless of <span class="math notranslate nohighlight">\(L\)</span>.</p></li>
+<li><p>Domain Growth Curves figure: y-axis relabelled from “Domain size <span class="math notranslate nohighlight">\(R(t)\)</span>” to “Characteristic length <span class="math notranslate nohighlight">\(R(t)\)</span> (lattice units)” and suptitle changed from “Coarsening: domain growth after infinite-temperature quench” to “Coarsening kinetics after infinite-temperature quench”. For the XY model, <span class="math notranslate nohighlight">\(R(t)\)</span> tracks the vortex-antivortex spacing, not a domain size.</p></li>
+<li><p>Part II prose updated throughout to replace “domain size” and “domain-size proxies” with physically accurate language (“coarsening length scale”, “coarsening-length estimators”) that applies to both the Ising (domain-wall) and XY (vortex annihilation) regimes.</p></li>
+</ul>
+</section>
+<section id="fixed">
+<h3>Fixed<a class="headerlink" href="#fixed" title="Link to this heading"></a></h3>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">scripts/xy/compare_correlations.py</span></code>: replaced naive fixed-step <code class="docutils literal notranslate"><span class="pre">sim.equilibrate(n_steps=2000)</span></code> with <code class="docutils literal notranslate"><span class="pre">convergence_equilibrate_with_status</span></code> and ordered-start fallback. At <span class="math notranslate nohighlight">\(T = 0.4\)</span> (deep BKT phase) the random-start simulation was stuck in a metastable state; the script now detects this and falls back to the ordered start. Regenerated <code class="docutils literal notranslate"><span class="pre">results/xy/correlation_comparison.npz</span></code>: <span class="math notranslate nohighlight">\(G(50) \approx 0.67\)</span> (was 0.017), fitted <span class="math notranslate nohighlight">\(\eta \approx 0.07\)</span> (was 0.57, theory: 0.064).</p></li>
+<li><p>XY and Clock correlation plots in <code class="docutils literal notranslate"><span class="pre">notebooks/Correlation_and_Coarsening.ipynb</span></code> now apply an <span class="math notranslate nohighlight">\(r \leq L/4\)</span> cutoff to exclude periodic-boundary wrap-around artefacts, matching the established practice in the Clock plot.</p></li>
+<li><p>Part I notebook prose rewritten for all three models: XY and Clock sections now state the spin-wave formula <span class="math notranslate nohighlight">\(\eta(T) = T/(2\pi J)\)</span> with explicit numerical predictions at the plotted temperatures (<span class="math notranslate nohighlight">\(\eta \approx 0.064\)</span> at <span class="math notranslate nohighlight">\(T = 0.4\)</span> for XY, <span class="math notranslate nohighlight">\(\eta \approx 0.13\)</span> at <span class="math notranslate nohighlight">\(T = 0.8\)</span> for Clock <span class="math notranslate nohighlight">\(q = 6\)</span>). Clock section specifies the exponent bounds <span class="math notranslate nohighlight">\(4/q^2 = 1/9\)</span> at <span class="math notranslate nohighlight">\(T_1\)</span> and <span class="math notranslate nohighlight">\(1/4\)</span> at <span class="math notranslate nohighlight">\(T_2\)</span>. Removed stale references to the old two-panel XY layout and incorrect claim of <span class="math notranslate nohighlight">\(\eta \approx 0.65\)</span> from broken data.</p></li>
+</ul>
+</section>
+<section id="id3">
+<h3>Added<a class="headerlink" href="#id3" title="Link to this heading"></a></h3>
+<ul class="simple">
 <li><p>New notebook <code class="docutils literal notranslate"><span class="pre">notebooks/XY_Temperature_Sweep.ipynb</span></code>: full thermodynamic sweep across the BKT crossover for the XY model, with data loading/fallback, convergence diagnostics, and autocorrelation analysis.</p></li>
 <li><p>New notebook <code class="docutils literal notranslate"><span class="pre">notebooks/Clock_Temperature_Sweep.ipynb</span></code>: temperature sweep for the q-state clock model showing the two-crossover regime structure, with entropy reference at ln(q).</p></li>
 <li><p>New notebook <code class="docutils literal notranslate"><span class="pre">notebooks/BKT_Transition.ipynb</span></code>: dedicated notebook examining vortex density, helicity modulus, and correlation function across the BKT transition.</p></li>
@@ -138,22 +193,22 @@
 <li><p>Data Pipeline mapping table in <code class="docutils literal notranslate"><span class="pre">SCRIPTS.md</span></code> documenting the script-to-NPZ-to-notebook data flow.</p></li>
 </ul>
 </section>
-<section id="changed">
-<h3>Changed<a class="headerlink" href="#changed" title="Link to this heading"></a></h3>
+<section id="id4">
+<h3>Changed<a class="headerlink" href="#id4" title="Link to this heading"></a></h3>
 <ul class="simple">
 <li><p><code class="docutils literal notranslate"><span class="pre">utils/observables.py</span></code>: replaced upward dependency on <code class="docutils literal notranslate"><span class="pre">models.simulation_base.MonteCarloSimulation</span></code> with a structural <code class="docutils literal notranslate"><span class="pre">Protocol</span></code> class <code class="docutils literal notranslate"><span class="pre">_Sim</span></code>, eliminating the utils-to-models import cycle.</p></li>
 </ul>
 </section>
-<section id="id1">
-<h3>Added<a class="headerlink" href="#id1" title="Link to this heading"></a></h3>
+<section id="id5">
+<h3>Added<a class="headerlink" href="#id5" title="Link to this heading"></a></h3>
 <ul class="simple">
 <li><p><code class="docutils literal notranslate"><span class="pre">utils/kinetics_helpers.py</span></code>: new shared module providing the ordering-kinetics simulation loop for the Ising, XY, and Clock scripts. Exports <code class="docutils literal notranslate"><span class="pre">compute_mean_intercept_length</span></code> (stereological domain-size estimator for scalar-spin lattices) and <code class="docutils literal notranslate"><span class="pre">run_ordering_kinetics</span></code> (loop over logarithmically spaced step targets, power-law fitting, and figure generation).</p></li>
 <li><p><code class="docutils literal notranslate"><span class="pre">utils/evolution_helpers.py</span></code>: new shared module providing the ordering-evolution snapshot loop for the Ising, XY, and Clock scripts. Exports <code class="docutils literal notranslate"><span class="pre">run_ordering_evolution</span></code>, which captures spin configurations, correlation functions, and (for vector-spin models) vorticity maps at each target step, then writes the multi-panel figure.</p></li>
 <li><p><code class="docutils literal notranslate"><span class="pre">utils/sweep_helpers.py</span></code>: new shared module providing the two-layer temperature-sweep worker infrastructure used by all three model sweep scripts. Exports <code class="docutils literal notranslate"><span class="pre">ThermoPoint</span></code> (typed NamedTuple worker payload), <code class="docutils literal notranslate"><span class="pre">RawThermoData</span></code> (raw measurement arrays), <code class="docutils literal notranslate"><span class="pre">simulate_at_temperature</span></code> (Layer 1: physics and equilibration), <code class="docutils literal notranslate"><span class="pre">compute_thermo_observables</span></code> (Layer 2: statistical summarization), <code class="docutils literal notranslate"><span class="pre">simulate_thermo_point</span></code> (convenience wrapper), <code class="docutils literal notranslate"><span class="pre">build_uncertainty_bundle</span></code>, and <code class="docutils literal notranslate"><span class="pre">build_quality_flags</span></code>.</p></li>
 </ul>
 </section>
-<section id="id2">
-<h3>Changed<a class="headerlink" href="#id2" title="Link to this heading"></a></h3>
+<section id="id6">
+<h3>Changed<a class="headerlink" href="#id6" title="Link to this heading"></a></h3>
 <ul class="simple">
 <li><p>Refactored <code class="docutils literal notranslate"><span class="pre">utils/analysis.py</span></code> into <code class="docutils literal notranslate"><span class="pre">utils/statistics.py</span></code> (domain-agnostic statistical estimators and schemas) and <code class="docutils literal notranslate"><span class="pre">utils/observables.py</span></code> (physics observables and spatial tools).</p></li>
 <li><p>Refactored <code class="docutils literal notranslate"><span class="pre">scripts/ising/ordering_kinetics.py</span></code>, <code class="docutils literal notranslate"><span class="pre">scripts/xy/ordering_kinetics.py</span></code>, and <code class="docutils literal notranslate"><span class="pre">scripts/clock/ordering_kinetics.py</span></code> to delegate the full simulation loop, power-law fitting, and figure generation to <code class="docutils literal notranslate"><span class="pre">utils/kinetics_helpers.run_ordering_kinetics</span></code>. Each script is now a thin argument-parsing wrapper.</p></li>
@@ -168,16 +223,16 @@
 <li><p>Fixed excessive memory allocation in <code class="docutils literal notranslate"><span class="pre">wolff_step_numba</span></code> across Ising, XY, and Clock models by pre-allocating the cluster mask and stack buffers once per simulation run, significantly lowering garbage collection overhead during large sweeps.</p></li>
 </ul>
 </section>
-<section id="id3">
-<h3>Changed<a class="headerlink" href="#id3" title="Link to this heading"></a></h3>
+<section id="id7">
+<h3>Changed<a class="headerlink" href="#id7" title="Link to this heading"></a></h3>
 <ul class="simple">
 <li><p>Refactored <code class="docutils literal notranslate"><span class="pre">utils/analysis.py</span></code> into <code class="docutils literal notranslate"><span class="pre">utils/statistics.py</span></code> (domain-agnostic statistical estimators and schemas) and <code class="docutils literal notranslate"><span class="pre">utils/observables.py</span></code> (physics observables and spatial tools).</p></li>
 <li><p>Removed deprecated <code class="docutils literal notranslate"><span class="pre">system_helpers.py</span></code> re-exports (<code class="docutils literal notranslate"><span class="pre">ensure_results_dir</span></code>, <code class="docutils literal notranslate"><span class="pre">adaptive_equilibrate</span></code>, etc.). All tests and Jupyter notebooks have been updated to explicitly import from <code class="docutils literal notranslate"><span class="pre">utils.equilibration</span></code> and <code class="docutils literal notranslate"><span class="pre">utils.plotting</span></code> directly.</p></li>
 <li><p>Renamed <code class="docutils literal notranslate"><span class="pre">run_scaling_benchmark()</span></code> to <code class="docutils literal notranslate"><span class="pre">main()</span></code> in <code class="docutils literal notranslate"><span class="pre">scripts/benchmarks/throughput.py</span></code> for consistency with other analysis scripts.</p></li>
 </ul>
 </section>
-<section id="fixed">
-<h3>Fixed<a class="headerlink" href="#fixed" title="Link to this heading"></a></h3>
+<section id="id8">
+<h3>Fixed<a class="headerlink" href="#id8" title="Link to this heading"></a></h3>
 <ul class="simple">
 <li><p>Improved robustness of <code class="docutils literal notranslate"><span class="pre">blocking_error</span></code> and <code class="docutils literal notranslate"><span class="pre">summarize_primary_observable</span></code> in <code class="docutils literal notranslate"><span class="pre">utils/physics_helpers.py</span></code> when handling all-NaN time series.</p></li>
 <li><p>Fixed indentation in <code class="docutils literal notranslate"><span class="pre">tests/style/test_docstring_style.py</span></code> that caused test collection failures.</p></li>
@@ -205,11 +260,11 @@
 </section>
 </section>
 <hr class="docutils" />
-<section id="id4">
-<h2><a class="reference external" href="https://github.com/manganite/VibeSpin/releases/tag/v0.1.0">0.1.0</a> — 2026-03-25<a class="headerlink" href="#id4" title="Link to this heading"></a></h2>
+<section id="id9">
+<h2><a class="reference external" href="https://github.com/manganite/VibeSpin/releases/tag/v0.1.0">0.1.0</a> — 2026-03-25<a class="headerlink" href="#id9" title="Link to this heading"></a></h2>
 <p>This is the baseline release capturing the full initial development history. The entries below summarize the major milestones grouped by category.</p>
-<section id="id5">
-<h3>Added<a class="headerlink" href="#id5" title="Link to this heading"></a></h3>
+<section id="id10">
+<h3>Added<a class="headerlink" href="#id10" title="Link to this heading"></a></h3>
 <ul class="simple">
 <li><p><strong>Models:</strong> <code class="docutils literal notranslate"><span class="pre">IsingSimulation</span></code>, <code class="docutils literal notranslate"><span class="pre">XYSimulation</span></code>, <code class="docutils literal notranslate"><span class="pre">ClockSimulation</span></code>, and <code class="docutils literal notranslate"><span class="pre">DiscreteClockSimulation</span></code> with Numba-accelerated checkerboard, random-site, and Wolff cluster update schemes. Each model exposes a <code class="docutils literal notranslate"><span class="pre">main()</span></code> CLI entry point.</p></li>
 <li><p><strong>Equilibration:</strong> Two-Start Convergence protocol with mutual cross-band criterion and Quasi-Steady Stuck Detection for low-temperature metastable trapping. Adaptive equilibration fallback for lightweight use cases.</p></li>
@@ -228,8 +283,8 @@
 <li><p><strong>Hierarchical multi-seed uncertainty</strong> combining within-seed blocking error with between-seed spread.</p></li>
 </ul>
 </section>
-<section id="id6">
-<h3>Performance<a class="headerlink" href="#id6" title="Link to this heading"></a></h3>
+<section id="id11">
+<h3>Performance<a class="headerlink" href="#id11" title="Link to this heading"></a></h3>
 <ul class="simple">
 <li><p>Numba JIT (<code class="docutils literal notranslate"><span class="pre">&#64;njit(cache=True,</span> <span class="pre">fastmath=True)</span></code>) on all simulation kernels; <code class="docutils literal notranslate"><span class="pre">parallel=True</span></code> + <code class="docutils literal notranslate"><span class="pre">prange</span></code> on checkerboard kernels.</p></li>
 <li><p>Pre-calculated neighbor index arrays (<code class="docutils literal notranslate"><span class="pre">idx_next</span></code>, <code class="docutils literal notranslate"><span class="pre">idx_prev</span></code>) replace modulo for periodic boundary conditions.</p></li>
@@ -237,8 +292,8 @@
 <li><p>Vectorized angle extraction for vorticity calculation; radial mask pre-computation for correlation functions.</p></li>
 </ul>
 </section>
-<section id="id7">
-<h3>Changed<a class="headerlink" href="#id7" title="Link to this heading"></a></h3>
+<section id="id12">
+<h3>Changed<a class="headerlink" href="#id12" title="Link to this heading"></a></h3>
 <ul class="simple">
 <li><p>Refactored <code class="docutils literal notranslate"><span class="pre">utils/analysis.py</span></code> into <code class="docutils literal notranslate"><span class="pre">utils/statistics.py</span></code> (domain-agnostic statistical estimators and schemas) and <code class="docutils literal notranslate"><span class="pre">utils/observables.py</span></code> (physics observables and spatial tools).</p></li>
 <li><p><code class="docutils literal notranslate"><span class="pre">ordering_kinetics</span></code> scripts unified and refactored; renamed from <code class="docutils literal notranslate"><span class="pre">domain_growth</span></code>.</p></li>
@@ -247,8 +302,8 @@
 <li><p>Equilibration and plotting logic extracted from <code class="docutils literal notranslate"><span class="pre">utils/system_helpers.py</span></code> into dedicated <code class="docutils literal notranslate"><span class="pre">utils/equilibration.py</span></code> and <code class="docutils literal notranslate"><span class="pre">utils/plotting.py</span></code> modules; re-exports maintained in <code class="docutils literal notranslate"><span class="pre">system_helpers.py</span></code> for backward compatibility.</p></li>
 </ul>
 </section>
-<section id="id8">
-<h3>Fixed<a class="headerlink" href="#id8" title="Link to this heading"></a></h3>
+<section id="id13">
+<h3>Fixed<a class="headerlink" href="#id13" title="Link to this heading"></a></h3>
 <ul class="simple">
 <li><p>Diagnostics header/title overlap in temperature-sweep diagnostic plots.</p></li>
 <li><p>Restored notebook JSON after corruption; ensured stuck-detection prose and figures are consistent.</p></li>
@@ -257,8 +312,8 @@
 </ul>
 </section>
 </section>
-<section id="id9">
-<h2><a class="reference external" href="https://github.com/manganite/VibeSpin/compare/v0.1.0...HEAD">Unreleased</a><a class="headerlink" href="#id9" title="Link to this heading"></a></h2>
+<section id="id14">
+<h2><a class="reference external" href="https://github.com/manganite/VibeSpin/compare/v0.1.0...HEAD">Unreleased</a><a class="headerlink" href="#id14" title="Link to this heading"></a></h2>
 <section id="refactored">
 <h3>Refactored<a class="headerlink" href="#refactored" title="Link to this heading"></a></h3>
 <ul class="simple">

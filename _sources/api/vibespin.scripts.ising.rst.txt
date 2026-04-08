@@ -4,6 +4,14 @@ vibespin.scripts.ising package
 Submodules
 ----------
 
+scripts.ising.coarsening\_analysis module
+-----------------------------------------
+
+.. automodule:: scripts.ising.coarsening_analysis
+   :members:
+   :show-inheritance:
+   :undoc-members:
+
 scripts.ising.correlation\_comparison module
 --------------------------------------------
 

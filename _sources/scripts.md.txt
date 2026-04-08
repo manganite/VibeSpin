@@ -6,17 +6,18 @@ VibeSpin provides a suite of entry-point scripts for conducting physics experime
 
 - **`temperature_sweep.py`**: Conducts a full thermodynamic sweep across a range of temperatures. Reports $|M|$, $E$, $\chi$, $C_v$, entropy $S(T)$ from $C_v/T$ integration, and integrated autocorrelation time $\tau_{\mathrm{int}}$. Supports `--n-seeds` for seeded ensembles and uncertainty controls including `--confidence-level`, `--derived-uncertainty-method`, `--derived-bootstrap-resamples`, `--entropy-uncertainty-method`, and `--entropy-bootstrap-resamples`. Convergence diagnostics can be tuned via `--eq-qs-sigma-threshold` and `--eq-qs-min-steps` to detect and stop early on low-temperature stuck states. Strict quality control is available via `--strict-uncertainty` with threshold controls for undefined and unstable points. For `n_seeds=1`, primary and derived observables use single-trajectory blocking, while entropy uncertainty falls back to propagation from the specific-heat uncertainty. For `n_seeds>1`, uncertainty combines between-seed spread and within-seed blocking error. Saves a standardized NPZ file `results/ising/temperature_sweep_data.npz` containing both legacy scalar arrays and per-observable uncertainty schema keys (`<obs>_value`, `<obs>_err`, `<obs>_ci_low`, `<obs>_ci_high`, `<obs>_tau_int`, `<obs>_n_eff`, `<obs>_samples`) plus additive extras (`entropy_*`, `tau_int_ci_*`, quality flags). The plotting output is split into a thermodynamics summary figure and a companion diagnostics figure, where entropy and $\tau_{\mathrm{int}}$ intervals are shown as ribbons and unavailable uncertainty is marked explicitly.
 - **`diag_eq_traces.py`**: Generates a comprehensive 4x6 diagnostic visualization of two-start equilibration traces (random vs. ordered start) covering 6 representative seeds across 4 temperatures. Pre-screens seeds at low temperature to identify and highlight trajectories that become stuck in metastable states (marked with a star). The script also produces a detailed 2x3 panel for $T=2.00$ showing mutual cross-bands and automatic convergence markers for each seed. Results are saved as PNG figures in the output directory.
-- **`ordering_kinetics.py`**: Quenches the system to $T < T_c$ and tracks the growth of domain size $R(t)$ over time.
+- **`ordering_kinetics.py`**: Quenches the system to $T < T_c$ and tracks the growth of domain size $R(t)$ over time. Supports `--seeds N` and `--base-seed` for multi-seed ensemble averaging with IQR-based error bars. Saves per-seed arrays and median trajectory to `results/ising/ordering_kinetics.npz`.
 - **`ordering_evolution.py`**: Generates visual snapshots of the lattice configuration, structure factor, and correlation functions during a quench.
 - **`correlation_divergence.py`**: Extracts the critical exponent $\nu$ by fitting the correlation length divergence near $T_c$.
 - **`correlation_comparison.py`**: Compares the functional form of $G(r)$ in the ferromagnetic, critical, and paramagnetic phases.
+- **`coarsening_analysis.py`**: Precomputes supplementary coarsening analyses for the `Correlation_and_Coarsening.ipynb` notebook: quench-depth sensitivity (3 temperatures, multi-seed), equilibrium-to-coarsening crossover ($\xi_{\mathrm{eq}}$ measurement plus coarsening traces), and a stochastic ensemble (8 seeds) visualizing run-to-run variability. Saves all data to `results/ising/coarsening_analysis.npz`.
 - **`wolff_efficiency.py`**: Compares the Metropolis checkerboard and Wolff cluster algorithms across the critical regime. Reports integrated autocorrelation time $\tau_{\mathrm{int}}$, independent samples per second (ISS), mean cluster size fraction $\langle C \rangle/N^2$, and susceptibility $\chi(T)$ for both algorithms. Saves results to `results/ising/wolff_efficiency.npz` for re-use by `notebooks/Wolff_Efficiency.ipynb` and a 4-panel summary figure to `results/ising/wolff_efficiency.png`.
 - **`measure_z.py`**: Specifically measures the dynamical critical exponent $z$ at the critical temperature $T_c$. Sweeps lattice sizes $L$ to extract the scaling law $\tau_{\mathrm{int}} \propto L^z$ for both Metropolis and Wolff algorithms. Runs `--n-seeds` independent replicas per (algorithm, $L$) point and saves per-seed sample arrays alongside median and 16–84% percentile summaries to `results/ising/dynamic_exponent_z.npz` for use in `notebooks/Dynamic_Critical_Exponents.ipynb`. The NPZ also includes standardized uncertainty keys (`tau_metro_value`, `tau_metro_err`, `tau_metro_ci_low`, `tau_metro_ci_high`, and Wolff equivalents).
 
 ## 2. XY Model (`scripts/xy/`)
 
 - **`temperature_sweep.py`**: Standard thermodynamic sweep for continuous vector spins, including $|M|$, $E$, $\chi$, $C_v$, entropy $S(T)$, and integrated autocorrelation time $\tau_{\mathrm{int}}$. Supports `--n-seeds` with the same single-seed blocking, entropy fallback propagation, multi-seed hierarchical uncertainty behavior, and uncertainty-control CLI options as the Ising sweep, plus per-temperature quality flags. Saves `results/xy/temperature_sweep_data.npz` with the same standardized uncertainty schema and additive extras as the Ising sweep, along with separate thermodynamics and diagnostics figures for clearer uncertainty visualization.
-- **`ordering_kinetics.py`**: Quenches to $T < T_{BKT}$ and tracks the decay of vortex density and the growth of the correlation length.
+- **`ordering_kinetics.py`**: Quenches to $T < T_{BKT}$ and tracks the decay of vortex density and the growth of the correlation length. Supports `--seeds N` and `--base-seed` for multi-seed ensemble averaging with IQR-based error bars.
 - **`ordering_evolution.py`**: Visual snapshots including phase maps and vorticity configurations during ordering.
 - **`bkt_transition.py`**: Specifically focuses on the BKT transition by measuring average vortex density vs. temperature.
 - **`helicity_modulus.py`**: Calculates the superfluid stiffness to identify the universal jump at $T_{BKT}$.
@@ -25,8 +26,9 @@ VibeSpin provides a suite of entry-point scripts for conducting physics experime
 ## 3. Clock Model (`scripts/clock/`)
 
 - **`temperature_sweep.py`**: Thermodynamic sweep for the q-state clock model, including $|M|$, $E$, $\chi$, $C_v$, entropy $S(T)$ (with optional $S_{\mathrm{ref}}=\ln q$ normalization), and integrated autocorrelation time $\tau_{\mathrm{int}}$. Supports `--n-seeds` with the same single-seed blocking, entropy fallback propagation, multi-seed hierarchical uncertainty behavior, and uncertainty-control CLI options as the Ising sweep, plus per-temperature quality flags. Saves `results/clock/temperature_sweep_data.npz` with the same standardized uncertainty schema and additive extras as the Ising sweep, along with separate thermodynamics and diagnostics figures for clearer uncertainty visualization.
-- **`ordering_kinetics.py`**: Analyzes the ordering dynamics after a quench.
+- **`ordering_kinetics.py`**: Analyzes the ordering dynamics after a quench. Supports `--seeds N` and `--base-seed` for multi-seed ensemble averaging with IQR-based error bars.
 - **`ordering_evolution.py`**: Visualizes the evolution of discrete phase domains.
+- **`correlation_comparison.py`**: Compares the functional form of $G(r)$ in the ordered ($T < T_1$), quasi-ordered ($T_1 < T < T_2$), and disordered ($T > T_2$) phases of the $q = 6$ clock model. Uses convergence equilibration. Saves `results/clock/correlation_comparison.npz`.
 - **`compare_discrete_vs_continuous.py`**: Provides a side-by-side performance and physical comparison between the continuous (XY + anisotropy) and discrete implementations.
 
 ## 4. Cross-Model Benchmarking (`scripts/benchmarks/`)
@@ -59,6 +61,7 @@ The table below maps each script to its data output and the notebook(s) that con
 | `scripts/ising/correlation_comparison.py` | `results/ising/correlation_comparison.npz` | `Correlation_and_Coarsening.ipynb` |
 | `scripts/ising/correlation_divergence.py` | `results/ising/correlation_divergence.npz` | `Correlation_and_Coarsening.ipynb` |
 | `scripts/ising/ordering_kinetics.py` | `results/ising/ordering_kinetics.npz` | `Correlation_and_Coarsening.ipynb` |
+| `scripts/ising/coarsening_analysis.py` | `results/ising/coarsening_analysis.npz` | `Correlation_and_Coarsening.ipynb` |
 | `scripts/ising/diag_eq_traces.py` | *(figure only)* | — |
 | `scripts/ising/ordering_evolution.py` | *(figure only)* | — |
 | **XY** | | |
@@ -71,6 +74,7 @@ The table below maps each script to its data output and the notebook(s) that con
 | **Clock** | | |
 | `scripts/clock/temperature_sweep.py` | `results/clock/temperature_sweep_data.npz` | `Clock_Temperature_Sweep.ipynb` |
 | `scripts/clock/ordering_kinetics.py` | `results/clock/ordering_kinetics.npz` | `Correlation_and_Coarsening.ipynb` |
+| `scripts/clock/correlation_comparison.py` | `results/clock/correlation_comparison.npz` | `Correlation_and_Coarsening.ipynb` |
 | `scripts/clock/ordering_evolution.py` | *(figure only)* | — |
 | `scripts/clock/compare_discrete_vs_continuous.py` | *(figure only)* | — |
 | **Benchmarks** | | |

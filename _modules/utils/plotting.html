@@ -133,6 +133,111 @@
 
 
 
+<div class="viewcode-block" id="plot_ordering_evolution_snapshots">
+<a class="viewcode-back" href="../../api/vibespin.utils.html#utils.plotting.plot_ordering_evolution_snapshots">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">plot_ordering_evolution_snapshots</span><span class="p">(</span>
+    <span class="o">*</span><span class="p">,</span>
+    <span class="n">targets</span><span class="p">:</span> <span class="n">Sequence</span><span class="p">[</span><span class="nb">int</span><span class="p">],</span>
+    <span class="n">snapshots</span><span class="p">:</span> <span class="n">Sequence</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">],</span>
+    <span class="n">gr_data</span><span class="p">:</span> <span class="n">Sequence</span><span class="p">[</span><span class="nb">tuple</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">]],</span>
+    <span class="n">sk_data</span><span class="p">:</span> <span class="n">Sequence</span><span class="p">[</span><span class="nb">tuple</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">]],</span>
+    <span class="n">size</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+    <span class="n">temp</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="n">plt</span><span class="o">.</span><span class="n">Figure</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="nb">list</span><span class="p">[</span><span class="nb">float</span><span class="p">]]:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Generate a 3-row diagnostic grid of ordering evolution snapshots.</span>
+
+<span class="sd">    Row 1 shows binary spin matrices. Row 2 shows the structure factor</span>
+<span class="sd">    :math:`S(|k|)` on log-log axes. Row 3 shows the spatial correlation</span>
+<span class="sd">    function G(r) with the 1/e crossing (correlation length xi) annotated.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">        targets: Target Monte Carlo sweep counts for each column.</span>
+<span class="sd">        snapshots: Spin matrices, one per target.</span>
+<span class="sd">        gr_data: Correlation data tuples ``(r, G(r))``, one per target.</span>
+<span class="sd">        sk_data: Structure factor tuples ``(k, S(|k|))``, one per target.</span>
+<span class="sd">        size: Lattice size L used in the suptitle.</span>
+<span class="sd">        temp: Quench temperature used in the suptitle.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">        fig: The matplotlib Figure object.</span>
+<span class="sd">        axes: The matplotlib Axes grid.</span>
+<span class="sd">        xi_values: List of extracted correlation lengths (np.nan if undefined).</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">n_cols</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">targets</span><span class="p">)</span>
+    <span class="n">fig</span><span class="p">,</span> <span class="n">axes</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">(</span>
+        <span class="mi">3</span><span class="p">,</span> <span class="n">n_cols</span><span class="p">,</span> <span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="n">n_cols</span> <span class="o">*</span> <span class="mf">3.5</span><span class="p">,</span> <span class="mf">10.5</span><span class="p">),</span>
+        <span class="n">gridspec_kw</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;hspace&#39;</span><span class="p">:</span> <span class="mf">0.45</span><span class="p">,</span> <span class="s1">&#39;wspace&#39;</span><span class="p">:</span> <span class="mf">0.25</span><span class="p">}</span>
+    <span class="p">)</span>
+    <span class="n">fig</span><span class="o">.</span><span class="n">suptitle</span><span class="p">(</span>
+        <span class="sa">f</span><span class="s1">&#39;Ising ordering evolution  (L = </span><span class="si">{</span><span class="n">size</span><span class="si">}</span><span class="s1">, T = </span><span class="si">{</span><span class="n">temp</span><span class="si">}</span><span class="s1">)&#39;</span><span class="p">,</span> <span class="n">fontsize</span><span class="o">=</span><span class="mi">13</span><span class="p">,</span> <span class="n">y</span><span class="o">=</span><span class="mf">0.99</span>
+    <span class="p">)</span>
+    <span class="n">inv_e</span> <span class="o">=</span> <span class="mf">1.0</span> <span class="o">/</span> <span class="n">np</span><span class="o">.</span><span class="n">e</span>
+    <span class="n">xi_values</span> <span class="o">=</span> <span class="p">[]</span>
+
+    <span class="k">for</span> <span class="n">col</span><span class="p">,</span> <span class="n">target</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">targets</span><span class="p">):</span>
+        <span class="n">spins</span> <span class="o">=</span> <span class="n">snapshots</span><span class="p">[</span><span class="n">col</span><span class="p">]</span>
+        <span class="n">r_ev</span><span class="p">,</span> <span class="n">G_ev</span> <span class="o">=</span> <span class="n">gr_data</span><span class="p">[</span><span class="n">col</span><span class="p">]</span>
+        <span class="n">k_vals</span><span class="p">,</span> <span class="n">S_r</span> <span class="o">=</span> <span class="n">sk_data</span><span class="p">[</span><span class="n">col</span><span class="p">]</span>
+
+        <span class="c1"># Row 0: spin configuration</span>
+        <span class="n">ax_s</span> <span class="o">=</span> <span class="n">axes</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="n">col</span><span class="p">]</span>
+        <span class="n">ax_s</span><span class="o">.</span><span class="n">imshow</span><span class="p">(</span><span class="n">spins</span><span class="p">,</span> <span class="n">cmap</span><span class="o">=</span><span class="s1">&#39;binary&#39;</span><span class="p">,</span> <span class="n">interpolation</span><span class="o">=</span><span class="s1">&#39;none&#39;</span><span class="p">,</span> <span class="n">vmin</span><span class="o">=-</span><span class="mi">1</span><span class="p">,</span> <span class="n">vmax</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+        <span class="n">ax_s</span><span class="o">.</span><span class="n">set_title</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;t = </span><span class="si">{</span><span class="n">target</span><span class="si">}</span><span class="s1"> sweep</span><span class="si">{</span><span class="s2">&quot;s&quot;</span><span class="w"> </span><span class="k">if</span><span class="w"> </span><span class="n">target</span><span class="w"> </span><span class="o">!=</span><span class="w"> </span><span class="mi">1</span><span class="w"> </span><span class="k">else</span><span class="w"> </span><span class="s2">&quot;&quot;</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">,</span> <span class="n">fontsize</span><span class="o">=</span><span class="mi">11</span><span class="p">)</span>
+        <span class="n">ax_s</span><span class="o">.</span><span class="n">axis</span><span class="p">(</span><span class="s1">&#39;off&#39;</span><span class="p">)</span>
+
+        <span class="c1"># Row 1: structure factor S(|k|)</span>
+        <span class="n">ax_sk</span> <span class="o">=</span> <span class="n">axes</span><span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="n">col</span><span class="p">]</span>
+        <span class="n">S_pos</span> <span class="o">=</span> <span class="n">S_r</span><span class="p">[</span><span class="mi">1</span><span class="p">:]</span>
+        <span class="n">k_pos</span> <span class="o">=</span> <span class="n">k_vals</span><span class="p">[</span><span class="mi">1</span><span class="p">:]</span>
+        <span class="n">has_positive</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">any</span><span class="p">(</span><span class="n">S_pos</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">has_positive</span><span class="p">:</span>
+            <span class="n">ax_sk</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">k_pos</span><span class="p">[</span><span class="n">S_pos</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">],</span> <span class="n">S_pos</span><span class="p">[</span><span class="n">S_pos</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">],</span> <span class="n">lw</span><span class="o">=</span><span class="mf">1.2</span><span class="p">)</span>
+            <span class="n">ax_sk</span><span class="o">.</span><span class="n">set_xscale</span><span class="p">(</span><span class="s1">&#39;log&#39;</span><span class="p">)</span>
+            <span class="n">ax_sk</span><span class="o">.</span><span class="n">set_yscale</span><span class="p">(</span><span class="s1">&#39;log&#39;</span><span class="p">)</span>
+            <span class="n">ax_sk</span><span class="o">.</span><span class="n">grid</span><span class="p">(</span><span class="kc">True</span><span class="p">,</span> <span class="n">which</span><span class="o">=</span><span class="s1">&#39;both&#39;</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.25</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">ax_sk</span><span class="o">.</span><span class="n">text</span><span class="p">(</span><span class="mf">0.5</span><span class="p">,</span> <span class="mf">0.5</span><span class="p">,</span> <span class="s1">&#39;fully</span><span class="se">\n</span><span class="s1">ordered&#39;</span><span class="p">,</span> <span class="n">ha</span><span class="o">=</span><span class="s1">&#39;center&#39;</span><span class="p">,</span> <span class="n">va</span><span class="o">=</span><span class="s1">&#39;center&#39;</span><span class="p">,</span>
+                       <span class="n">transform</span><span class="o">=</span><span class="n">ax_sk</span><span class="o">.</span><span class="n">transAxes</span><span class="p">,</span> <span class="n">fontsize</span><span class="o">=</span><span class="mi">11</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s1">&#39;0.4&#39;</span><span class="p">)</span>
+            <span class="n">ax_sk</span><span class="o">.</span><span class="n">set_axis_off</span><span class="p">()</span>
+        <span class="n">ax_sk</span><span class="o">.</span><span class="n">set_xlabel</span><span class="p">(</span><span class="s1">&#39;$|k|$&#39;</span><span class="p">,</span> <span class="n">fontsize</span><span class="o">=</span><span class="mi">9</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">col</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">ax_sk</span><span class="o">.</span><span class="n">set_ylabel</span><span class="p">(</span><span class="s1">&#39;$S(|k|)$&#39;</span><span class="p">,</span> <span class="n">fontsize</span><span class="o">=</span><span class="mi">9</span><span class="p">)</span>
+
+        <span class="c1"># Row 2: G(r) with xi marked</span>
+        <span class="n">ax_gr</span> <span class="o">=</span> <span class="n">axes</span><span class="p">[</span><span class="mi">2</span><span class="p">,</span> <span class="n">col</span><span class="p">]</span>
+        <span class="n">r_plot</span><span class="p">,</span> <span class="n">G_plot</span> <span class="o">=</span> <span class="n">r_ev</span><span class="p">[</span><span class="mi">1</span><span class="p">:],</span> <span class="n">G_ev</span><span class="p">[</span><span class="mi">1</span><span class="p">:]</span>
+        <span class="n">ax_gr</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">r_plot</span><span class="p">,</span> <span class="n">G_plot</span><span class="p">,</span> <span class="n">lw</span><span class="o">=</span><span class="mf">1.5</span><span class="p">)</span>
+        <span class="n">ax_gr</span><span class="o">.</span><span class="n">axhline</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s1">&#39;tab:gray&#39;</span><span class="p">,</span> <span class="n">lw</span><span class="o">=</span><span class="mf">0.7</span><span class="p">,</span> <span class="n">ls</span><span class="o">=</span><span class="s1">&#39;--&#39;</span><span class="p">)</span>
+        <span class="n">ax_gr</span><span class="o">.</span><span class="n">axhline</span><span class="p">(</span><span class="n">inv_e</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s1">&#39;tab:red&#39;</span><span class="p">,</span> <span class="n">lw</span><span class="o">=</span><span class="mf">0.8</span><span class="p">,</span> <span class="n">ls</span><span class="o">=</span><span class="s1">&#39;:&#39;</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.7</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s1">&#39;$1/e$&#39;</span><span class="p">)</span>
+        <span class="n">ax_gr</span><span class="o">.</span><span class="n">set_xscale</span><span class="p">(</span><span class="s1">&#39;log&#39;</span><span class="p">)</span>
+        <span class="n">ax_gr</span><span class="o">.</span><span class="n">set_xlabel</span><span class="p">(</span><span class="s1">&#39;Distance $r$&#39;</span><span class="p">,</span> <span class="n">fontsize</span><span class="o">=</span><span class="mi">9</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">col</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">ax_gr</span><span class="o">.</span><span class="n">set_ylabel</span><span class="p">(</span><span class="s1">&#39;$G(r)/G(0)$&#39;</span><span class="p">,</span> <span class="n">fontsize</span><span class="o">=</span><span class="mi">9</span><span class="p">)</span>
+        <span class="n">ax_gr</span><span class="o">.</span><span class="n">grid</span><span class="p">(</span><span class="kc">True</span><span class="p">,</span> <span class="n">which</span><span class="o">=</span><span class="s1">&#39;both&#39;</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.3</span><span class="p">)</span>
+        <span class="n">ax_gr</span><span class="o">.</span><span class="n">set_ylim</span><span class="p">(</span><span class="o">-</span><span class="mf">0.1</span><span class="p">,</span> <span class="mf">1.1</span><span class="p">)</span>
+
+        <span class="n">below</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">G_plot</span> <span class="o">&lt;</span> <span class="n">inv_e</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">below</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">idx</span> <span class="o">=</span> <span class="n">below</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+            <span class="n">xi</span> <span class="o">=</span> <span class="p">(</span>
+                <span class="nb">float</span><span class="p">(</span><span class="n">r_plot</span><span class="p">[</span><span class="n">idx</span> <span class="o">-</span> <span class="mi">1</span><span class="p">])</span> <span class="o">+</span> <span class="p">(</span><span class="n">inv_e</span> <span class="o">-</span> <span class="nb">float</span><span class="p">(</span><span class="n">G_plot</span><span class="p">[</span><span class="n">idx</span> <span class="o">-</span> <span class="mi">1</span><span class="p">]))</span>
+                <span class="o">*</span> <span class="p">(</span><span class="nb">float</span><span class="p">(</span><span class="n">r_plot</span><span class="p">[</span><span class="n">idx</span><span class="p">])</span> <span class="o">-</span> <span class="nb">float</span><span class="p">(</span><span class="n">r_plot</span><span class="p">[</span><span class="n">idx</span> <span class="o">-</span> <span class="mi">1</span><span class="p">]))</span>
+                <span class="o">/</span> <span class="p">(</span><span class="nb">float</span><span class="p">(</span><span class="n">G_plot</span><span class="p">[</span><span class="n">idx</span><span class="p">])</span> <span class="o">-</span> <span class="nb">float</span><span class="p">(</span><span class="n">G_plot</span><span class="p">[</span><span class="n">idx</span> <span class="o">-</span> <span class="mi">1</span><span class="p">]))</span>
+                <span class="k">if</span> <span class="n">idx</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="k">else</span> <span class="nb">float</span><span class="p">(</span><span class="n">r_plot</span><span class="p">[</span><span class="n">idx</span><span class="p">])</span>
+            <span class="p">)</span>
+            <span class="n">ax_gr</span><span class="o">.</span><span class="n">axvline</span><span class="p">(</span><span class="n">xi</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s1">&#39;tab:red&#39;</span><span class="p">,</span> <span class="n">lw</span><span class="o">=</span><span class="mf">1.0</span><span class="p">,</span> <span class="n">ls</span><span class="o">=</span><span class="s1">&#39;--&#39;</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.8</span><span class="p">)</span>
+            <span class="n">ax_gr</span><span class="o">.</span><span class="n">text</span><span class="p">(</span><span class="n">xi</span> <span class="o">*</span> <span class="mf">1.15</span><span class="p">,</span> <span class="n">inv_e</span> <span class="o">+</span> <span class="mf">0.04</span><span class="p">,</span> <span class="sa">rf</span><span class="s1">&#39;$\xi = </span><span class="si">{</span><span class="n">xi</span><span class="si">:</span><span class="s1">.1f</span><span class="si">}</span><span class="s1">$&#39;</span><span class="p">,</span> <span class="n">fontsize</span><span class="o">=</span><span class="mi">9</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s1">&#39;tab:red&#39;</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">xi</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="s1">&#39;nan&#39;</span><span class="p">)</span>
+        <span class="n">xi_values</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">xi</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">fig</span><span class="p">,</span> <span class="n">axes</span><span class="p">,</span> <span class="n">xi_values</span></div>
+
+
+
 <div class="viewcode-block" id="save_plot">
 <a class="viewcode-back" href="../../api/vibespin.utils.html#utils.plotting.save_plot">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">save_plot</span><span class="p">(</span><span class="o">*</span><span class="p">,</span> <span class="n">filename</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">directory</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">&#39;results&#39;</span><span class="p">,</span> <span class="n">tight_layout</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
