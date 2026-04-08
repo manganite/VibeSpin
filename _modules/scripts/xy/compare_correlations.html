@@ -57,6 +57,10 @@
 <li class="toctree-l1"><a class="reference internal" href="../../../dynamic_critical_exponents.html">Dynamical Critical Exponents in the 2D Ising Model</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../ising_relaxation_and_autocorrelation_analysis.html">Ising Model: Relaxation to Equilibrium</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../ising_temperature_sweep.html">Ising Model: Temperature Sweep and Critical Behavior</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../xy_temperature_sweep.html">XY Model: Temperature Sweep and BKT Crossover</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../clock_temperature_sweep.html">Clock Model: Temperature Sweep and Discrete Symmetry Breaking</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../bkt_transition.html">BKT Transition: Vortices, Helicity, and Correlations</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../correlation_and_coarsening.html">Correlation Functions and Coarsening Dynamics</a></li>
 </ul>
 <p class="caption" role="heading"><span class="caption-text">API Reference:</span></p>
 <ul>
@@ -101,7 +105,7 @@
 <span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">models.xy_model</span><span class="w"> </span><span class="kn">import</span> <span class="n">XYSimulation</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">utils.analysis</span><span class="w"> </span><span class="kn">import</span> <span class="n">get_averaged_correlation</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">utils.observables</span><span class="w"> </span><span class="kn">import</span> <span class="n">get_averaged_correlation</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">utils.plotting</span><span class="w"> </span><span class="kn">import</span> <span class="n">ensure_results_dir</span><span class="p">,</span> <span class="n">save_plot</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">utils.system</span><span class="w"> </span><span class="kn">import</span> <span class="n">parallel_sweep</span><span class="p">,</span> <span class="n">parse_args_compat</span><span class="p">,</span> <span class="n">setup_logging</span>
 
@@ -182,7 +186,24 @@
     <span class="n">ax2</span><span class="o">.</span><span class="n">grid</span><span class="p">(</span><span class="kc">True</span><span class="p">,</span> <span class="n">which</span><span class="o">=</span><span class="s1">&#39;both&#39;</span><span class="p">,</span> <span class="n">ls</span><span class="o">=</span><span class="s1">&#39;-&#39;</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.5</span><span class="p">)</span>
 
     <span class="n">output_dir</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">ensure_results_dir</span><span class="p">(</span><span class="n">directory</span><span class="o">=</span><span class="n">args</span><span class="o">.</span><span class="n">output_dir</span><span class="p">)</span>
-    <span class="n">save_plot</span><span class="p">(</span><span class="n">filename</span><span class="o">=</span><span class="s1">&#39;correlation_comparison.png&#39;</span><span class="p">,</span> <span class="n">directory</span><span class="o">=</span><span class="n">output_dir</span><span class="p">)</span></div>
+    <span class="n">save_plot</span><span class="p">(</span><span class="n">filename</span><span class="o">=</span><span class="s1">&#39;correlation_comparison.png&#39;</span><span class="p">,</span> <span class="n">directory</span><span class="o">=</span><span class="n">output_dir</span><span class="p">)</span>
+
+    <span class="c1"># Save data for notebook consumption</span>
+    <span class="n">npz_path</span> <span class="o">=</span> <span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">output_dir</span><span class="si">}</span><span class="s1">/correlation_comparison.npz&#39;</span>
+    <span class="n">np</span><span class="o">.</span><span class="n">savez_compressed</span><span class="p">(</span>
+        <span class="n">npz_path</span><span class="p">,</span>
+        <span class="n">r_low</span><span class="o">=</span><span class="n">r_low</span><span class="p">,</span>
+        <span class="n">G_low</span><span class="o">=</span><span class="n">G_low</span><span class="p">,</span>
+        <span class="n">r_high</span><span class="o">=</span><span class="n">r_high</span><span class="p">,</span>
+        <span class="n">G_high</span><span class="o">=</span><span class="n">G_high</span><span class="p">,</span>
+        <span class="n">T_low</span><span class="o">=</span><span class="n">T_LOW</span><span class="p">,</span>
+        <span class="n">T_high</span><span class="o">=</span><span class="n">T_HIGH</span><span class="p">,</span>
+        <span class="n">L</span><span class="o">=</span><span class="n">args</span><span class="o">.</span><span class="n">size</span><span class="p">,</span>
+        <span class="n">steps</span><span class="o">=</span><span class="n">args</span><span class="o">.</span><span class="n">steps</span><span class="p">,</span>
+        <span class="n">eq_steps</span><span class="o">=</span><span class="n">args</span><span class="o">.</span><span class="n">eq_steps</span><span class="p">,</span>
+        <span class="n">sample_interval</span><span class="o">=</span><span class="n">args</span><span class="o">.</span><span class="n">interval</span><span class="p">,</span>
+    <span class="p">)</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Data saved to </span><span class="si">{</span><span class="n">npz_path</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span></div>
 
 
 

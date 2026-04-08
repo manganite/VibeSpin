@@ -57,6 +57,10 @@
 <li class="toctree-l1"><a class="reference internal" href="../../dynamic_critical_exponents.html">Dynamical Critical Exponents in the 2D Ising Model</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../ising_relaxation_and_autocorrelation_analysis.html">Ising Model: Relaxation to Equilibrium</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../ising_temperature_sweep.html">Ising Model: Temperature Sweep and Critical Behavior</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../xy_temperature_sweep.html">XY Model: Temperature Sweep and BKT Crossover</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../clock_temperature_sweep.html">Clock Model: Temperature Sweep and Discrete Symmetry Breaking</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../bkt_transition.html">BKT Transition: Vortices, Helicity, and Correlations</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../correlation_and_coarsening.html">Correlation Functions and Coarsening Dynamics</a></li>
 </ul>
 <p class="caption" role="heading"><span class="caption-text">API Reference:</span></p>
 <ul>
@@ -105,8 +109,9 @@
 <span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">tqdm</span><span class="w"> </span><span class="kn">import</span> <span class="n">tqdm</span>
 
-<span class="kn">from</span><span class="w"> </span><span class="nn">utils.analysis</span><span class="w"> </span><span class="kn">import</span> <span class="n">compute_kinetics_metrics</span><span class="p">,</span> <span class="n">power_fit</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">utils.observables</span><span class="w"> </span><span class="kn">import</span> <span class="n">compute_kinetics_metrics</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">utils.plotting</span><span class="w"> </span><span class="kn">import</span> <span class="n">ensure_results_dir</span><span class="p">,</span> <span class="n">plot_ordering_kinetics</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">utils.statistics</span><span class="w"> </span><span class="kn">import</span> <span class="n">power_fit</span>
 
 <span class="c1"># tqdm bar format that always shows rate as iterations/s (never inverts to s/it).</span>
 <span class="n">_BAR_FORMAT</span> <span class="o">=</span> <span class="s1">&#39;</span><span class="si">{l_bar}{bar}</span><span class="s1">| </span><span class="si">{n_fmt}</span><span class="s1">/</span><span class="si">{total_fmt}</span><span class="s1"> [</span><span class="si">{elapsed}</span><span class="s1">&lt;</span><span class="si">{remaining}</span><span class="s1">, </span><span class="si">{rate_noinv_fmt}{postfix}</span><span class="s1">]&#39;</span>
@@ -166,6 +171,7 @@
     <span class="n">output_dir</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
     <span class="n">y_label</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">&#39;Characteristic Length Scale $L(t)$ (lattice units)&#39;</span><span class="p">,</span>
     <span class="n">logger</span><span class="p">:</span> <span class="n">logging</span><span class="o">.</span><span class="n">Logger</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">npz_path</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Run an ordering kinetics simulation and save the two-panel kinetics figure.</span>
 
@@ -208,6 +214,9 @@
 <span class="sd">        Y-axis label for the growth-scale panel.</span>
 <span class="sd">    logger : logging.Logger, optional</span>
 <span class="sd">        Logger to use; creates a module-level logger if not provided.</span>
+<span class="sd">    npz_path : str, optional</span>
+<span class="sd">        If given, save the kinetics data arrays to this ``.npz`` file for</span>
+<span class="sd">        notebook consumption.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="n">_log</span> <span class="o">=</span> <span class="n">logger</span> <span class="ow">or</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span>
 
@@ -247,6 +256,27 @@
         <span class="n">exponents</span><span class="p">[</span><span class="n">key</span><span class="p">],</span> <span class="n">prefactors</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="n">exp</span><span class="p">,</span> <span class="n">pre</span>
         <span class="k">if</span> <span class="n">exp</span><span class="p">:</span>
             <span class="n">_log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">key</span><span class="si">}</span><span class="s1"> exponent: </span><span class="si">{</span><span class="n">exp</span><span class="si">:</span><span class="s1">.3f</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">npz_path</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">_nan</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="s1">&#39;nan&#39;</span><span class="p">)</span>
+        <span class="n">np</span><span class="o">.</span><span class="n">savez_compressed</span><span class="p">(</span>
+            <span class="n">npz_path</span><span class="p">,</span>
+            <span class="n">t</span><span class="o">=</span><span class="n">t</span><span class="p">,</span>
+            <span class="n">R_sk</span><span class="o">=</span><span class="n">R_sk</span><span class="p">,</span>
+            <span class="n">R_xi</span><span class="o">=</span><span class="n">R_xi</span><span class="p">,</span>
+            <span class="n">third_metric</span><span class="o">=</span><span class="n">third</span><span class="p">,</span>
+            <span class="n">third_metric_label</span><span class="o">=</span><span class="n">third_metric_label</span><span class="p">,</span>
+            <span class="n">exponent_R_sk</span><span class="o">=</span><span class="n">exponents</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;R_sk&#39;</span><span class="p">)</span> <span class="ow">or</span> <span class="n">_nan</span><span class="p">,</span>
+            <span class="n">exponent_xi</span><span class="o">=</span><span class="n">exponents</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;xi&#39;</span><span class="p">)</span> <span class="ow">or</span> <span class="n">_nan</span><span class="p">,</span>
+            <span class="n">exponent_third</span><span class="o">=</span><span class="n">exponents</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;third&#39;</span><span class="p">)</span> <span class="ow">or</span> <span class="n">_nan</span><span class="p">,</span>
+            <span class="n">prefactor_R_sk</span><span class="o">=</span><span class="n">prefactors</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;R_sk&#39;</span><span class="p">)</span> <span class="ow">or</span> <span class="n">_nan</span><span class="p">,</span>
+            <span class="n">prefactor_xi</span><span class="o">=</span><span class="n">prefactors</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;xi&#39;</span><span class="p">)</span> <span class="ow">or</span> <span class="n">_nan</span><span class="p">,</span>
+            <span class="n">prefactor_third</span><span class="o">=</span><span class="n">prefactors</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;third&#39;</span><span class="p">)</span> <span class="ow">or</span> <span class="n">_nan</span><span class="p">,</span>
+            <span class="n">fit_min</span><span class="o">=</span><span class="n">fit_min</span><span class="p">,</span>
+            <span class="n">size</span><span class="o">=</span><span class="n">size</span><span class="p">,</span>
+            <span class="n">temp</span><span class="o">=</span><span class="n">temp</span><span class="p">,</span>
+        <span class="p">)</span>
+        <span class="n">_log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Kinetics data saved to </span><span class="si">{</span><span class="n">npz_path</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
 
     <span class="n">plot_ordering_kinetics</span><span class="p">(</span>
         <span class="n">t</span><span class="o">=</span><span class="n">t</span><span class="p">,</span>

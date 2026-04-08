@@ -43,3 +43,35 @@ As mandated in `AGENTS.md`:
 
 ### Results
 All scripts save their output (plots and data files) to the `results/` directory, sub-divided by model and experiment type.
+
+## Data Pipeline
+
+Scripts serve a dual role: they generate cached NPZ data files for notebooks and produce quick-check PNG figures for immediate visual verification. Notebooks are the curated presentation layer and load precomputed NPZ files to avoid re-running expensive simulations. When NPZ data is absent, notebooks provide lightweight fallback computations for demonstration purposes.
+
+The table below maps each script to its data output and the notebook(s) that consume it. Scripts marked "figure only" produce PNG visualizations but no cached data; their analyses are reproduced inline within notebooks at small system sizes when needed.
+
+| Script | NPZ Output | Consuming Notebook(s) |
+|--------|-----------|----------------------|
+| **Ising** | | |
+| `scripts/ising/temperature_sweep.py` | `results/ising/temperature_sweep_data.npz` | `Ising_Temperature_Sweep.ipynb`, `Ising_Relaxation_and_Autocorrelation_Analysis.ipynb` |
+| `scripts/ising/measure_z.py` | `results/ising/dynamic_exponent_z.npz` | `Dynamic_Critical_Exponents.ipynb` |
+| `scripts/ising/wolff_efficiency.py` | `results/ising/wolff_efficiency.npz` | `Wolff_Efficiency.ipynb` |
+| `scripts/ising/correlation_comparison.py` | `results/ising/correlation_comparison.npz` | `Correlation_and_Coarsening.ipynb` |
+| `scripts/ising/correlation_divergence.py` | `results/ising/correlation_divergence.npz` | `Correlation_and_Coarsening.ipynb` |
+| `scripts/ising/ordering_kinetics.py` | `results/ising/ordering_kinetics.npz` | `Correlation_and_Coarsening.ipynb` |
+| `scripts/ising/diag_eq_traces.py` | *(figure only)* | — |
+| `scripts/ising/ordering_evolution.py` | *(figure only)* | — |
+| **XY** | | |
+| `scripts/xy/temperature_sweep.py` | `results/xy/temperature_sweep_data.npz` | `XY_Temperature_Sweep.ipynb` |
+| `scripts/xy/bkt_transition.py` | `results/xy/bkt_transition.npz` | `BKT_Transition.ipynb` |
+| `scripts/xy/helicity_modulus.py` | `results/xy/helicity_modulus.npz` | `BKT_Transition.ipynb` |
+| `scripts/xy/compare_correlations.py` | `results/xy/correlation_comparison.npz` | `BKT_Transition.ipynb`, `Correlation_and_Coarsening.ipynb` |
+| `scripts/xy/ordering_kinetics.py` | `results/xy/ordering_kinetics.npz` | `Correlation_and_Coarsening.ipynb` |
+| `scripts/xy/ordering_evolution.py` | *(figure only)* | — |
+| **Clock** | | |
+| `scripts/clock/temperature_sweep.py` | `results/clock/temperature_sweep_data.npz` | `Clock_Temperature_Sweep.ipynb` |
+| `scripts/clock/ordering_kinetics.py` | `results/clock/ordering_kinetics.npz` | `Correlation_and_Coarsening.ipynb` |
+| `scripts/clock/ordering_evolution.py` | *(figure only)* | — |
+| `scripts/clock/compare_discrete_vs_continuous.py` | *(figure only)* | — |
+| **Benchmarks** | | |
+| `scripts/benchmarks/throughput.py` | `results/benchmarks/scaling_benchmark.npz` | `Performance_Benchmarks.ipynb` |

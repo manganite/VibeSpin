@@ -1,0 +1,485 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="./">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>BKT Transition: Vortices, Helicity, and Correlations &mdash; VibeSpin 0.1.0 documentation</title>
+      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=9edc463e" />
+      <link rel="stylesheet" type="text/css" href="_static/nbsphinx-code-cells.css?v=2aa19091" />
+
+  
+      <script src="_static/jquery.js?v=5d32c60e"></script>
+      <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="_static/documentation_options.js?v=01f34227"></script>
+      <script src="_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="_static/sphinx_highlight.js?v=6ffebe34"></script>
+      <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+      <script>window.MathJax = {"options": {"processHtmlClass": "tex2jax_process|mathjax_process|math|output_area"}}</script>
+      <script>window.MathJax = {"tex": {"inlineMath": [["$", "$"], ["\\(", "\\)"]], "processEscapes": true}, "options": {"ignoreHtmlClass": "tex2jax_ignore|mathjax_ignore|document", "processHtmlClass": "tex2jax_process|mathjax_process|math|output_area"}}</script>
+      <script defer="defer" src="https://cdn.jsdelivr.net/npm/mathjax@4/tex-mml-chtml.js"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Correlation Functions and Coarsening Dynamics" href="correlation_and_coarsening.html" />
+    <link rel="prev" title="Clock Model: Temperature Sweep and Discrete Symmetry Breaking" href="clock_temperature_sweep.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="index.html" class="icon icon-home">
+            VibeSpin
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">User Guides:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="introduction.html">VibeSpin</a></li>
+<li class="toctree-l1"><a class="reference internal" href="physics.html">Physics and Algorithm Guide: VibeSpin</a></li>
+<li class="toctree-l1"><a class="reference internal" href="code.html">Developer and Architecture Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="scripts.html">Scripts Catalog: VibeSpin</a></li>
+<li class="toctree-l1"><a class="reference internal" href="agents.html">Agent Instruction Guide: VibeSpin</a></li>
+<li class="toctree-l1"><a class="reference internal" href="bibliography.html">Project Bibliography: VibeSpin</a></li>
+<li class="toctree-l1"><a class="reference internal" href="changelog.html">Changelog</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Research &amp; Analysis:</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="benchmarks.html">Performance Benchmarking for VibeSpin</a></li>
+<li class="toctree-l1"><a class="reference internal" href="wolff_efficiency.html">Wolff vs. Metropolis: Algorithmic Efficiency in the Critical Regime</a></li>
+<li class="toctree-l1"><a class="reference internal" href="dynamic_critical_exponents.html">Dynamical Critical Exponents in the 2D Ising Model</a></li>
+<li class="toctree-l1"><a class="reference internal" href="ising_relaxation_and_autocorrelation_analysis.html">Ising Model: Relaxation to Equilibrium</a></li>
+<li class="toctree-l1"><a class="reference internal" href="ising_temperature_sweep.html">Ising Model: Temperature Sweep and Critical Behavior</a></li>
+<li class="toctree-l1"><a class="reference internal" href="xy_temperature_sweep.html">XY Model: Temperature Sweep and BKT Crossover</a></li>
+<li class="toctree-l1"><a class="reference internal" href="clock_temperature_sweep.html">Clock Model: Temperature Sweep and Discrete Symmetry Breaking</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">BKT Transition: Vortices, Helicity, and Correlations</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#Part-I:-Vortex-Density">Part I: Vortex Density</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#Data">Data</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#Vortex-Density-vs-Temperature">Vortex Density vs Temperature</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#Part-II:-Helicity-Modulus">Part II: Helicity Modulus</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#id1">Data</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#Helicity-Modulus-vs-Temperature">Helicity Modulus vs Temperature</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#Part-III:-Correlation-Function">Part III: Correlation Function</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#id2">Data</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#Correlation-Functions-on-Log-Log-and-Semi-Log-Scales">Correlation Functions on Log-Log and Semi-Log Scales</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#Synthesis">Synthesis</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#Bibliography">Bibliography</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="correlation_and_coarsening.html">Correlation Functions and Coarsening Dynamics</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">API Reference:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="api/modules.html">vibespin</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">VibeSpin</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">BKT Transition: Vortices, Helicity, and Correlations</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="_sources/bkt_transition.ipynb.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="BKT-Transition:-Vortices,-Helicity,-and-Correlations">
+<h1>BKT Transition: Vortices, Helicity, and Correlations<a class="headerlink" href="#BKT-Transition:-Vortices,-Helicity,-and-Correlations" title="Link to this heading"></a></h1>
+<p>The Berezinskii-Kosterlitz-Thouless (BKT) transition in the 2D XY model is not driven by symmetry breaking but by the unbinding of topological defects: vortex-antivortex pairs. Below <span class="math notranslate nohighlight">\(T_{\mathrm{BKT}} \approx 0.893\)</span> vortices and antivortices remain bound into dipole pairs that contribute only weakly to thermodynamic fluctuations. Above <span class="math notranslate nohighlight">\(T_{\mathrm{BKT}}\)</span> these pairs dissociate into free vortices, destroying the algebraic quasi-long-range order and introducing a finite correlation
+length <a class="reference internal" href="#Bibliography"><span class="std std-ref">[1]</span></a> <a class="reference internal" href="#Bibliography"><span class="std std-ref">[2]</span></a>.</p>
+<p>This notebook examines three complementary signatures of the BKT transition:</p>
+<ol class="arabic simple">
+<li><p><strong>Vortex density</strong> <span class="math notranslate nohighlight">\(n_v(T)\)</span>: the fraction of plaquettes carrying nonzero winding number, which rises sharply near <span class="math notranslate nohighlight">\(T_{\mathrm{BKT}}\)</span> as bound pairs proliferate and eventually unbind.</p></li>
+<li><p><strong>Helicity modulus</strong> <span class="math notranslate nohighlight">\(\Upsilon(T)\)</span>: the superfluid stiffness, which exhibits a universal discontinuous jump <span class="math notranslate nohighlight">\(\Upsilon(T_{\mathrm{BKT}}^{-}) = 2T_{\mathrm{BKT}}/\pi\)</span> at the transition, proportional to the density of the superfluid component in the dual Coulomb-gas picture <a class="reference internal" href="#Bibliography"><span class="std std-ref">[2]</span></a>.</p></li>
+<li><p><strong>Correlation function</strong> <span class="math notranslate nohighlight">\(G(r)\)</span>: algebraic decay <span class="math notranslate nohighlight">\(G(r) \sim r^{-\eta(T)}\)</span> with a continuously varying exponent below <span class="math notranslate nohighlight">\(T_{\mathrm{BKT}}\)</span>, switching to exponential decay <span class="math notranslate nohighlight">\(G(r) \sim e^{-r/\xi}\)</span> above the transition <a class="reference internal" href="#Bibliography"><span class="std std-ref">[1]</span></a>.</p></li>
+</ol>
+<p>Each section loads precomputed data from <code class="docutils literal notranslate"><span class="pre">results/xy/</span></code> when available and falls back to a lightweight inline computation otherwise.</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+</pre></div>
+</div>
+<div class="input_area highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">__future__</span><span class="w"> </span><span class="kn">import</span> <span class="n">annotations</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">pathlib</span><span class="w"> </span><span class="kn">import</span> <span class="n">Path</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">matplotlib.pyplot</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">plt</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">models.xy_model</span><span class="w"> </span><span class="kn">import</span> <span class="n">XYSimulation</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">utils.equilibration</span><span class="w"> </span><span class="kn">import</span> <span class="n">convergence_equilibrate</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">utils.observables</span><span class="w"> </span><span class="kn">import</span> <span class="n">get_averaged_correlation</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_find_repo_root</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="n">Path</span><span class="p">:</span>
+    <span class="n">cwd</span> <span class="o">=</span> <span class="n">Path</span><span class="o">.</span><span class="n">cwd</span><span class="p">()</span><span class="o">.</span><span class="n">resolve</span><span class="p">()</span>
+    <span class="k">for</span> <span class="n">candidate</span> <span class="ow">in</span> <span class="p">(</span><span class="n">cwd</span><span class="p">,</span> <span class="o">*</span><span class="n">cwd</span><span class="o">.</span><span class="n">parents</span><span class="p">):</span>
+        <span class="k">if</span> <span class="p">(</span><span class="n">candidate</span> <span class="o">/</span> <span class="s1">&#39;pyproject.toml&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">exists</span><span class="p">()</span> <span class="ow">and</span> <span class="p">(</span><span class="n">candidate</span> <span class="o">/</span> <span class="s1">&#39;results&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">exists</span><span class="p">():</span>
+            <span class="k">return</span> <span class="n">candidate</span>
+    <span class="k">return</span> <span class="n">cwd</span>
+
+
+<span class="n">REPO_ROOT</span> <span class="o">=</span> <span class="n">_find_repo_root</span><span class="p">()</span>
+<span class="n">T_BKT</span> <span class="o">=</span> <span class="mf">0.893</span>
+<span class="n">CACHE_DIR</span> <span class="o">=</span> <span class="n">REPO_ROOT</span> <span class="o">/</span> <span class="s1">&#39;results&#39;</span> <span class="o">/</span> <span class="s1">&#39;xy&#39;</span>
+<span class="n">PALETTE</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="s1">&#39;vortex&#39;</span><span class="p">:</span> <span class="s1">&#39;#D65F5F&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;helicity&#39;</span><span class="p">:</span> <span class="s1">&#39;#4878CF&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;corr_low&#39;</span><span class="p">:</span> <span class="s1">&#39;#4878CF&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;corr_high&#39;</span><span class="p">:</span> <span class="s1">&#39;#D65F5F&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;jump_line&#39;</span><span class="p">:</span> <span class="s1">&#39;#956CB4&#39;</span><span class="p">,</span>
+<span class="p">}</span>
+
+<span class="n">plt</span><span class="o">.</span><span class="n">rcParams</span><span class="p">[</span><span class="s1">&#39;figure.dpi&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="mi">120</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;T_BKT (theoretical) = </span><span class="si">{</span><span class="n">T_BKT</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Repository root: </span><span class="si">{</span><span class="n">REPO_ROOT</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<section id="Part-I:-Vortex-Density">
+<h2>Part I: Vortex Density<a class="headerlink" href="#Part-I:-Vortex-Density" title="Link to this heading"></a></h2>
+<section id="Data">
+<h3>Data<a class="headerlink" href="#Data" title="Link to this heading"></a></h3>
+<p>The vortex density is the fraction of lattice plaquettes that carry a nonzero winding number. In the ground state this fraction is zero. As <span class="math notranslate nohighlight">\(T\)</span> increases, thermally generated vortex-antivortex pairs appear at a rate that grows rapidly near <span class="math notranslate nohighlight">\(T_{\mathrm{BKT}}\)</span>. The cached data comes from <code class="docutils literal notranslate"><span class="pre">scripts/xy/bkt_transition.py</span></code>; the fallback sweeps a <span class="math notranslate nohighlight">\(32 \times 32\)</span> lattice with short equilibration and measurement.</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+</pre></div>
+</div>
+<div class="input_area highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">vortex_cache</span> <span class="o">=</span> <span class="n">CACHE_DIR</span> <span class="o">/</span> <span class="s1">&#39;bkt_transition.npz&#39;</span>
+<span class="n">vortex_min_points</span> <span class="o">=</span> <span class="mi">8</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_compute_vortex_sweep</span><span class="p">(</span>
+    <span class="o">*</span><span class="p">,</span>
+    <span class="n">size</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">32</span><span class="p">,</span>
+    <span class="n">n_temps</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">18</span><span class="p">,</span>
+    <span class="n">meas_steps</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">80</span><span class="p">,</span>
+    <span class="n">eq_probe</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">200</span><span class="p">,</span>
+    <span class="n">eq_max</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">8_000</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">]:</span>
+    <span class="n">temps</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="mf">0.3</span><span class="p">,</span> <span class="mf">1.5</span><span class="p">,</span> <span class="n">n_temps</span><span class="p">)</span>
+    <span class="n">densities</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">empty_like</span><span class="p">(</span><span class="n">temps</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">idx</span><span class="p">,</span> <span class="n">t</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">temps</span><span class="p">):</span>
+        <span class="n">sim_r</span> <span class="o">=</span> <span class="n">XYSimulation</span><span class="p">(</span><span class="n">size</span><span class="o">=</span><span class="n">size</span><span class="p">,</span> <span class="n">temp</span><span class="o">=</span><span class="nb">float</span><span class="p">(</span><span class="n">t</span><span class="p">),</span> <span class="n">update</span><span class="o">=</span><span class="s1">&#39;checkerboard&#39;</span><span class="p">,</span> <span class="n">init_state</span><span class="o">=</span><span class="s1">&#39;random&#39;</span><span class="p">,</span> <span class="n">seed</span><span class="o">=</span><span class="mi">100</span> <span class="o">+</span> <span class="n">idx</span><span class="p">)</span>
+        <span class="n">sim_o</span> <span class="o">=</span> <span class="n">XYSimulation</span><span class="p">(</span><span class="n">size</span><span class="o">=</span><span class="n">size</span><span class="p">,</span> <span class="n">temp</span><span class="o">=</span><span class="nb">float</span><span class="p">(</span><span class="n">t</span><span class="p">),</span> <span class="n">update</span><span class="o">=</span><span class="s1">&#39;checkerboard&#39;</span><span class="p">,</span> <span class="n">init_state</span><span class="o">=</span><span class="s1">&#39;ordered&#39;</span><span class="p">,</span> <span class="n">seed</span><span class="o">=</span><span class="mi">100</span> <span class="o">+</span> <span class="n">idx</span><span class="p">)</span>
+        <span class="n">convergence_equilibrate</span><span class="p">(</span><span class="n">sim_r</span><span class="p">,</span> <span class="n">sim_o</span><span class="p">,</span> <span class="n">chunk_size</span><span class="o">=</span><span class="n">eq_probe</span><span class="p">,</span> <span class="n">max_steps</span><span class="o">=</span><span class="n">eq_max</span><span class="p">)</span>
+        <span class="n">total</span> <span class="o">=</span> <span class="mf">0.0</span>
+        <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">meas_steps</span><span class="p">):</span>
+            <span class="n">sim_r</span><span class="o">.</span><span class="n">step</span><span class="p">()</span>
+            <span class="n">total</span> <span class="o">+=</span> <span class="n">sim_r</span><span class="o">.</span><span class="n">_get_vortex_density</span><span class="p">()</span>
+        <span class="n">densities</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span> <span class="o">=</span> <span class="n">total</span> <span class="o">/</span> <span class="n">meas_steps</span>
+    <span class="k">return</span> <span class="n">temps</span><span class="p">,</span> <span class="n">densities</span>
+
+
+<span class="n">vortex_loaded</span> <span class="o">=</span> <span class="kc">False</span>
+<span class="k">if</span> <span class="n">vortex_cache</span><span class="o">.</span><span class="n">exists</span><span class="p">():</span>
+    <span class="n">d</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">vortex_cache</span><span class="p">)</span>
+    <span class="k">if</span> <span class="s1">&#39;temperatures&#39;</span> <span class="ow">in</span> <span class="n">d</span><span class="o">.</span><span class="n">files</span> <span class="ow">and</span> <span class="s1">&#39;vortex_densities&#39;</span> <span class="ow">in</span> <span class="n">d</span><span class="o">.</span><span class="n">files</span> <span class="ow">and</span> <span class="n">d</span><span class="p">[</span><span class="s1">&#39;temperatures&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">size</span> <span class="o">&gt;=</span> <span class="n">vortex_min_points</span><span class="p">:</span>
+        <span class="n">vortex_temps</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">d</span><span class="p">[</span><span class="s1">&#39;temperatures&#39;</span><span class="p">],</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">float</span><span class="p">)</span>
+        <span class="n">vortex_densities</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">d</span><span class="p">[</span><span class="s1">&#39;vortex_densities&#39;</span><span class="p">],</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">float</span><span class="p">)</span>
+        <span class="n">vortex_source</span> <span class="o">=</span> <span class="sa">f</span><span class="s1">&#39;Loaded </span><span class="si">{</span><span class="n">vortex_temps</span><span class="o">.</span><span class="n">size</span><span class="si">}</span><span class="s1"> points from cache (</span><span class="si">{</span><span class="n">vortex_cache</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s1">)&#39;</span>
+        <span class="n">vortex_loaded</span> <span class="o">=</span> <span class="kc">True</span>
+
+<span class="k">if</span> <span class="ow">not</span> <span class="n">vortex_loaded</span><span class="p">:</span>
+    <span class="n">vortex_temps</span><span class="p">,</span> <span class="n">vortex_densities</span> <span class="o">=</span> <span class="n">_compute_vortex_sweep</span><span class="p">()</span>
+    <span class="n">vortex_source</span> <span class="o">=</span> <span class="sa">f</span><span class="s1">&#39;Computed fallback vortex sweep (</span><span class="si">{</span><span class="n">vortex_temps</span><span class="o">.</span><span class="n">size</span><span class="si">}</span><span class="s1"> points, L=32)&#39;</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="n">vortex_source</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</section>
+<section id="Vortex-Density-vs-Temperature">
+<h3>Vortex Density vs Temperature<a class="headerlink" href="#Vortex-Density-vs-Temperature" title="Link to this heading"></a></h3>
+<p>The vortex density curve rises gently at low temperature as tightly bound pairs form, then sharpens near <span class="math notranslate nohighlight">\(T_{\mathrm{BKT}}\)</span> as the binding energy vanishes and free vortices proliferate. The dashed vertical line marks the theoretical <span class="math notranslate nohighlight">\(T_{\mathrm{BKT}} \approx 0.893\)</span>.</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+</pre></div>
+</div>
+<div class="input_area highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">fig</span><span class="p">,</span> <span class="n">ax</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mf">7.5</span><span class="p">,</span> <span class="mf">4.8</span><span class="p">))</span>
+
+<span class="n">ax</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">vortex_temps</span><span class="p">,</span> <span class="n">vortex_densities</span><span class="p">,</span> <span class="s1">&#39;o-&#39;</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="n">PALETTE</span><span class="p">[</span><span class="s1">&#39;vortex&#39;</span><span class="p">],</span> <span class="n">lw</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">ms</span><span class="o">=</span><span class="mi">5</span><span class="p">)</span>
+<span class="n">ax</span><span class="o">.</span><span class="n">axvline</span><span class="p">(</span><span class="n">T_BKT</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s1">&#39;0.3&#39;</span><span class="p">,</span> <span class="n">ls</span><span class="o">=</span><span class="s1">&#39;--&#39;</span><span class="p">,</span> <span class="n">lw</span><span class="o">=</span><span class="mf">1.2</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="sa">rf</span><span class="s1">&#39;$T_</span><span class="se">{{</span><span class="s1">\mathrm</span><span class="se">{{</span><span class="s1">BKT</span><span class="se">}}}}</span><span class="s1"> = </span><span class="si">{</span><span class="n">T_BKT</span><span class="si">}</span><span class="s1">$&#39;</span><span class="p">)</span>
+<span class="n">ax</span><span class="o">.</span><span class="n">set_xlabel</span><span class="p">(</span><span class="s1">&#39;Temperature $T$&#39;</span><span class="p">)</span>
+<span class="n">ax</span><span class="o">.</span><span class="n">set_ylabel</span><span class="p">(</span><span class="s1">&#39;Vortex density $n_v$&#39;</span><span class="p">)</span>
+<span class="n">ax</span><span class="o">.</span><span class="n">set_title</span><span class="p">(</span><span class="s1">&#39;Topological defect density across the BKT crossover&#39;</span><span class="p">)</span>
+<span class="n">ax</span><span class="o">.</span><span class="n">grid</span><span class="p">(</span><span class="n">alpha</span><span class="o">=</span><span class="mf">0.25</span><span class="p">)</span>
+<span class="n">ax</span><span class="o">.</span><span class="n">legend</span><span class="p">(</span><span class="n">fontsize</span><span class="o">=</span><span class="mi">9</span><span class="p">)</span>
+
+<span class="n">fig</span><span class="o">.</span><span class="n">tight_layout</span><span class="p">()</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+</section>
+</section>
+<section id="Part-II:-Helicity-Modulus">
+<h2>Part II: Helicity Modulus<a class="headerlink" href="#Part-II:-Helicity-Modulus" title="Link to this heading"></a></h2>
+<section id="id1">
+<h3>Data<a class="headerlink" href="#id1" title="Link to this heading"></a></h3>
+<p>The helicity modulus (superfluid stiffness) <span class="math notranslate nohighlight">\(\Upsilon\)</span> measures the free-energy cost of imposing a twist across the lattice boundary. It is computed from the fluctuations of the spin-angle current:</p>
+<div class="math notranslate nohighlight">
+\[\Upsilon = \frac{1}{L^2}\left( \langle C \rangle - \frac{1}{T}\langle S^2 \rangle \right)\]</div>
+<p>where <span class="math notranslate nohighlight">\(C = \sum_{\langle i,j \rangle_x} \cos(\theta_i - \theta_j)\)</span> and <span class="math notranslate nohighlight">\(S = \sum_{\langle i,j \rangle_x} \sin(\theta_i - \theta_j)\)</span> are summed over nearest-neighbor bonds in the <span class="math notranslate nohighlight">\(x\)</span>-direction.</p>
+<p>The BKT theory predicts a universal jump: <span class="math notranslate nohighlight">\(\Upsilon(T_{\mathrm{BKT}}^-) = 2T_{\mathrm{BKT}}/\pi\)</span> with <span class="math notranslate nohighlight">\(\Upsilon = 0\)</span> above the transition (in the thermodynamic limit). On finite lattices the jump is rounded into a smooth crossover <a class="reference internal" href="#Bibliography"><span class="std std-ref">[2]</span></a> <a class="reference internal" href="#Bibliography"><span class="std std-ref">[3]</span></a>.</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+</pre></div>
+</div>
+<div class="input_area highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">helicity_cache</span> <span class="o">=</span> <span class="n">CACHE_DIR</span> <span class="o">/</span> <span class="s1">&#39;helicity_modulus.npz&#39;</span>
+<span class="n">helicity_min_points</span> <span class="o">=</span> <span class="mi">8</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_compute_helicity_sweep</span><span class="p">(</span>
+    <span class="o">*</span><span class="p">,</span>
+    <span class="n">size</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">32</span><span class="p">,</span>
+    <span class="n">n_temps</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">20</span><span class="p">,</span>
+    <span class="n">meas_steps</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">2_000</span><span class="p">,</span>
+    <span class="n">eq_probe</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">200</span><span class="p">,</span>
+    <span class="n">eq_max</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">8_000</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">]:</span>
+    <span class="n">temps</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="mf">0.1</span><span class="p">,</span> <span class="mf">1.5</span><span class="p">,</span> <span class="n">n_temps</span><span class="p">)</span>
+    <span class="n">helicity</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">empty_like</span><span class="p">(</span><span class="n">temps</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">idx</span><span class="p">,</span> <span class="n">t</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">temps</span><span class="p">):</span>
+        <span class="n">sim_r</span> <span class="o">=</span> <span class="n">XYSimulation</span><span class="p">(</span><span class="n">size</span><span class="o">=</span><span class="n">size</span><span class="p">,</span> <span class="n">temp</span><span class="o">=</span><span class="nb">float</span><span class="p">(</span><span class="n">t</span><span class="p">),</span> <span class="n">update</span><span class="o">=</span><span class="s1">&#39;checkerboard&#39;</span><span class="p">,</span> <span class="n">init_state</span><span class="o">=</span><span class="s1">&#39;random&#39;</span><span class="p">,</span> <span class="n">seed</span><span class="o">=</span><span class="mi">200</span> <span class="o">+</span> <span class="n">idx</span><span class="p">)</span>
+        <span class="n">sim_o</span> <span class="o">=</span> <span class="n">XYSimulation</span><span class="p">(</span><span class="n">size</span><span class="o">=</span><span class="n">size</span><span class="p">,</span> <span class="n">temp</span><span class="o">=</span><span class="nb">float</span><span class="p">(</span><span class="n">t</span><span class="p">),</span> <span class="n">update</span><span class="o">=</span><span class="s1">&#39;checkerboard&#39;</span><span class="p">,</span> <span class="n">init_state</span><span class="o">=</span><span class="s1">&#39;ordered&#39;</span><span class="p">,</span> <span class="n">seed</span><span class="o">=</span><span class="mi">200</span> <span class="o">+</span> <span class="n">idx</span><span class="p">)</span>
+        <span class="n">convergence_equilibrate</span><span class="p">(</span><span class="n">sim_r</span><span class="p">,</span> <span class="n">sim_o</span><span class="p">,</span> <span class="n">chunk_size</span><span class="o">=</span><span class="n">eq_probe</span><span class="p">,</span> <span class="n">max_steps</span><span class="o">=</span><span class="n">eq_max</span><span class="p">)</span>
+        <span class="n">cos_sums</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">empty</span><span class="p">(</span><span class="n">meas_steps</span><span class="p">)</span>
+        <span class="n">sin_sums</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">empty</span><span class="p">(</span><span class="n">meas_steps</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">meas_steps</span><span class="p">):</span>
+            <span class="n">sim_r</span><span class="o">.</span><span class="n">step</span><span class="p">()</span>
+            <span class="n">cos_sums</span><span class="p">[</span><span class="n">k</span><span class="p">],</span> <span class="n">sin_sums</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="o">=</span> <span class="n">sim_r</span><span class="o">.</span><span class="n">_get_helicity_data</span><span class="p">()</span>
+        <span class="n">avg_cos</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">cos_sums</span><span class="p">)</span>
+        <span class="n">avg_sq_sin</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">sin_sums</span> <span class="o">**</span> <span class="mi">2</span><span class="p">)</span>
+        <span class="n">helicity</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="n">avg_cos</span> <span class="o">-</span> <span class="p">(</span><span class="mf">1.0</span> <span class="o">/</span> <span class="nb">float</span><span class="p">(</span><span class="n">t</span><span class="p">))</span> <span class="o">*</span> <span class="n">avg_sq_sin</span><span class="p">)</span> <span class="o">/</span> <span class="p">(</span><span class="n">size</span> <span class="o">**</span> <span class="mi">2</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">temps</span><span class="p">,</span> <span class="n">helicity</span>
+
+
+<span class="n">helicity_loaded</span> <span class="o">=</span> <span class="kc">False</span>
+<span class="k">if</span> <span class="n">helicity_cache</span><span class="o">.</span><span class="n">exists</span><span class="p">():</span>
+    <span class="n">d</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">helicity_cache</span><span class="p">)</span>
+    <span class="k">if</span> <span class="s1">&#39;temperatures&#39;</span> <span class="ow">in</span> <span class="n">d</span><span class="o">.</span><span class="n">files</span> <span class="ow">and</span> <span class="s1">&#39;helicity_modulus&#39;</span> <span class="ow">in</span> <span class="n">d</span><span class="o">.</span><span class="n">files</span> <span class="ow">and</span> <span class="n">d</span><span class="p">[</span><span class="s1">&#39;temperatures&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">size</span> <span class="o">&gt;=</span> <span class="n">helicity_min_points</span><span class="p">:</span>
+        <span class="n">helicity_temps</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">d</span><span class="p">[</span><span class="s1">&#39;temperatures&#39;</span><span class="p">],</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">float</span><span class="p">)</span>
+        <span class="n">helicity_vals</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">d</span><span class="p">[</span><span class="s1">&#39;helicity_modulus&#39;</span><span class="p">],</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">float</span><span class="p">)</span>
+        <span class="n">helicity_source</span> <span class="o">=</span> <span class="sa">f</span><span class="s1">&#39;Loaded </span><span class="si">{</span><span class="n">helicity_temps</span><span class="o">.</span><span class="n">size</span><span class="si">}</span><span class="s1"> points from cache (</span><span class="si">{</span><span class="n">helicity_cache</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s1">)&#39;</span>
+        <span class="n">helicity_loaded</span> <span class="o">=</span> <span class="kc">True</span>
+
+<span class="k">if</span> <span class="ow">not</span> <span class="n">helicity_loaded</span><span class="p">:</span>
+    <span class="n">helicity_temps</span><span class="p">,</span> <span class="n">helicity_vals</span> <span class="o">=</span> <span class="n">_compute_helicity_sweep</span><span class="p">()</span>
+    <span class="n">helicity_source</span> <span class="o">=</span> <span class="sa">f</span><span class="s1">&#39;Computed fallback helicity sweep (</span><span class="si">{</span><span class="n">helicity_temps</span><span class="o">.</span><span class="n">size</span><span class="si">}</span><span class="s1"> points, L=32)&#39;</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="n">helicity_source</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</section>
+<section id="Helicity-Modulus-vs-Temperature">
+<h3>Helicity Modulus vs Temperature<a class="headerlink" href="#Helicity-Modulus-vs-Temperature" title="Link to this heading"></a></h3>
+<p>The helicity curve approaches a constant (the spin-wave stiffness) at low temperature, then drops toward zero near <span class="math notranslate nohighlight">\(T_{\mathrm{BKT}}\)</span>. The dashed purple line shows the Nelson-Kosterlitz universal-jump criterion <span class="math notranslate nohighlight">\(\Upsilon = 2T/\pi\)</span>; the intersection with the data curve locates <span class="math notranslate nohighlight">\(T_{\mathrm{BKT}}\)</span> on the finite lattice <a class="reference internal" href="#Bibliography"><span class="std std-ref">[2]</span></a>.</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+</pre></div>
+</div>
+<div class="input_area highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">fig</span><span class="p">,</span> <span class="n">ax</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mf">7.5</span><span class="p">,</span> <span class="mf">4.8</span><span class="p">))</span>
+
+<span class="n">ax</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">helicity_temps</span><span class="p">,</span> <span class="n">helicity_vals</span><span class="p">,</span> <span class="s1">&#39;o-&#39;</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="n">PALETTE</span><span class="p">[</span><span class="s1">&#39;helicity&#39;</span><span class="p">],</span> <span class="n">lw</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">ms</span><span class="o">=</span><span class="mi">5</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="sa">r</span><span class="s1">&#39;$\Upsilon(T)$&#39;</span><span class="p">)</span>
+
+<span class="n">jump_line_t</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="n">helicity_temps</span><span class="o">.</span><span class="n">min</span><span class="p">(),</span> <span class="n">helicity_temps</span><span class="o">.</span><span class="n">max</span><span class="p">(),</span> <span class="mi">100</span><span class="p">)</span>
+<span class="n">jump_line_y</span> <span class="o">=</span> <span class="mf">2.0</span> <span class="o">*</span> <span class="n">jump_line_t</span> <span class="o">/</span> <span class="n">np</span><span class="o">.</span><span class="n">pi</span>
+<span class="n">ax</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">jump_line_t</span><span class="p">,</span> <span class="n">jump_line_y</span><span class="p">,</span> <span class="s1">&#39;--&#39;</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="n">PALETTE</span><span class="p">[</span><span class="s1">&#39;jump_line&#39;</span><span class="p">],</span> <span class="n">lw</span><span class="o">=</span><span class="mf">1.5</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="sa">r</span><span class="s1">&#39;$2T/\pi$ (universal jump criterion)&#39;</span><span class="p">)</span>
+
+<span class="n">ax</span><span class="o">.</span><span class="n">axvline</span><span class="p">(</span><span class="n">T_BKT</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s1">&#39;0.3&#39;</span><span class="p">,</span> <span class="n">ls</span><span class="o">=</span><span class="s1">&#39;--&#39;</span><span class="p">,</span> <span class="n">lw</span><span class="o">=</span><span class="mf">1.2</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="sa">rf</span><span class="s1">&#39;$T_</span><span class="se">{{</span><span class="s1">\mathrm</span><span class="se">{{</span><span class="s1">BKT</span><span class="se">}}}}</span><span class="s1"> = </span><span class="si">{</span><span class="n">T_BKT</span><span class="si">}</span><span class="s1">$&#39;</span><span class="p">)</span>
+<span class="n">ax</span><span class="o">.</span><span class="n">set_xlabel</span><span class="p">(</span><span class="s1">&#39;Temperature $T$&#39;</span><span class="p">)</span>
+<span class="n">ax</span><span class="o">.</span><span class="n">set_ylabel</span><span class="p">(</span><span class="sa">r</span><span class="s1">&#39;Helicity modulus $\Upsilon$&#39;</span><span class="p">)</span>
+<span class="n">ax</span><span class="o">.</span><span class="n">set_title</span><span class="p">(</span><span class="s1">&#39;Superfluid stiffness across the BKT crossover&#39;</span><span class="p">)</span>
+<span class="n">ax</span><span class="o">.</span><span class="n">set_ylim</span><span class="p">(</span><span class="n">bottom</span><span class="o">=-</span><span class="mf">0.05</span><span class="p">)</span>
+<span class="n">ax</span><span class="o">.</span><span class="n">grid</span><span class="p">(</span><span class="n">alpha</span><span class="o">=</span><span class="mf">0.25</span><span class="p">)</span>
+<span class="n">ax</span><span class="o">.</span><span class="n">legend</span><span class="p">(</span><span class="n">fontsize</span><span class="o">=</span><span class="mi">9</span><span class="p">)</span>
+
+<span class="n">fig</span><span class="o">.</span><span class="n">tight_layout</span><span class="p">()</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+</section>
+</section>
+<section id="Part-III:-Correlation-Function">
+<h2>Part III: Correlation Function<a class="headerlink" href="#Part-III:-Correlation-Function" title="Link to this heading"></a></h2>
+<section id="id2">
+<h3>Data<a class="headerlink" href="#id2" title="Link to this heading"></a></h3>
+<p>The spin-spin correlation function <span class="math notranslate nohighlight">\(G(r) = \langle \vec{s}_0 \cdot \vec{s}_r \rangle\)</span> reveals the nature of order in each regime. Below <span class="math notranslate nohighlight">\(T_{\mathrm{BKT}}\)</span> the decay is algebraic: <span class="math notranslate nohighlight">\(G(r) \sim r^{-\eta(T)}\)</span> with <span class="math notranslate nohighlight">\(\eta(T_{\mathrm{BKT}}) = 1/4\)</span>. Above <span class="math notranslate nohighlight">\(T_{\mathrm{BKT}}\)</span> the decay crosses over to exponential: <span class="math notranslate nohighlight">\(G(r) \sim \exp(-r/\xi)\)</span> with a finite correlation length <span class="math notranslate nohighlight">\(\xi\)</span> <a class="reference internal" href="#Bibliography"><span class="std std-ref">[1]</span></a> <a class="reference internal" href="#Bibliography"><span class="std std-ref">[2]</span></a>. The precomputed data comes from
+<code class="docutils literal notranslate"><span class="pre">scripts/xy/compare_correlations.py</span></code>; the fallback uses <code class="docutils literal notranslate"><span class="pre">get_averaged_correlation()</span></code> on a <span class="math notranslate nohighlight">\(40 \times 40\)</span> lattice.</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+</pre></div>
+</div>
+<div class="input_area highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">corr_cache</span> <span class="o">=</span> <span class="n">CACHE_DIR</span> <span class="o">/</span> <span class="s1">&#39;correlation_comparison.npz&#39;</span>
+<span class="n">T_LOW</span> <span class="o">=</span> <span class="mf">0.4</span>
+<span class="n">T_HIGH</span> <span class="o">=</span> <span class="mf">1.5</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_compute_correlations</span><span class="p">(</span>
+    <span class="o">*</span><span class="p">,</span>
+    <span class="n">temp</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
+    <span class="n">size</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">40</span><span class="p">,</span>
+    <span class="n">total_steps</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">2_000</span><span class="p">,</span>
+    <span class="n">sample_interval</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">20</span><span class="p">,</span>
+    <span class="n">eq_probe</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">200</span><span class="p">,</span>
+    <span class="n">eq_max</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">6_000</span><span class="p">,</span>
+    <span class="n">seed</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">]:</span>
+    <span class="n">sim_r</span> <span class="o">=</span> <span class="n">XYSimulation</span><span class="p">(</span><span class="n">size</span><span class="o">=</span><span class="n">size</span><span class="p">,</span> <span class="n">temp</span><span class="o">=</span><span class="n">temp</span><span class="p">,</span> <span class="n">update</span><span class="o">=</span><span class="s1">&#39;checkerboard&#39;</span><span class="p">,</span> <span class="n">init_state</span><span class="o">=</span><span class="s1">&#39;random&#39;</span><span class="p">,</span> <span class="n">seed</span><span class="o">=</span><span class="n">seed</span><span class="p">)</span>
+    <span class="n">sim_o</span> <span class="o">=</span> <span class="n">XYSimulation</span><span class="p">(</span><span class="n">size</span><span class="o">=</span><span class="n">size</span><span class="p">,</span> <span class="n">temp</span><span class="o">=</span><span class="n">temp</span><span class="p">,</span> <span class="n">update</span><span class="o">=</span><span class="s1">&#39;checkerboard&#39;</span><span class="p">,</span> <span class="n">init_state</span><span class="o">=</span><span class="s1">&#39;ordered&#39;</span><span class="p">,</span> <span class="n">seed</span><span class="o">=</span><span class="n">seed</span><span class="p">)</span>
+    <span class="n">convergence_equilibrate</span><span class="p">(</span><span class="n">sim_r</span><span class="p">,</span> <span class="n">sim_o</span><span class="p">,</span> <span class="n">chunk_size</span><span class="o">=</span><span class="n">eq_probe</span><span class="p">,</span> <span class="n">max_steps</span><span class="o">=</span><span class="n">eq_max</span><span class="p">)</span>
+    <span class="n">r</span><span class="p">,</span> <span class="n">G</span> <span class="o">=</span> <span class="n">get_averaged_correlation</span><span class="p">(</span>
+        <span class="n">sim</span><span class="o">=</span><span class="n">sim_r</span><span class="p">,</span>
+        <span class="n">total_steps</span><span class="o">=</span><span class="n">total_steps</span><span class="p">,</span>
+        <span class="n">sample_interval</span><span class="o">=</span><span class="n">sample_interval</span><span class="p">,</span>
+    <span class="p">)</span>
+    <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">r</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">float</span><span class="p">),</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">G</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">float</span><span class="p">)</span>
+
+
+<span class="n">corr_loaded</span> <span class="o">=</span> <span class="kc">False</span>
+<span class="k">if</span> <span class="n">corr_cache</span><span class="o">.</span><span class="n">exists</span><span class="p">():</span>
+    <span class="n">d</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">corr_cache</span><span class="p">)</span>
+    <span class="k">if</span> <span class="nb">all</span><span class="p">(</span><span class="n">k</span> <span class="ow">in</span> <span class="n">d</span><span class="o">.</span><span class="n">files</span> <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="p">(</span><span class="s1">&#39;r_low&#39;</span><span class="p">,</span> <span class="s1">&#39;G_low&#39;</span><span class="p">,</span> <span class="s1">&#39;r_high&#39;</span><span class="p">,</span> <span class="s1">&#39;G_high&#39;</span><span class="p">)):</span>
+        <span class="n">r_low</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">d</span><span class="p">[</span><span class="s1">&#39;r_low&#39;</span><span class="p">],</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">float</span><span class="p">)</span>
+        <span class="n">G_low</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">d</span><span class="p">[</span><span class="s1">&#39;G_low&#39;</span><span class="p">],</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">float</span><span class="p">)</span>
+        <span class="n">r_high</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">d</span><span class="p">[</span><span class="s1">&#39;r_high&#39;</span><span class="p">],</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">float</span><span class="p">)</span>
+        <span class="n">G_high</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">d</span><span class="p">[</span><span class="s1">&#39;G_high&#39;</span><span class="p">],</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">float</span><span class="p">)</span>
+        <span class="n">T_LOW</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">d</span><span class="p">[</span><span class="s1">&#39;T_low&#39;</span><span class="p">])</span> <span class="k">if</span> <span class="s1">&#39;T_low&#39;</span> <span class="ow">in</span> <span class="n">d</span><span class="o">.</span><span class="n">files</span> <span class="k">else</span> <span class="n">T_LOW</span>
+        <span class="n">T_HIGH</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">d</span><span class="p">[</span><span class="s1">&#39;T_high&#39;</span><span class="p">])</span> <span class="k">if</span> <span class="s1">&#39;T_high&#39;</span> <span class="ow">in</span> <span class="n">d</span><span class="o">.</span><span class="n">files</span> <span class="k">else</span> <span class="n">T_HIGH</span>
+        <span class="n">corr_source</span> <span class="o">=</span> <span class="sa">f</span><span class="s1">&#39;Loaded correlation data from cache (</span><span class="si">{</span><span class="n">corr_cache</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s1">)&#39;</span>
+        <span class="n">corr_loaded</span> <span class="o">=</span> <span class="kc">True</span>
+
+<span class="k">if</span> <span class="ow">not</span> <span class="n">corr_loaded</span><span class="p">:</span>
+    <span class="n">r_low</span><span class="p">,</span> <span class="n">G_low</span> <span class="o">=</span> <span class="n">_compute_correlations</span><span class="p">(</span><span class="n">temp</span><span class="o">=</span><span class="n">T_LOW</span><span class="p">,</span> <span class="n">seed</span><span class="o">=</span><span class="mi">400</span><span class="p">)</span>
+    <span class="n">r_high</span><span class="p">,</span> <span class="n">G_high</span> <span class="o">=</span> <span class="n">_compute_correlations</span><span class="p">(</span><span class="n">temp</span><span class="o">=</span><span class="n">T_HIGH</span><span class="p">,</span> <span class="n">seed</span><span class="o">=</span><span class="mi">401</span><span class="p">)</span>
+    <span class="n">corr_source</span> <span class="o">=</span> <span class="sa">f</span><span class="s1">&#39;Computed fallback correlations (L=40)&#39;</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="n">corr_source</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</section>
+<section id="Correlation-Functions-on-Log-Log-and-Semi-Log-Scales">
+<h3>Correlation Functions on Log-Log and Semi-Log Scales<a class="headerlink" href="#Correlation-Functions-on-Log-Log-and-Semi-Log-Scales" title="Link to this heading"></a></h3>
+<p>A log-log plot reveals algebraic decay as a straight line: the negative slope gives <span class="math notranslate nohighlight">\(\eta(T)\)</span>. A semi-log plot makes exponential decay appear linear. Below <span class="math notranslate nohighlight">\(T_{\mathrm{BKT}}\)</span> the log-log curve is approximately straight (power-law). Above <span class="math notranslate nohighlight">\(T_{\mathrm{BKT}}\)</span> the semi-log plot linearizes (exponential).</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+</pre></div>
+</div>
+<div class="input_area highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">fig</span><span class="p">,</span> <span class="n">axes</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">12</span><span class="p">,</span> <span class="mf">4.8</span><span class="p">))</span>
+
+<span class="n">mask_low</span> <span class="o">=</span> <span class="p">(</span><span class="n">r_low</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">)</span> <span class="o">&amp;</span> <span class="p">(</span><span class="n">G_low</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">)</span>
+<span class="n">mask_high</span> <span class="o">=</span> <span class="p">(</span><span class="n">r_high</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">)</span> <span class="o">&amp;</span> <span class="p">(</span><span class="n">G_high</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">)</span>
+
+<span class="c1"># Log-log: algebraic regime</span>
+<span class="n">axes</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">loglog</span><span class="p">(</span><span class="n">r_low</span><span class="p">[</span><span class="n">mask_low</span><span class="p">],</span> <span class="n">G_low</span><span class="p">[</span><span class="n">mask_low</span><span class="p">],</span> <span class="s1">&#39;o-&#39;</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="n">PALETTE</span><span class="p">[</span><span class="s1">&#39;corr_low&#39;</span><span class="p">],</span> <span class="n">ms</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span> <span class="n">lw</span><span class="o">=</span><span class="mf">1.5</span><span class="p">,</span>
+               <span class="n">label</span><span class="o">=</span><span class="sa">rf</span><span class="s1">&#39;$T = </span><span class="si">{</span><span class="n">T_LOW</span><span class="si">}</span><span class="s1">$ (below $T_</span><span class="se">{{</span><span class="s1">\mathrm</span><span class="se">{{</span><span class="s1">BKT</span><span class="se">}}}}</span><span class="s1">$)&#39;</span><span class="p">)</span>
+<span class="n">axes</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">loglog</span><span class="p">(</span><span class="n">r_high</span><span class="p">[</span><span class="n">mask_high</span><span class="p">],</span> <span class="n">G_high</span><span class="p">[</span><span class="n">mask_high</span><span class="p">],</span> <span class="s1">&#39;s-&#39;</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="n">PALETTE</span><span class="p">[</span><span class="s1">&#39;corr_high&#39;</span><span class="p">],</span> <span class="n">ms</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span> <span class="n">lw</span><span class="o">=</span><span class="mf">1.5</span><span class="p">,</span>
+               <span class="n">label</span><span class="o">=</span><span class="sa">rf</span><span class="s1">&#39;$T = </span><span class="si">{</span><span class="n">T_HIGH</span><span class="si">}</span><span class="s1">$ (above $T_</span><span class="se">{{</span><span class="s1">\mathrm</span><span class="se">{{</span><span class="s1">BKT</span><span class="se">}}}}</span><span class="s1">$)&#39;</span><span class="p">)</span>
+<span class="n">axes</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">set_xlabel</span><span class="p">(</span><span class="s1">&#39;Distance $r$&#39;</span><span class="p">)</span>
+<span class="n">axes</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">set_ylabel</span><span class="p">(</span><span class="s1">&#39;$G(r)$&#39;</span><span class="p">)</span>
+<span class="n">axes</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">set_title</span><span class="p">(</span><span class="s1">&#39;Log-log (algebraic decay is linear)&#39;</span><span class="p">)</span>
+<span class="n">axes</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">grid</span><span class="p">(</span><span class="n">alpha</span><span class="o">=</span><span class="mf">0.25</span><span class="p">,</span> <span class="n">which</span><span class="o">=</span><span class="s1">&#39;both&#39;</span><span class="p">)</span>
+<span class="n">axes</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">legend</span><span class="p">(</span><span class="n">fontsize</span><span class="o">=</span><span class="mi">8</span><span class="p">)</span>
+
+<span class="c1"># Semi-log: exponential regime</span>
+<span class="n">axes</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">semilogy</span><span class="p">(</span><span class="n">r_low</span><span class="p">[</span><span class="n">mask_low</span><span class="p">],</span> <span class="n">G_low</span><span class="p">[</span><span class="n">mask_low</span><span class="p">],</span> <span class="s1">&#39;o-&#39;</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="n">PALETTE</span><span class="p">[</span><span class="s1">&#39;corr_low&#39;</span><span class="p">],</span> <span class="n">ms</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span> <span class="n">lw</span><span class="o">=</span><span class="mf">1.5</span><span class="p">,</span>
+                 <span class="n">label</span><span class="o">=</span><span class="sa">rf</span><span class="s1">&#39;$T = </span><span class="si">{</span><span class="n">T_LOW</span><span class="si">}</span><span class="s1">$&#39;</span><span class="p">)</span>
+<span class="n">axes</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">semilogy</span><span class="p">(</span><span class="n">r_high</span><span class="p">[</span><span class="n">mask_high</span><span class="p">],</span> <span class="n">G_high</span><span class="p">[</span><span class="n">mask_high</span><span class="p">],</span> <span class="s1">&#39;s-&#39;</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="n">PALETTE</span><span class="p">[</span><span class="s1">&#39;corr_high&#39;</span><span class="p">],</span> <span class="n">ms</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span> <span class="n">lw</span><span class="o">=</span><span class="mf">1.5</span><span class="p">,</span>
+                 <span class="n">label</span><span class="o">=</span><span class="sa">rf</span><span class="s1">&#39;$T = </span><span class="si">{</span><span class="n">T_HIGH</span><span class="si">}</span><span class="s1">$&#39;</span><span class="p">)</span>
+<span class="n">axes</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">set_xlabel</span><span class="p">(</span><span class="s1">&#39;Distance $r$&#39;</span><span class="p">)</span>
+<span class="n">axes</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">set_ylabel</span><span class="p">(</span><span class="s1">&#39;$G(r)$&#39;</span><span class="p">)</span>
+<span class="n">axes</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">set_title</span><span class="p">(</span><span class="s1">&#39;Semi-log (exponential decay is linear)&#39;</span><span class="p">)</span>
+<span class="n">axes</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">grid</span><span class="p">(</span><span class="n">alpha</span><span class="o">=</span><span class="mf">0.25</span><span class="p">,</span> <span class="n">which</span><span class="o">=</span><span class="s1">&#39;both&#39;</span><span class="p">)</span>
+<span class="n">axes</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">legend</span><span class="p">(</span><span class="n">fontsize</span><span class="o">=</span><span class="mi">8</span><span class="p">)</span>
+
+<span class="n">fig</span><span class="o">.</span><span class="n">suptitle</span><span class="p">(</span><span class="s1">&#39;Correlation function below and above the BKT transition&#39;</span><span class="p">,</span> <span class="n">y</span><span class="o">=</span><span class="mf">1.02</span><span class="p">)</span>
+<span class="n">fig</span><span class="o">.</span><span class="n">tight_layout</span><span class="p">()</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+</section>
+</section>
+<section id="Synthesis">
+<h2>Synthesis<a class="headerlink" href="#Synthesis" title="Link to this heading"></a></h2>
+<p>The three observables jointly confirm the BKT mechanism. The vortex density curve shows the onset of topological defect proliferation near <span class="math notranslate nohighlight">\(T_{\mathrm{BKT}}\)</span>. The helicity modulus tracks the vanishing of the superfluid stiffness, crossing the <span class="math notranslate nohighlight">\(2T/\pi\)</span> universal-jump line in the vicinity of the predicted transition temperature. The correlation function changes from algebraic to exponential decay across the same temperature region. Together these signatures distinguish the BKT
+transition from conventional order-disorder transitions: the correlation length diverges exponentially (rather than as a power law) from the high-temperature side, and the helicity modulus jumps discontinuously (rather than vanishing continuously) as the temperature decreases through <span class="math notranslate nohighlight">\(T_{\mathrm{BKT}}\)</span>.</p>
+</section>
+<section id="Bibliography">
+<h2>Bibliography<a class="headerlink" href="#Bibliography" title="Link to this heading"></a></h2>
+<p><a class="reference internal" href="#Bibliography"><span class="std std-ref">[1]</span></a> V. L. Berezinskii, “Destruction of Long-range Order in One-dimensional and Two-dimensional Systems Possessing a Continuous Symmetry Group. II. Quantum Systems,” <em>Soviet Physics JETP</em> 34, 610 (1972). <a class="reference external" href="http://www.jetp.ras.ru/cgi-bin/e/index/e/34/3/p610?a=list">JETP link</a></p>
+<p><a class="reference internal" href="#Bibliography"><span class="std std-ref">[2]</span></a> J. M. Kosterlitz and D. J. Thouless, “Ordering, metastability and phase transitions in two-dimensional systems,” <em>Journal of Physics C</em> 6, 1181 (1973). <a class="reference external" href="https://iopscience.iop.org/article/10.1088/0022-3719/6/7/010">IoP Open Access</a></p>
+<p><a class="reference internal" href="#Bibliography"><span class="std std-ref">[3]</span></a> D. R. Nelson and J. M. Kosterlitz, “Universal Jump in the Superfluid Density of Two-Dimensional Superfluids,” <em>Physical Review Letters</em> 39, 1201 (1977). <a class="reference external" href="https://journals.aps.org/prl/abstract/10.1103/PhysRevLett.39.1201">APS</a></p>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="clock_temperature_sweep.html" class="btn btn-neutral float-left" title="Clock Model: Temperature Sweep and Discrete Symmetry Breaking" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="correlation_and_coarsening.html" class="btn btn-neutral float-right" title="Correlation Functions and Coarsening Dynamics" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2026, Thomas Lottermoser.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

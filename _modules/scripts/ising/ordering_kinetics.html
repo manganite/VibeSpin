@@ -57,6 +57,10 @@
 <li class="toctree-l1"><a class="reference internal" href="../../../dynamic_critical_exponents.html">Dynamical Critical Exponents in the 2D Ising Model</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../ising_relaxation_and_autocorrelation_analysis.html">Ising Model: Relaxation to Equilibrium</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../ising_temperature_sweep.html">Ising Model: Temperature Sweep and Critical Behavior</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../xy_temperature_sweep.html">XY Model: Temperature Sweep and BKT Crossover</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../clock_temperature_sweep.html">Clock Model: Temperature Sweep and Discrete Symmetry Breaking</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../bkt_transition.html">BKT Transition: Vortices, Helicity, and Correlations</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../correlation_and_coarsening.html">Correlation Functions and Coarsening Dynamics</a></li>
 </ul>
 <p class="caption" role="heading"><span class="caption-text">API Reference:</span></p>
 <ul>
@@ -101,6 +105,7 @@
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">models.ising_model</span><span class="w"> </span><span class="kn">import</span> <span class="n">IsingSimulation</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">utils.kinetics_helpers</span><span class="w"> </span><span class="kn">import</span> <span class="n">compute_mean_intercept_length</span><span class="p">,</span> <span class="n">run_ordering_kinetics</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">utils.plotting</span><span class="w"> </span><span class="kn">import</span> <span class="n">ensure_results_dir</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">utils.system</span><span class="w"> </span><span class="kn">import</span> <span class="n">parse_args_compat</span><span class="p">,</span> <span class="n">setup_logging</span>
 
 
@@ -147,6 +152,7 @@
         <span class="n">fit_min</span><span class="o">=</span><span class="n">args</span><span class="o">.</span><span class="n">fit_min</span><span class="p">,</span>
         <span class="n">output_dir</span><span class="o">=</span><span class="n">args</span><span class="o">.</span><span class="n">output_dir</span><span class="p">,</span>
         <span class="n">logger</span><span class="o">=</span><span class="n">logger</span><span class="p">,</span>
+        <span class="n">npz_path</span><span class="o">=</span><span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">ensure_results_dir</span><span class="p">(</span><span class="n">directory</span><span class="o">=</span><span class="n">args</span><span class="o">.</span><span class="n">output_dir</span><span class="p">)</span><span class="si">}</span><span class="s1">/ordering_kinetics.npz&#39;</span><span class="p">,</span>
     <span class="p">)</span></div>
 
 

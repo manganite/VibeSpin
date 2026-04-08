@@ -61,6 +61,7 @@
 <li class="toctree-l3"><a class="reference internal" href="#results">Results</a></li>
 </ul>
 </li>
+<li class="toctree-l2"><a class="reference internal" href="#data-pipeline">Data Pipeline</a></li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="agents.html">Agent Instruction Guide: VibeSpin</a></li>
@@ -74,6 +75,10 @@
 <li class="toctree-l1"><a class="reference internal" href="dynamic_critical_exponents.html">Dynamical Critical Exponents in the 2D Ising Model</a></li>
 <li class="toctree-l1"><a class="reference internal" href="ising_relaxation_and_autocorrelation_analysis.html">Ising Model: Relaxation to Equilibrium</a></li>
 <li class="toctree-l1"><a class="reference internal" href="ising_temperature_sweep.html">Ising Model: Temperature Sweep and Critical Behavior</a></li>
+<li class="toctree-l1"><a class="reference internal" href="xy_temperature_sweep.html">XY Model: Temperature Sweep and BKT Crossover</a></li>
+<li class="toctree-l1"><a class="reference internal" href="clock_temperature_sweep.html">Clock Model: Temperature Sweep and Discrete Symmetry Breaking</a></li>
+<li class="toctree-l1"><a class="reference internal" href="bkt_transition.html">BKT Transition: Vortices, Helicity, and Correlations</a></li>
+<li class="toctree-l1"><a class="reference internal" href="correlation_and_coarsening.html">Correlation Functions and Coarsening Dynamics</a></li>
 </ul>
 <p class="caption" role="heading"><span class="caption-text">API Reference:</span></p>
 <ul>
@@ -161,6 +166,113 @@
 <h3>Results<a class="headerlink" href="#results" title="Link to this heading"></a></h3>
 <p>All scripts save their output (plots and data files) to the <code class="docutils literal notranslate"><span class="pre">results/</span></code> directory, sub-divided by model and experiment type.</p>
 </section>
+</section>
+<section id="data-pipeline">
+<h2>Data Pipeline<a class="headerlink" href="#data-pipeline" title="Link to this heading"></a></h2>
+<p>Scripts serve a dual role: they generate cached NPZ data files for notebooks and produce quick-check PNG figures for immediate visual verification. Notebooks are the curated presentation layer and load precomputed NPZ files to avoid re-running expensive simulations. When NPZ data is absent, notebooks provide lightweight fallback computations for demonstration purposes.</p>
+<p>The table below maps each script to its data output and the notebook(s) that consume it. Scripts marked “figure only” produce PNG visualizations but no cached data; their analyses are reproduced inline within notebooks at small system sizes when needed.</p>
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>Script</p></th>
+<th class="head"><p>NPZ Output</p></th>
+<th class="head"><p>Consuming Notebook(s)</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><strong>Ising</strong></p></td>
+<td><p></p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">scripts/ising/temperature_sweep.py</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">results/ising/temperature_sweep_data.npz</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">Ising_Temperature_Sweep.ipynb</span></code>, <code class="docutils literal notranslate"><span class="pre">Ising_Relaxation_and_Autocorrelation_Analysis.ipynb</span></code></p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">scripts/ising/measure_z.py</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">results/ising/dynamic_exponent_z.npz</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">Dynamic_Critical_Exponents.ipynb</span></code></p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">scripts/ising/wolff_efficiency.py</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">results/ising/wolff_efficiency.npz</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">Wolff_Efficiency.ipynb</span></code></p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">scripts/ising/correlation_comparison.py</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">results/ising/correlation_comparison.npz</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">Correlation_and_Coarsening.ipynb</span></code></p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">scripts/ising/correlation_divergence.py</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">results/ising/correlation_divergence.npz</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">Correlation_and_Coarsening.ipynb</span></code></p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">scripts/ising/ordering_kinetics.py</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">results/ising/ordering_kinetics.npz</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">Correlation_and_Coarsening.ipynb</span></code></p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">scripts/ising/diag_eq_traces.py</span></code></p></td>
+<td><p><em>(figure only)</em></p></td>
+<td><p>—</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">scripts/ising/ordering_evolution.py</span></code></p></td>
+<td><p><em>(figure only)</em></p></td>
+<td><p>—</p></td>
+</tr>
+<tr class="row-odd"><td><p><strong>XY</strong></p></td>
+<td><p></p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">scripts/xy/temperature_sweep.py</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">results/xy/temperature_sweep_data.npz</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">XY_Temperature_Sweep.ipynb</span></code></p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">scripts/xy/bkt_transition.py</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">results/xy/bkt_transition.npz</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">BKT_Transition.ipynb</span></code></p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">scripts/xy/helicity_modulus.py</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">results/xy/helicity_modulus.npz</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">BKT_Transition.ipynb</span></code></p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">scripts/xy/compare_correlations.py</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">results/xy/correlation_comparison.npz</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">BKT_Transition.ipynb</span></code>, <code class="docutils literal notranslate"><span class="pre">Correlation_and_Coarsening.ipynb</span></code></p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">scripts/xy/ordering_kinetics.py</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">results/xy/ordering_kinetics.npz</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">Correlation_and_Coarsening.ipynb</span></code></p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">scripts/xy/ordering_evolution.py</span></code></p></td>
+<td><p><em>(figure only)</em></p></td>
+<td><p>—</p></td>
+</tr>
+<tr class="row-even"><td><p><strong>Clock</strong></p></td>
+<td><p></p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">scripts/clock/temperature_sweep.py</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">results/clock/temperature_sweep_data.npz</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">Clock_Temperature_Sweep.ipynb</span></code></p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">scripts/clock/ordering_kinetics.py</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">results/clock/ordering_kinetics.npz</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">Correlation_and_Coarsening.ipynb</span></code></p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">scripts/clock/ordering_evolution.py</span></code></p></td>
+<td><p><em>(figure only)</em></p></td>
+<td><p>—</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">scripts/clock/compare_discrete_vs_continuous.py</span></code></p></td>
+<td><p><em>(figure only)</em></p></td>
+<td><p>—</p></td>
+</tr>
+<tr class="row-odd"><td><p><strong>Benchmarks</strong></p></td>
+<td><p></p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">scripts/benchmarks/throughput.py</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">results/benchmarks/scaling_benchmark.npz</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">Performance_Benchmarks.ipynb</span></code></p></td>
+</tr>
+</tbody>
+</table>
 </section>
 </section>
 

@@ -60,6 +60,10 @@
 <li class="toctree-l1"><a class="reference internal" href="../dynamic_critical_exponents.html">Dynamical Critical Exponents in the 2D Ising Model</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../ising_relaxation_and_autocorrelation_analysis.html">Ising Model: Relaxation to Equilibrium</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../ising_temperature_sweep.html">Ising Model: Temperature Sweep and Critical Behavior</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../xy_temperature_sweep.html">XY Model: Temperature Sweep and BKT Crossover</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../clock_temperature_sweep.html">Clock Model: Temperature Sweep and Discrete Symmetry Breaking</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../bkt_transition.html">BKT Transition: Vortices, Helicity, and Correlations</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../correlation_and_coarsening.html">Correlation Functions and Coarsening Dynamics</a></li>
 </ul>
 <p class="caption" role="heading"><span class="caption-text">API Reference:</span></p>
 <ul class="current">
@@ -215,25 +219,6 @@
 </li>
 <li class="toctree-l1"><a class="reference internal" href="vibespin.utils.html">vibespin.utils package</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="vibespin.utils.html#submodules">Submodules</a></li>
-<li class="toctree-l2"><a class="reference internal" href="vibespin.utils.html#module-utils.analysis">utils.analysis module</a><ul>
-<li class="toctree-l3"><a class="reference internal" href="vibespin.utils.html#utils.analysis.blocking_error"><code class="docutils literal notranslate"><span class="pre">blocking_error()</span></code></a></li>
-<li class="toctree-l3"><a class="reference internal" href="vibespin.utils.html#utils.analysis.calculate_autocorr"><code class="docutils literal notranslate"><span class="pre">calculate_autocorr()</span></code></a></li>
-<li class="toctree-l3"><a class="reference internal" href="vibespin.utils.html#utils.analysis.calculate_entropy"><code class="docutils literal notranslate"><span class="pre">calculate_entropy()</span></code></a></li>
-<li class="toctree-l3"><a class="reference internal" href="vibespin.utils.html#utils.analysis.calculate_thermodynamics"><code class="docutils literal notranslate"><span class="pre">calculate_thermodynamics()</span></code></a></li>
-<li class="toctree-l3"><a class="reference internal" href="vibespin.utils.html#utils.analysis.compute_kinetics_metrics"><code class="docutils literal notranslate"><span class="pre">compute_kinetics_metrics()</span></code></a></li>
-<li class="toctree-l3"><a class="reference internal" href="vibespin.utils.html#utils.analysis.estimate_effective_sample_size"><code class="docutils literal notranslate"><span class="pre">estimate_effective_sample_size()</span></code></a></li>
-<li class="toctree-l3"><a class="reference internal" href="vibespin.utils.html#utils.analysis.get_averaged_correlation"><code class="docutils literal notranslate"><span class="pre">get_averaged_correlation()</span></code></a></li>
-<li class="toctree-l3"><a class="reference internal" href="vibespin.utils.html#utils.analysis.pair_correlation_x"><code class="docutils literal notranslate"><span class="pre">pair_correlation_x()</span></code></a></li>
-<li class="toctree-l3"><a class="reference internal" href="vibespin.utils.html#utils.analysis.power_fit"><code class="docutils literal notranslate"><span class="pre">power_fit()</span></code></a></li>
-<li class="toctree-l3"><a class="reference internal" href="vibespin.utils.html#utils.analysis.radial_average_sk"><code class="docutils literal notranslate"><span class="pre">radial_average_sk()</span></code></a></li>
-<li class="toctree-l3"><a class="reference internal" href="vibespin.utils.html#utils.analysis.summarize_asymmetric_replicate_uncertainty"><code class="docutils literal notranslate"><span class="pre">summarize_asymmetric_replicate_uncertainty()</span></code></a></li>
-<li class="toctree-l3"><a class="reference internal" href="vibespin.utils.html#utils.analysis.summarize_derived_observable"><code class="docutils literal notranslate"><span class="pre">summarize_derived_observable()</span></code></a></li>
-<li class="toctree-l3"><a class="reference internal" href="vibespin.utils.html#utils.analysis.summarize_entropy_observable"><code class="docutils literal notranslate"><span class="pre">summarize_entropy_observable()</span></code></a></li>
-<li class="toctree-l3"><a class="reference internal" href="vibespin.utils.html#utils.analysis.summarize_primary_observable"><code class="docutils literal notranslate"><span class="pre">summarize_primary_observable()</span></code></a></li>
-<li class="toctree-l3"><a class="reference internal" href="vibespin.utils.html#utils.analysis.summarize_replicate_samples"><code class="docutils literal notranslate"><span class="pre">summarize_replicate_samples()</span></code></a></li>
-<li class="toctree-l3"><a class="reference internal" href="vibespin.utils.html#utils.analysis.summarize_seed_ensemble"><code class="docutils literal notranslate"><span class="pre">summarize_seed_ensemble()</span></code></a></li>
-</ul>
-</li>
 <li class="toctree-l2"><a class="reference internal" href="vibespin.utils.html#module-utils.equilibration">utils.equilibration module</a><ul>
 <li class="toctree-l3"><a class="reference internal" href="vibespin.utils.html#utils.equilibration.adaptive_equilibrate"><code class="docutils literal notranslate"><span class="pre">adaptive_equilibrate()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="vibespin.utils.html#utils.equilibration.convergence_equilibrate"><code class="docutils literal notranslate"><span class="pre">convergence_equilibrate()</span></code></a></li>
@@ -256,12 +241,34 @@
 <li class="toctree-l3"><a class="reference internal" href="vibespin.utils.html#utils.kinetics_helpers.run_ordering_kinetics"><code class="docutils literal notranslate"><span class="pre">run_ordering_kinetics()</span></code></a></li>
 </ul>
 </li>
+<li class="toctree-l2"><a class="reference internal" href="vibespin.utils.html#module-utils.observables">utils.observables module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="vibespin.utils.html#utils.observables.calculate_entropy"><code class="docutils literal notranslate"><span class="pre">calculate_entropy()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="vibespin.utils.html#utils.observables.calculate_thermodynamics"><code class="docutils literal notranslate"><span class="pre">calculate_thermodynamics()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="vibespin.utils.html#utils.observables.compute_kinetics_metrics"><code class="docutils literal notranslate"><span class="pre">compute_kinetics_metrics()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="vibespin.utils.html#utils.observables.get_averaged_correlation"><code class="docutils literal notranslate"><span class="pre">get_averaged_correlation()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="vibespin.utils.html#utils.observables.pair_correlation_x"><code class="docutils literal notranslate"><span class="pre">pair_correlation_x()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="vibespin.utils.html#utils.observables.radial_average_sk"><code class="docutils literal notranslate"><span class="pre">radial_average_sk()</span></code></a></li>
+</ul>
+</li>
 <li class="toctree-l2"><a class="reference internal" href="vibespin.utils.html#module-utils.plotting">utils.plotting module</a><ul>
 <li class="toctree-l3"><a class="reference internal" href="vibespin.utils.html#utils.plotting.ensure_results_dir"><code class="docutils literal notranslate"><span class="pre">ensure_results_dir()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="vibespin.utils.html#utils.plotting.plot_ordering_evolution"><code class="docutils literal notranslate"><span class="pre">plot_ordering_evolution()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="vibespin.utils.html#utils.plotting.plot_ordering_kinetics"><code class="docutils literal notranslate"><span class="pre">plot_ordering_kinetics()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="vibespin.utils.html#utils.plotting.plot_temperature_sweep"><code class="docutils literal notranslate"><span class="pre">plot_temperature_sweep()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="vibespin.utils.html#utils.plotting.save_plot"><code class="docutils literal notranslate"><span class="pre">save_plot()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="vibespin.utils.html#module-utils.statistics">utils.statistics module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="vibespin.utils.html#utils.statistics.blocking_error"><code class="docutils literal notranslate"><span class="pre">blocking_error()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="vibespin.utils.html#utils.statistics.calculate_autocorr"><code class="docutils literal notranslate"><span class="pre">calculate_autocorr()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="vibespin.utils.html#utils.statistics.estimate_effective_sample_size"><code class="docutils literal notranslate"><span class="pre">estimate_effective_sample_size()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="vibespin.utils.html#utils.statistics.power_fit"><code class="docutils literal notranslate"><span class="pre">power_fit()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="vibespin.utils.html#utils.statistics.summarize_asymmetric_replicate_uncertainty"><code class="docutils literal notranslate"><span class="pre">summarize_asymmetric_replicate_uncertainty()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="vibespin.utils.html#utils.statistics.summarize_derived_observable"><code class="docutils literal notranslate"><span class="pre">summarize_derived_observable()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="vibespin.utils.html#utils.statistics.summarize_entropy_observable"><code class="docutils literal notranslate"><span class="pre">summarize_entropy_observable()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="vibespin.utils.html#utils.statistics.summarize_primary_observable"><code class="docutils literal notranslate"><span class="pre">summarize_primary_observable()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="vibespin.utils.html#utils.statistics.summarize_replicate_samples"><code class="docutils literal notranslate"><span class="pre">summarize_replicate_samples()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="vibespin.utils.html#utils.statistics.summarize_seed_ensemble"><code class="docutils literal notranslate"><span class="pre">summarize_seed_ensemble()</span></code></a></li>
 </ul>
 </li>
 <li class="toctree-l2"><a class="reference internal" href="vibespin.utils.html#module-utils.sweep_helpers">utils.sweep_helpers module</a><ul>

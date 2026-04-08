@@ -4,14 +4,6 @@ vibespin.utils package
 Submodules
 ----------
 
-utils.analysis module
----------------------
-
-.. automodule:: utils.analysis
-   :members:
-   :show-inheritance:
-   :undoc-members:
-
 utils.equilibration module
 --------------------------
 
@@ -44,10 +36,26 @@ utils.kinetics\_helpers module
    :show-inheritance:
    :undoc-members:
 
+utils.observables module
+------------------------
+
+.. automodule:: utils.observables
+   :members:
+   :show-inheritance:
+   :undoc-members:
+
 utils.plotting module
 ---------------------
 
 .. automodule:: utils.plotting
+   :members:
+   :show-inheritance:
+   :undoc-members:
+
+utils.statistics module
+-----------------------
+
+.. automodule:: utils.statistics
    :members:
    :show-inheritance:
    :undoc-members:

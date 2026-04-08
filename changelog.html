@@ -55,18 +55,24 @@
 <li class="toctree-l2"><a class="reference internal" href="#unreleased">Unreleased</a><ul>
 <li class="toctree-l3"><a class="reference internal" href="#added">Added</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#changed">Changed</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#id1">Added</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#id2">Changed</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#performance">Performance</a></li>
-<li class="toctree-l3"><a class="reference internal" href="#id1">Changed</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#id3">Changed</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#fixed">Fixed</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#test">Test</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#chores">Chores</a></li>
 </ul>
 </li>
-<li class="toctree-l2"><a class="reference internal" href="#id2">0.1.0 — 2026-03-25</a><ul>
-<li class="toctree-l3"><a class="reference internal" href="#id3">Added</a></li>
-<li class="toctree-l3"><a class="reference internal" href="#id4">Performance</a></li>
-<li class="toctree-l3"><a class="reference internal" href="#id5">Changed</a></li>
-<li class="toctree-l3"><a class="reference internal" href="#id6">Fixed</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#id4">0.1.0 — 2026-03-25</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#id5">Added</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#id6">Performance</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#id7">Changed</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#id8">Fixed</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#id9">Unreleased</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#refactored">Refactored</a></li>
 </ul>
 </li>
 </ul>
@@ -79,6 +85,10 @@
 <li class="toctree-l1"><a class="reference internal" href="dynamic_critical_exponents.html">Dynamical Critical Exponents in the 2D Ising Model</a></li>
 <li class="toctree-l1"><a class="reference internal" href="ising_relaxation_and_autocorrelation_analysis.html">Ising Model: Relaxation to Equilibrium</a></li>
 <li class="toctree-l1"><a class="reference internal" href="ising_temperature_sweep.html">Ising Model: Temperature Sweep and Critical Behavior</a></li>
+<li class="toctree-l1"><a class="reference internal" href="xy_temperature_sweep.html">XY Model: Temperature Sweep and BKT Crossover</a></li>
+<li class="toctree-l1"><a class="reference internal" href="clock_temperature_sweep.html">Clock Model: Temperature Sweep and Discrete Symmetry Breaking</a></li>
+<li class="toctree-l1"><a class="reference internal" href="bkt_transition.html">BKT Transition: Vortices, Helicity, and Correlations</a></li>
+<li class="toctree-l1"><a class="reference internal" href="correlation_and_coarsening.html">Correlation Functions and Coarsening Dynamics</a></li>
 </ul>
 <p class="caption" role="heading"><span class="caption-text">API Reference:</span></p>
 <ul>
@@ -119,14 +129,33 @@
 <section id="added">
 <h3>Added<a class="headerlink" href="#added" title="Link to this heading"></a></h3>
 <ul class="simple">
-<li><p><code class="docutils literal notranslate"><span class="pre">utils/kinetics_helpers.py</span></code>: new shared module providing the ordering-kinetics simulation loop for the Ising, XY, and Clock scripts. Exports <code class="docutils literal notranslate"><span class="pre">compute_mean_intercept_length</span></code> (stereological domain-size estimator for scalar-spin lattices) and <code class="docutils literal notranslate"><span class="pre">run_ordering_kinetics</span></code> (loop over logarithmically spaced step targets, power-law fitting, and figure generation).</p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">utils/evolution_helpers.py</span></code>: new shared module providing the ordering-evolution snapshot loop for the Ising, XY, and Clock scripts. Exports <code class="docutils literal notranslate"><span class="pre">run_ordering_evolution</span></code>, which captures spin configurations, correlation functions, and (for vector-spin models) vorticity maps at each target step, then writes the multi-panel figure.</p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">utils/sweep_helpers.py</span></code>: new shared module providing the two-layer temperature-sweep worker infrastructure used by all three model sweep scripts. Exports <code class="docutils literal notranslate"><span class="pre">ThermoPoint</span></code> (typed NamedTuple worker payload), <code class="docutils literal notranslate"><span class="pre">RawThermoData</span></code> (raw measurement arrays), <code class="docutils literal notranslate"><span class="pre">simulate_at_temperature</span></code> (Layer 1: physics and equilibration), <code class="docutils literal notranslate"><span class="pre">compute_thermo_observables</span></code> (Layer 2: statistical summarization), <code class="docutils literal notranslate"><span class="pre">simulate_thermo_point</span></code> (convenience wrapper), <code class="docutils literal notranslate"><span class="pre">build_uncertainty_bundle</span></code>, and <code class="docutils literal notranslate"><span class="pre">build_quality_flags</span></code>.</p></li>
+<li><p>New notebook <code class="docutils literal notranslate"><span class="pre">notebooks/XY_Temperature_Sweep.ipynb</span></code>: full thermodynamic sweep across the BKT crossover for the XY model, with data loading/fallback, convergence diagnostics, and autocorrelation analysis.</p></li>
+<li><p>New notebook <code class="docutils literal notranslate"><span class="pre">notebooks/Clock_Temperature_Sweep.ipynb</span></code>: temperature sweep for the q-state clock model showing the two-crossover regime structure, with entropy reference at ln(q).</p></li>
+<li><p>New notebook <code class="docutils literal notranslate"><span class="pre">notebooks/BKT_Transition.ipynb</span></code>: dedicated notebook examining vortex density, helicity modulus, and correlation function across the BKT transition.</p></li>
+<li><p>New notebook <code class="docutils literal notranslate"><span class="pre">notebooks/Correlation_and_Coarsening.ipynb</span></code>: combined notebook covering equilibrium correlation functions (Ising, XY) and non-equilibrium coarsening dynamics across all three models.</p></li>
+<li><p>NPZ output for <code class="docutils literal notranslate"><span class="pre">scripts/xy/bkt_transition.py</span></code>, <code class="docutils literal notranslate"><span class="pre">scripts/xy/helicity_modulus.py</span></code>, <code class="docutils literal notranslate"><span class="pre">scripts/xy/compare_correlations.py</span></code>, <code class="docutils literal notranslate"><span class="pre">scripts/ising/correlation_comparison.py</span></code>, <code class="docutils literal notranslate"><span class="pre">scripts/ising/correlation_divergence.py</span></code>.</p></li>
+<li><p>Optional <code class="docutils literal notranslate"><span class="pre">npz_path</span></code> parameter in <code class="docutils literal notranslate"><span class="pre">utils/kinetics_helpers.run_ordering_kinetics</span></code> for persisting kinetics data. All three ordering_kinetics scripts now save NPZ output.</p></li>
+<li><p>Data Pipeline mapping table in <code class="docutils literal notranslate"><span class="pre">SCRIPTS.md</span></code> documenting the script-to-NPZ-to-notebook data flow.</p></li>
 </ul>
 </section>
 <section id="changed">
 <h3>Changed<a class="headerlink" href="#changed" title="Link to this heading"></a></h3>
 <ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">utils/observables.py</span></code>: replaced upward dependency on <code class="docutils literal notranslate"><span class="pre">models.simulation_base.MonteCarloSimulation</span></code> with a structural <code class="docutils literal notranslate"><span class="pre">Protocol</span></code> class <code class="docutils literal notranslate"><span class="pre">_Sim</span></code>, eliminating the utils-to-models import cycle.</p></li>
+</ul>
+</section>
+<section id="id1">
+<h3>Added<a class="headerlink" href="#id1" title="Link to this heading"></a></h3>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">utils/kinetics_helpers.py</span></code>: new shared module providing the ordering-kinetics simulation loop for the Ising, XY, and Clock scripts. Exports <code class="docutils literal notranslate"><span class="pre">compute_mean_intercept_length</span></code> (stereological domain-size estimator for scalar-spin lattices) and <code class="docutils literal notranslate"><span class="pre">run_ordering_kinetics</span></code> (loop over logarithmically spaced step targets, power-law fitting, and figure generation).</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">utils/evolution_helpers.py</span></code>: new shared module providing the ordering-evolution snapshot loop for the Ising, XY, and Clock scripts. Exports <code class="docutils literal notranslate"><span class="pre">run_ordering_evolution</span></code>, which captures spin configurations, correlation functions, and (for vector-spin models) vorticity maps at each target step, then writes the multi-panel figure.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">utils/sweep_helpers.py</span></code>: new shared module providing the two-layer temperature-sweep worker infrastructure used by all three model sweep scripts. Exports <code class="docutils literal notranslate"><span class="pre">ThermoPoint</span></code> (typed NamedTuple worker payload), <code class="docutils literal notranslate"><span class="pre">RawThermoData</span></code> (raw measurement arrays), <code class="docutils literal notranslate"><span class="pre">simulate_at_temperature</span></code> (Layer 1: physics and equilibration), <code class="docutils literal notranslate"><span class="pre">compute_thermo_observables</span></code> (Layer 2: statistical summarization), <code class="docutils literal notranslate"><span class="pre">simulate_thermo_point</span></code> (convenience wrapper), <code class="docutils literal notranslate"><span class="pre">build_uncertainty_bundle</span></code>, and <code class="docutils literal notranslate"><span class="pre">build_quality_flags</span></code>.</p></li>
+</ul>
+</section>
+<section id="id2">
+<h3>Changed<a class="headerlink" href="#id2" title="Link to this heading"></a></h3>
+<ul class="simple">
+<li><p>Refactored <code class="docutils literal notranslate"><span class="pre">utils/analysis.py</span></code> into <code class="docutils literal notranslate"><span class="pre">utils/statistics.py</span></code> (domain-agnostic statistical estimators and schemas) and <code class="docutils literal notranslate"><span class="pre">utils/observables.py</span></code> (physics observables and spatial tools).</p></li>
 <li><p>Refactored <code class="docutils literal notranslate"><span class="pre">scripts/ising/ordering_kinetics.py</span></code>, <code class="docutils literal notranslate"><span class="pre">scripts/xy/ordering_kinetics.py</span></code>, and <code class="docutils literal notranslate"><span class="pre">scripts/clock/ordering_kinetics.py</span></code> to delegate the full simulation loop, power-law fitting, and figure generation to <code class="docutils literal notranslate"><span class="pre">utils/kinetics_helpers.run_ordering_kinetics</span></code>. Each script is now a thin argument-parsing wrapper.</p></li>
 <li><p>Refactored <code class="docutils literal notranslate"><span class="pre">scripts/ising/ordering_evolution.py</span></code>, <code class="docutils literal notranslate"><span class="pre">scripts/xy/ordering_evolution.py</span></code>, and <code class="docutils literal notranslate"><span class="pre">scripts/clock/ordering_evolution.py</span></code> to delegate the snapshot loop and figure generation to <code class="docutils literal notranslate"><span class="pre">utils/evolution_helpers.run_ordering_evolution</span></code>. Vorticity capture is controlled by the <code class="docutils literal notranslate"><span class="pre">capture_vorticity</span></code> flag (True for XY and Clock, False for Ising).</p></li>
 <li><p>Refactored <code class="docutils literal notranslate"><span class="pre">scripts/ising/temperature_sweep.py</span></code>, <code class="docutils literal notranslate"><span class="pre">scripts/xy/temperature_sweep.py</span></code>, and <code class="docutils literal notranslate"><span class="pre">scripts/clock/temperature_sweep.py</span></code> to delegate all worker, uncertainty-bundle, and quality-flag logic to <code class="docutils literal notranslate"><span class="pre">utils/sweep_helpers</span></code>.</p></li>
@@ -139,9 +168,10 @@
 <li><p>Fixed excessive memory allocation in <code class="docutils literal notranslate"><span class="pre">wolff_step_numba</span></code> across Ising, XY, and Clock models by pre-allocating the cluster mask and stack buffers once per simulation run, significantly lowering garbage collection overhead during large sweeps.</p></li>
 </ul>
 </section>
-<section id="id1">
-<h3>Changed<a class="headerlink" href="#id1" title="Link to this heading"></a></h3>
+<section id="id3">
+<h3>Changed<a class="headerlink" href="#id3" title="Link to this heading"></a></h3>
 <ul class="simple">
+<li><p>Refactored <code class="docutils literal notranslate"><span class="pre">utils/analysis.py</span></code> into <code class="docutils literal notranslate"><span class="pre">utils/statistics.py</span></code> (domain-agnostic statistical estimators and schemas) and <code class="docutils literal notranslate"><span class="pre">utils/observables.py</span></code> (physics observables and spatial tools).</p></li>
 <li><p>Removed deprecated <code class="docutils literal notranslate"><span class="pre">system_helpers.py</span></code> re-exports (<code class="docutils literal notranslate"><span class="pre">ensure_results_dir</span></code>, <code class="docutils literal notranslate"><span class="pre">adaptive_equilibrate</span></code>, etc.). All tests and Jupyter notebooks have been updated to explicitly import from <code class="docutils literal notranslate"><span class="pre">utils.equilibration</span></code> and <code class="docutils literal notranslate"><span class="pre">utils.plotting</span></code> directly.</p></li>
 <li><p>Renamed <code class="docutils literal notranslate"><span class="pre">run_scaling_benchmark()</span></code> to <code class="docutils literal notranslate"><span class="pre">main()</span></code> in <code class="docutils literal notranslate"><span class="pre">scripts/benchmarks/throughput.py</span></code> for consistency with other analysis scripts.</p></li>
 </ul>
@@ -175,11 +205,11 @@
 </section>
 </section>
 <hr class="docutils" />
-<section id="id2">
-<h2><a class="reference external" href="https://github.com/manganite/VibeSpin/releases/tag/v0.1.0">0.1.0</a> — 2026-03-25<a class="headerlink" href="#id2" title="Link to this heading"></a></h2>
+<section id="id4">
+<h2><a class="reference external" href="https://github.com/manganite/VibeSpin/releases/tag/v0.1.0">0.1.0</a> — 2026-03-25<a class="headerlink" href="#id4" title="Link to this heading"></a></h2>
 <p>This is the baseline release capturing the full initial development history. The entries below summarize the major milestones grouped by category.</p>
-<section id="id3">
-<h3>Added<a class="headerlink" href="#id3" title="Link to this heading"></a></h3>
+<section id="id5">
+<h3>Added<a class="headerlink" href="#id5" title="Link to this heading"></a></h3>
 <ul class="simple">
 <li><p><strong>Models:</strong> <code class="docutils literal notranslate"><span class="pre">IsingSimulation</span></code>, <code class="docutils literal notranslate"><span class="pre">XYSimulation</span></code>, <code class="docutils literal notranslate"><span class="pre">ClockSimulation</span></code>, and <code class="docutils literal notranslate"><span class="pre">DiscreteClockSimulation</span></code> with Numba-accelerated checkerboard, random-site, and Wolff cluster update schemes. Each model exposes a <code class="docutils literal notranslate"><span class="pre">main()</span></code> CLI entry point.</p></li>
 <li><p><strong>Equilibration:</strong> Two-Start Convergence protocol with mutual cross-band criterion and Quasi-Steady Stuck Detection for low-temperature metastable trapping. Adaptive equilibration fallback for lightweight use cases.</p></li>
@@ -198,8 +228,8 @@
 <li><p><strong>Hierarchical multi-seed uncertainty</strong> combining within-seed blocking error with between-seed spread.</p></li>
 </ul>
 </section>
-<section id="id4">
-<h3>Performance<a class="headerlink" href="#id4" title="Link to this heading"></a></h3>
+<section id="id6">
+<h3>Performance<a class="headerlink" href="#id6" title="Link to this heading"></a></h3>
 <ul class="simple">
 <li><p>Numba JIT (<code class="docutils literal notranslate"><span class="pre">&#64;njit(cache=True,</span> <span class="pre">fastmath=True)</span></code>) on all simulation kernels; <code class="docutils literal notranslate"><span class="pre">parallel=True</span></code> + <code class="docutils literal notranslate"><span class="pre">prange</span></code> on checkerboard kernels.</p></li>
 <li><p>Pre-calculated neighbor index arrays (<code class="docutils literal notranslate"><span class="pre">idx_next</span></code>, <code class="docutils literal notranslate"><span class="pre">idx_prev</span></code>) replace modulo for periodic boundary conditions.</p></li>
@@ -207,22 +237,32 @@
 <li><p>Vectorized angle extraction for vorticity calculation; radial mask pre-computation for correlation functions.</p></li>
 </ul>
 </section>
-<section id="id5">
-<h3>Changed<a class="headerlink" href="#id5" title="Link to this heading"></a></h3>
+<section id="id7">
+<h3>Changed<a class="headerlink" href="#id7" title="Link to this heading"></a></h3>
 <ul class="simple">
+<li><p>Refactored <code class="docutils literal notranslate"><span class="pre">utils/analysis.py</span></code> into <code class="docutils literal notranslate"><span class="pre">utils/statistics.py</span></code> (domain-agnostic statistical estimators and schemas) and <code class="docutils literal notranslate"><span class="pre">utils/observables.py</span></code> (physics observables and spatial tools).</p></li>
 <li><p><code class="docutils literal notranslate"><span class="pre">ordering_kinetics</span></code> scripts unified and refactored; renamed from <code class="docutils literal notranslate"><span class="pre">domain_growth</span></code>.</p></li>
 <li><p><code class="docutils literal notranslate"><span class="pre">ordering_evolution</span></code> scripts unified from earlier <code class="docutils literal notranslate"><span class="pre">domain_snapshots</span></code>.</p></li>
 <li><p>Test suite reorganized from a flat layout into five layer directories: <code class="docutils literal notranslate"><span class="pre">algorithm/</span></code>, <code class="docutils literal notranslate"><span class="pre">model/</span></code>, <code class="docutils literal notranslate"><span class="pre">utility/</span></code>, <code class="docutils literal notranslate"><span class="pre">style/</span></code>, <code class="docutils literal notranslate"><span class="pre">integration/</span></code>.</p></li>
 <li><p>Equilibration and plotting logic extracted from <code class="docutils literal notranslate"><span class="pre">utils/system_helpers.py</span></code> into dedicated <code class="docutils literal notranslate"><span class="pre">utils/equilibration.py</span></code> and <code class="docutils literal notranslate"><span class="pre">utils/plotting.py</span></code> modules; re-exports maintained in <code class="docutils literal notranslate"><span class="pre">system_helpers.py</span></code> for backward compatibility.</p></li>
 </ul>
 </section>
-<section id="id6">
-<h3>Fixed<a class="headerlink" href="#id6" title="Link to this heading"></a></h3>
+<section id="id8">
+<h3>Fixed<a class="headerlink" href="#id8" title="Link to this heading"></a></h3>
 <ul class="simple">
 <li><p>Diagnostics header/title overlap in temperature-sweep diagnostic plots.</p></li>
 <li><p>Restored notebook JSON after corruption; ensured stuck-detection prose and figures are consistent.</p></li>
 <li><p>Low-temperature sweep relaxation logic now correctly accepts stable ordered starts as converged.</p></li>
 <li><p>Default <code class="docutils literal notranslate"><span class="pre">--eq-max-steps</span></code> lowered from 200,000 to 20,000 to prevent excessively long equilibration runs.</p></li>
+</ul>
+</section>
+</section>
+<section id="id9">
+<h2><a class="reference external" href="https://github.com/manganite/VibeSpin/compare/v0.1.0...HEAD">Unreleased</a><a class="headerlink" href="#id9" title="Link to this heading"></a></h2>
+<section id="refactored">
+<h3>Refactored<a class="headerlink" href="#refactored" title="Link to this heading"></a></h3>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">utils/analysis.py</span></code> has been split into <code class="docutils literal notranslate"><span class="pre">utils/statistics.py</span></code> (domain-agnostic statistical estimators and NPZ schemas) and <code class="docutils literal notranslate"><span class="pre">utils/observables.py</span></code> (physics observables and spatial analysis) to separate concerns and improve maintainability without introducing subfolders.</p></li>
 </ul>
 </section>
 </section>

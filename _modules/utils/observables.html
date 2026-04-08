@@ -1,0 +1,464 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>utils.observables &mdash; VibeSpin 0.1.0 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=9edc463e" />
+
+  
+      <script src="../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../_static/documentation_options.js?v=01f34227"></script>
+      <script src="../../_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="../../_static/sphinx_highlight.js?v=6ffebe34"></script>
+      <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+    <script src="../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../index.html" class="icon icon-home">
+            VibeSpin
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">User Guides:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../introduction.html">VibeSpin</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../physics.html">Physics and Algorithm Guide: VibeSpin</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../code.html">Developer and Architecture Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../scripts.html">Scripts Catalog: VibeSpin</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../agents.html">Agent Instruction Guide: VibeSpin</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../bibliography.html">Project Bibliography: VibeSpin</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../changelog.html">Changelog</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Research &amp; Analysis:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../benchmarks.html">Performance Benchmarking for VibeSpin</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../wolff_efficiency.html">Wolff vs. Metropolis: Algorithmic Efficiency in the Critical Regime</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../dynamic_critical_exponents.html">Dynamical Critical Exponents in the 2D Ising Model</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../ising_relaxation_and_autocorrelation_analysis.html">Ising Model: Relaxation to Equilibrium</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../ising_temperature_sweep.html">Ising Model: Temperature Sweep and Critical Behavior</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../xy_temperature_sweep.html">XY Model: Temperature Sweep and BKT Crossover</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../clock_temperature_sweep.html">Clock Model: Temperature Sweep and Discrete Symmetry Breaking</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../bkt_transition.html">BKT Transition: Vortices, Helicity, and Correlations</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../correlation_and_coarsening.html">Correlation Functions and Coarsening Dynamics</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">API Reference:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../api/modules.html">vibespin</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">VibeSpin</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">utils.observables</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for utils.observables</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">Physics-related utility functions for calculating thermodynamic observables and correlations.</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">__future__</span><span class="w"> </span><span class="kn">import</span> <span class="n">annotations</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Protocol</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">scipy.integrate</span><span class="w"> </span><span class="kn">import</span> <span class="n">cumulative_trapezoid</span>
+
+
+<span class="k">class</span><span class="w"> </span><span class="nc">_Sim</span><span class="p">(</span><span class="n">Protocol</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Structural type for any MonteCarloSimulation; avoids a models/ → utils/ import.&quot;&quot;&quot;</span>
+
+    <span class="n">spins</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span> <span class="o">|</span> <span class="kc">None</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">step</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span> <span class="o">...</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_calculate_correlation_function</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">]:</span> <span class="o">...</span>
+
+
+<div class="viewcode-block" id="calculate_thermodynamics">
+<a class="viewcode-back" href="../../api/vibespin.utils.html#utils.observables.calculate_thermodynamics">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">calculate_thermodynamics</span><span class="p">(</span>
+    <span class="o">*</span><span class="p">,</span> <span class="n">mags</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">engs</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">T</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">L</span><span class="p">:</span> <span class="nb">int</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">float</span><span class="p">,</span> <span class="nb">float</span><span class="p">,</span> <span class="nb">float</span><span class="p">,</span> <span class="nb">float</span><span class="p">]:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Calculate average magnetization, energy, susceptibility, and specific heat.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">        mags: Array of magnetization measurements.</span>
+<span class="sd">        engs: Array of energy measurements.</span>
+<span class="sd">        T: Temperature.</span>
+<span class="sd">        L: Linear lattice size.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">        A tuple of (avg_mag, avg_eng, susceptibility, specific_heat).</span>
+
+<span class="sd">    Raises</span>
+<span class="sd">    ------</span>
+<span class="sd">        ValueError: If ``T`` is not positive or ``L`` is not a positive integer.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">T</span> <span class="o">&lt;=</span> <span class="mf">0.0</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;T must be positive (T &gt; 0), got </span><span class="si">{</span><span class="n">T</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">L</span><span class="p">,</span> <span class="p">(</span><span class="nb">int</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">integer</span><span class="p">))</span> <span class="ow">or</span> <span class="n">L</span> <span class="o">&lt;</span> <span class="mi">1</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;L must be a positive integer, got </span><span class="si">{</span><span class="n">L</span><span class="si">!r}</span><span class="s1">&#39;</span><span class="p">)</span>
+    <span class="n">avg_mag</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">mags</span><span class="p">))</span>
+    <span class="n">avg_eng</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">engs</span><span class="p">))</span>
+    <span class="n">N</span> <span class="o">=</span> <span class="n">L</span> <span class="o">*</span> <span class="n">L</span>
+
+    <span class="c1"># Susceptibility: chi = N * Var(M) / T</span>
+    <span class="n">susceptibility</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">N</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">var</span><span class="p">(</span><span class="n">mags</span><span class="p">)</span> <span class="o">/</span> <span class="n">T</span><span class="p">)</span>
+
+    <span class="c1"># Specific Heat: Cv = N * Var(E) / T^2</span>
+    <span class="n">specific_heat</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">N</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">var</span><span class="p">(</span><span class="n">engs</span><span class="p">)</span> <span class="o">/</span> <span class="p">(</span><span class="n">T</span><span class="o">**</span><span class="mi">2</span><span class="p">))</span>
+
+    <span class="k">return</span> <span class="n">avg_mag</span><span class="p">,</span> <span class="n">avg_eng</span><span class="p">,</span> <span class="n">susceptibility</span><span class="p">,</span> <span class="n">specific_heat</span></div>
+
+
+
+<div class="viewcode-block" id="calculate_entropy">
+<a class="viewcode-back" href="../../api/vibespin.utils.html#utils.observables.calculate_entropy">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">calculate_entropy</span><span class="p">(</span>
+    <span class="o">*</span><span class="p">,</span>
+    <span class="n">temperatures</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
+    <span class="n">specific_heat</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
+    <span class="n">s_ref</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.0</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Compute entropy by integrating specific heat over a temperature sweep.</span>
+
+<span class="sd">    Integrates C(T)/T from high temperature downward so that</span>
+<span class="sd">    S(T_max) = ``s_ref`` and S(T) = s_ref - integral from T to T_max of C/T dT&#39;.</span>
+<span class="sd">    This avoids the C/T divergence near T = 0 and anchors the result at the</span>
+<span class="sd">    high-temperature limit where the entropy is analytically known.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">        temperatures: 1-D array of temperature values. Need not be sorted.</span>
+<span class="sd">        specific_heat: Specific heat C_v at each temperature (same length).</span>
+<span class="sd">        s_ref: Reference entropy at the highest temperature. Pass ``0.0``</span>
+<span class="sd">            for relative entropy or ``np.log(q)`` (per site, in units of</span>
+<span class="sd">            k_B) for absolute entropy of a q-state model.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">        1-D array of entropy values, one per temperature, in the original</span>
+<span class="sd">        unsorted order of ``temperatures``.</span>
+
+<span class="sd">    Raises</span>
+<span class="sd">    ------</span>
+<span class="sd">        ValueError: If arrays differ in length, contain fewer than 2 points,</span>
+<span class="sd">            or include non-positive temperatures.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">temperatures</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">temperatures</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">)</span>
+    <span class="n">specific_heat</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">specific_heat</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">temperatures</span><span class="o">.</span><span class="n">shape</span> <span class="o">!=</span> <span class="n">specific_heat</span><span class="o">.</span><span class="n">shape</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+            <span class="sa">f</span><span class="s1">&#39;temperatures and specific_heat must have the same shape, &#39;</span>
+            <span class="sa">f</span><span class="s1">&#39;got </span><span class="si">{</span><span class="n">temperatures</span><span class="o">.</span><span class="n">shape</span><span class="si">}</span><span class="s1"> and </span><span class="si">{</span><span class="n">specific_heat</span><span class="o">.</span><span class="n">shape</span><span class="si">}</span><span class="s1">&#39;</span>
+        <span class="p">)</span>
+    <span class="k">if</span> <span class="n">temperatures</span><span class="o">.</span><span class="n">size</span> <span class="o">&lt;</span> <span class="mi">2</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;Need at least 2 temperature points for integration&#39;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">any</span><span class="p">(</span><span class="n">temperatures</span> <span class="o">&lt;=</span> <span class="mf">0.0</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;All temperatures must be positive&#39;</span><span class="p">)</span>
+
+    <span class="c1"># Sort ascending; remember original order to restore later.</span>
+    <span class="n">sort_idx</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">argsort</span><span class="p">(</span><span class="n">temperatures</span><span class="p">)</span>
+    <span class="n">t_sorted</span> <span class="o">=</span> <span class="n">temperatures</span><span class="p">[</span><span class="n">sort_idx</span><span class="p">]</span>
+    <span class="n">cv_sorted</span> <span class="o">=</span> <span class="n">specific_heat</span><span class="p">[</span><span class="n">sort_idx</span><span class="p">]</span>
+
+    <span class="c1"># Integrand: C(T) / T</span>
+    <span class="n">integrand</span> <span class="o">=</span> <span class="n">cv_sorted</span> <span class="o">/</span> <span class="n">t_sorted</span>
+
+    <span class="c1"># Cumulative integral from T_1 (lowest) to each T_i.</span>
+    <span class="n">partial</span> <span class="o">=</span> <span class="n">cumulative_trapezoid</span><span class="p">(</span><span class="n">integrand</span><span class="p">,</span> <span class="n">t_sorted</span><span class="p">)</span>
+    <span class="c1"># Prepend 0 for the first (lowest-T) point.</span>
+    <span class="n">partial</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">concatenate</span><span class="p">(([</span><span class="mf">0.0</span><span class="p">],</span> <span class="n">partial</span><span class="p">))</span>
+
+    <span class="c1"># S(T) = s_ref - (total_integral - partial_integral_up_to_T)</span>
+    <span class="n">total</span> <span class="o">=</span> <span class="n">partial</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+    <span class="n">entropy_sorted</span> <span class="o">=</span> <span class="n">s_ref</span> <span class="o">-</span> <span class="p">(</span><span class="n">total</span> <span class="o">-</span> <span class="n">partial</span><span class="p">)</span>
+
+    <span class="c1"># Restore original ordering.</span>
+    <span class="n">entropy</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">empty_like</span><span class="p">(</span><span class="n">entropy_sorted</span><span class="p">)</span>
+    <span class="n">entropy</span><span class="p">[</span><span class="n">sort_idx</span><span class="p">]</span> <span class="o">=</span> <span class="n">entropy_sorted</span>
+    <span class="k">return</span> <span class="n">entropy</span></div>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div class="viewcode-block" id="get_averaged_correlation">
+<a class="viewcode-back" href="../../api/vibespin.utils.html#utils.observables.get_averaged_correlation">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">get_averaged_correlation</span><span class="p">(</span>
+    <span class="o">*</span><span class="p">,</span> <span class="n">sim</span><span class="p">:</span> <span class="n">_Sim</span><span class="p">,</span> <span class="n">total_steps</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">sample_interval</span><span class="p">:</span> <span class="nb">int</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">]:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Run simulation and average the correlation function over multiple configurations.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">        sim: An instance of MonteCarloSimulation.</span>
+<span class="sd">        total_steps: Total number of MC steps to run.</span>
+<span class="sd">        sample_interval: Interval between correlation samples. Must be ≥ 1.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">        r: Radial distances.</span>
+<span class="sd">        G_r_avg: Averaged correlation values.</span>
+
+<span class="sd">    Raises</span>
+<span class="sd">    ------</span>
+<span class="sd">        ValueError: If ``sample_interval`` is less than 1 or ``total_steps`` is negative.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">sample_interval</span> <span class="o">&lt;</span> <span class="mi">1</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;sample_interval must be &gt;= 1, got </span><span class="si">{</span><span class="n">sample_interval</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">total_steps</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;total_steps must be non-negative, got </span><span class="si">{</span><span class="n">total_steps</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
+    <span class="n">G_r_avg</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">count</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="n">r</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([])</span>
+
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">total_steps</span><span class="p">):</span>
+        <span class="n">sim</span><span class="o">.</span><span class="n">step</span><span class="p">()</span>
+        <span class="k">if</span> <span class="n">i</span> <span class="o">%</span> <span class="n">sample_interval</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">r</span><span class="p">,</span> <span class="n">G_r</span> <span class="o">=</span> <span class="n">sim</span><span class="o">.</span><span class="n">_calculate_correlation_function</span><span class="p">()</span>
+            <span class="k">if</span> <span class="n">G_r_avg</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">G_r_avg</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros_like</span><span class="p">(</span><span class="n">G_r</span><span class="p">)</span>
+            <span class="n">G_r_avg</span> <span class="o">+=</span> <span class="n">G_r</span>
+            <span class="n">count</span> <span class="o">+=</span> <span class="mi">1</span>
+
+    <span class="k">if</span> <span class="n">G_r_avg</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">count</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="n">G_r_avg</span> <span class="o">/=</span> <span class="n">count</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="c1"># Fallback if no samples were taken</span>
+        <span class="n">_</span><span class="p">,</span> <span class="n">G_r_dummy</span> <span class="o">=</span> <span class="n">sim</span><span class="o">.</span><span class="n">_calculate_correlation_function</span><span class="p">()</span>
+        <span class="n">G_r_avg</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros_like</span><span class="p">(</span><span class="n">G_r_dummy</span><span class="p">)</span>
+        <span class="n">r</span> <span class="o">=</span> <span class="n">_</span>
+
+    <span class="k">return</span> <span class="n">r</span><span class="p">,</span> <span class="n">G_r_avg</span></div>
+
+
+
+<div class="viewcode-block" id="radial_average_sk">
+<a class="viewcode-back" href="../../api/vibespin.utils.html#utils.observables.radial_average_sk">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">radial_average_sk</span><span class="p">(</span><span class="o">*</span><span class="p">,</span> <span class="n">spins</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">]:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Compute the circularly averaged structure factor :math:`S(|k|)`.</span>
+
+<span class="sd">    Bins :math:`S(k)` by integer pixel radius from the DC centre of the shifted FFT,</span>
+<span class="sd">    then averages within each annular bin.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">        spins: (N, N) or (N, N, 2) spin array.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">        k_vals: Wavevector magnitudes in units of 2π/N (reciprocal lattice).</span>
+<span class="sd">        S_radial: Mean S(k) value for each annular bin.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">N</span> <span class="o">=</span> <span class="n">spins</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+    <span class="k">if</span> <span class="n">spins</span><span class="o">.</span><span class="n">ndim</span> <span class="o">==</span> <span class="mi">3</span><span class="p">:</span>  <span class="c1"># Vector spins (XY/Clock)</span>
+        <span class="n">sx</span><span class="p">,</span> <span class="n">sy</span> <span class="o">=</span> <span class="n">spins</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="mi">0</span><span class="p">],</span> <span class="n">spins</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="mi">1</span><span class="p">]</span>
+        <span class="n">Sk_raw</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">fft</span><span class="o">.</span><span class="n">fft2</span><span class="p">(</span><span class="n">sx</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">float</span><span class="p">)))</span> <span class="o">**</span> <span class="mi">2</span> <span class="o">+</span> <span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">fft</span><span class="o">.</span><span class="n">fft2</span><span class="p">(</span><span class="n">sy</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">float</span><span class="p">)))</span> <span class="o">**</span> <span class="mi">2</span>
+        <span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>  <span class="c1"># Scalar spins (Ising)</span>
+        <span class="n">Sk_raw</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">fft</span><span class="o">.</span><span class="n">fft2</span><span class="p">(</span><span class="n">spins</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">float</span><span class="p">)))</span> <span class="o">**</span> <span class="mi">2</span>
+
+    <span class="n">Sk</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">fft</span><span class="o">.</span><span class="n">fftshift</span><span class="p">(</span><span class="n">Sk_raw</span><span class="p">)</span> <span class="o">/</span> <span class="p">(</span><span class="n">N</span> <span class="o">*</span> <span class="n">N</span><span class="p">)</span>
+
+    <span class="n">cx</span> <span class="o">=</span> <span class="n">N</span> <span class="o">//</span> <span class="mi">2</span>
+    <span class="n">iy</span><span class="p">,</span> <span class="n">ix</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">indices</span><span class="p">((</span><span class="n">N</span><span class="p">,</span> <span class="n">N</span><span class="p">))</span>
+    <span class="n">r_int</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">((</span><span class="n">ix</span> <span class="o">-</span> <span class="n">cx</span><span class="p">)</span> <span class="o">**</span> <span class="mi">2</span> <span class="o">+</span> <span class="p">(</span><span class="n">iy</span> <span class="o">-</span> <span class="n">cx</span><span class="p">)</span> <span class="o">**</span> <span class="mi">2</span><span class="p">)</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">int</span><span class="p">)</span>
+
+    <span class="c1"># Average within each annular bin up to the Nyquist radius</span>
+    <span class="n">r_max</span> <span class="o">=</span> <span class="n">cx</span>
+    <span class="n">mask</span> <span class="o">=</span> <span class="n">r_int</span> <span class="o">&lt;=</span> <span class="n">r_max</span>
+    <span class="n">tbin</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">bincount</span><span class="p">(</span><span class="n">r_int</span><span class="p">[</span><span class="n">mask</span><span class="p">]</span><span class="o">.</span><span class="n">ravel</span><span class="p">(),</span> <span class="n">Sk</span><span class="p">[</span><span class="n">mask</span><span class="p">]</span><span class="o">.</span><span class="n">ravel</span><span class="p">())</span>
+    <span class="n">nbin</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">bincount</span><span class="p">(</span><span class="n">r_int</span><span class="p">[</span><span class="n">mask</span><span class="p">]</span><span class="o">.</span><span class="n">ravel</span><span class="p">())</span>
+    <span class="n">S_radial</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">nbin</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">,</span> <span class="n">tbin</span> <span class="o">/</span> <span class="n">nbin</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">)</span>
+
+    <span class="c1"># Convert bin index → |k| in reciprocal lattice units (2π/N per bin)</span>
+    <span class="n">k_vals</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">S_radial</span><span class="p">))</span> <span class="o">*</span> <span class="p">(</span><span class="mf">2.0</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">pi</span> <span class="o">/</span> <span class="n">N</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">k_vals</span><span class="p">,</span> <span class="n">S_radial</span></div>
+
+
+
+<div class="viewcode-block" id="pair_correlation_x">
+<a class="viewcode-back" href="../../api/vibespin.utils.html#utils.observables.pair_correlation_x">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">pair_correlation_x</span><span class="p">(</span><span class="o">*</span><span class="p">,</span> <span class="n">spins</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">]:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Compute the real-space spin-spin pair correlation G(r) along x.</span>
+
+<span class="sd">    Uses the Wiener-Khinchin theorem: the autocorrelation of each row is the</span>
+<span class="sd">    inverse FFT of the row&#39;s power spectrum.  Results are averaged over all</span>
+<span class="sd">    rows (y positions) and normalised so G(0) = 1.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">        spins: (N, N) or (N, N, 2) spin array.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">        r_vals: Lag distances r = 0 … N//2 in lattice units.</span>
+<span class="sd">        G: Normalised pair correlation G(r) / G(0).</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">N</span> <span class="o">=</span> <span class="n">spins</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+
+    <span class="k">if</span> <span class="n">spins</span><span class="o">.</span><span class="n">ndim</span> <span class="o">==</span> <span class="mi">3</span><span class="p">:</span>  <span class="c1"># Vector spins (XY/Clock)</span>
+        <span class="n">sx</span><span class="p">,</span> <span class="n">sy</span> <span class="o">=</span> <span class="n">spins</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">float</span><span class="p">),</span> <span class="n">spins</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">float</span><span class="p">)</span>
+        <span class="n">Fx</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">fft</span><span class="o">.</span><span class="n">rfft</span><span class="p">(</span><span class="n">sx</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+        <span class="n">Fy</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">fft</span><span class="o">.</span><span class="n">rfft</span><span class="p">(</span><span class="n">sy</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+        <span class="n">autocorr</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">fft</span><span class="o">.</span><span class="n">irfft</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">Fx</span><span class="p">)</span> <span class="o">**</span> <span class="mi">2</span> <span class="o">+</span> <span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">Fy</span><span class="p">)</span> <span class="o">**</span> <span class="mi">2</span><span class="p">,</span> <span class="n">n</span><span class="o">=</span><span class="n">N</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>  <span class="c1"># Scalar spins (Ising)</span>
+        <span class="n">s</span> <span class="o">=</span> <span class="n">spins</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">float</span><span class="p">)</span>
+        <span class="n">F</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">fft</span><span class="o">.</span><span class="n">rfft</span><span class="p">(</span><span class="n">s</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+        <span class="n">autocorr</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">fft</span><span class="o">.</span><span class="n">irfft</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">F</span><span class="p">)</span> <span class="o">**</span> <span class="mi">2</span><span class="p">,</span> <span class="n">n</span><span class="o">=</span><span class="n">N</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+
+    <span class="c1"># Average over rows and normalise by N</span>
+    <span class="n">G_full</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">autocorr</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span> <span class="o">/</span> <span class="n">N</span>
+    <span class="n">r_half</span> <span class="o">=</span> <span class="n">N</span> <span class="o">//</span> <span class="mi">2</span> <span class="o">+</span> <span class="mi">1</span>
+    <span class="n">r_vals</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="n">r_half</span><span class="p">)</span>
+    <span class="n">G</span> <span class="o">=</span> <span class="n">G_full</span><span class="p">[:</span><span class="n">r_half</span><span class="p">]</span>
+
+    <span class="k">if</span> <span class="n">G</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">!=</span> <span class="mf">0.0</span><span class="p">:</span>
+        <span class="n">G</span> <span class="o">=</span> <span class="n">G</span> <span class="o">/</span> <span class="n">G</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+
+    <span class="k">return</span> <span class="n">r_vals</span><span class="p">,</span> <span class="n">G</span></div>
+
+
+
+<div class="viewcode-block" id="compute_kinetics_metrics">
+<a class="viewcode-back" href="../../api/vibespin.utils.html#utils.observables.compute_kinetics_metrics">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">compute_kinetics_metrics</span><span class="p">(</span><span class="o">*</span><span class="p">,</span> <span class="n">sim</span><span class="p">:</span> <span class="n">_Sim</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">float</span><span class="p">]:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Calculate common kinetics metrics (R_sk, xi) for a simulation state.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">        sim: MonteCarloSimulation instance.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">        Dictionary containing &#39;R_sk&#39; and &#39;xi&#39;.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">sim</span><span class="o">.</span><span class="n">spins</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">return</span> <span class="p">{</span><span class="s1">&#39;R_sk&#39;</span><span class="p">:</span> <span class="mf">0.0</span><span class="p">,</span> <span class="s1">&#39;xi&#39;</span><span class="p">:</span> <span class="mf">0.0</span><span class="p">}</span>
+
+    <span class="c1"># 1. R_sk from structure factor first moment</span>
+    <span class="n">kvals</span><span class="p">,</span> <span class="n">S_radial</span> <span class="o">=</span> <span class="n">radial_average_sk</span><span class="p">(</span><span class="n">spins</span><span class="o">=</span><span class="n">sim</span><span class="o">.</span><span class="n">spins</span><span class="p">)</span>
+    <span class="n">S_k</span> <span class="o">=</span> <span class="n">S_radial</span><span class="p">[</span><span class="mi">1</span><span class="p">:]</span>
+    <span class="n">K_k</span> <span class="o">=</span> <span class="n">kvals</span><span class="p">[</span><span class="mi">1</span><span class="p">:]</span>
+    <span class="n">denom</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">K_k</span> <span class="o">*</span> <span class="n">S_k</span><span class="p">))</span>
+    <span class="n">R_sk</span> <span class="o">=</span> <span class="p">(</span><span class="mf">2.0</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">pi</span> <span class="o">*</span> <span class="nb">float</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">S_k</span><span class="p">)</span> <span class="o">/</span> <span class="n">denom</span><span class="p">))</span> <span class="k">if</span> <span class="n">denom</span> <span class="o">!=</span> <span class="mi">0</span> <span class="k">else</span> <span class="mf">0.0</span>
+
+    <span class="c1"># 2. xi from G(r) 1/e decay</span>
+    <span class="n">r_vals</span><span class="p">,</span> <span class="n">G</span> <span class="o">=</span> <span class="n">pair_correlation_x</span><span class="p">(</span><span class="n">spins</span><span class="o">=</span><span class="n">sim</span><span class="o">.</span><span class="n">spins</span><span class="p">)</span>
+    <span class="n">inv_e</span> <span class="o">=</span> <span class="mf">1.0</span> <span class="o">/</span> <span class="n">np</span><span class="o">.</span><span class="n">e</span>
+    <span class="n">below</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">G</span> <span class="o">&lt;</span> <span class="n">inv_e</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">below</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="n">xi</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">r_vals</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">])</span>
+    <span class="k">elif</span> <span class="n">below</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="n">xi</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">r_vals</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">idx</span> <span class="o">=</span> <span class="n">below</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="n">r0</span><span class="p">,</span> <span class="n">r1</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">r_vals</span><span class="p">[</span><span class="n">idx</span> <span class="o">-</span> <span class="mi">1</span><span class="p">]),</span> <span class="nb">float</span><span class="p">(</span><span class="n">r_vals</span><span class="p">[</span><span class="n">idx</span><span class="p">])</span>
+        <span class="n">g0</span><span class="p">,</span> <span class="n">g1</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">G</span><span class="p">[</span><span class="n">idx</span> <span class="o">-</span> <span class="mi">1</span><span class="p">]),</span> <span class="nb">float</span><span class="p">(</span><span class="n">G</span><span class="p">[</span><span class="n">idx</span><span class="p">])</span>
+        <span class="n">xi</span> <span class="o">=</span> <span class="n">r0</span> <span class="o">+</span> <span class="p">(</span><span class="n">inv_e</span> <span class="o">-</span> <span class="n">g0</span><span class="p">)</span> <span class="o">*</span> <span class="p">(</span><span class="n">r1</span> <span class="o">-</span> <span class="n">r0</span><span class="p">)</span> <span class="o">/</span> <span class="p">(</span><span class="n">g1</span> <span class="o">-</span> <span class="n">g0</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="p">{</span><span class="s1">&#39;R_sk&#39;</span><span class="p">:</span> <span class="n">R_sk</span><span class="p">,</span> <span class="s1">&#39;xi&#39;</span><span class="p">:</span> <span class="n">xi</span><span class="p">}</span></div>
+
+
+
+
+
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2026, Thomas Lottermoser.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>
