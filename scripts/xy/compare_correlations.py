@@ -11,37 +11,79 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 from models.xy_model import XYSimulation
+from utils.equilibration import convergence_equilibrate_with_status
 from utils.observables import get_averaged_correlation
 from utils.plotting import ensure_results_dir, save_plot
-from utils.system import parallel_sweep, parse_args_compat, setup_logging
+from utils.system import parse_args_compat, setup_logging
 
 
-def simulate_correlation(params: tuple[float, int, int, int, int]) -> tuple[np.ndarray, np.ndarray]:
-    """Worker function: simulate and return the averaged correlation function at temperature T.
+def simulate_correlation(
+    *,
+    T: float,
+    L: int,
+    steps: int,
+    eq_probe: int,
+    eq_max: int,
+    sample_interval: int,
+    seed: int,
+    logger: logging.Logger,
+) -> tuple[np.ndarray, np.ndarray]:
+    """Equilibrate and measure the averaged correlation function at temperature T.
+
+    Uses two-start convergence equilibration to avoid initialization bias.
 
     Parameters
     ----------
-        params: Tuple of (T, L, steps, eq_steps, sample_interval).
+    T : float
+        Temperature for the measurement.
+    L : int
+        Linear lattice size.
+    steps : int
+        Measurement steps after equilibration.
+    eq_probe : int
+        Chunk size for convergence equilibration probes.
+    eq_max : int
+        Maximum equilibration steps.
+    sample_interval : int
+        Spacing between correlation samples during measurement.
+    seed : int
+        Random seed for reproducibility.
+    logger : logging.Logger
+        Logger instance.
 
     Returns
     -------
-        A tuple of (r, G_r) - radial distances and averaged correlations.
+    tuple[np.ndarray, np.ndarray]
+        Radial distances r and averaged correlations G(r).
     """
-    T, L, steps, eq_steps, sample_interval = params
-    logger = logging.getLogger('vibespin')
-    logger.debug(f'Collecting data for T={T}...')
-    sim = XYSimulation(size=L, temp=T)
-    sim.equilibrate(n_steps=eq_steps)
-    return get_averaged_correlation(sim=sim, total_steps=steps, sample_interval=sample_interval)
+    logger.debug(f'Equilibrating at T={T:.3f} (L={L}, seed={seed})...')
+    sim_r = XYSimulation(
+        size=L, temp=T, update='checkerboard', init_state='random', seed=seed,
+    )
+    sim_o = XYSimulation(
+        size=L, temp=T, update='checkerboard', init_state='ordered', seed=seed,
+    )
+    _, converged = convergence_equilibrate_with_status(
+        sim_r, sim_o, chunk_size=eq_probe, max_steps=eq_max,
+    )
+    sim_meas = sim_r if converged else sim_o
+    if not converged:
+        logger.info(f'T={T:.3f}: convergence not reached, falling back to ordered start')
+    logger.debug(f'Measuring correlations at T={T:.3f}...')
+    return get_averaged_correlation(
+        sim=sim_meas, total_steps=steps, sample_interval=sample_interval,
+    )
 
 
 def main() -> None:
     """Run the correlation comparison analysis for the XY model."""
     parser = argparse.ArgumentParser(description='2D XY Model Correlation Comparison')
-    parser.add_argument('--size', type=int, default=50, help='Linear lattice size L')
+    parser.add_argument('--size', type=int, default=128, help='Linear lattice size L')
     parser.add_argument('--steps', type=int, default=10000, help='Measurement steps')
-    parser.add_argument('--eq-steps', type=int, default=2000, help='Equilibration steps')
+    parser.add_argument('--eq-probe', type=int, default=200, help='Convergence probe chunk size')
+    parser.add_argument('--eq-max', type=int, default=50000, help='Max equilibration steps')
     parser.add_argument('--interval', type=int, default=20, help='Sample interval')
+    parser.add_argument('--seed', type=int, default=510, help='Random seed')
     parser.add_argument('--output-dir', type=str, default='results/xy', help='Output directory')
     parser.add_argument('--log-file', type=str, default=None, help='Optional log file path')
     parser.add_argument('--verbose', action='store_true', help='Enable verbose logging')
@@ -57,11 +99,18 @@ def main() -> None:
     T_HIGH: float = 1.5  # Well above BKT (Exponential expected)
 
     logger.info(f'Starting XY correlation comparison (L={args.size})...')
-    temperatures = [T_LOW, T_HIGH]
-    sweep_params = [(T, args.size, args.steps, args.eq_steps, args.interval) for T in temperatures]
 
-    results = parallel_sweep(worker_func=simulate_correlation, params=sweep_params)
-    (r_low, G_low), (r_high, G_high) = results
+    results = {}
+    for label, T in [('low', T_LOW), ('high', T_HIGH)]:
+        r, G = simulate_correlation(
+            T=T, L=args.size, steps=args.steps, eq_probe=args.eq_probe,
+            eq_max=args.eq_max, sample_interval=args.interval, seed=args.seed,
+            logger=logger,
+        )
+        results[label] = (r, G)
+
+    r_low, G_low = results['low']
+    r_high, G_high = results['high']
 
     # Plotting
     fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(14, 6))
@@ -101,8 +150,10 @@ def main() -> None:
         T_high=T_HIGH,
         L=args.size,
         steps=args.steps,
-        eq_steps=args.eq_steps,
+        eq_probe=args.eq_probe,
+        eq_max=args.eq_max,
         sample_interval=args.interval,
+        seed=args.seed,
     )
     logger.info(f'Data saved to {npz_path}')
 

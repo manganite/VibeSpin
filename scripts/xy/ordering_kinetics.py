@@ -19,10 +19,15 @@ def main() -> None:
     """Run the XY ordering kinetics simulation."""
     parser = argparse.ArgumentParser(description='2D XY Model Ordering Kinetics Analysis')
     parser.add_argument('--size', type=int, default=256, help='Linear lattice size L')
-    parser.add_argument('--temp', type=float, default=0.1, help='Quench temperature T')
-    parser.add_argument('--max-steps', type=int, default=1000, help='Total MC steps')
-    parser.add_argument('--samples', type=int, default=15, help='Number of measurement points')
-    parser.add_argument('--fit-min', type=int, default=20, help='Min step for power-law fit')
+    parser.add_argument('--temp', type=float, default=0.5, help='Quench temperature T')
+    parser.add_argument('--max-steps', type=int, default=1500, help='Total MC steps')
+    parser.add_argument('--samples', type=int, default=30, help='Number of measurement points')
+    parser.add_argument('--fit-min', type=int, default=5, help='Min step for power-law fit')
+    parser.add_argument(
+        '--seeds', type=int, default=4,
+        help='Number of independent seeds for ensemble averaging',
+    )
+    parser.add_argument('--base-seed', type=int, default=42, help='Starting seed for the ensemble')
     parser.add_argument('--output-dir', type=str, default='results/xy', help='Output directory')
     parser.add_argument('--log-file', type=str, default=None, help='Optional log file path')
     parser.add_argument('--verbose', action='store_true', help='Enable verbose logging')
@@ -54,6 +59,8 @@ def main() -> None:
         output_dir=args.output_dir,
         logger=logger,
         npz_path=f'{ensure_results_dir(directory=args.output_dir)}/ordering_kinetics.npz',
+        n_seeds=args.seeds,
+        base_seed=args.base_seed,
     )
 
 

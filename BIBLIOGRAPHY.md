@@ -18,6 +18,7 @@ Referencing policy is defined in [AGENTS.md](./agents.md#7-scientific-referencin
 - J. M. Kosterlitz and D. J. Thouless, "Ordering, metastability and phase transitions in two-dimensional systems," Journal of Physics C: Solid State Physics, vol. 6, no. 7, pp. 1181–1203, 1973. [IOP Open Access](https://iopscience.iop.org/article/10.1088/0022-3719/6/7/010)
 - N. D. Mermin and H. Wagner, "Absence of Ferromagnetism or Antiferromagnetism in One- or Two-Dimensional Isotropic Heisenberg Models," Physical Review Letters, vol. 17, no. 22, pp. 1133–1136, 1966. [APS Open Access](https://journals.aps.org/prl/abstract/10.1103/PhysRevLett.17.1133)
 - J. Villain, "Theory of one- and two-dimensional magnets with an easy magnetization plane. II. The planar, classical, two-dimensional magnet," J. Phys. France 36, 581-590 (1975). [Open Access](https://doi.org/10.1051/jphys:01975003606058100)
+- J. V. José, L. P. Kadanoff, S. Kirkpatrick, and D. R. Nelson, "Renormalization, vortices, and symmetry-breaking perturbations in the two-dimensional planar model," Physical Review B, vol. 16, no. 3, pp. 1217–1241, 1977. [APS](https://journals.aps.org/prb/abstract/10.1103/PhysRevB.16.1217)
 - [XY model on Wikipedia](https://en.wikipedia.org/wiki/XY_model)
 
 
