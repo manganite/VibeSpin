@@ -25,13 +25,22 @@ The framework provides a comprehensive suite of diagnostics for physical analysi
 
 ## Installation
 
-For standard simulation use:
+The recommended method for managing this project is using [uv](https://github.com/astral-sh/uv), a fast Python package installer and resolver.
+
+To install dependencies and set up the local virtual environment in editable mode:
+
+```bash
+uv sync --all-extras
+uv run pre-commit install --hook-type pre-commit --hook-type pre-push
+```
+
+Alternatively, you can install the package using standard pip:
 
 ```bash
 pip install -e .
 ```
 
-For full development capabilities (benchmarking, tests, and documentation):
+Or for full development capabilities with standard pip:
 
 ```bash
 pip install -e ".[dev,notebook,docs]"
@@ -113,13 +122,13 @@ VibeSpin maintains rigorous engineering and physical standards. All update algor
 Performance-critical kernels are implemented with Numba JIT compilation to minimize execution time and memory allocation. These kernels utilize `@njit(cache=True, fastmath=True)` and avoid expensive modulo operations by using precomputed neighbor index arrays. To maintain reproducibility, models synchronize Numba's internal random number generator with the project seed.
 
 ### Verification Suite
-Before proposing changes, ensure all verification checks pass:
+Before proposing changes, ensure all verification checks pass using `uv run` (or standard environment commands):
 
 ```bash
-pytest
-ruff check .
-mypy --explicit-package-bases models/ utils/ scripts/
-pre-commit run --all-files --hook-stage pre-push
+uv run pytest
+uv run ruff check .
+uv run mypy --explicit-package-bases models/ utils/ scripts/
+uv run pre-commit run --all-files --hook-stage pre-push
 ```
 
 ## Documentation

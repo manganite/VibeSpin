@@ -16,6 +16,11 @@ All notable changes to VibeSpin are documented here. The format follows [Keep a 
 - Generated `results/xy/correlation_comparison.npz` ($L = 128$) from existing `scripts/xy/compare_correlations.py`.
 
 ### Changed
+- Transitioned project package and virtual environment management to use `uv`.
+- Configured `.devcontainer/devcontainer.json` postCreateCommand to globally install `uv` and use `uv sync --all-extras` for deterministic environment provisioning.
+- Pinned and locked all direct and transitive dependencies into `uv.lock`.
+- Regenerated standard `requirements.txt` using `uv pip compile` to ensure backward compatibility.
+- Updated `README.md` to recommend `uv sync` and `uv run` commands for local installation and test suites.
 - `notebooks/Correlation_and_Coarsening.ipynb`: quench-depth (cell 31), crossover (cell 34), and stochastic ensemble (cell 39) cells now load precomputed data from `results/ising/coarsening_analysis.npz` with inline computation as fallback only. Clock correlation cell (cell 13) and XY correlation cell (cell 8) similarly load from cached NPZ files. Methodology section updated to describe multi-seed ensemble averaging.
 
 ### Added

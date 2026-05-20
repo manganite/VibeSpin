@@ -17,7 +17,6 @@
       <script src="_static/doctools.js?v=fd6eb6e6"></script>
       <script src="_static/sphinx_highlight.js?v=6ffebe34"></script>
       <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
-      <script>window.MathJax = {"options": {"processHtmlClass": "tex2jax_process|mathjax_process|math|output_area"}}</script>
       <script>window.MathJax = {"tex": {"inlineMath": [["$", "$"], ["\\(", "\\)"]], "processEscapes": true}, "options": {"ignoreHtmlClass": "tex2jax_ignore|mathjax_ignore|document", "processHtmlClass": "tex2jax_process|mathjax_process|math|output_area"}}</script>
       <script defer="defer" src="https://cdn.jsdelivr.net/npm/mathjax@4/tex-mml-chtml.js"></script>
     <script src="_static/js/theme.js"></script>
@@ -147,6 +146,11 @@
 <section id="changed">
 <h3>Changed<a class="headerlink" href="#changed" title="Link to this heading"></a></h3>
 <ul class="simple">
+<li><p>Transitioned project package and virtual environment management to use <code class="docutils literal notranslate"><span class="pre">uv</span></code>.</p></li>
+<li><p>Configured <code class="docutils literal notranslate"><span class="pre">.devcontainer/devcontainer.json</span></code> postCreateCommand to globally install <code class="docutils literal notranslate"><span class="pre">uv</span></code> and use <code class="docutils literal notranslate"><span class="pre">uv</span> <span class="pre">sync</span> <span class="pre">--all-extras</span></code> for deterministic environment provisioning.</p></li>
+<li><p>Pinned and locked all direct and transitive dependencies into <code class="docutils literal notranslate"><span class="pre">uv.lock</span></code>.</p></li>
+<li><p>Regenerated standard <code class="docutils literal notranslate"><span class="pre">requirements.txt</span></code> using <code class="docutils literal notranslate"><span class="pre">uv</span> <span class="pre">pip</span> <span class="pre">compile</span></code> to ensure backward compatibility.</p></li>
+<li><p>Updated <code class="docutils literal notranslate"><span class="pre">README.md</span></code> to recommend <code class="docutils literal notranslate"><span class="pre">uv</span> <span class="pre">sync</span></code> and <code class="docutils literal notranslate"><span class="pre">uv</span> <span class="pre">run</span></code> commands for local installation and test suites.</p></li>
 <li><p><code class="docutils literal notranslate"><span class="pre">notebooks/Correlation_and_Coarsening.ipynb</span></code>: quench-depth (cell 31), crossover (cell 34), and stochastic ensemble (cell 39) cells now load precomputed data from <code class="docutils literal notranslate"><span class="pre">results/ising/coarsening_analysis.npz</span></code> with inline computation as fallback only. Clock correlation cell (cell 13) and XY correlation cell (cell 8) similarly load from cached NPZ files. Methodology section updated to describe multi-seed ensemble averaging.</p></li>
 </ul>
 </section>

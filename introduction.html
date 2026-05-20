@@ -17,7 +17,6 @@
       <script src="_static/doctools.js?v=fd6eb6e6"></script>
       <script src="_static/sphinx_highlight.js?v=6ffebe34"></script>
       <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
-      <script>window.MathJax = {"options": {"processHtmlClass": "tex2jax_process|mathjax_process|math|output_area"}}</script>
       <script>window.MathJax = {"tex": {"inlineMath": [["$", "$"], ["\\(", "\\)"]], "processEscapes": true}, "options": {"ignoreHtmlClass": "tex2jax_ignore|mathjax_ignore|document", "processHtmlClass": "tex2jax_process|mathjax_process|math|output_area"}}</script>
       <script defer="defer" src="https://cdn.jsdelivr.net/npm/mathjax@4/tex-mml-chtml.js"></script>
     <script src="_static/js/theme.js"></script>
@@ -147,11 +146,17 @@
 </section>
 <section id="installation">
 <h2>Installation<a class="headerlink" href="#installation" title="Link to this heading"></a></h2>
-<p>For standard simulation use:</p>
+<p>The recommended method for managing this project is using <a class="reference external" href="https://github.com/astral-sh/uv">uv</a>, a fast Python package installer and resolver.</p>
+<p>To install dependencies and set up the local virtual environment in editable mode:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>uv<span class="w"> </span>sync<span class="w"> </span>--all-extras
+uv<span class="w"> </span>run<span class="w"> </span>pre-commit<span class="w"> </span>install<span class="w"> </span>--hook-type<span class="w"> </span>pre-commit<span class="w"> </span>--hook-type<span class="w"> </span>pre-push
+</pre></div>
+</div>
+<p>Alternatively, you can install the package using standard pip:</p>
 <div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>pip<span class="w"> </span>install<span class="w"> </span>-e<span class="w"> </span>.
 </pre></div>
 </div>
-<p>For full development capabilities (benchmarking, tests, and documentation):</p>
+<p>Or for full development capabilities with standard pip:</p>
 <div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>pip<span class="w"> </span>install<span class="w"> </span>-e<span class="w"> </span><span class="s2">&quot;.[dev,notebook,docs]&quot;</span>
 pre-commit<span class="w"> </span>install<span class="w"> </span>--hook-type<span class="w"> </span>pre-commit<span class="w"> </span>--hook-type<span class="w"> </span>pre-push
 </pre></div>
@@ -212,11 +217,11 @@ python<span class="w"> </span>scripts/benchmarks/throughput.py<span class="w"> <
 <p>Performance-critical kernels are implemented with Numba JIT compilation to minimize execution time and memory allocation. These kernels utilize <code class="docutils literal notranslate"><span class="pre">&#64;njit(cache=True,</span> <span class="pre">fastmath=True)</span></code> and avoid expensive modulo operations by using precomputed neighbor index arrays. To maintain reproducibility, models synchronize Numba’s internal random number generator with the project seed.</p>
 <section id="verification-suite">
 <h3>Verification Suite<a class="headerlink" href="#verification-suite" title="Link to this heading"></a></h3>
-<p>Before proposing changes, ensure all verification checks pass:</p>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>pytest
-ruff<span class="w"> </span>check<span class="w"> </span>.
-mypy<span class="w"> </span>--explicit-package-bases<span class="w"> </span>models/<span class="w"> </span>utils/<span class="w"> </span>scripts/
-pre-commit<span class="w"> </span>run<span class="w"> </span>--all-files<span class="w"> </span>--hook-stage<span class="w"> </span>pre-push
+<p>Before proposing changes, ensure all verification checks pass using <code class="docutils literal notranslate"><span class="pre">uv</span> <span class="pre">run</span></code> (or standard environment commands):</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>uv<span class="w"> </span>run<span class="w"> </span>pytest
+uv<span class="w"> </span>run<span class="w"> </span>ruff<span class="w"> </span>check<span class="w"> </span>.
+uv<span class="w"> </span>run<span class="w"> </span>mypy<span class="w"> </span>--explicit-package-bases<span class="w"> </span>models/<span class="w"> </span>utils/<span class="w"> </span>scripts/
+uv<span class="w"> </span>run<span class="w"> </span>pre-commit<span class="w"> </span>run<span class="w"> </span>--all-files<span class="w"> </span>--hook-stage<span class="w"> </span>pre-push
 </pre></div>
 </div>
 </section>
