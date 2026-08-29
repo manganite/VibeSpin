@@ -16,6 +16,7 @@ All notable changes to VibeSpin are documented here. The format follows [Keep a 
 - Generated `results/xy/correlation_comparison.npz` ($L = 128$) from existing `scripts/xy/compare_correlations.py`.
 
 ### Changed
+- Updated pre-commit hook versions to match the locked project environment: `ruff-pre-commit` v0.15.0 → v0.15.13 and `mirrors-mypy` v1.18.2 → v2.1.0. The mypy hook's `additional_dependencies` are now pinned to the versions from `requirements.txt`, fixing spurious `prange` iteration errors caused by version drift between the isolated hook environment and the project venv.
 - Transitioned project package and virtual environment management to use `uv`.
 - Configured `.devcontainer/devcontainer.json` postCreateCommand to globally install `uv` and use `uv sync --all-extras` for deterministic environment provisioning.
 - Pinned and locked all direct and transitive dependencies into `uv.lock`.
