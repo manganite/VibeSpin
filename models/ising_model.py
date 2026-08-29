@@ -339,7 +339,10 @@ class IsingSimulation(MonteCarloSimulation):
                 ``'wolff'`` (Wolff cluster algorithm, highly efficient near T_c
                 due to vanishing critical slowing down).
             init_state: Initial spin configuration: ``'random'`` (default) or ``'ordered'``.
-            parallel: Whether to use parallelized Numba kernels (only for checkerboard).
+            parallel: Whether to use parallelized Numba kernels (only for
+                checkerboard). Parallel kernels are NOT seed-reproducible:
+                only the calling thread's Numba RNG is seeded, so two runs
+                with the same seed may differ.
             seed: Optional random seed for reproducibility.
 
         Raises
@@ -359,18 +362,10 @@ class IsingSimulation(MonteCarloSimulation):
         else:
             self.spins = self.rng.choice(np.array([-1, 1], dtype=np.int8), size=(size, size))
 
-        # Last Wolff cluster size (0 for non-Wolff updates or before any step)
-        self.last_cluster_size: int = 0
-
     def step(self) -> None:
         """Perform one Monte Carlo sweep using the configured update scheme."""
         if self.spins is not None:
-            # For Numba compatibility with reproducibility, we seed numba's
-            # random generator if a seed was provided.
-            if self.seed is not None:
-                from .simulation_base import _seed_numba
-
-                _seed_numba(seed=self.seed + self.steps)
+            self._reseed_numba_for_step()
 
             if self.update == 'random':
                 self.spins = ising_step_random_numba(

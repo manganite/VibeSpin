@@ -402,7 +402,10 @@ class XYSimulation(MonteCarloSimulation):
                 ``'wolff'`` (Wolff-Evertz cluster algorithm, efficient near
                 the BKT transition).
             init_state: Initial spin configuration: ``'random'`` (default) or ``'ordered'``.
-            parallel: Whether to use parallelized Numba kernels (only for checkerboard).
+            parallel: Whether to use parallelized Numba kernels (only for
+                checkerboard). Parallel kernels are NOT seed-reproducible:
+                only the calling thread's Numba RNG is seeded, so two runs
+                with the same seed may differ.
             seed: Optional random seed for reproducibility.
 
         Raises
@@ -429,10 +432,7 @@ class XYSimulation(MonteCarloSimulation):
     def step(self) -> None:
         """Perform one Monte Carlo step using Numba."""
         if self.spins is not None:
-            if self.seed is not None:
-                from .simulation_base import _seed_numba
-
-                _seed_numba(seed=self.seed + self.steps)
+            self._reseed_numba_for_step()
 
             if self.update == 'random':
                 self.spins = xy_step_random_numba(

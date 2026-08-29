@@ -5,12 +5,13 @@ NOTE: ``ClockSimulation`` (continuous XY-plus-anisotropy form) and
 ``DiscreteClockSimulation`` (integer state indices with cosine lookup tables) are
 collocated here for convenience.  When either class grows beyond roughly 400 lines
 of unique logic, split them into ``clock_model_continuous.py`` and
-``clock_model_discrete.py`` and keep this file as a re-export shim, following the
-existing ``utils/system_helpers.py`` pattern.
+``clock_model_discrete.py`` and keep this file as a re-export shim for backward
+compatibility.
 """
 from __future__ import annotations
 
 import os
+import warnings
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -288,8 +289,16 @@ def clock_energy_numba(
 
 @njit(cache=True, fastmath=True)
 def clock_wolff_step_numba(
-    *, spins: np.ndarray, beta: float, J: float, idx_next: np.ndarray, idx_prev: np.ndarray
-) -> np.ndarray:
+    *,
+    spins: np.ndarray,
+    beta: float,
+    J: float,
+    idx_next: np.ndarray,
+    idx_prev: np.ndarray,
+    in_cluster: np.ndarray,
+    stack: np.ndarray,
+    cluster_spins: np.ndarray
+) -> tuple:
     """
     Perform one Wolff cluster flip on the continuous Clock Model lattice.
 
@@ -316,10 +325,14 @@ def clock_wolff_step_numba(
         J: Coupling constant.
         idx_next: Pre-calculated next-neighbor indices (PBC).
         idx_prev: Pre-calculated previous-neighbor indices (PBC).
+        in_cluster: Pre-allocated (N, N) boolean array for cluster membership mask.
+        stack: Pre-allocated (N*N) int64 array for DFS stack.
+        cluster_spins: Pre-allocated (N*N) int64 array to track cluster elements.
 
     Returns
     -------
-        Updated spins array.
+        spins: Updated spins array.
+        cluster_size: Number of spins reflected in this step.
     """
     N = spins.shape[0]
 
@@ -332,12 +345,15 @@ def clock_wolff_step_numba(
     si = np.random.randint(0, N)
     sj = np.random.randint(0, N)
 
-    # Pre-allocate cluster membership mask and DFS stack
-    in_cluster = np.zeros((N, N), dtype=np.bool_)
-    stack = np.empty(N * N, dtype=np.int64)
+    # Setup DFS from seed
+    # Notice: in_cluster is assumed to be fully False upon entry!
+    seed_flat = si * N + sj
     in_cluster[si, sj] = True
-    stack[0] = si * N + sj
+    stack[0] = seed_flat
     stack_top = 1
+
+    cluster_spins[0] = seed_flat
+    cluster_size = 1
 
     while stack_top > 0:
         stack_top -= 1
@@ -359,8 +375,11 @@ def clock_wolff_step_numba(
                 p_add = 1.0 - np.exp(-2.0 * beta * J * prod)
                 if np.random.random() < p_add:
                     in_cluster[iprv, cj] = True
-                    stack[stack_top] = iprv * N + cj
+                    new_idx = iprv * N + cj
+                    stack[stack_top] = new_idx
                     stack_top += 1
+                    cluster_spins[cluster_size] = new_idx
+                    cluster_size += 1
         # South
         if not in_cluster[inxt, cj]:
             proj_n = spins[inxt, cj, 0] * rx + spins[inxt, cj, 1] * ry
@@ -369,8 +388,11 @@ def clock_wolff_step_numba(
                 p_add = 1.0 - np.exp(-2.0 * beta * J * prod)
                 if np.random.random() < p_add:
                     in_cluster[inxt, cj] = True
-                    stack[stack_top] = inxt * N + cj
+                    new_idx = inxt * N + cj
+                    stack[stack_top] = new_idx
                     stack_top += 1
+                    cluster_spins[cluster_size] = new_idx
+                    cluster_size += 1
         # West
         if not in_cluster[ci, jprv]:
             proj_n = spins[ci, jprv, 0] * rx + spins[ci, jprv, 1] * ry
@@ -379,8 +401,11 @@ def clock_wolff_step_numba(
                 p_add = 1.0 - np.exp(-2.0 * beta * J * prod)
                 if np.random.random() < p_add:
                     in_cluster[ci, jprv] = True
-                    stack[stack_top] = ci * N + jprv
+                    new_idx = ci * N + jprv
+                    stack[stack_top] = new_idx
                     stack_top += 1
+                    cluster_spins[cluster_size] = new_idx
+                    cluster_size += 1
         # East
         if not in_cluster[ci, jnxt]:
             proj_n = spins[ci, jnxt, 0] * rx + spins[ci, jnxt, 1] * ry
@@ -389,18 +414,23 @@ def clock_wolff_step_numba(
                 p_add = 1.0 - np.exp(-2.0 * beta * J * prod)
                 if np.random.random() < p_add:
                     in_cluster[ci, jnxt] = True
-                    stack[stack_top] = ci * N + jnxt
+                    new_idx = ci * N + jnxt
+                    stack[stack_top] = new_idx
                     stack_top += 1
+                    cluster_spins[cluster_size] = new_idx
+                    cluster_size += 1
 
-    # Reflect all cluster spins through the plane perpendicular to r\u0302
-    for i in range(N):
-        for j in range(N):
-            if in_cluster[i, j]:
-                proj = spins[i, j, 0] * rx + spins[i, j, 1] * ry
-                spins[i, j, 0] -= 2.0 * proj * rx
-                spins[i, j, 1] -= 2.0 * proj * ry
+    # Reflect all cluster spins in-place and reset in_cluster mask
+    for i in range(cluster_size):
+        flat = cluster_spins[i]
+        ci = flat // N
+        cj = flat % N
+        proj = spins[ci, cj, 0] * rx + spins[ci, cj, 1] * ry
+        spins[ci, cj, 0] -= 2.0 * proj * rx
+        spins[ci, cj, 1] -= 2.0 * proj * ry
+        in_cluster[ci, cj] = False
 
-    return spins
+    return spins, cluster_size
 
 
 class ClockSimulation(MonteCarloSimulation):
@@ -439,7 +469,10 @@ class ClockSimulation(MonteCarloSimulation):
                 ``'wolff'`` (Wolff-Evertz cluster algorithm using the exchange
                 term J; detailed balance holds exactly only when A=0).
             init_state: Initial spin configuration: ``'random'`` (default) or ``'ordered'``.
-            parallel: Whether to use parallelized Numba kernels (only for checkerboard).
+            parallel: Whether to use parallelized Numba kernels (only for
+                checkerboard). Parallel kernels are NOT seed-reproducible:
+                only the calling thread's Numba RNG is seeded, so two runs
+                with the same seed may differ.
             seed: Optional random seed for reproducibility.
 
         Raises
@@ -452,6 +485,17 @@ class ClockSimulation(MonteCarloSimulation):
         if update not in self._VALID_UPDATES:
             valid_opts = sorted(self._VALID_UPDATES)
             raise ValueError(f'Unknown update scheme {update!r}. Valid options: {valid_opts}')
+        if update == 'wolff' and A != 0.0:
+            # The Wolff-Evertz reflection ignores the anisotropy term, so the
+            # sampled distribution is exactly Boltzmann only for A = 0.
+            warnings.warn(
+                f'ClockSimulation with update=\'wolff\' ignores the anisotropy '
+                f'term (A={A}); detailed balance holds exactly only for A=0. '
+                f'Set A=0.0 for exchange-only studies or use a local update '
+                f'scheme for anisotropic sampling.',
+                UserWarning,
+                stacklevel=2,
+            )
         self.J = J
         self.A = A
         self.q = q
@@ -470,10 +514,7 @@ class ClockSimulation(MonteCarloSimulation):
     def step(self) -> None:
         """Perform one Monte Carlo step using Numba."""
         if self.spins is not None:
-            if self.seed is not None:
-                from .simulation_base import _seed_numba
-
-                _seed_numba(seed=self.seed + self.steps)
+            self._reseed_numba_for_step()
 
             if self.update == 'random':
                 self.spins = clock_step_random_numba(
@@ -486,12 +527,15 @@ class ClockSimulation(MonteCarloSimulation):
                     idx_prev=self.idx_prev,
                 )
             elif self.update == 'wolff':
-                self.spins = clock_wolff_step_numba(
+                self.spins, self.last_cluster_size = clock_wolff_step_numba(
                     spins=self.spins,
                     beta=self.beta,
                     J=self.J,
                     idx_next=self.idx_next,
                     idx_prev=self.idx_prev,
+                    in_cluster=self._wolff_cluster_mask,
+                    stack=self._wolff_stack,
+                    cluster_spins=self._wolff_cluster_spins,
                 )
             elif self.parallel:
                 self.spins = clock_step_parallel_numba(
@@ -852,7 +896,10 @@ class DiscreteClockSimulation(MonteCarloSimulation):
                 ``'random'`` (random sequential Metropolis, more physical
                 stochastic dynamics for kinetics studies).
             init_state: Initial spin configuration: ``'random'`` (default) or ``'ordered'``.
-            parallel: Whether to use parallelized Numba kernels (only for checkerboard).
+            parallel: Whether to use parallelized Numba kernels (only for
+                checkerboard). Parallel kernels are NOT seed-reproducible:
+                only the calling thread's Numba RNG is seeded, so two runs
+                with the same seed may differ.
             seed: Optional random seed for reproducibility.
 
         Raises
@@ -886,10 +933,7 @@ class DiscreteClockSimulation(MonteCarloSimulation):
     def step(self) -> None:
         """Perform one Monte Carlo sweep using Numba."""
         if self.spins is not None:
-            if self.seed is not None:
-                from .simulation_base import _seed_numba
-
-                _seed_numba(seed=self.seed + self.steps)
+            self._reseed_numba_for_step()
 
             if self.update == 'random':
                 self.spins = discrete_clock_step_random_numba(

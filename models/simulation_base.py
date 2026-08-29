@@ -15,6 +15,35 @@ def _seed_numba(*, seed: int) -> None:
     np.random.seed(seed)
 
 
+_MASK64 = (1 << 64) - 1
+
+
+def _derive_step_seed(*, seed: int, step: int) -> int:
+    """Mix a (seed, step) pair into a decorrelated 32-bit per-sweep seed.
+
+    A plain ``seed + step`` derivation makes the per-sweep random stream of
+    seed ``s`` at sweep ``t + 1`` identical to that of seed ``s + 1`` at sweep
+    ``t``, so replicas seeded with consecutive integers (the common
+    ``base_seed + k`` convention) share almost all of their randomness and are
+    not statistically independent. The SplitMix64 finalizer scrambles the pair
+    so distinct (seed, step) inputs yield uncorrelated seeds.
+
+    Parameters
+    ----------
+        seed: Simulation base seed (non-negative integer).
+        step: Zero-based sweep index.
+
+    Returns
+    -------
+        A seed in [0, 2**32) suitable for ``np.random.seed`` inside Numba.
+    """
+    z = (seed * 0xD1B54A32D192ED03 + step * 0x9E3779B97F4A7C15) & _MASK64
+    z = ((z ^ (z >> 30)) * 0xBF58476D1CE4E5B9) & _MASK64
+    z = ((z ^ (z >> 27)) * 0x94D049BB133111EB) & _MASK64
+    z ^= z >> 31
+    return int(z & 0xFFFFFFFF)
+
+
 @njit(cache=True, fastmath=True)
 def _calculate_vorticity_angles_numba(angles: np.ndarray, idx_next: np.ndarray) -> np.ndarray:
     """Fast kernel to calculate vorticity from a 2D array of angles."""
@@ -159,6 +188,8 @@ class MonteCarloSimulation(ABC):
         self._wolff_cluster_mask = np.zeros((size, size), dtype=np.bool_)
         self._wolff_stack = np.empty(size * size, dtype=np.int64)
         self._wolff_cluster_spins = np.empty(size * size, dtype=np.int64)
+        # Last Wolff cluster size (0 for non-Wolff updates or before any step)
+        self.last_cluster_size: int = 0
 
         # Pre-calculate radial distance bins for correlation analysis
         center = size // 2
@@ -167,6 +198,16 @@ class MonteCarloSimulation(ABC):
         self._r_int_pre = r.astype(int).ravel()
         self._nr_pre = np.bincount(self._r_int_pre)
         self._r_range_pre = np.arange(center)
+
+    def _reseed_numba_for_step(self) -> None:
+        """Reseed Numba's RNG deterministically for the upcoming sweep.
+
+        No-op when the simulation is unseeded. Serial kernels become fully
+        reproducible; parallel (``prange``) kernels are NOT seed-reproducible
+        because only the calling thread's Numba RNG state is seeded.
+        """
+        if self.seed is not None:
+            _seed_numba(seed=_derive_step_seed(seed=self.seed, step=self.steps))
 
     @abstractmethod
     def step(self) -> None:

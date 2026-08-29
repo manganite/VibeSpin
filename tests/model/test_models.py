@@ -510,7 +510,7 @@ def test_xy_wolff_update():
 
 def test_clock_wolff_update():
     """Verify Clock Wolff cluster update dispatches correctly and preserves norms."""
-    sim = ClockSimulation(size=10, temp=0.5, q=6, update='wolff')
+    sim = ClockSimulation(size=10, temp=0.5, q=6, A=0.0, update='wolff')
     sim.step()
     assert sim.steps == 1
     assert sim.update == 'wolff'
