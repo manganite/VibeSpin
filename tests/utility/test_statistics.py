@@ -1,5 +1,5 @@
 """
-Unit tests for physics-related utility functions in utils/physics_helpers.py.
+Unit tests for statistical utility functions in utils/statistics.py.
 Covers thermodynamic averages, entropy, autocorrelation, spatial diagnostics,
 kinetics metrics, and power-law fitting.
 """
@@ -451,7 +451,22 @@ def test_summarize_replicate_samples_2d_nan_safe():
     assert isinstance(summary['value'], np.ndarray)
     assert isinstance(summary['ci_low'], np.ndarray)
     assert isinstance(summary['ci_high'], np.ndarray)
+    assert isinstance(summary['err'], np.ndarray)
+    np.testing.assert_allclose(summary['err'], 0.5 * (summary['ci_high'] - summary['ci_low']))
     assert summary['samples'] == pytest.approx(4.0)
+
+
+def test_summarize_replicate_samples_1d_has_err_field():
+    """1-D replicate summaries must expose the scalar 'err' schema field.
+
+    Regression test: scripts/ising/measure_z.py reads summary['err'] when
+    saving its NPZ output, which previously raised KeyError after the full
+    sweep had completed.
+    """
+    summary = summarize_replicate_samples(samples=np.array([1.0, 2.0, 3.0]))
+    assert summary['err'] == pytest.approx(0.5 * (summary['ci_high'] - summary['ci_low']))
+    for key in ('value', 'err', 'ci_low', 'ci_high'):
+        assert np.isfinite(summary[key])
 
 
 def test_summarize_seed_ensemble_single_seed_matches_within_seed_error():
@@ -794,7 +809,7 @@ def test_detect_quasi_steady_stuck_l_scaling_true_for_low_t_stuck():
 
 
 class TestPhysicsHelpersValidation:
-    """Verify error handling for invalid inputs in physics_helpers.py."""
+    """Verify error handling for invalid inputs in statistics.py."""
 
     def test_validate_confidence_errors(self) -> None:
         """Should raise ValueError for confidence outside (0, 1)."""

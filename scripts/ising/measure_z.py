@@ -22,7 +22,7 @@ from utils.equilibration import convergence_equilibrate
 from utils.exceptions import ZeroVarianceAutocorrelationError
 from utils.statistics import (
     DEFAULT_CONFIDENCE_LEVEL,
-    UNCERTAINTY_METHOD_BLOCKING,
+    UNCERTAINTY_METHOD_REPLICATE,
     calculate_autocorr,
     summarize_replicate_samples,
 )
@@ -199,7 +199,7 @@ def main() -> None:
         tau_wolff_err=wolff_summary['err'],
         tau_wolff_ci_low=wolff_summary['ci_low'],
         tau_wolff_ci_high=wolff_summary['ci_high'],
-        uncertainty_method=UNCERTAINTY_METHOD_BLOCKING,
+        uncertainty_method=UNCERTAINTY_METHOD_REPLICATE,
         confidence_level=DEFAULT_CONFIDENCE_LEVEL,
     )
     logger.info('Data saved to %s', npz_path)

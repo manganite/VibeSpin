@@ -35,6 +35,7 @@ try:
         ThermoPoint,
         build_uncertainty_bundle,
         simulate_thermo_point,
+        validate_sweep_uncertainty_args,
     )
     HAS_TEMPERATURE_SWEEP = True
 except ImportError:
@@ -531,10 +532,64 @@ class TestTemperatureSweepUncertaintySchema:
                 'entropy_value', 'entropy_err', 'entropy_ci_low', 'entropy_ci_high',
                 'entropy_samples',
                 'entropy_uncertainty_method',
+                # Metadata contract from AGENTS.md section 8
+                'uncertainty_method', 'confidence_level', 'n_seeds',
+                'bootstrap_resamples', 'nan_or_undefined_count',
             }
             present = set(data.keys())
             missing = required - present
             assert not missing, f"Missing keys in NPZ: {missing}"
+
+
+class TestSweepValidation:
+    """Shared CLI-argument validation used by all three temperature sweeps."""
+
+    def _valid_kwargs(self) -> dict[str, Any]:
+        return {
+            'confidence_level': 0.68,
+            'max_undefined_fraction': 0.25,
+            'min_effective_samples': 20.0,
+            'max_tau_relative_width': 1.0,
+            'derived_uncertainty_method': 'blocking',
+            'derived_bootstrap_resamples': 0,
+            'n_seeds': 1,
+        }
+
+    def test_valid_arguments_pass(self) -> None:
+        """Documented default arguments must validate silently."""
+        if not HAS_TEMPERATURE_SWEEP:
+            pytest.skip("Temperature sweep modules not available")
+        validate_sweep_uncertainty_args(**self._valid_kwargs())
+
+    @pytest.mark.parametrize(
+        ('field', 'value', 'match'),
+        [
+            ('confidence_level', 0.0, 'confidence-level'),
+            ('confidence_level', 1.0, 'confidence-level'),
+            ('max_undefined_fraction', 1.5, 'max-undefined-fraction'),
+            ('min_effective_samples', -1.0, 'min-effective-samples'),
+            ('max_tau_relative_width', -0.5, 'max-tau-relative-width'),
+            ('n_seeds', 0, 'n-seeds'),
+        ],
+    )
+    def test_out_of_range_arguments_raise(self, field: str, value: Any, match: str) -> None:
+        """Each out-of-range argument must raise ValueError naming the flag."""
+        if not HAS_TEMPERATURE_SWEEP:
+            pytest.skip("Temperature sweep modules not available")
+        kwargs = self._valid_kwargs()
+        kwargs[field] = value
+        with pytest.raises(ValueError, match=match):
+            validate_sweep_uncertainty_args(**kwargs)
+
+    def test_bootstrap_requires_resamples(self) -> None:
+        """Bootstrap method with zero resamples must be rejected up front."""
+        if not HAS_TEMPERATURE_SWEEP:
+            pytest.skip("Temperature sweep modules not available")
+        kwargs = self._valid_kwargs()
+        kwargs['derived_uncertainty_method'] = 'bootstrap'
+        kwargs['derived_bootstrap_resamples'] = 0
+        with pytest.raises(ValueError, match='derived-bootstrap-resamples'):
+            validate_sweep_uncertainty_args(**kwargs)
 
 
 class TestTemperatureSweepPlotPayloads:

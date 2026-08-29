@@ -12,6 +12,7 @@ from utils.observables import calculate_entropy
 DEFAULT_CONFIDENCE_LEVEL = 0.68
 UNCERTAINTY_METHOD_BLOCKING = 'blocking'
 UNCERTAINTY_METHOD_BOOTSTRAP = 'bootstrap'
+UNCERTAINTY_METHOD_REPLICATE = 'replicate_percentile'
 
 UNCERTAINTY_FIELDS = (
     'value',
@@ -668,6 +669,9 @@ def summarize_replicate_samples(
         ci_high = float(np.nanquantile(arr, 1.0 - alpha))
         return {
             'value': value,
+            # Half the percentile band width serves as the scalar error field so
+            # replicate summaries conform to the standard uncertainty schema.
+            'err': 0.5 * (ci_high - ci_low),
             'ci_low': ci_low,
             'ci_high': ci_high,
             'samples': float(arr.size),
@@ -679,6 +683,7 @@ def summarize_replicate_samples(
     ci_high_arr = np.nanquantile(arr, 1.0 - alpha, axis=1)
     return {
         'value': value_arr,
+        'err': 0.5 * (ci_high_arr - ci_low_arr),
         'ci_low': ci_low_arr,
         'ci_high': ci_high_arr,
         'samples': float(arr.shape[1]),
@@ -770,7 +775,8 @@ def power_fit(
 
     Parameters
     ----------
-        t_arr: Independent variable array (e.g., time or length scale).
+        t_arr: Independent variable array (e.g., time or length scale); only
+            positive values are used in the fit.
         y_arr: Dependent variable array; only positive values are used in the fit.
         mask: Boolean mask selecting the subset of points to include.
 
@@ -779,7 +785,7 @@ def power_fit(
         exponent: Fitted power-law exponent, or None if fewer than 3 valid points.
         prefactor: Fitted prefactor, or None if fewer than 3 valid points.
     """
-    valid = mask & (y_arr > 0)
+    valid = mask & (y_arr > 0) & (t_arr > 0)
     if valid.sum() < 3:
         return None, None
     coeffs = np.polyfit(np.log(t_arr[valid]), np.log(y_arr[valid]), 1)

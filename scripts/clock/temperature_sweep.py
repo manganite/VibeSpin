@@ -24,6 +24,7 @@ from utils.sweep_helpers import (
     build_quality_flags,
     build_uncertainty_bundle,
     simulate_thermo_point,
+    validate_sweep_uncertainty_args,
 )
 from utils.system import parallel_sweep, parse_args_compat, setup_logging
 
@@ -126,6 +127,16 @@ def main() -> None:
     parser.add_argument('--verbose', action='store_true', help='Enable verbose logging')
 
     args = parse_args_compat(parser)
+
+    validate_sweep_uncertainty_args(
+        confidence_level=float(args.confidence_level),
+        max_undefined_fraction=float(args.max_undefined_fraction),
+        min_effective_samples=float(args.min_effective_samples),
+        max_tau_relative_width=float(args.max_tau_relative_width),
+        derived_uncertainty_method=str(args.derived_uncertainty_method),
+        derived_bootstrap_resamples=int(args.derived_bootstrap_resamples),
+        n_seeds=int(args.n_seeds),
+    )
 
     log_level = logging.DEBUG if args.verbose else logging.INFO
     logger = setup_logging(level=log_level, log_file=args.log_file)
@@ -280,8 +291,11 @@ def main() -> None:
         **cast(Any, {f'spec_h_{k}': v for k, v in spec_h_bundle.items()}),
         **cast(Any, {f'entropy_{k}': v for k, v in entropy_res.items()}),
         **cast(Any, quality),
+        entropy_uncertainty_method=str(args.entropy_uncertainty_method),
         uncertainty_method=str(args.derived_uncertainty_method),
         confidence_level=float(args.confidence_level),
+        n_seeds=max_seeds_retained,
+        bootstrap_resamples=int(args.derived_bootstrap_resamples),
         requested_n_seeds=target_n_seeds,
         max_seed_attempts=max_seed_attempts,
         retained_n_seeds=max_seeds_retained,

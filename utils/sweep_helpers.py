@@ -22,10 +22,78 @@ import numpy as np
 
 from utils.equilibration import convergence_equilibrate_with_status
 from utils.statistics import (
+    UNCERTAINTY_METHOD_BOOTSTRAP,
+    _z_multiplier,
     summarize_derived_observable,
     summarize_primary_observable,
     summarize_seed_ensemble,
 )
+
+
+def validate_sweep_uncertainty_args(
+    *,
+    confidence_level: float,
+    max_undefined_fraction: float,
+    min_effective_samples: float,
+    max_tau_relative_width: float,
+    derived_uncertainty_method: str,
+    derived_bootstrap_resamples: int,
+    n_seeds: int,
+) -> None:
+    """Validate the shared uncertainty-related CLI arguments of sweep scripts.
+
+    Centralized here so that the Ising, XY, and Clock temperature sweeps
+    reject invalid inputs identically instead of failing deep inside worker
+    statistics after simulations have already started.
+
+    Parameters
+    ----------
+    confidence_level : float
+        Two-sided confidence level; must satisfy 0 < c < 1.
+    max_undefined_fraction : float
+        Strict-mode threshold; must satisfy 0 <= f <= 1.
+    min_effective_samples : float
+        Quality-flag threshold; must be >= 0.
+    max_tau_relative_width : float
+        Quality-flag threshold; must be >= 0.
+    derived_uncertainty_method : str
+        Method name for derived observables; bootstrap requires resamples.
+    derived_bootstrap_resamples : int
+        Bootstrap resample count; must be > 0 when the method is bootstrap.
+    n_seeds : int
+        Target converged seed replicas; must be >= 1.
+
+    Raises
+    ------
+    ValueError
+        If any argument is outside its documented range.
+    """
+    if not (0.0 < float(confidence_level) < 1.0):
+        raise ValueError(
+            f'confidence-level must satisfy 0 < c < 1, got {confidence_level}'
+        )
+    if max_undefined_fraction < 0.0 or max_undefined_fraction > 1.0:
+        raise ValueError(
+            f'max-undefined-fraction must satisfy 0 <= f <= 1, got {max_undefined_fraction}'
+        )
+    if min_effective_samples < 0.0:
+        raise ValueError(
+            f'min-effective-samples must be >= 0, got {min_effective_samples}'
+        )
+    if max_tau_relative_width < 0.0:
+        raise ValueError(
+            f'max-tau-relative-width must be >= 0, got {max_tau_relative_width}'
+        )
+    if (
+        derived_uncertainty_method == UNCERTAINTY_METHOD_BOOTSTRAP
+        and derived_bootstrap_resamples <= 0
+    ):
+        raise ValueError(
+            'derived-bootstrap-resamples must be > 0 when '
+            'derived-uncertainty-method=bootstrap'
+        )
+    if n_seeds < 1:
+        raise ValueError(f'n-seeds must be >= 1, got {n_seeds}')
 
 # ---------------------------------------------------------------------------
 # Input type
@@ -425,11 +493,14 @@ def build_uncertainty_bundle(
                 int(np.sum(nan_mask)),
             )
     else:
+        # Apply the same Gaussian z-multiplier as the multi-seed path so that
+        # 'ci_low'/'ci_high' honor the requested confidence level here too.
+        z = _z_multiplier(confidence=confidence)
         res = {
             'value': values_by_seed[:, 0],
             'err': errors_by_seed[:, 0],
-            'ci_low': values_by_seed[:, 0] - errors_by_seed[:, 0],
-            'ci_high': values_by_seed[:, 0] + errors_by_seed[:, 0],
+            'ci_low': values_by_seed[:, 0] - z * errors_by_seed[:, 0],
+            'ci_high': values_by_seed[:, 0] + z * errors_by_seed[:, 0],
         }
         tau_int = tau_by_seed[:, 0]
         n_eff = n_eff_by_seed[:, 0]

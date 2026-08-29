@@ -24,6 +24,7 @@ from utils.sweep_helpers import (
     build_quality_flags,
     build_uncertainty_bundle,
     simulate_thermo_point,
+    validate_sweep_uncertainty_args,
 )
 from utils.system import parallel_sweep, parse_args_compat, setup_logging
 
@@ -136,31 +137,15 @@ def main() -> None:
 
     args = parse_args_compat(parser)
 
-    if not (0.0 < float(args.confidence_level) < 1.0):
-        raise ValueError(
-            f'confidence-level must satisfy 0 < c < 1, got {args.confidence_level}'
-        )
-    if args.max_undefined_fraction < 0.0 or args.max_undefined_fraction > 1.0:
-        raise ValueError(
-            'max-undefined-fraction must satisfy 0 <= f <= 1, '
-            f'got {args.max_undefined_fraction}'
-        )
-    if args.min_effective_samples < 0.0:
-        raise ValueError(
-            f'min-effective-samples must be >= 0, got {args.min_effective_samples}'
-        )
-    if args.max_tau_relative_width < 0.0:
-        raise ValueError(
-            f'max-tau-relative-width must be >= 0, got {args.max_tau_relative_width}'
-        )
-    if (
-        args.derived_uncertainty_method == UNCERTAINTY_METHOD_BOOTSTRAP
-        and args.derived_bootstrap_resamples <= 0
-    ):
-        raise ValueError(
-            'derived-bootstrap-resamples must be > 0 when '
-            'derived-uncertainty-method=bootstrap'
-        )
+    validate_sweep_uncertainty_args(
+        confidence_level=float(args.confidence_level),
+        max_undefined_fraction=float(args.max_undefined_fraction),
+        min_effective_samples=float(args.min_effective_samples),
+        max_tau_relative_width=float(args.max_tau_relative_width),
+        derived_uncertainty_method=str(args.derived_uncertainty_method),
+        derived_bootstrap_resamples=int(args.derived_bootstrap_resamples),
+        n_seeds=int(args.n_seeds),
+    )
 
     # Configure logging
     log_level = logging.DEBUG if args.verbose else logging.INFO
@@ -171,9 +156,6 @@ def main() -> None:
     t_points = len(temperatures)
 
     target_n_seeds = int(args.n_seeds)
-    if target_n_seeds < 1:
-        raise ValueError(f'n-seeds must be >= 1, got {target_n_seeds}')
-
     max_seed_attempts = args.max_seed_attempts
     if max_seed_attempts is None:
         max_seed_attempts = max(target_n_seeds, 10 * target_n_seeds)
@@ -376,6 +358,8 @@ def main() -> None:
         entropy_uncertainty_method=str(args.entropy_uncertainty_method),
         uncertainty_method=str(args.derived_uncertainty_method),
         confidence_level=float(args.confidence_level),
+        n_seeds=max_seeds_retained,
+        bootstrap_resamples=int(args.derived_bootstrap_resamples),
         requested_n_seeds=target_n_seeds,
         max_seed_attempts=max_seed_attempts,
         retained_n_seeds=max_seeds_retained,

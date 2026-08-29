@@ -255,7 +255,7 @@ def run_ordering_kinetics(
     for key, data in [('R_sk', R_sk), ('xi', R_xi), ('third', third)]:
         exp, pre = power_fit(t_arr=t, y_arr=data, mask=fit_mask)
         exponents[key], prefactors[key] = exp, pre
-        if exp:
+        if exp is not None:
             _log.info(f'{key} exponent: {exp:.3f}')
 
     # --- Save NPZ ---

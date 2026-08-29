@@ -1,11 +1,9 @@
 """Domain plotting and file-output helpers for VibeSpin simulations.
 
-Groups the filesystem output helper (:func:`save_plot`,
-:func:`ensure_results_dir`) together with the three domain-specific
-visualisation functions that were previously embedded in
-``utils.system``.  Keeping visualisation logic here makes
-``system_helpers`` a pure infrastructure module (logging, parallelism) with
-no matplotlib dependency.
+Groups the filesystem output helpers (:func:`save_plot`,
+:func:`ensure_results_dir`) together with the domain-specific visualisation
+functions.  Keeping visualisation logic here leaves ``utils.system`` a pure
+infrastructure module (logging, parallelism) with no matplotlib dependency.
 """
 from __future__ import annotations
 
