@@ -1,5 +1,6 @@
 """
-Physics-related utility functions for calculating thermodynamic observables and correlations.
+Statistical estimators and uncertainty schemas for Monte Carlo time series:
+blocking analysis, autocorrelation, replicate and seed-ensemble aggregation.
 """
 from __future__ import annotations
 
@@ -422,15 +423,22 @@ def blocking_error(
     min_block_size: int = 2,
     max_block_size: int | None = None,
 ) -> dict[str, float]:
-    """Estimate standard error using standard blocking/binning analysis."""
+    """Estimate standard error using standard blocking/binning analysis.
+
+    Any series containing NaN values (e.g. from failed measurements) yields
+    the all-NaN result dict: a partially NaN series would otherwise poison
+    the block means and produce a meaningless plateau selection.
+    """
     arr = _as_1d_float_array(time_series=time_series, name='time_series')
     if min_block_size < 2:
         raise ValueError(f'min_block_size must be >= 2, got {min_block_size}')
     if max_block_size is None:
         max_block_size = arr.size // 2
 
-    # Handle all-NaN series gracefully (e.g. from failed measurements)
-    if np.isnan(arr).all():
+    # The NaN early-out precedes range validation so that NaN-poisoned series
+    # (whose length may be too short for any blocking) still return the
+    # graceful NaN dict instead of a range error.
+    if np.isnan(arr).any():
         return {
             'stderr': float('nan'),
             'stderr_naive': float('nan'),
@@ -496,24 +504,45 @@ def blocking_error(
     }
 
 
+def estimate_tau_int_or_nan(*, time_series: np.ndarray) -> float:
+    """Return the integrated autocorrelation time, or NaN when undefined.
+
+    Wraps ``calculate_autocorr`` with the standard zero-variance fallback so
+    callers can precompute tau_int once and share it between the primary and
+    derived summarizers instead of recomputing the FFT per summarizer.
+    """
+    try:
+        _, tau_int = calculate_autocorr(time_series=time_series)
+    except ZeroVarianceAutocorrelationError:
+        return float('nan')
+    return float(tau_int)
+
+
 def summarize_primary_observable(
     *,
     time_series: np.ndarray,
     confidence: float = DEFAULT_CONFIDENCE_LEVEL,
+    blocking: dict[str, float] | None = None,
+    tau_int: float | None = None,
 ) -> dict[str, float]:
-    """Summarize a primary observable with blocking-based uncertainty."""
+    """Summarize a primary observable with blocking-based uncertainty.
+
+    ``blocking`` and ``tau_int`` accept precomputed results from
+    ``blocking_error`` and ``estimate_tau_int_or_nan`` on the same series, so
+    a caller that also summarizes a derived observable of that series does
+    not pay for the blocking scan and autocorrelation FFT twice. When omitted
+    they are computed here. A passed ``tau_int`` may be NaN (undefined).
+    """
     _validate_confidence(confidence=confidence)
     arr = _as_1d_float_array(time_series=time_series, name='time_series')
 
     value = float(np.mean(arr))
-    block = blocking_error(time_series=arr)
+    block = blocking if blocking is not None else blocking_error(time_series=arr)
     err = float(block['stderr'])
     z = _z_multiplier(confidence=confidence)
 
-    try:
-        _, tau_int = calculate_autocorr(time_series=arr)
-    except ZeroVarianceAutocorrelationError:
-        tau_int = float('nan')
+    if tau_int is None:
+        tau_int = estimate_tau_int_or_nan(time_series=arr)
 
     n_eff = _safe_n_eff_from_tau(n_samples=arr.size, tau_int=tau_int)
 
@@ -555,8 +584,17 @@ def summarize_derived_observable(
     method: str = UNCERTAINTY_METHOD_BLOCKING,
     confidence: float = DEFAULT_CONFIDENCE_LEVEL,
     bootstrap_resamples: int = 0,
+    rng_seed: int = 0,
+    blocking: dict[str, float] | None = None,
+    tau_int: float | None = None,
 ) -> dict[str, float]:
-    """Summarize derived observables (chi, Cv) with uncertainty estimates."""
+    """Summarize derived observables (chi, Cv) with uncertainty estimates.
+
+    ``rng_seed`` seeds the block-bootstrap resampling (default 0, matching
+    the previously hardcoded stream). ``blocking`` and ``tau_int`` accept
+    precomputed results for the base series, as in
+    ``summarize_primary_observable``.
+    """
     _validate_confidence(confidence=confidence)
     if temperature <= 0.0:
         raise ValueError(f'temperature must be positive, got {temperature}')
@@ -593,24 +631,26 @@ def summarize_derived_observable(
             'samples': float(base.size),
         }
 
-    block = blocking_error(time_series=base)
+    block = blocking if blocking is not None else blocking_error(time_series=base)
     block_size = int(block['block_size'])
     n_blocks = base.size // block_size
     trimmed = base[:n_blocks * block_size]
     block_reshaped = trimmed.reshape(n_blocks, block_size)
 
-    per_block = np.array(
-        [
-            _derived_point_estimate(
-                series=block_reshaped[idx],
-                temperature=temperature,
-                L=L,
-                observable=observable,
-            )
-            for idx in range(n_blocks)
-        ],
-        dtype=np.float64,
-    )
+    per_block = np.empty(0, dtype=np.float64)
+    if n_blocks >= 2:
+        per_block = np.array(
+            [
+                _derived_point_estimate(
+                    series=block_reshaped[idx],
+                    temperature=temperature,
+                    L=L,
+                    observable=observable,
+                )
+                for idx in range(n_blocks)
+            ],
+            dtype=np.float64,
+        )
 
     if n_blocks < 2:
         err = float('nan')
@@ -624,7 +664,7 @@ def summarize_derived_observable(
     else:
         if bootstrap_resamples <= 0:
             raise ValueError('bootstrap_resamples must be > 0 when method is bootstrap')
-        rng = np.random.default_rng(0)
+        rng = np.random.default_rng(rng_seed)
         boot = np.empty(bootstrap_resamples, dtype=np.float64)
         for i in range(bootstrap_resamples):
             sample = rng.choice(per_block, size=n_blocks, replace=True)
@@ -634,10 +674,8 @@ def summarize_derived_observable(
         ci_high = float(np.quantile(boot, 1.0 - alpha))
         err = float(np.std(boot, ddof=1))
 
-    try:
-        _, tau_int = calculate_autocorr(time_series=base)
-    except ZeroVarianceAutocorrelationError:
-        tau_int = float('nan')
+    if tau_int is None:
+        tau_int = estimate_tau_int_or_nan(time_series=base)
 
     n_eff = _safe_n_eff_from_tau(n_samples=base.size, tau_int=tau_int)
     return {

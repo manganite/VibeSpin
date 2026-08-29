@@ -105,7 +105,7 @@ def main() -> None:
     parser.add_argument('--output-dir', type=str, default='results/ising', help='Output directory')
     parser.add_argument('--verbose', action='store_true', help='Enable verbose logging')
 
-    args = parse_args_compat(parser)
+    args = parse_args_compat(parser=parser)
     logger = setup_logging(level=logging.DEBUG if args.verbose else logging.INFO)
 
     size = args.size
@@ -191,7 +191,8 @@ def main() -> None:
 
             # Estimate convergence time
             tau_est = estimate_relaxation_time_two_start(
-                tr, to, smooth_window=smooth_window, dwell_window=smooth_window,
+                trace_random=tr, trace_ordered=to,
+                smooth_window=smooth_window, dwell_window=smooth_window,
             )
 
             # Plot raw data with low alpha as background
@@ -318,7 +319,8 @@ def main() -> None:
 
         # Estimate convergence time (index into smoothed array)
         tau_est = estimate_relaxation_time_two_start(
-            tr, to, smooth_window=smooth_window, dwell_window=smooth_window,
+            trace_random=tr, trace_ordered=to,
+            smooth_window=smooth_window, dwell_window=smooth_window,
         )
 
         # Raw traces (faint background)

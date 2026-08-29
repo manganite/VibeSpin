@@ -79,7 +79,7 @@ def parallel_sweep(
         return list(tqdm(pool.imap(worker_func, params), total=total_len, bar_format=_BAR_FORMAT))
 
 
-def parse_args_compat(parser: argparse.ArgumentParser) -> argparse.Namespace:
+def parse_args_compat(*, parser: argparse.ArgumentParser) -> argparse.Namespace:
     """Parse CLI args with compatibility for parser wrappers used by some runners."""
     parse_arguments = getattr(parser, 'parse_arguments', None)
     if callable(parse_arguments):

@@ -16,7 +16,7 @@ class _Sim(Protocol):
 
     def step(self) -> None: ...
 
-    def _calculate_correlation_function(self) -> tuple[np.ndarray, np.ndarray]: ...
+    def calculate_correlation_function(self) -> tuple[np.ndarray, np.ndarray]: ...
 
 
 def calculate_thermodynamics(
@@ -179,7 +179,7 @@ def get_averaged_correlation(
     for i in range(total_steps):
         sim.step()
         if i % sample_interval == 0:
-            r, G_r = sim._calculate_correlation_function()
+            r, G_r = sim.calculate_correlation_function()
             if G_r_avg is None:
                 G_r_avg = np.zeros_like(G_r)
             G_r_avg += G_r
@@ -189,9 +189,8 @@ def get_averaged_correlation(
         G_r_avg /= count
     else:
         # Fallback if no samples were taken
-        _, G_r_dummy = sim._calculate_correlation_function()
+        r, G_r_dummy = sim.calculate_correlation_function()
         G_r_avg = np.zeros_like(G_r_dummy)
-        r = _
 
     return r, G_r_avg
 
@@ -279,6 +278,35 @@ def pair_correlation_x(*, spins: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
     return r_vals, G
 
 
+def correlation_length_1e(*, r: np.ndarray, G: np.ndarray) -> float:
+    """Estimate the correlation length as the 1/e crossing of G(r).
+
+    Linearly interpolates between the last point above 1/e and the first
+    point below it. Returns ``r[0]`` when the very first point is already
+    below 1/e, and NaN when G never drops below 1/e within the given range
+    (callers decide the appropriate fallback for their context).
+
+    Parameters
+    ----------
+        r: Radial distances (monotonically increasing).
+        G: Correlation values G(r), normalised so G(0) = 1.
+
+    Returns
+    -------
+        The interpolated 1/e crossing radius, or NaN if no crossing exists.
+    """
+    inv_e = 1.0 / np.e
+    below = np.where(np.asarray(G) < inv_e)[0]
+    if len(below) == 0:
+        return float('nan')
+    idx = int(below[0])
+    if idx == 0:
+        return float(r[0])
+    r0, r1 = float(r[idx - 1]), float(r[idx])
+    g0, g1 = float(G[idx - 1]), float(G[idx])
+    return r0 + (inv_e - g0) * (r1 - r0) / (g1 - g0)
+
+
 def compute_kinetics_metrics(*, sim: _Sim) -> dict[str, float]:
     """
     Calculate common kinetics metrics (R_sk, xi) for a simulation state.
@@ -301,19 +329,12 @@ def compute_kinetics_metrics(*, sim: _Sim) -> dict[str, float]:
     denom = float(np.sum(K_k * S_k))
     R_sk = (2.0 * np.pi * float(np.sum(S_k) / denom)) if denom != 0 else 0.0
 
-    # 2. xi from G(r) 1/e decay
+    # 2. xi from G(r) 1/e decay; no crossing means the correlation extends
+    # beyond the accessible range, so fall back to the largest distance.
     r_vals, G = pair_correlation_x(spins=sim.spins)
-    inv_e = 1.0 / np.e
-    below = np.where(G < inv_e)[0]
-    if len(below) == 0:
+    xi = correlation_length_1e(r=r_vals, G=G)
+    if not np.isfinite(xi):
         xi = float(r_vals[-1])
-    elif below[0] == 0:
-        xi = float(r_vals[0])
-    else:
-        idx = below[0]
-        r0, r1 = float(r_vals[idx - 1]), float(r_vals[idx])
-        g0, g1 = float(G[idx - 1]), float(G[idx])
-        xi = r0 + (inv_e - g0) * (r1 - r0) / (g1 - g0)
 
     return {'R_sk': R_sk, 'xi': xi}
 

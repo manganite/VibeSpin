@@ -61,16 +61,56 @@ The ``qs_sigma_threshold`` parameter is calibrated at this L and scaled
 proportionally as ``threshold * _QS_SIGMA_REF_L / lattice_size`` for other sizes.
 """
 
+# Shared defaults for the two-start criteria. The convergence loop forwards
+# user overrides via **kwargs to both the relaxation estimator and the stuck
+# detector; keeping the fallback values here (instead of repeating literals)
+# guarantees the two criteria cannot silently drift apart.
+_TWO_START_DEFAULT_K: float = 1.0
+_TWO_START_DEFAULT_SMOOTH_WINDOW: int = 60
+_TWO_START_DEFAULT_SIGMA_FLOOR: float = 0.02
 
-def estimate_relaxation_time_two_start(
+
+def _prepare_smoothed_traces(
+    *,
     trace_random: np.ndarray,
     trace_ordered: np.ndarray,
+    smooth_window: int,
+    skip_validation: bool,
+) -> tuple[np.ndarray, np.ndarray, int] | None:
+    """Shared preprocessing for the two-start criteria.
+
+    Takes the absolute values (optionally after finite-prefix validation),
+    truncates both traces to a common length ``n``, and applies the
+    moving-average smoother. Returns ``(r_smoothed, o_smoothed, n)``, or
+    ``None`` when the traces are too short to analyze (fewer than 8 common
+    raw samples).
+    """
+    if skip_validation:
+        r = np.abs(trace_random)
+        o = np.abs(trace_ordered)
+    else:
+        r = np.abs(_valid_prefix(np.asarray(trace_random, dtype=float)))
+        o = np.abs(_valid_prefix(np.asarray(trace_ordered, dtype=float)))
+
+    n = min(len(r), len(o))
+    if n < 8:
+        return None
+
+    r_sm = _moving_average(r[:n], smooth_window)
+    o_sm = _moving_average(o[:n], smooth_window)
+    m = min(len(r_sm), len(o_sm))
+    return r_sm[:m], o_sm[:m], n
+
+
+def estimate_relaxation_time_two_start(
     *,
-    k: float = 1.0,
-    smooth_window: int = 60,
+    trace_random: np.ndarray,
+    trace_ordered: np.ndarray,
+    k: float = _TWO_START_DEFAULT_K,
+    smooth_window: int = _TWO_START_DEFAULT_SMOOTH_WINDOW,
     dwell_window: int = 60,
     min_fraction_inside: float = 0.85,
-    sigma_floor: float = 0.02,
+    sigma_floor: float = _TWO_START_DEFAULT_SIGMA_FLOOR,
     skip_validation: bool = False,
 ) -> int:
     """Estimate thermalization time from convergence of random- and ordered-start traces.
@@ -110,24 +150,16 @@ def estimate_relaxation_time_two_start(
         position as ``hits[0] + smooth_window - 1``.  Returns ``n`` (full trace
         length) if no convergence is detected, or ``0`` for very short traces.
     """
-    if skip_validation:
-        r = np.abs(trace_random)
-        o = np.abs(trace_ordered)
-    else:
-        r = np.abs(_valid_prefix(np.asarray(trace_random, dtype=float)))
-        o = np.abs(_valid_prefix(np.asarray(trace_ordered, dtype=float)))
-
-    n = min(len(r), len(o))
-    if n < 8:
+    prepared = _prepare_smoothed_traces(
+        trace_random=trace_random,
+        trace_ordered=trace_ordered,
+        smooth_window=smooth_window,
+        skip_validation=skip_validation,
+    )
+    if prepared is None:
         return 0
-    r = r[:n]
-    o = o[:n]
-
-    r_sm = _moving_average(r, smooth_window)
-    o_sm = _moving_average(o, smooth_window)
-    m = min(len(r_sm), len(o_sm))
-    r_sm = r_sm[:m]
-    o_sm = o_sm[:m]
+    r_sm, o_sm, n = prepared
+    m = len(r_sm)
 
     # Compute tail statistics independently for each trace
     half = m // 2
@@ -153,13 +185,13 @@ def estimate_relaxation_time_two_start(
 
 
 def _detect_quasi_steady_stuck(
+    *,
     trace_random: np.ndarray,
     trace_ordered: np.ndarray,
-    *,
-    k: float = 1.0,
-    smooth_window: int = 60,
+    k: float = _TWO_START_DEFAULT_K,
+    smooth_window: int = _TWO_START_DEFAULT_SMOOTH_WINDOW,
     qs_sigma_threshold: float = 0.05,
-    sigma_floor: float = 0.02,
+    sigma_floor: float = _TWO_START_DEFAULT_SIGMA_FLOOR,
     lattice_size: int | None = None,
     skip_validation: bool = False,
 ) -> bool:
@@ -184,26 +216,18 @@ def _detect_quasi_steady_stuck(
     variance at any system size.  At ``lattice_size = _QS_SIGMA_REF_L`` the
     effective threshold equals ``qs_sigma_threshold`` exactly.
     """
-    if skip_validation:
-        r = np.abs(trace_random)
-        o = np.abs(trace_ordered)
-    else:
-        r = np.abs(_valid_prefix(np.asarray(trace_random, dtype=float)))
-        o = np.abs(_valid_prefix(np.asarray(trace_ordered, dtype=float)))
-
-    n = min(len(r), len(o))
-    if n < 8:
+    prepared = _prepare_smoothed_traces(
+        trace_random=trace_random,
+        trace_ordered=trace_ordered,
+        smooth_window=smooth_window,
+        skip_validation=skip_validation,
+    )
+    if prepared is None:
         return False
-    r = r[:n]
-    o = o[:n]
-
-    r_sm = _moving_average(r, smooth_window)
-    o_sm = _moving_average(o, smooth_window)
-    m = min(len(r_sm), len(o_sm))
+    r_sm, o_sm, _ = prepared
+    m = len(r_sm)
     if m < 8:
         return False
-    r_sm = r_sm[:m]
-    o_sm = o_sm[:m]
 
     half = m // 2
     tail_r = r_sm[half:]
@@ -321,9 +345,9 @@ def adaptive_equilibrate(
 
 
 def convergence_equilibrate(
+    *,
     sim_random: _Sim,
     sim_ordered: _Sim,
-    *,
     chunk_size: int = 500,
     max_steps: int = 200_000,
     qs_sigma_threshold: float = 0.05,
@@ -359,8 +383,8 @@ def convergence_equilibrate(
         Total number of MC steps run per simulation.
     """
     total, _ = convergence_equilibrate_with_status(
-        sim_random,
-        sim_ordered,
+        sim_random=sim_random,
+        sim_ordered=sim_ordered,
         chunk_size=chunk_size,
         max_steps=max_steps,
         qs_sigma_threshold=qs_sigma_threshold,
@@ -371,9 +395,9 @@ def convergence_equilibrate(
 
 
 def convergence_equilibrate_with_status(
+    *,
     sim_random: _Sim,
     sim_ordered: _Sim,
-    *,
     chunk_size: int = 500,
     max_steps: int = 200_000,
     qs_sigma_threshold: float = 0.05,
@@ -417,6 +441,13 @@ def convergence_equilibrate_with_status(
     mags_r = np.full(max_steps, np.nan, dtype=float)
     mags_o = np.full(max_steps, np.nan, dtype=float)
     total = 0
+    # Every convergence check re-analyzes the full accumulated trace, so
+    # checking after every chunk costs O(total^2 / chunk_size) over a long
+    # run. Once the trace is much longer than a chunk, space the checks
+    # geometrically (25% growth); the summed analysis cost then stays linear
+    # in max_steps. Convergence between two checks is caught at the next
+    # check, so equilibration can only end slightly later, never earlier.
+    next_check_total = 100
 
     while total < max_steps:
         # Run next chunk
@@ -434,7 +465,8 @@ def convergence_equilibrate_with_status(
 
         # Only check if we have enough data for a meaningful estimate
         # smooth_window defaults to 60, dwell_window to 60.
-        if total >= 100:
+        if total >= next_check_total:
+            next_check_total = total + max(chunk_size, total // 4)
             # Pass slices (views) to avoid copying
             trace_r = mags_r[:total]
             trace_o = mags_o[:total]
@@ -453,10 +485,10 @@ def convergence_equilibrate_with_status(
             if total >= qs_min_steps and _detect_quasi_steady_stuck(
                 trace_random=trace_r,
                 trace_ordered=trace_o,
-                k=float(kwargs.get('k', 1.0)),
-                smooth_window=int(kwargs.get('smooth_window', 60)),
+                k=float(kwargs.get('k', _TWO_START_DEFAULT_K)),
+                smooth_window=int(kwargs.get('smooth_window', _TWO_START_DEFAULT_SMOOTH_WINDOW)),
                 qs_sigma_threshold=qs_sigma_threshold,
-                sigma_floor=float(kwargs.get('sigma_floor', 0.02)),
+                sigma_floor=float(kwargs.get('sigma_floor', _TWO_START_DEFAULT_SIGMA_FLOOR)),
                 lattice_size=getattr(sim_random, 'size', None),
                 skip_validation=True,
             ):

@@ -849,7 +849,7 @@ class TestOrderingKineticsHelpers:
         from utils.kinetics_helpers import compute_mean_intercept_length
 
         sim = IsingSimulation(size=8, temp=1.5)
-        result = compute_mean_intercept_length(sim)
+        result = compute_mean_intercept_length(sim=sim)
         assert isinstance(result, float)
         assert result > 0.0
 
@@ -865,7 +865,7 @@ class TestOrderingKineticsHelpers:
         run_ordering_kinetics(
             model_cls=IsingSimulation,
             model_kwargs={},
-            third_metric_fn=compute_mean_intercept_length,
+            third_metric_fn=lambda s: compute_mean_intercept_length(sim=s),
             third_metric_label='MIL',
             title='Test Ising Kinetics',
             left_title='Coarsening',
@@ -978,6 +978,7 @@ class TestMiscScriptsMain:
         """Throughput benchmark main() execution."""
         import scripts.benchmarks.throughput as throughput
         monkeypatch.setattr('matplotlib.pyplot.savefig', lambda *args, **kwargs: None)
+        monkeypatch.setattr('matplotlib.figure.Figure.savefig', lambda *args, **kwargs: None)
         monkeypatch.setattr('matplotlib.pyplot.close', lambda *args, **kwargs: None)
         monkeypatch.setattr('os.makedirs', lambda *args, **kwargs: None)
         monkeypatch.setattr('numpy.savez', lambda *args, **kwargs: None)

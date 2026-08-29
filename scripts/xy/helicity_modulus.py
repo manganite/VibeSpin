@@ -38,14 +38,17 @@ def simulate_helicity(params: tuple[float, int, int, int, int]) -> float:
 
     sim_r = XYSimulation(size=L, temp=T, init_state='random')
     sim_o = XYSimulation(size=L, temp=T, init_state='ordered')
-    convergence_equilibrate(sim_r, sim_o, chunk_size=eq_probe_steps, max_steps=eq_max_steps)
+    convergence_equilibrate(
+        sim_random=sim_r, sim_ordered=sim_o,
+        chunk_size=eq_probe_steps, max_steps=eq_max_steps,
+    )
 
     cos_sums: np.ndarray = np.empty(meas_steps)
     sin_sums: np.ndarray = np.empty(meas_steps)
 
     for k in range(meas_steps):
         sim_r.step()
-        cos_sums[k], sin_sums[k] = sim_r._get_helicity_data()
+        cos_sums[k], sin_sums[k] = sim_r.get_helicity_data()
 
     # Formula: Upsilon = (1/L^2) * (<Sum cos> - (1/T) * <(Sum sin)^2>)
     avg_cos: float = float(np.mean(cos_sums))
@@ -77,7 +80,7 @@ def main() -> None:
     parser.add_argument('--log-file', type=str, default=None, help='Optional log file path')
     parser.add_argument('--verbose', action='store_true', help='Enable verbose logging')
 
-    args = parse_args_compat(parser)
+    args = parse_args_compat(parser=parser)
 
     # Configure logging
     log_level = logging.DEBUG if args.verbose else logging.INFO

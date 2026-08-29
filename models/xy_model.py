@@ -11,6 +11,7 @@ from numba import njit, prange
 
 from .simulation_base import (
     MonteCarloSimulation,
+    VectorSpinObservablesMixin,
     calculate_vortex_density_numba,
     calculate_vorticity_numba,
     get_helicity_data_numba,
@@ -370,7 +371,7 @@ def xy_wolff_step_numba(
     return spins, cluster_size
 
 
-class XYSimulation(MonteCarloSimulation):
+class XYSimulation(VectorSpinObservablesMixin, MonteCarloSimulation):
     """
     Simulation of the 2D XY model on a square lattice.
     """
@@ -565,14 +566,14 @@ def main() -> None:
         fig.colorbar(im1, ax=ax1, label='Phase (rad)', shrink=0.8)
 
     # Vorticity map
-    vort = sim._calculate_vorticity()
+    vort = sim.calculate_vorticity()
     im2 = ax2.imshow(vort, cmap='bwr', interpolation='none', vmin=-1, vmax=1)
     ax2.set_title(f'Vorticity (Total: {int(np.sum(np.abs(vort)))})')
     ax2.axis('off')
     fig.colorbar(im2, ax=ax2, ticks=[-1, 0, 1], label='Winding No.', shrink=0.8)
 
     # Spin-Spin Correlation Function
-    r, G_r = sim._calculate_correlation_function()
+    r, G_r = sim.calculate_correlation_function()
     ax3.plot(r[1:], G_r[1:], 'o-', markersize=3)
     ax3.set_title('Spin-Spin Correlation G(r)')
     ax3.set_xlabel('Distance r')

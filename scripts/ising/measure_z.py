@@ -57,7 +57,10 @@ def _measure_tau_point(
     sim_o = IsingSimulation(size=L, temp=TC_ISING, update=update, init_state='ordered', seed=seed)
 
     # Thorough equilibration at Tc via two-start convergence
-    convergence_equilibrate(sim_r, sim_o, chunk_size=eq_probe_steps, max_steps=eq_max_steps)
+    convergence_equilibrate(
+        sim_random=sim_r, sim_ordered=sim_o,
+        chunk_size=eq_probe_steps, max_steps=eq_max_steps,
+    )
 
     t0 = time.perf_counter()
     mags, _ = sim_r.run(n_steps=meas_steps)

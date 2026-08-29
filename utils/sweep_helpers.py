@@ -24,6 +24,8 @@ from utils.equilibration import convergence_equilibrate_with_status
 from utils.statistics import (
     UNCERTAINTY_METHOD_BOOTSTRAP,
     _z_multiplier,
+    blocking_error,
+    estimate_tau_int_or_nan,
     summarize_derived_observable,
     summarize_primary_observable,
     summarize_seed_ensemble,
@@ -239,8 +241,8 @@ def simulate_at_temperature(point: ThermoPoint) -> RawThermoData:
     )
 
     total_steps, converged = convergence_equilibrate_with_status(
-        sim_r,
-        sim_o,
+        sim_random=sim_r,
+        sim_ordered=sim_o,
         chunk_size=point.eq_probe_steps,
         max_steps=point.eq_max_steps,
         qs_sigma_threshold=point.eq_qs_sigma_threshold,
@@ -264,8 +266,8 @@ def simulate_at_temperature(point: ThermoPoint) -> RawThermoData:
     # switch to it when its magnetisation is substantially higher.
     active_sim = sim_r
     if point.prefer_ordered_start:
-        m_r = float(np.abs(sim_r._get_magnetization()))
-        m_o = float(np.abs(sim_o._get_magnetization()))
+        m_r = float(np.abs(sim_r.get_magnetization()))
+        m_o = float(np.abs(sim_o.get_magnetization()))
         if m_o > m_r + 0.2:
             active_sim = sim_o
 
@@ -329,13 +331,24 @@ def compute_thermo_observables(
     mags_arr = raw.mags_arr
     engs_arr = raw.engs_arr
 
+    # Blocking and autocorrelation are shared between the primary summary and
+    # the derived observable of the same series, so compute each exactly once.
+    mag_blocking = blocking_error(time_series=mags_arr)
+    mag_tau = estimate_tau_int_or_nan(time_series=mags_arr)
+    eng_blocking = blocking_error(time_series=engs_arr)
+    eng_tau = estimate_tau_int_or_nan(time_series=engs_arr)
+
     mag = summarize_primary_observable(
         time_series=mags_arr,
         confidence=point.confidence,
+        blocking=mag_blocking,
+        tau_int=mag_tau,
     )
     eng = summarize_primary_observable(
         time_series=engs_arr,
         confidence=point.confidence,
+        blocking=eng_blocking,
+        tau_int=eng_tau,
     )
     chi = summarize_derived_observable(
         magnetization_series=mags_arr,
@@ -345,6 +358,8 @@ def compute_thermo_observables(
         method=point.derived_method,
         confidence=point.confidence,
         bootstrap_resamples=point.bootstrap_resamples,
+        blocking=mag_blocking,
+        tau_int=mag_tau,
     )
     cv = summarize_derived_observable(
         energy_series=engs_arr,
@@ -354,6 +369,8 @@ def compute_thermo_observables(
         method=point.derived_method,
         confidence=point.confidence,
         bootstrap_resamples=point.bootstrap_resamples,
+        blocking=eng_blocking,
+        tau_int=eng_tau,
     )
 
     return {

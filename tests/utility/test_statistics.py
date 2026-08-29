@@ -607,7 +607,7 @@ def test_estimate_relaxation_time_two_start_short():
     """Should return 0 for very short traces."""
     r = np.array([0.1, 0.2])
     o = np.array([0.9, 0.8])
-    assert estimate_relaxation_time_two_start(r, o) == 0
+    assert estimate_relaxation_time_two_start(trace_random=r, trace_ordered=o) == 0
 
 
 def test_estimate_relaxation_time_two_start_no_convergence():
@@ -616,7 +616,7 @@ def test_estimate_relaxation_time_two_start_no_convergence():
     r = np.zeros(n)
     o = np.ones(n)
     # Use small k to ensure they don't accidentally converge
-    tau = estimate_relaxation_time_two_start(r, o, k=0.1)
+    tau = estimate_relaxation_time_two_start(trace_random=r, trace_ordered=o, k=0.1)
     assert tau == n
 
 

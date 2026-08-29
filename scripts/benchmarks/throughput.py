@@ -21,7 +21,7 @@ import numpy as np
 
 from models.clock_model import ClockSimulation, DiscreteClockSimulation
 from models.ising_model import IsingSimulation
-from models.simulation_base import MonteCarloSimulation
+from models.simulation_base import MonteCarloSimulation, VectorSpinObservablesMixin
 from models.xy_model import XYSimulation
 from utils.plotting import ensure_results_dir, save_plot
 
@@ -32,15 +32,13 @@ def measure_performance(
     """Measure sweeps/sec and analysis times for a simulation instance."""
     # Warm-up: trigger JIT
     sim.step()
-    sim._get_energy()
-    sim._get_magnetization()
-    sim._calculate_correlation_function()
-    if hasattr(sim, '_calculate_vorticity'):
-        sim._calculate_vorticity()
-    if hasattr(sim, '_get_vortex_density'):
-        sim._get_vortex_density()
-    if hasattr(sim, '_get_helicity_data'):
-        sim._get_helicity_data()
+    sim.get_energy()
+    sim.get_magnetization()
+    sim.calculate_correlation_function()
+    if isinstance(sim, VectorSpinObservablesMixin):
+        sim.calculate_vorticity()
+        sim.get_vortex_density()
+        sim.get_helicity_data()
 
     # 1. Sweep speed
     start = time.perf_counter()
@@ -52,38 +50,34 @@ def measure_performance(
     # 2. Thermodynamic measurements (Energy + Mag)
     start = time.perf_counter()
     for _ in range(analysis_iters):
-        sim._get_energy()
-        sim._get_magnetization()
+        sim.get_energy()
+        sim.get_magnetization()
     thermo_ms = (time.perf_counter() - start) / analysis_iters * 1000
 
     # 3. Correlation function G(r)
     start = time.perf_counter()
     for _ in range(analysis_iters):
-        sim._calculate_correlation_function()
+        sim.calculate_correlation_function()
     corr_ms = (time.perf_counter() - start) / analysis_iters * 1000
 
-    # 4. Vorticity
+    # 4-6. Topological observables (vector-spin models only)
     vort_ms = 0.0
-    if hasattr(sim, '_calculate_vorticity'):
+    vden_ms = 0.0
+    heli_ms = 0.0
+    if isinstance(sim, VectorSpinObservablesMixin):
         start = time.perf_counter()
         for _ in range(analysis_iters):
-            sim._calculate_vorticity()
+            sim.calculate_vorticity()
         vort_ms = (time.perf_counter() - start) / analysis_iters * 1000
 
-    # 5. Vortex Density
-    vden_ms = 0.0
-    if hasattr(sim, '_get_vortex_density'):
         start = time.perf_counter()
         for _ in range(analysis_iters):
-            sim._get_vortex_density()
+            sim.get_vortex_density()
         vden_ms = (time.perf_counter() - start) / analysis_iters * 1000
 
-    # 6. Helicity
-    heli_ms = 0.0
-    if hasattr(sim, '_get_helicity_data'):
         start = time.perf_counter()
         for _ in range(analysis_iters):
-            sim._get_helicity_data()
+            sim.get_helicity_data()
         heli_ms = (time.perf_counter() - start) / analysis_iters * 1000
 
     return {

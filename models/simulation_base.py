@@ -144,6 +144,44 @@ def get_helicity_data_numba(*, spins: np.ndarray, idx_next: np.ndarray) -> tuple
     return cos_sum, sin_sum
 
 
+class VectorSpinObservablesMixin:
+    """Public topological-observable accessors for vector-spin models.
+
+    Mixed into ``XYSimulation``, ``ClockSimulation``, and
+    ``DiscreteClockSimulation``, which each provide the private
+    implementations. Keeping the public wrappers here gives scripts and
+    analysis helpers a stable API without duplicating docstrings per model.
+    """
+
+    def calculate_vorticity(self) -> np.ndarray:
+        """Calculate the vorticity (winding number) of each plaquette.
+
+        Returns
+        -------
+            (N, N) array of winding numbers (+1, -1, or 0).
+        """
+        return self._calculate_vorticity()  # type: ignore[attr-defined]
+
+    def get_vortex_density(self) -> float:
+        """Calculate the vortex density n_v.
+
+        Returns
+        -------
+            Fraction of plaquettes with non-zero winding, in [0, 1].
+        """
+        return self._get_vortex_density()  # type: ignore[attr-defined]
+
+    def get_helicity_data(self) -> tuple[float, float]:
+        """Calculate the helicity-modulus raw sums along the x-direction.
+
+        Returns
+        -------
+            cos_sum: Sum of cosine of nearest-neighbor angle differences.
+            sin_sum: Sum of sine of nearest-neighbor angle differences.
+        """
+        return self._get_helicity_data()  # type: ignore[attr-defined]
+
+
 class MonteCarloSimulation(ABC):
     """
     Abstract base class for 2D lattice Monte Carlo simulations.
@@ -262,6 +300,42 @@ class MonteCarloSimulation(ABC):
 
         center = self.size // 2
         return self._r_range_pre, radial_profile[:center]
+
+    def get_magnetization(self) -> float:
+        """Return the current absolute magnetization per site.
+
+        Public accessor for scripts and analysis helpers; delegates to the
+        model-specific implementation.
+
+        Returns
+        -------
+            Absolute magnetization per site.
+        """
+        return self._get_magnetization()
+
+    def get_energy(self) -> float:
+        """Return the current energy per site.
+
+        Public accessor for scripts and analysis helpers; delegates to the
+        model-specific implementation.
+
+        Returns
+        -------
+            Energy per site.
+        """
+        return self._get_energy()
+
+    def calculate_correlation_function(self) -> tuple[np.ndarray, np.ndarray]:
+        """Calculate the radially averaged spin-spin correlation function G(r).
+
+        Public accessor for scripts and analysis helpers.
+
+        Returns
+        -------
+            r: Radial distances.
+            G_r: Radially averaged correlation values, normalized to G(0) = 1.
+        """
+        return self._calculate_correlation_function()
 
     def equilibrate(self, *, n_steps: int) -> None:
         """

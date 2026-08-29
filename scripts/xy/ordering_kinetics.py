@@ -32,7 +32,7 @@ def main() -> None:
     parser.add_argument('--log-file', type=str, default=None, help='Optional log file path')
     parser.add_argument('--verbose', action='store_true', help='Enable verbose logging')
 
-    args = parse_args_compat(parser)
+    args = parse_args_compat(parser=parser)
 
     log_level = logging.DEBUG if args.verbose else logging.INFO
     logger = setup_logging(level=log_level, log_file=args.log_file)
@@ -43,7 +43,7 @@ def main() -> None:
     run_ordering_kinetics(
         model_cls=XYSimulation,
         model_kwargs={},
-        third_metric_fn=lambda sim: sim._get_vortex_density(),
+        third_metric_fn=lambda sim: sim.get_vortex_density(),
         third_metric_label='Vortex Density $n_v(t)$',
         title=(
             f'2D XY Ordering Kinetics - $T = {args.temp}$'

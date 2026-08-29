@@ -46,7 +46,7 @@ def main() -> None:
     parser.add_argument('--log-file', type=str, default=None, help='Optional log file path')
     parser.add_argument('--verbose', action='store_true', help='Enable verbose logging')
 
-    args = parse_args_compat(parser)
+    args = parse_args_compat(parser=parser)
 
     # Configure logging
     log_level = logging.DEBUG if args.verbose else logging.INFO

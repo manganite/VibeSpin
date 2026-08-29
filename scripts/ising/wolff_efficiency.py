@@ -67,7 +67,10 @@ def _measure_efficiency_point(
     sim_m_o = IsingSimulation(
         size=L, temp=T, update='checkerboard', init_state='ordered', seed=seed
     )
-    convergence_equilibrate(sim_m_r, sim_m_o, chunk_size=eq_probe_steps, max_steps=eq_max_steps)
+    convergence_equilibrate(
+        sim_random=sim_m_r, sim_ordered=sim_m_o,
+        chunk_size=eq_probe_steps, max_steps=eq_max_steps,
+    )
 
     t0 = time.perf_counter()
     mags_m, engs_m = sim_m_r.run(n_steps=meas_steps)
@@ -90,7 +93,10 @@ def _measure_efficiency_point(
     # ---- Wolff cluster (tau_int and ISS via sim.run for clean timing) ----
     sim_w_r = IsingSimulation(size=L, temp=T, update='wolff', init_state='random', seed=seed + 1)
     sim_w_o = IsingSimulation(size=L, temp=T, update='wolff', init_state='ordered', seed=seed + 1)
-    convergence_equilibrate(sim_w_r, sim_w_o, chunk_size=eq_probe_steps, max_steps=eq_max_steps)
+    convergence_equilibrate(
+        sim_random=sim_w_r, sim_ordered=sim_w_o,
+        chunk_size=eq_probe_steps, max_steps=eq_max_steps,
+    )
 
     t0 = time.perf_counter()
     mags_w, engs_w = sim_w_r.run(n_steps=meas_steps)
@@ -114,7 +120,10 @@ def _measure_efficiency_point(
     cluster_steps = min(meas_steps, 300)
     sim_c_r = IsingSimulation(size=L, temp=T, update='wolff', init_state='random', seed=seed + 2)
     sim_c_o = IsingSimulation(size=L, temp=T, update='wolff', init_state='ordered', seed=seed + 2)
-    convergence_equilibrate(sim_c_r, sim_c_o, chunk_size=eq_probe_steps, max_steps=eq_max_steps)
+    convergence_equilibrate(
+        sim_random=sim_c_r, sim_ordered=sim_c_o,
+        chunk_size=eq_probe_steps, max_steps=eq_max_steps,
+    )
     _, _, cluster_sizes_arr = sim_c_r.run_with_cluster_sizes(n_steps=cluster_steps)
     mean_cluster_frac = float(np.mean(cluster_sizes_arr)) / (L * L)
 

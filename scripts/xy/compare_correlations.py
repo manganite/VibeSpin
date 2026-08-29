@@ -64,7 +64,7 @@ def simulate_correlation(
         size=L, temp=T, update='checkerboard', init_state='ordered', seed=seed,
     )
     _, converged = convergence_equilibrate_with_status(
-        sim_r, sim_o, chunk_size=eq_probe, max_steps=eq_max,
+        sim_random=sim_r, sim_ordered=sim_o, chunk_size=eq_probe, max_steps=eq_max,
     )
     sim_meas = sim_r if converged else sim_o
     if not converged:
@@ -88,7 +88,7 @@ def main() -> None:
     parser.add_argument('--log-file', type=str, default=None, help='Optional log file path')
     parser.add_argument('--verbose', action='store_true', help='Enable verbose logging')
 
-    args = parse_args_compat(parser)
+    args = parse_args_compat(parser=parser)
 
     # Configure logging
     log_level = logging.DEBUG if args.verbose else logging.INFO

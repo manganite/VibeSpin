@@ -515,7 +515,7 @@ def main() -> None:
     ax2.legend()
 
     # Correlation
-    r, G_r = sim._calculate_correlation_function()
+    r, G_r = sim.calculate_correlation_function()
     ax3.plot(r, G_r, 'o-', markersize=3)
     ax3.set_title('Spin-Spin Correlation G(r)')
     ax3.set_xlabel('Distance r')

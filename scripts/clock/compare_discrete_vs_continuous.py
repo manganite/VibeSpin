@@ -36,7 +36,10 @@ def sweep_model(
     for T in temperatures:
         sim_r = model_cls(size=L, temp=T, q=q, init_state='random', **extra_kwargs)
         sim_o = model_cls(size=L, temp=T, q=q, init_state='ordered', **extra_kwargs)
-        convergence_equilibrate(sim_r, sim_o, chunk_size=eq_probe_steps, max_steps=eq_max_steps)
+        convergence_equilibrate(
+            sim_random=sim_r, sim_ordered=sim_o,
+            chunk_size=eq_probe_steps, max_steps=eq_max_steps,
+        )
 
         mags, engs = sim_r.run(n_steps=meas_steps)
         avg_m, avg_e, susc, spec_h = calculate_thermodynamics(

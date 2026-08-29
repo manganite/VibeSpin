@@ -19,6 +19,7 @@ from numba import njit, prange
 
 from .simulation_base import (
     MonteCarloSimulation,
+    VectorSpinObservablesMixin,
     calculate_vortex_density_numba,
     calculate_vorticity_numba,
     get_helicity_data_numba,
@@ -433,7 +434,7 @@ def clock_wolff_step_numba(
     return spins, cluster_size
 
 
-class ClockSimulation(MonteCarloSimulation):
+class ClockSimulation(VectorSpinObservablesMixin, MonteCarloSimulation):
     """
     Simulation of the 2D q-state clock model on a square lattice.
     """
@@ -857,7 +858,7 @@ def discrete_clock_energy_numba(
     return energy / (N * N)
 
 
-class DiscreteClockSimulation(MonteCarloSimulation):
+class DiscreteClockSimulation(VectorSpinObservablesMixin, MonteCarloSimulation):
     """
     Simulation of the 2D q-state clock model with discrete integer spins.
 
@@ -1090,7 +1091,7 @@ def main() -> None:
     ax2.legend()
 
     # Vorticity map
-    vort = sim._calculate_vorticity()
+    vort = sim.calculate_vorticity()
     im2 = ax3.imshow(vort, cmap='bwr', interpolation='none', vmin=-1, vmax=1)
     ax3.set_title(f'Vorticity (Total: {int(np.sum(np.abs(vort)))})')
     ax3.axis('off')

@@ -150,7 +150,9 @@ def _measure_xi_eq(
     sim_o = IsingSimulation(
         size=size, temp=temp, update='checkerboard', init_state='ordered', seed=seed,
     )
-    convergence_equilibrate(sim_r, sim_o, chunk_size=eq_probe, max_steps=eq_max)
+    convergence_equilibrate(
+        sim_random=sim_r, sim_ordered=sim_o, chunk_size=eq_probe, max_steps=eq_max,
+    )
     r_eq, G_eq = get_averaged_correlation(
         sim=sim_r, total_steps=meas_steps, sample_interval=meas_interval,
     )
@@ -203,7 +205,7 @@ def main() -> None:
     # Seed control.
     parser.add_argument('--base-seed', type=int, default=42, help='Starting seed')
 
-    args = parse_args_compat(parser)
+    args = parse_args_compat(parser=parser)
 
     log_level = logging.DEBUG if args.verbose else logging.INFO
     logger = setup_logging(level=log_level, log_file=args.log_file)

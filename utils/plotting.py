@@ -16,6 +16,8 @@ from collections.abc import Mapping, Sequence
 import matplotlib.pyplot as plt
 import numpy as np
 
+from utils.observables import correlation_length_1e, radial_average_sk
+
 
 def ensure_results_dir(*, directory: str = 'results') -> str:
     """
@@ -34,127 +36,41 @@ def ensure_results_dir(*, directory: str = 'results') -> str:
     return directory
 
 
-def plot_ordering_evolution_snapshots(
+def save_plot(
     *,
-    targets: Sequence[int],
-    snapshots: Sequence[np.ndarray],
-    gr_data: Sequence[tuple[np.ndarray, np.ndarray]],
-    sk_data: Sequence[tuple[np.ndarray, np.ndarray]],
-    size: int,
-    temp: float,
-) -> tuple[plt.Figure, np.ndarray, list[float]]:
+    filename: str,
+    directory: str = 'results',
+    tight_layout: bool = True,
+    fig: plt.Figure | None = None,
+    close: bool = False,
+) -> None:
     """
-    Generate a 3-row diagnostic grid of ordering evolution snapshots.
-
-    Row 1 shows binary spin matrices. Row 2 shows the structure factor
-    :math:`S(|k|)` on log-log axes. Row 3 shows the spatial correlation
-    function G(r) with the 1/e crossing (correlation length xi) annotated.
-
-    Parameters
-    ----------
-        targets: Target Monte Carlo sweep counts for each column.
-        snapshots: Spin matrices, one per target.
-        gr_data: Correlation data tuples ``(r, G(r))``, one per target.
-        sk_data: Structure factor tuples ``(k, S(|k|))``, one per target.
-        size: Lattice size L used in the suptitle.
-        temp: Quench temperature used in the suptitle.
-
-    Returns
-    -------
-        fig: The matplotlib Figure object.
-        axes: The matplotlib Axes grid.
-        xi_values: List of extracted correlation lengths (np.nan if undefined).
-    """
-    n_cols = len(targets)
-    fig, axes = plt.subplots(
-        3, n_cols, figsize=(n_cols * 3.5, 10.5),
-        gridspec_kw={'hspace': 0.45, 'wspace': 0.25}
-    )
-    fig.suptitle(
-        f'Ising ordering evolution  (L = {size}, T = {temp})', fontsize=13, y=0.99
-    )
-    inv_e = 1.0 / np.e
-    xi_values = []
-
-    for col, target in enumerate(targets):
-        spins = snapshots[col]
-        r_ev, G_ev = gr_data[col]
-        k_vals, S_r = sk_data[col]
-
-        # Row 0: spin configuration
-        ax_s = axes[0, col]
-        ax_s.imshow(spins, cmap='binary', interpolation='none', vmin=-1, vmax=1)
-        ax_s.set_title(f't = {target} sweep{"s" if target != 1 else ""}', fontsize=11)
-        ax_s.axis('off')
-
-        # Row 1: structure factor S(|k|)
-        ax_sk = axes[1, col]
-        S_pos = S_r[1:]
-        k_pos = k_vals[1:]
-        has_positive = np.any(S_pos > 0)
-        if has_positive:
-            ax_sk.plot(k_pos[S_pos > 0], S_pos[S_pos > 0], lw=1.2)
-            ax_sk.set_xscale('log')
-            ax_sk.set_yscale('log')
-            ax_sk.grid(True, which='both', alpha=0.25)
-        else:
-            ax_sk.text(0.5, 0.5, 'fully\nordered', ha='center', va='center',
-                       transform=ax_sk.transAxes, fontsize=11, color='0.4')
-            ax_sk.set_axis_off()
-        ax_sk.set_xlabel('$|k|$', fontsize=9)
-        if col == 0:
-            ax_sk.set_ylabel('$S(|k|)$', fontsize=9)
-
-        # Row 2: G(r) with xi marked
-        ax_gr = axes[2, col]
-        r_plot, G_plot = r_ev[1:], G_ev[1:]
-        ax_gr.plot(r_plot, G_plot, lw=1.5)
-        ax_gr.axhline(0, color='tab:gray', lw=0.7, ls='--')
-        ax_gr.axhline(inv_e, color='tab:red', lw=0.8, ls=':', alpha=0.7, label='$1/e$')
-        ax_gr.set_xscale('log')
-        ax_gr.set_xlabel('Distance $r$', fontsize=9)
-        if col == 0:
-            ax_gr.set_ylabel('$G(r)/G(0)$', fontsize=9)
-        ax_gr.grid(True, which='both', alpha=0.3)
-        ax_gr.set_ylim(-0.1, 1.1)
-
-        below = np.where(G_plot < inv_e)[0]
-        if len(below) > 0:
-            idx = below[0]
-            xi = (
-                float(r_plot[idx - 1]) + (inv_e - float(G_plot[idx - 1]))
-                * (float(r_plot[idx]) - float(r_plot[idx - 1]))
-                / (float(G_plot[idx]) - float(G_plot[idx - 1]))
-                if idx > 0 else float(r_plot[idx])
-            )
-            ax_gr.axvline(xi, color='tab:red', lw=1.0, ls='--', alpha=0.8)
-            ax_gr.text(xi * 1.15, inv_e + 0.04, rf'$\xi = {xi:.1f}$', fontsize=9, color='tab:red')
-        else:
-            xi = float('nan')
-        xi_values.append(xi)
-
-    return fig, axes, xi_values
-
-
-def save_plot(*, filename: str, directory: str = 'results', tight_layout: bool = True) -> None:
-    """
-    Save the current matplotlib plot to the results directory.
+    Save a matplotlib figure to the results directory.
 
     Parameters
     ----------
         filename: Name of the output file (e.g., 'plot.png').
         directory: Output directory name.
-        tight_layout: Whether to apply plt.tight_layout() before saving.
+        tight_layout: Whether to apply tight_layout() before saving.
+        fig: Figure to save. Defaults to the current figure; passing it
+            explicitly removes the dependence on pyplot's global state and is
+            required for correctness when several figures are open.
+        close: Whether to close the figure after saving. Long-running sweeps
+            otherwise accumulate open figures in pyplot's global registry.
     """
     logger = logging.getLogger('vibespin')
     ensure_results_dir(directory=directory)
+    if fig is None:
+        fig = plt.gcf()
     if tight_layout:
         with warnings.catch_warnings():
             warnings.simplefilter('ignore', UserWarning)
-            plt.tight_layout()
+            fig.tight_layout()
     path = os.path.join(directory, filename)
-    plt.savefig(path)
+    fig.savefig(path)
     logger.info(f'Plot saved to {path}')
+    if close:
+        plt.close(fig)
 
 
 def plot_temperature_sweep(
@@ -497,7 +413,7 @@ def plot_temperature_sweep(
         if ax.get_visible():
             ax.set_xlabel('Temperature (T)')
 
-    save_plot(filename=filename, directory=directory)
+    save_plot(filename=filename, directory=directory, fig=fig, close=True)
 
     if not use_extra:
         return
@@ -713,7 +629,10 @@ def plot_temperature_sweep(
     else:
         ax6.set_visible(False)
 
-    save_plot(filename=diagnostics_filename, directory=directory, tight_layout=False)
+    save_plot(
+        filename=diagnostics_filename, directory=directory,
+        tight_layout=False, fig=diag_fig, close=True,
+    )
 
 
 def plot_ordering_kinetics(
@@ -804,7 +723,7 @@ def plot_ordering_kinetics(
     else:
         ax2.axis('off')
 
-    save_plot(filename=filename, directory=directory)
+    save_plot(filename=filename, directory=directory, fig=fig, close=True)
 
 
 def plot_ordering_evolution(
@@ -870,8 +789,6 @@ def plot_ordering_evolution(
             if col == n_cols - 1:
                 plt.colorbar(im_v, ax=ax_mid, ticks=[-1, 0, 1], label='Winding No.', shrink=0.8)
         else:
-            from .observables import radial_average_sk
-
             k_vals, S_radial = radial_average_sk(spins=spins)
             ax_mid.plot(k_vals[1:], S_radial[1:], linewidth=1.2)
             ax_mid.set_xscale('log')
@@ -899,19 +816,10 @@ def plot_ordering_evolution(
         ax_gr.grid(True, which='both', alpha=0.3)
         ax_gr.set_ylim(-0.1, 1.1)
 
-        # Find xi where G(r) first drops below 1/e
-        r_plot = r[1:]
-        G_plot = G[1:]
-        below = np.where(G_plot < inv_e)[0]
-        if len(below) > 0:
-            idx = below[0]
-            if idx > 0:
-                r0, r1 = float(r_plot[idx - 1]), float(r_plot[idx])
-                g0, g1 = float(G_plot[idx - 1]), float(G_plot[idx])
-                xi = r0 + (inv_e - g0) * (r1 - r0) / (g1 - g0)
-            else:
-                xi = float(r_plot[idx])
+        # Mark xi where G(r) first drops below 1/e (skipped when no crossing)
+        xi = correlation_length_1e(r=r[1:], G=G[1:])
+        if np.isfinite(xi):
             ax_gr.axvline(xi, color='tab:red', linewidth=1.0, linestyle='--', alpha=0.8)
             ax_gr.text(xi * 1.15, inv_e + 0.04, f'$\\xi = {xi:.1f}$', fontsize=9, color='tab:red')
 
-    save_plot(filename=filename, directory=directory)
+    save_plot(filename=filename, directory=directory, fig=fig, close=True)
