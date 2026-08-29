@@ -1,21 +1,23 @@
 repos:
   - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: v0.15.0
+    rev: v0.15.13
     hooks:
       - id: ruff-check
 
   - repo: https://github.com/pre-commit/mirrors-mypy
-    rev: v1.18.2
+    rev: v2.1.0
     hooks:
       - id: mypy
         args: [--explicit-package-bases, models/, utils/, scripts/]
         pass_filenames: false
+        # Keep these pins in sync with requirements.txt so the hook
+        # environment type-checks against the same versions as the venv.
         additional_dependencies:
-          - numpy
-          - matplotlib
-          - tqdm
-          - numba
-          - scipy
+          - numpy==2.4.6
+          - matplotlib==3.10.9
+          - tqdm==4.67.3
+          - numba==0.65.1
+          - scipy==1.17.1
 
   - repo: local
     hooks:
