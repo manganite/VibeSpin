@@ -7,6 +7,7 @@ Subpackages
 .. toctree::
    :maxdepth: 4
 
+   vibespin.scripts.benchmarks
    vibespin.scripts.clock
    vibespin.scripts.ising
    vibespin.scripts.xy

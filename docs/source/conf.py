@@ -61,8 +61,9 @@ myst_enable_extensions = [
     "amsmath",
 ]
 myst_heading_anchors = 3
+# Note: 'myst.xref_missing' is deliberately NOT suppressed; with -W this
+# makes dead internal anchors (e.g. broken citation links) fail the build.
 suppress_warnings = [
-    'myst.xref_missing',
     # CI docs jobs may omit ipywidgets; keep notebook docs buildable with -W.
     'nbsphinx.ipywidgets',
 ]

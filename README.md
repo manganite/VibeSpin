@@ -9,10 +9,10 @@ The implementation is optimized for speed, scalability, and physical repeatabili
 
 ## Project Policies & Scope Discipline
 
-VibeSpin enforces strict development policies for physical correctness, code quality, reproducibility, and documentation. All edits must follow the **Scope Discipline**: never change, rewrite, or delete code/text unrelated to the current task. See [AGENTS.md](./AGENTS.md) for the full list of mandatory development policies.
+VibeSpin enforces strict development policies for physical correctness, code quality, reproducibility, and documentation. All edits must follow the **Scope Discipline**: never change, rewrite, or delete code/text unrelated to the current task. See [AGENTS.md](https://github.com/manganite/VibeSpin/blob/master/AGENTS.md) for the full list of mandatory development policies.
 
 ## Reference Policy
-All references used in VibeSpin are listed in [BIBLIOGRAPHY.md](./BIBLIOGRAPHY.md). Reference policy and link validation are enforced as described in AGENTS.md.
+All references used in VibeSpin are listed in [BIBLIOGRAPHY.md](https://github.com/manganite/VibeSpin/blob/master/BIBLIOGRAPHY.md). Reference policy and link validation are enforced as described in AGENTS.md.
 
 ### Background and References
 The Ising model [[1]](#bibliography), XY model [[2]](#bibliography), and q-state Clock model [[3]](#bibliography) are canonical systems in statistical physics for studying phase transitions, critical phenomena, and topological defects. Monte Carlo methods, especially the Metropolis-Hastings algorithm [[4]](#bibliography), are standard for simulating these models. The Wolff cluster algorithm [[5]](#bibliography) is highly effective near criticality, reducing autocorrelation times by exploiting collective spin updates. For a comprehensive introduction to these models and algorithms, see the references below.
