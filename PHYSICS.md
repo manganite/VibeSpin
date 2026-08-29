@@ -163,7 +163,7 @@ $N_\mathrm{eff}$ is bounded above by $N$ and approaches it only when successive 
 
 ### Confidence Intervals and Conventions
 
-VibeSpin reports uncertainty intervals at a default confidence level of 68%, the one-sigma Gaussian equivalent. Under this convention the interval $[\bar{x} - \sigma_{\bar{x}},\, \bar{x} + \sigma_{\bar{x}}]$ contains the true mean with probability 0.68 for large samples from a normal distribution. This matches the standard physics convention of quoting a single symmetric error bar and is set by the constant `DEFAULT_CONFIDENCE_LEVEL = 0.68` in `utils/physics_helpers.py`.
+VibeSpin reports uncertainty intervals at a default confidence level of 68%, the one-sigma Gaussian equivalent. Under this convention the interval $[\bar{x} - \sigma_{\bar{x}},\, \bar{x} + \sigma_{\bar{x}}]$ contains the true mean with probability 0.68 for large samples from a normal distribution. This matches the standard physics convention of quoting a single symmetric error bar and is set by the constant `DEFAULT_CONFIDENCE_LEVEL = 0.68` in `utils/statistics.py`.
 
 When a time series has zero variance (a fully ordered configuration, for example), $\tau_{\mathrm{int}}$ is undefined. VibeSpin handles this explicitly: the `ZeroVarianceAutocorrelationError` exception is caught and the corresponding fields (`err`, `tau_int`, `n_eff`) are stored as `NaN` rather than silently defaulting to zero or propagating exceptions into the aggregation layer.
 

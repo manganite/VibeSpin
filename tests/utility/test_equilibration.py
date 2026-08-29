@@ -1,7 +1,7 @@
 # mypy: disable-error-code=no-untyped-def
 
 """
-Unit tests for system-related utility functions in utils/system_helpers.py.
+Unit tests for system-related utility functions in utils/equilibration.py.
 Covers logging, directory management, plotting, parallel execution,
 and adaptive equilibration.
 """

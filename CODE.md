@@ -74,16 +74,6 @@ The worker logic is split into two explicit layers. Layer 1, `simulate_at_temper
 
 Two post-processing helpers, `build_uncertainty_bundle` and `build_quality_flags`, aggregate per-seed per-temperature scalar results into the full `(T,)` and `(T, S)` arrays required by the NPZ schema. These were previously duplicated identically in all three scripts and are now the shared canonical implementations.
 
-### Sweep Worker Infrastructure
-
-The three temperature-sweep scripts (Ising, XY, Clock) share a two-layer worker architecture defined in `utils/sweep_helpers.py`. This module eliminates the ~300 lines of previously duplicated per-model worker code and centralizes the equilibration, measurement, and statistical summarization logic.
-
-The input to the worker is a `ThermoPoint` named tuple. It carries all configuration needed for one `(temperature, seed)` point: lattice size, measurement steps, equilibration parameters, model dispatch information (`model_cls` and `model_kwargs`), and statistical config (`confidence`, `derived_method`, `bootstrap_resamples`). Embedding statistical config as fields rather than module-level globals makes the payload fully self-contained and safe for multiprocessing dispatch, since workers receive all their configuration through the pickled payload rather than relying on shared global state.
-
-The worker logic is split into two explicit layers. Layer 1, `simulate_at_temperature`, owns the physics: it instantiates the simulation, runs the two-start convergence equilibration, executes the measurement sweep, and returns a `RawThermoData` named tuple containing the raw magnetization and energy arrays alongside equilibration diagnostics. Layer 2, `compute_thermo_observables`, owns the statistics: it calls the appropriate `utils/statistics.py` summarizers on the raw arrays and returns a flat `dict[str, float]` in the standard schema format. This separation means that the measurement and summarization concerns can be tested, profiled, and reasoned about independently. The `simulate_thermo_point` function chains both layers and is the function passed to `parallel_sweep` in all three sweep scripts.
-
-Two post-processing helpers, `build_uncertainty_bundle` and `build_quality_flags`, aggregate per-seed per-temperature scalar results into the full `(T,)` and `(T, S)` arrays required by the NPZ schema. These were previously duplicated identically in all three scripts and are now the shared canonical implementations.
-
 ### Ordering Kinetics and Evolution Helper Infrastructure
 
 The three ordering-kinetics scripts (Ising, XY, Clock) and the three ordering-evolution scripts share simulation loops that were previously duplicated across each model. These loops are now centralized in two utility modules.
@@ -96,7 +86,7 @@ The three kinetics scripts and three evolution scripts are now thin wrappers: ea
 
 ## Bibliography
 
-The engineering and algorithmic choices in VibeSpin are grounded in standard practices for scientific computing and statistical physics. For a comprehensive list of all references used in the project, see [BIBLIOGRAPHY.md](./bibliography.md).
+The engineering and algorithmic choices in VibeSpin are grounded in standard practices for scientific computing and statistical physics. For a comprehensive list of all references used in the project, see [BIBLIOGRAPHY.md](./BIBLIOGRAPHY.md).
 
 [[1]](#Bibliography) W. K. Hastings, "Monte Carlo sampling methods using Markov chains and their applications," *Biometrika*, vol. 57, no. 1, pp. 97–109, 1970. [Oxford Academic Open Access](https://academic.oup.com/biomet/article/57/1/97/252073)
 
