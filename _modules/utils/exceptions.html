@@ -92,28 +92,28 @@
            <div itemprop="articleBody">
              
   <h1>Source code for utils.exceptions</h1><div class="highlight"><pre>
-<span></span><span class="sd">&quot;&quot;&quot;Project-specific exception types for analysis and runtime failures.&quot;&quot;&quot;</span>
+<span></span><span class="sd">"""Project-specific exception types for analysis and runtime failures."""</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">__future__</span><span class="w"> </span><span class="kn">import</span> <span class="n">annotations</span>
 
 
 <div class="viewcode-block" id="VibeSpinError">
 <a class="viewcode-back" href="../../api/vibespin.utils.html#utils.exceptions.VibeSpinError">[docs]</a>
 <span class="k">class</span><span class="w"> </span><span class="nc">VibeSpinError</span><span class="p">(</span><span class="ne">Exception</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Base class for project-specific exceptions.&quot;&quot;&quot;</span></div>
+<span class="w">    </span><span class="sd">"""Base class for project-specific exceptions."""</span></div>
 
 
 
 <div class="viewcode-block" id="NumericalAnalysisError">
 <a class="viewcode-back" href="../../api/vibespin.utils.html#utils.exceptions.NumericalAnalysisError">[docs]</a>
 <span class="k">class</span><span class="w"> </span><span class="nc">NumericalAnalysisError</span><span class="p">(</span><span class="n">VibeSpinError</span><span class="p">,</span> <span class="ne">RuntimeError</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Base class for mathematically undefined or failed analysis results.&quot;&quot;&quot;</span></div>
+<span class="w">    </span><span class="sd">"""Base class for mathematically undefined or failed analysis results."""</span></div>
 
 
 
 <div class="viewcode-block" id="ZeroVarianceAutocorrelationError">
 <a class="viewcode-back" href="../../api/vibespin.utils.html#utils.exceptions.ZeroVarianceAutocorrelationError">[docs]</a>
 <span class="k">class</span><span class="w"> </span><span class="nc">ZeroVarianceAutocorrelationError</span><span class="p">(</span><span class="n">NumericalAnalysisError</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Raised when autocorrelation is undefined because the series variance is zero.&quot;&quot;&quot;</span></div>
+<span class="w">    </span><span class="sd">"""Raised when autocorrelation is undefined because the series variance is zero."""</span></div>
 
 </pre></div>
 

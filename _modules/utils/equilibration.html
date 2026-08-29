@@ -92,7 +92,7 @@
            <div itemprop="articleBody">
              
   <h1>Source code for utils.equilibration</h1><div class="highlight"><pre>
-<span></span><span class="sd">&quot;&quot;&quot;Equilibration algorithms for Monte Carlo simulations.</span>
+<span></span><span class="sd">"""Equilibration algorithms for Monte Carlo simulations.</span>
 
 <span class="sd">Provides adaptive and two-start convergence equilibration routines, together</span>
 <span class="sd">with the underlying relaxation-time estimation and quasi-steady-state detection</span>
@@ -100,7 +100,7 @@
 <span class="sd">``utils.system`` (equilibrate functions) and ``utils.analysis``</span>
 <span class="sd">(relaxation diagnostic helpers), which required a lazy cross-import to avoid</span>
 <span class="sd">circular dependencies.  Unifying them here eliminates that workaround.</span>
-<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">"""</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">__future__</span><span class="w"> </span><span class="kn">import</span> <span class="n">annotations</span>
 
 <span class="kn">import</span><span class="w"> </span><span class="nn">logging</span>
@@ -116,7 +116,7 @@
 
 
 <span class="k">class</span><span class="w"> </span><span class="nc">_Sim</span><span class="p">(</span><span class="n">Protocol</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Structural type for any MonteCarloSimulation; avoids a models/ → utils/ import.&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""Structural type for any MonteCarloSimulation; avoids a models/ → utils/ import."""</span>
 
     <span class="n">size</span><span class="p">:</span> <span class="nb">int</span>
 
@@ -131,7 +131,7 @@
 
 
 <span class="k">def</span><span class="w"> </span><span class="nf">_valid_prefix</span><span class="p">(</span><span class="n">x</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Return the non-NaN prefix from a padded trajectory.&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""Return the non-NaN prefix from a padded trajectory."""</span>
     <span class="n">valid</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">isfinite</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
     <span class="k">if</span> <span class="ow">not</span> <span class="n">np</span><span class="o">.</span><span class="n">any</span><span class="p">(</span><span class="n">valid</span><span class="p">):</span>
         <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">empty</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">float</span><span class="p">)</span>
@@ -141,7 +141,7 @@
 
 <span class="k">def</span><span class="w"> </span><span class="nf">_moving_average</span><span class="p">(</span><span class="n">x</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">window</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
     <span class="n">window</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="nb">min</span><span class="p">(</span><span class="n">window</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">x</span><span class="p">)))</span>
-    <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">convolve</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="n">window</span><span class="p">)</span> <span class="o">/</span> <span class="n">window</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="s1">&#39;valid&#39;</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">convolve</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="n">window</span><span class="p">)</span> <span class="o">/</span> <span class="n">window</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="s1">'valid'</span><span class="p">)</span>
 
 
 <span class="c1"># ---------------------------------------------------------------------------</span>
@@ -149,11 +149,11 @@
 <span class="c1"># ---------------------------------------------------------------------------</span>
 
 <span class="n">_QS_SIGMA_REF_L</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">32</span>
-<span class="sd">&quot;&quot;&quot;Reference lattice side-length for ``_detect_quasi_steady_stuck`` threshold scaling.</span>
+<span class="sd">"""Reference lattice side-length for ``_detect_quasi_steady_stuck`` threshold scaling.</span>
 
 <span class="sd">The ``qs_sigma_threshold`` parameter is calibrated at this L and scaled</span>
 <span class="sd">proportionally as ``threshold * _QS_SIGMA_REF_L / lattice_size`` for other sizes.</span>
-<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">"""</span>
 
 
 <div class="viewcode-block" id="estimate_relaxation_time_two_start">
@@ -169,7 +169,7 @@
     <span class="n">sigma_floor</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.02</span><span class="p">,</span>
     <span class="n">skip_validation</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Estimate thermalization time from convergence of random- and ordered-start traces.</span>
+<span class="w">    </span><span class="sd">"""Estimate thermalization time from convergence of random- and ordered-start traces.</span>
 
 <span class="sd">    Compares a trajectory started from a random spin configuration against one</span>
 <span class="sd">    started from a fully ordered configuration.  Returns the first step at which</span>
@@ -201,11 +201,11 @@
 <span class="sd">    -------</span>
 <span class="sd">        Estimated relaxation time as a 0-indexed position in the original input</span>
 <span class="sd">        traces (i.e. a sweep count minus one).  The first index at which both</span>
-<span class="sd">        smoothed traces have been mutually inside each other&#39;s band for</span>
+<span class="sd">        smoothed traces have been mutually inside each other's band for</span>
 <span class="sd">        ``dwell_window`` steps is mapped back to the corresponding raw-trace</span>
 <span class="sd">        position as ``hits[0] + smooth_window - 1``.  Returns ``n`` (full trace</span>
 <span class="sd">        length) if no convergence is detected, or ``0`` for very short traces.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="k">if</span> <span class="n">skip_validation</span><span class="p">:</span>
         <span class="n">r</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">trace_random</span><span class="p">)</span>
         <span class="n">o</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">trace_ordered</span><span class="p">)</span>
@@ -234,14 +234,14 @@
     <span class="n">sig_r</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="nb">float</span><span class="p">(</span><span class="n">tail_r</span><span class="o">.</span><span class="n">std</span><span class="p">()),</span> <span class="n">sigma_floor</span><span class="p">)</span>
     <span class="n">sig_o</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="nb">float</span><span class="p">(</span><span class="n">tail_o</span><span class="o">.</span><span class="n">std</span><span class="p">()),</span> <span class="n">sigma_floor</span><span class="p">)</span>
 
-    <span class="c1"># Mutual cross-band test: each trace must be inside the other trace&#39;s band</span>
-    <span class="n">in_o_band</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">r_sm</span> <span class="o">-</span> <span class="n">mu_o</span><span class="p">)</span> <span class="o">&lt;=</span> <span class="n">k</span> <span class="o">*</span> <span class="n">sig_o</span>  <span class="c1"># random inside ordered&#39;s band</span>
-    <span class="n">in_r_band</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">o_sm</span> <span class="o">-</span> <span class="n">mu_r</span><span class="p">)</span> <span class="o">&lt;=</span> <span class="n">k</span> <span class="o">*</span> <span class="n">sig_r</span>  <span class="c1"># ordered inside random&#39;s band</span>
+    <span class="c1"># Mutual cross-band test: each trace must be inside the other trace's band</span>
+    <span class="n">in_o_band</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">r_sm</span> <span class="o">-</span> <span class="n">mu_o</span><span class="p">)</span> <span class="o">&lt;=</span> <span class="n">k</span> <span class="o">*</span> <span class="n">sig_o</span>  <span class="c1"># random inside ordered's band</span>
+    <span class="n">in_r_band</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">o_sm</span> <span class="o">-</span> <span class="n">mu_r</span><span class="p">)</span> <span class="o">&lt;=</span> <span class="n">k</span> <span class="o">*</span> <span class="n">sig_r</span>  <span class="c1"># ordered inside random's band</span>
     <span class="n">both_inside</span> <span class="o">=</span> <span class="p">(</span><span class="n">in_o_band</span> <span class="o">&amp;</span> <span class="n">in_r_band</span><span class="p">)</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">float</span><span class="p">)</span>
 
     <span class="n">dwell_window</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="nb">min</span><span class="p">(</span><span class="n">dwell_window</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">both_inside</span><span class="p">)))</span>
     <span class="n">sustained_fraction</span> <span class="o">=</span> <span class="p">(</span>
-        <span class="n">np</span><span class="o">.</span><span class="n">convolve</span><span class="p">(</span><span class="n">both_inside</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="n">dwell_window</span><span class="p">),</span> <span class="n">mode</span><span class="o">=</span><span class="s1">&#39;valid&#39;</span><span class="p">)</span> <span class="o">/</span> <span class="n">dwell_window</span>
+        <span class="n">np</span><span class="o">.</span><span class="n">convolve</span><span class="p">(</span><span class="n">both_inside</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="n">dwell_window</span><span class="p">),</span> <span class="n">mode</span><span class="o">=</span><span class="s1">'valid'</span><span class="p">)</span> <span class="o">/</span> <span class="n">dwell_window</span>
     <span class="p">)</span>
 
     <span class="n">hits</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">sustained_fraction</span> <span class="o">&gt;=</span> <span class="n">min_fraction_inside</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
@@ -260,7 +260,7 @@
     <span class="n">lattice_size</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">skip_validation</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Detect low-temperature stuck states in two-start equilibration.</span>
+<span class="w">    </span><span class="sd">"""Detect low-temperature stuck states in two-start equilibration.</span>
 
 <span class="sd">    A stuck state is declared when the ordered-start trace has settled</span>
 <span class="sd">    (small tail variance, as expected for any equilibrated state) but the</span>
@@ -280,7 +280,7 @@
 <span class="sd">    constant safety margin between the threshold and the thermal ordered-trace</span>
 <span class="sd">    variance at any system size.  At ``lattice_size = _QS_SIGMA_REF_L`` the</span>
 <span class="sd">    effective threshold equals ``qs_sigma_threshold`` exactly.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="k">if</span> <span class="n">skip_validation</span><span class="p">:</span>
         <span class="n">r</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">trace_random</span><span class="p">)</span>
         <span class="n">o</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">trace_ordered</span><span class="p">)</span>
@@ -348,7 +348,7 @@
     <span class="n">factor</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">50.0</span><span class="p">,</span>
     <span class="n">max_steps</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">200_000</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Equilibrate a simulation adaptively, extending the burn-in until the probe</span>
 <span class="sd">    window covers ``factor`` integrated autocorrelation times.</span>
 
@@ -377,21 +377,21 @@
 <span class="sd">    Raises</span>
 <span class="sd">    ------</span>
 <span class="sd">        ValueError: If the adaptive-equilibration parameters are invalid.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="kn">from</span><span class="w"> </span><span class="nn">utils.statistics</span><span class="w"> </span><span class="kn">import</span> <span class="n">calculate_autocorr</span>  <span class="c1"># lazy import; avoids pickle issues</span>
 
     <span class="k">if</span> <span class="n">min_steps</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">:</span>
-        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;min_steps must be non-negative, got </span><span class="si">{</span><span class="n">min_steps</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s1">'min_steps must be non-negative, got </span><span class="si">{</span><span class="n">min_steps</span><span class="si">}</span><span class="s1">'</span><span class="p">)</span>
     <span class="k">if</span> <span class="n">probe_steps</span> <span class="o">&lt;</span> <span class="mi">3</span><span class="p">:</span>
-        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;probe_steps must be &gt;= 3, got </span><span class="si">{</span><span class="n">probe_steps</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s1">'probe_steps must be &gt;= 3, got </span><span class="si">{</span><span class="n">probe_steps</span><span class="si">}</span><span class="s1">'</span><span class="p">)</span>
     <span class="k">if</span> <span class="n">factor</span> <span class="o">&lt;=</span> <span class="mf">0.0</span><span class="p">:</span>
-        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;factor must be positive, got </span><span class="si">{</span><span class="n">factor</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s1">'factor must be positive, got </span><span class="si">{</span><span class="n">factor</span><span class="si">}</span><span class="s1">'</span><span class="p">)</span>
     <span class="k">if</span> <span class="n">max_steps</span> <span class="o">&lt;</span> <span class="n">min_steps</span><span class="p">:</span>
         <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
-            <span class="sa">f</span><span class="s1">&#39;max_steps must be &gt;= min_steps, got max_steps=</span><span class="si">{</span><span class="n">max_steps</span><span class="si">}</span><span class="s1"> and min_steps=</span><span class="si">{</span><span class="n">min_steps</span><span class="si">}</span><span class="s1">&#39;</span>
+            <span class="sa">f</span><span class="s1">'max_steps must be &gt;= min_steps, got max_steps=</span><span class="si">{</span><span class="n">max_steps</span><span class="si">}</span><span class="s1"> and min_steps=</span><span class="si">{</span><span class="n">min_steps</span><span class="si">}</span><span class="s1">'</span>
         <span class="p">)</span>
 
-    <span class="n">logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="s1">&#39;vibespin&#39;</span><span class="p">)</span>
+    <span class="n">logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="s1">'vibespin'</span><span class="p">)</span>
     <span class="n">sim</span><span class="o">.</span><span class="n">equilibrate</span><span class="p">(</span><span class="n">n_steps</span><span class="o">=</span><span class="n">min_steps</span><span class="p">)</span>
     <span class="n">total</span> <span class="o">=</span> <span class="n">min_steps</span>
 
@@ -407,9 +407,9 @@
             <span class="k">return</span> <span class="n">total</span>
 
     <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span>
-        <span class="sa">f</span><span class="s1">&#39;adaptive_equilibrate: reached max_steps=</span><span class="si">{</span><span class="n">max_steps</span><span class="si">}</span><span class="s1"> without satisfying &#39;</span>
-        <span class="sa">f</span><span class="s1">&#39;criterion probe_steps(</span><span class="si">{</span><span class="n">probe_steps</span><span class="si">}</span><span class="s1">) &gt;= factor(</span><span class="si">{</span><span class="n">factor</span><span class="si">}</span><span class="s1">) * tau_int; &#39;</span>
-        <span class="s1">&#39;proceeding anyway.&#39;</span>
+        <span class="sa">f</span><span class="s1">'adaptive_equilibrate: reached max_steps=</span><span class="si">{</span><span class="n">max_steps</span><span class="si">}</span><span class="s1"> without satisfying '</span>
+        <span class="sa">f</span><span class="s1">'criterion probe_steps(</span><span class="si">{</span><span class="n">probe_steps</span><span class="si">}</span><span class="s1">) &gt;= factor(</span><span class="si">{</span><span class="n">factor</span><span class="si">}</span><span class="s1">) * tau_int; '</span>
+        <span class="s1">'proceeding anyway.'</span>
     <span class="p">)</span>
     <span class="k">return</span> <span class="n">total</span></div>
 
@@ -432,12 +432,12 @@
     <span class="n">qs_min_steps</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">1500</span><span class="p">,</span>
     <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Equilibrate two simulations (random- and ordered-start) until they converge.</span>
 
 <span class="sd">    Uses ``estimate_relaxation_time_two_start`` to detect convergence via the</span>
 <span class="sd">    mutual cross-band criterion: each smoothed trajectory must enter and sustain</span>
-<span class="sd">    a band defined by the other trajectory&#39;s tail statistics.  A sigma floor</span>
+<span class="sd">    a band defined by the other trajectory's tail statistics.  A sigma floor</span>
 <span class="sd">    prevents false positives when one trace is nearly flat.  This is more robust</span>
 <span class="sd">    than one-start adaptive methods for complex energy landscapes.</span>
 
@@ -459,7 +459,7 @@
 <span class="sd">    Returns</span>
 <span class="sd">    -------</span>
 <span class="sd">        Total number of MC steps run per simulation.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="n">total</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">convergence_equilibrate_with_status</span><span class="p">(</span>
         <span class="n">sim_random</span><span class="p">,</span>
         <span class="n">sim_ordered</span><span class="p">,</span>
@@ -486,12 +486,12 @@
     <span class="n">qs_allow_stuck</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
     <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">bool</span><span class="p">]:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Equilibrate two simulations and report whether convergence was reached.</span>
 
 <span class="sd">    Uses ``estimate_relaxation_time_two_start`` to detect convergence via the</span>
 <span class="sd">    mutual cross-band criterion: each smoothed trajectory must enter and sustain</span>
-<span class="sd">    a band defined by the other trajectory&#39;s tail statistics.  A sigma floor</span>
+<span class="sd">    a band defined by the other trajectory's tail statistics.  A sigma floor</span>
 <span class="sd">    prevents false positives when one trace is nearly flat.  This variant returns</span>
 <span class="sd">    both the total number of MC steps executed and a boolean convergence flag.</span>
 
@@ -517,8 +517,8 @@
 <span class="sd">    Returns</span>
 <span class="sd">    -------</span>
 <span class="sd">        Tuple ``(total_steps, converged)``.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
-    <span class="n">logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="s1">&#39;vibespin&#39;</span><span class="p">)</span>
+<span class="sd">    """</span>
+    <span class="n">logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="s1">'vibespin'</span><span class="p">)</span>
     <span class="n">mags_r</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">full</span><span class="p">(</span><span class="n">max_steps</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">nan</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">float</span><span class="p">)</span>
     <span class="n">mags_o</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">full</span><span class="p">(</span><span class="n">max_steps</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">nan</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">float</span><span class="p">)</span>
     <span class="n">total</span> <span class="o">=</span> <span class="mi">0</span>
@@ -558,29 +558,29 @@
             <span class="k">if</span> <span class="n">total</span> <span class="o">&gt;=</span> <span class="n">qs_min_steps</span> <span class="ow">and</span> <span class="n">_detect_quasi_steady_stuck</span><span class="p">(</span>
                 <span class="n">trace_random</span><span class="o">=</span><span class="n">trace_r</span><span class="p">,</span>
                 <span class="n">trace_ordered</span><span class="o">=</span><span class="n">trace_o</span><span class="p">,</span>
-                <span class="n">k</span><span class="o">=</span><span class="nb">float</span><span class="p">(</span><span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;k&#39;</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">)),</span>
-                <span class="n">smooth_window</span><span class="o">=</span><span class="nb">int</span><span class="p">(</span><span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;smooth_window&#39;</span><span class="p">,</span> <span class="mi">60</span><span class="p">)),</span>
+                <span class="n">k</span><span class="o">=</span><span class="nb">float</span><span class="p">(</span><span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">'k'</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">)),</span>
+                <span class="n">smooth_window</span><span class="o">=</span><span class="nb">int</span><span class="p">(</span><span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">'smooth_window'</span><span class="p">,</span> <span class="mi">60</span><span class="p">)),</span>
                 <span class="n">qs_sigma_threshold</span><span class="o">=</span><span class="n">qs_sigma_threshold</span><span class="p">,</span>
-                <span class="n">sigma_floor</span><span class="o">=</span><span class="nb">float</span><span class="p">(</span><span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;sigma_floor&#39;</span><span class="p">,</span> <span class="mf">0.02</span><span class="p">)),</span>
-                <span class="n">lattice_size</span><span class="o">=</span><span class="nb">getattr</span><span class="p">(</span><span class="n">sim_random</span><span class="p">,</span> <span class="s1">&#39;size&#39;</span><span class="p">,</span> <span class="kc">None</span><span class="p">),</span>
+                <span class="n">sigma_floor</span><span class="o">=</span><span class="nb">float</span><span class="p">(</span><span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">'sigma_floor'</span><span class="p">,</span> <span class="mf">0.02</span><span class="p">)),</span>
+                <span class="n">lattice_size</span><span class="o">=</span><span class="nb">getattr</span><span class="p">(</span><span class="n">sim_random</span><span class="p">,</span> <span class="s1">'size'</span><span class="p">,</span> <span class="kc">None</span><span class="p">),</span>
                 <span class="n">skip_validation</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
             <span class="p">):</span>
                 <span class="k">if</span> <span class="n">qs_allow_stuck</span><span class="p">:</span>
                     <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
-                        <span class="s1">&#39;convergence_equilibrate: detected stable quasi-steady stuck state; &#39;</span>
-                        <span class="s1">&#39;stopping early and accepting ordered start.&#39;</span>
+                        <span class="s1">'convergence_equilibrate: detected stable quasi-steady stuck state; '</span>
+                        <span class="s1">'stopping early and accepting ordered start.'</span>
                     <span class="p">)</span>
                     <span class="k">return</span> <span class="n">total</span><span class="p">,</span> <span class="kc">True</span>
 
                 <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span>
-                    <span class="s1">&#39;convergence_equilibrate: detected quasi-steady stuck state &#39;</span>
-                    <span class="sa">f</span><span class="s1">&#39;before max_steps=</span><span class="si">{</span><span class="n">max_steps</span><span class="si">}</span><span class="s1">; stopping early without convergence.&#39;</span>
+                    <span class="s1">'convergence_equilibrate: detected quasi-steady stuck state '</span>
+                    <span class="sa">f</span><span class="s1">'before max_steps=</span><span class="si">{</span><span class="n">max_steps</span><span class="si">}</span><span class="s1">; stopping early without convergence.'</span>
                 <span class="p">)</span>
                 <span class="k">return</span> <span class="n">total</span><span class="p">,</span> <span class="kc">False</span>
 
     <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span>
-        <span class="sa">f</span><span class="s1">&#39;convergence_equilibrate: reached max_steps=</span><span class="si">{</span><span class="n">max_steps</span><span class="si">}</span><span class="s1"> without convergence; &#39;</span>
-        <span class="s1">&#39;proceeding anyway.&#39;</span>
+        <span class="sa">f</span><span class="s1">'convergence_equilibrate: reached max_steps=</span><span class="si">{</span><span class="n">max_steps</span><span class="si">}</span><span class="s1"> without convergence; '</span>
+        <span class="s1">'proceeding anyway.'</span>
     <span class="p">)</span>
     <span class="k">return</span> <span class="n">total</span><span class="p">,</span> <span class="kc">False</span></div>
 

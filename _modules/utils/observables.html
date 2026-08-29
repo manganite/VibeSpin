@@ -92,9 +92,9 @@
            <div itemprop="articleBody">
              
   <h1>Source code for utils.observables</h1><div class="highlight"><pre>
-<span></span><span class="sd">&quot;&quot;&quot;</span>
+<span></span><span class="sd">"""</span>
 <span class="sd">Physics-related utility functions for calculating thermodynamic observables and correlations.</span>
-<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">"""</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">__future__</span><span class="w"> </span><span class="kn">import</span> <span class="n">annotations</span>
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Protocol</span>
@@ -104,7 +104,7 @@
 
 
 <span class="k">class</span><span class="w"> </span><span class="nc">_Sim</span><span class="p">(</span><span class="n">Protocol</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Structural type for any MonteCarloSimulation; avoids a models/ → utils/ import.&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""Structural type for any MonteCarloSimulation; avoids a models/ → utils/ import."""</span>
 
     <span class="n">spins</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span> <span class="o">|</span> <span class="kc">None</span>
 
@@ -118,7 +118,7 @@
 <span class="k">def</span><span class="w"> </span><span class="nf">calculate_thermodynamics</span><span class="p">(</span>
     <span class="o">*</span><span class="p">,</span> <span class="n">mags</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">engs</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">T</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">L</span><span class="p">:</span> <span class="nb">int</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">float</span><span class="p">,</span> <span class="nb">float</span><span class="p">,</span> <span class="nb">float</span><span class="p">,</span> <span class="nb">float</span><span class="p">]:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Calculate average magnetization, energy, susceptibility, and specific heat.</span>
 
 <span class="sd">    Parameters</span>
@@ -135,11 +135,11 @@
 <span class="sd">    Raises</span>
 <span class="sd">    ------</span>
 <span class="sd">        ValueError: If ``T`` is not positive or ``L`` is not a positive integer.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="k">if</span> <span class="n">T</span> <span class="o">&lt;=</span> <span class="mf">0.0</span><span class="p">:</span>
-        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;T must be positive (T &gt; 0), got </span><span class="si">{</span><span class="n">T</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s1">'T must be positive (T &gt; 0), got </span><span class="si">{</span><span class="n">T</span><span class="si">}</span><span class="s1">'</span><span class="p">)</span>
     <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">L</span><span class="p">,</span> <span class="p">(</span><span class="nb">int</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">integer</span><span class="p">))</span> <span class="ow">or</span> <span class="n">L</span> <span class="o">&lt;</span> <span class="mi">1</span><span class="p">:</span>
-        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;L must be a positive integer, got </span><span class="si">{</span><span class="n">L</span><span class="si">!r}</span><span class="s1">&#39;</span><span class="p">)</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s1">'L must be a positive integer, got </span><span class="si">{</span><span class="n">L</span><span class="si">!r}</span><span class="s1">'</span><span class="p">)</span>
     <span class="n">avg_mag</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">mags</span><span class="p">))</span>
     <span class="n">avg_eng</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">engs</span><span class="p">))</span>
     <span class="n">N</span> <span class="o">=</span> <span class="n">L</span> <span class="o">*</span> <span class="n">L</span>
@@ -162,11 +162,11 @@
     <span class="n">specific_heat</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
     <span class="n">s_ref</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.0</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Compute entropy by integrating specific heat over a temperature sweep.</span>
 
 <span class="sd">    Integrates C(T)/T from high temperature downward so that</span>
-<span class="sd">    S(T_max) = ``s_ref`` and S(T) = s_ref - integral from T to T_max of C/T dT&#39;.</span>
+<span class="sd">    S(T_max) = ``s_ref`` and S(T) = s_ref - integral from T to T_max of C/T dT'.</span>
 <span class="sd">    This avoids the C/T divergence near T = 0 and anchors the result at the</span>
 <span class="sd">    high-temperature limit where the entropy is analytically known.</span>
 
@@ -187,19 +187,19 @@
 <span class="sd">    ------</span>
 <span class="sd">        ValueError: If arrays differ in length, contain fewer than 2 points,</span>
 <span class="sd">            or include non-positive temperatures.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="n">temperatures</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">temperatures</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">)</span>
     <span class="n">specific_heat</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">specific_heat</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">)</span>
 
     <span class="k">if</span> <span class="n">temperatures</span><span class="o">.</span><span class="n">shape</span> <span class="o">!=</span> <span class="n">specific_heat</span><span class="o">.</span><span class="n">shape</span><span class="p">:</span>
         <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
-            <span class="sa">f</span><span class="s1">&#39;temperatures and specific_heat must have the same shape, &#39;</span>
-            <span class="sa">f</span><span class="s1">&#39;got </span><span class="si">{</span><span class="n">temperatures</span><span class="o">.</span><span class="n">shape</span><span class="si">}</span><span class="s1"> and </span><span class="si">{</span><span class="n">specific_heat</span><span class="o">.</span><span class="n">shape</span><span class="si">}</span><span class="s1">&#39;</span>
+            <span class="sa">f</span><span class="s1">'temperatures and specific_heat must have the same shape, '</span>
+            <span class="sa">f</span><span class="s1">'got </span><span class="si">{</span><span class="n">temperatures</span><span class="o">.</span><span class="n">shape</span><span class="si">}</span><span class="s1"> and </span><span class="si">{</span><span class="n">specific_heat</span><span class="o">.</span><span class="n">shape</span><span class="si">}</span><span class="s1">'</span>
         <span class="p">)</span>
     <span class="k">if</span> <span class="n">temperatures</span><span class="o">.</span><span class="n">size</span> <span class="o">&lt;</span> <span class="mi">2</span><span class="p">:</span>
-        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;Need at least 2 temperature points for integration&#39;</span><span class="p">)</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">'Need at least 2 temperature points for integration'</span><span class="p">)</span>
     <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">any</span><span class="p">(</span><span class="n">temperatures</span> <span class="o">&lt;=</span> <span class="mf">0.0</span><span class="p">):</span>
-        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;All temperatures must be positive&#39;</span><span class="p">)</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">'All temperatures must be positive'</span><span class="p">)</span>
 
     <span class="c1"># Sort ascending; remember original order to restore later.</span>
     <span class="n">sort_idx</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">argsort</span><span class="p">(</span><span class="n">temperatures</span><span class="p">)</span>
@@ -252,7 +252,7 @@
 <span class="k">def</span><span class="w"> </span><span class="nf">get_averaged_correlation</span><span class="p">(</span>
     <span class="o">*</span><span class="p">,</span> <span class="n">sim</span><span class="p">:</span> <span class="n">_Sim</span><span class="p">,</span> <span class="n">total_steps</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">sample_interval</span><span class="p">:</span> <span class="nb">int</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">]:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Run simulation and average the correlation function over multiple configurations.</span>
 
 <span class="sd">    Parameters</span>
@@ -269,11 +269,11 @@
 <span class="sd">    Raises</span>
 <span class="sd">    ------</span>
 <span class="sd">        ValueError: If ``sample_interval`` is less than 1 or ``total_steps`` is negative.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="k">if</span> <span class="n">sample_interval</span> <span class="o">&lt;</span> <span class="mi">1</span><span class="p">:</span>
-        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;sample_interval must be &gt;= 1, got </span><span class="si">{</span><span class="n">sample_interval</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s1">'sample_interval must be &gt;= 1, got </span><span class="si">{</span><span class="n">sample_interval</span><span class="si">}</span><span class="s1">'</span><span class="p">)</span>
     <span class="k">if</span> <span class="n">total_steps</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">:</span>
-        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;total_steps must be non-negative, got </span><span class="si">{</span><span class="n">total_steps</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s1">'total_steps must be non-negative, got </span><span class="si">{</span><span class="n">total_steps</span><span class="si">}</span><span class="s1">'</span><span class="p">)</span>
     <span class="n">G_r_avg</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
     <span class="n">count</span> <span class="o">=</span> <span class="mi">0</span>
     <span class="n">r</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([])</span>
@@ -302,7 +302,7 @@
 <div class="viewcode-block" id="radial_average_sk">
 <a class="viewcode-back" href="../../api/vibespin.utils.html#utils.observables.radial_average_sk">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">radial_average_sk</span><span class="p">(</span><span class="o">*</span><span class="p">,</span> <span class="n">spins</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">]:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Compute the circularly averaged structure factor :math:`S(|k|)`.</span>
+<span class="w">    </span><span class="sd">"""Compute the circularly averaged structure factor :math:`S(|k|)`.</span>
 
 <span class="sd">    Bins :math:`S(k)` by integer pixel radius from the DC centre of the shifted FFT,</span>
 <span class="sd">    then averages within each annular bin.</span>
@@ -315,7 +315,7 @@
 <span class="sd">    -------</span>
 <span class="sd">        k_vals: Wavevector magnitudes in units of 2π/N (reciprocal lattice).</span>
 <span class="sd">        S_radial: Mean S(k) value for each annular bin.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="n">N</span> <span class="o">=</span> <span class="n">spins</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
     <span class="k">if</span> <span class="n">spins</span><span class="o">.</span><span class="n">ndim</span> <span class="o">==</span> <span class="mi">3</span><span class="p">:</span>  <span class="c1"># Vector spins (XY/Clock)</span>
         <span class="n">sx</span><span class="p">,</span> <span class="n">sy</span> <span class="o">=</span> <span class="n">spins</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="mi">0</span><span class="p">],</span> <span class="n">spins</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="mi">1</span><span class="p">]</span>
@@ -348,10 +348,10 @@
 <div class="viewcode-block" id="pair_correlation_x">
 <a class="viewcode-back" href="../../api/vibespin.utils.html#utils.observables.pair_correlation_x">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">pair_correlation_x</span><span class="p">(</span><span class="o">*</span><span class="p">,</span> <span class="n">spins</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">]:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Compute the real-space spin-spin pair correlation G(r) along x.</span>
+<span class="w">    </span><span class="sd">"""Compute the real-space spin-spin pair correlation G(r) along x.</span>
 
 <span class="sd">    Uses the Wiener-Khinchin theorem: the autocorrelation of each row is the</span>
-<span class="sd">    inverse FFT of the row&#39;s power spectrum.  Results are averaged over all</span>
+<span class="sd">    inverse FFT of the row's power spectrum.  Results are averaged over all</span>
 <span class="sd">    rows (y positions) and normalised so G(0) = 1.</span>
 
 <span class="sd">    Parameters</span>
@@ -362,7 +362,7 @@
 <span class="sd">    -------</span>
 <span class="sd">        r_vals: Lag distances r = 0 … N//2 in lattice units.</span>
 <span class="sd">        G: Normalised pair correlation G(r) / G(0).</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="n">N</span> <span class="o">=</span> <span class="n">spins</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
 
     <span class="k">if</span> <span class="n">spins</span><span class="o">.</span><span class="n">ndim</span> <span class="o">==</span> <span class="mi">3</span><span class="p">:</span>  <span class="c1"># Vector spins (XY/Clock)</span>
@@ -391,7 +391,7 @@
 <div class="viewcode-block" id="compute_kinetics_metrics">
 <a class="viewcode-back" href="../../api/vibespin.utils.html#utils.observables.compute_kinetics_metrics">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">compute_kinetics_metrics</span><span class="p">(</span><span class="o">*</span><span class="p">,</span> <span class="n">sim</span><span class="p">:</span> <span class="n">_Sim</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">float</span><span class="p">]:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Calculate common kinetics metrics (R_sk, xi) for a simulation state.</span>
 
 <span class="sd">    Parameters</span>
@@ -400,10 +400,10 @@
 
 <span class="sd">    Returns</span>
 <span class="sd">    -------</span>
-<span class="sd">        Dictionary containing &#39;R_sk&#39; and &#39;xi&#39;.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">        Dictionary containing 'R_sk' and 'xi'.</span>
+<span class="sd">    """</span>
     <span class="k">if</span> <span class="n">sim</span><span class="o">.</span><span class="n">spins</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-        <span class="k">return</span> <span class="p">{</span><span class="s1">&#39;R_sk&#39;</span><span class="p">:</span> <span class="mf">0.0</span><span class="p">,</span> <span class="s1">&#39;xi&#39;</span><span class="p">:</span> <span class="mf">0.0</span><span class="p">}</span>
+        <span class="k">return</span> <span class="p">{</span><span class="s1">'R_sk'</span><span class="p">:</span> <span class="mf">0.0</span><span class="p">,</span> <span class="s1">'xi'</span><span class="p">:</span> <span class="mf">0.0</span><span class="p">}</span>
 
     <span class="c1"># 1. R_sk from structure factor first moment</span>
     <span class="n">kvals</span><span class="p">,</span> <span class="n">S_radial</span> <span class="o">=</span> <span class="n">radial_average_sk</span><span class="p">(</span><span class="n">spins</span><span class="o">=</span><span class="n">sim</span><span class="o">.</span><span class="n">spins</span><span class="p">)</span>
@@ -426,7 +426,7 @@
         <span class="n">g0</span><span class="p">,</span> <span class="n">g1</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">G</span><span class="p">[</span><span class="n">idx</span> <span class="o">-</span> <span class="mi">1</span><span class="p">]),</span> <span class="nb">float</span><span class="p">(</span><span class="n">G</span><span class="p">[</span><span class="n">idx</span><span class="p">])</span>
         <span class="n">xi</span> <span class="o">=</span> <span class="n">r0</span> <span class="o">+</span> <span class="p">(</span><span class="n">inv_e</span> <span class="o">-</span> <span class="n">g0</span><span class="p">)</span> <span class="o">*</span> <span class="p">(</span><span class="n">r1</span> <span class="o">-</span> <span class="n">r0</span><span class="p">)</span> <span class="o">/</span> <span class="p">(</span><span class="n">g1</span> <span class="o">-</span> <span class="n">g0</span><span class="p">)</span>
 
-    <span class="k">return</span> <span class="p">{</span><span class="s1">&#39;R_sk&#39;</span><span class="p">:</span> <span class="n">R_sk</span><span class="p">,</span> <span class="s1">&#39;xi&#39;</span><span class="p">:</span> <span class="n">xi</span><span class="p">}</span></div>
+    <span class="k">return</span> <span class="p">{</span><span class="s1">'R_sk'</span><span class="p">:</span> <span class="n">R_sk</span><span class="p">,</span> <span class="s1">'xi'</span><span class="p">:</span> <span class="n">xi</span><span class="p">}</span></div>
 
 
 

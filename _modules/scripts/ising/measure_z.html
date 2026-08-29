@@ -92,7 +92,7 @@
            <div itemprop="articleBody">
              
   <h1>Source code for scripts.ising.measure_z</h1><div class="highlight"><pre>
-<span></span><span class="sd">&quot;&quot;&quot;</span>
+<span></span><span class="sd">"""</span>
 <span class="sd">Measure the dynamical critical exponent z for Metropolis and Wolff algorithms.</span>
 
 <span class="sd">This script runs simulations of the 2D Ising model at the critical temperature Tc</span>
@@ -100,7 +100,7 @@
 <span class="sd">tau_int and fits tau_int ~ L^z to extract the dynamic exponent z.</span>
 
 <span class="sd">Results are saved to ``results/ising/dynamic_exponent_z.npz``.</span>
-<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">"""</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">__future__</span><span class="w"> </span><span class="kn">import</span> <span class="n">annotations</span>
 
 <span class="kn">import</span><span class="w"> </span><span class="nn">argparse</span>
@@ -129,7 +129,7 @@
 <span class="k">def</span><span class="w"> </span><span class="nf">_measure_tau_point</span><span class="p">(</span>
     <span class="n">params</span><span class="p">:</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">,</span> <span class="nb">str</span><span class="p">,</span> <span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">],</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Worker: measure tau_int for a specific algorithm and lattice size at Tc.</span>
 
 <span class="sd">    Parameters</span>
@@ -145,10 +145,10 @@
 <span class="sd">    dict</span>
 <span class="sd">        Keys: ``size_idx``, ``seed_idx``, ``update``, ``L``, ``tau_int``,</span>
 <span class="sd">        ``wall_time``.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="n">size_idx</span><span class="p">,</span> <span class="n">seed_idx</span><span class="p">,</span> <span class="n">update</span><span class="p">,</span> <span class="n">L</span><span class="p">,</span> <span class="n">eq_probe_steps</span><span class="p">,</span> <span class="n">eq_max_steps</span><span class="p">,</span> <span class="n">meas_steps</span><span class="p">,</span> <span class="n">seed</span> <span class="o">=</span> <span class="n">params</span>
-    <span class="n">sim_r</span> <span class="o">=</span> <span class="n">IsingSimulation</span><span class="p">(</span><span class="n">size</span><span class="o">=</span><span class="n">L</span><span class="p">,</span> <span class="n">temp</span><span class="o">=</span><span class="n">TC_ISING</span><span class="p">,</span> <span class="n">update</span><span class="o">=</span><span class="n">update</span><span class="p">,</span> <span class="n">init_state</span><span class="o">=</span><span class="s1">&#39;random&#39;</span><span class="p">,</span> <span class="n">seed</span><span class="o">=</span><span class="n">seed</span><span class="p">)</span>
-    <span class="n">sim_o</span> <span class="o">=</span> <span class="n">IsingSimulation</span><span class="p">(</span><span class="n">size</span><span class="o">=</span><span class="n">L</span><span class="p">,</span> <span class="n">temp</span><span class="o">=</span><span class="n">TC_ISING</span><span class="p">,</span> <span class="n">update</span><span class="o">=</span><span class="n">update</span><span class="p">,</span> <span class="n">init_state</span><span class="o">=</span><span class="s1">&#39;ordered&#39;</span><span class="p">,</span> <span class="n">seed</span><span class="o">=</span><span class="n">seed</span><span class="p">)</span>
+    <span class="n">sim_r</span> <span class="o">=</span> <span class="n">IsingSimulation</span><span class="p">(</span><span class="n">size</span><span class="o">=</span><span class="n">L</span><span class="p">,</span> <span class="n">temp</span><span class="o">=</span><span class="n">TC_ISING</span><span class="p">,</span> <span class="n">update</span><span class="o">=</span><span class="n">update</span><span class="p">,</span> <span class="n">init_state</span><span class="o">=</span><span class="s1">'random'</span><span class="p">,</span> <span class="n">seed</span><span class="o">=</span><span class="n">seed</span><span class="p">)</span>
+    <span class="n">sim_o</span> <span class="o">=</span> <span class="n">IsingSimulation</span><span class="p">(</span><span class="n">size</span><span class="o">=</span><span class="n">L</span><span class="p">,</span> <span class="n">temp</span><span class="o">=</span><span class="n">TC_ISING</span><span class="p">,</span> <span class="n">update</span><span class="o">=</span><span class="n">update</span><span class="p">,</span> <span class="n">init_state</span><span class="o">=</span><span class="s1">'ordered'</span><span class="p">,</span> <span class="n">seed</span><span class="o">=</span><span class="n">seed</span><span class="p">)</span>
 
     <span class="c1"># Thorough equilibration at Tc via two-start convergence</span>
     <span class="n">convergence_equilibrate</span><span class="p">(</span><span class="n">sim_r</span><span class="p">,</span> <span class="n">sim_o</span><span class="p">,</span> <span class="n">chunk_size</span><span class="o">=</span><span class="n">eq_probe_steps</span><span class="p">,</span> <span class="n">max_steps</span><span class="o">=</span><span class="n">eq_max_steps</span><span class="p">)</span>
@@ -161,56 +161,56 @@
     <span class="k">try</span><span class="p">:</span>
         <span class="n">_</span><span class="p">,</span> <span class="n">tau_int</span> <span class="o">=</span> <span class="n">calculate_autocorr</span><span class="p">(</span><span class="n">time_series</span><span class="o">=</span><span class="n">mags_arr</span><span class="p">)</span>
     <span class="k">except</span> <span class="n">ZeroVarianceAutocorrelationError</span><span class="p">:</span>
-        <span class="n">tau_int</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="s1">&#39;nan&#39;</span><span class="p">)</span>
+        <span class="n">tau_int</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="s1">'nan'</span><span class="p">)</span>
 
     <span class="k">return</span> <span class="p">{</span>
-        <span class="s1">&#39;size_idx&#39;</span><span class="p">:</span> <span class="nb">int</span><span class="p">(</span><span class="n">size_idx</span><span class="p">),</span>
-        <span class="s1">&#39;seed_idx&#39;</span><span class="p">:</span> <span class="nb">int</span><span class="p">(</span><span class="n">seed_idx</span><span class="p">),</span>
-        <span class="s1">&#39;update&#39;</span><span class="p">:</span> <span class="n">update</span><span class="p">,</span>
-        <span class="s1">&#39;L&#39;</span><span class="p">:</span> <span class="nb">float</span><span class="p">(</span><span class="n">L</span><span class="p">),</span>
-        <span class="s1">&#39;tau_int&#39;</span><span class="p">:</span> <span class="nb">float</span><span class="p">(</span><span class="n">tau_int</span><span class="p">),</span>
-        <span class="s1">&#39;wall_time&#39;</span><span class="p">:</span> <span class="nb">float</span><span class="p">(</span><span class="n">wall_time</span><span class="p">),</span>
+        <span class="s1">'size_idx'</span><span class="p">:</span> <span class="nb">int</span><span class="p">(</span><span class="n">size_idx</span><span class="p">),</span>
+        <span class="s1">'seed_idx'</span><span class="p">:</span> <span class="nb">int</span><span class="p">(</span><span class="n">seed_idx</span><span class="p">),</span>
+        <span class="s1">'update'</span><span class="p">:</span> <span class="n">update</span><span class="p">,</span>
+        <span class="s1">'L'</span><span class="p">:</span> <span class="nb">float</span><span class="p">(</span><span class="n">L</span><span class="p">),</span>
+        <span class="s1">'tau_int'</span><span class="p">:</span> <span class="nb">float</span><span class="p">(</span><span class="n">tau_int</span><span class="p">),</span>
+        <span class="s1">'wall_time'</span><span class="p">:</span> <span class="nb">float</span><span class="p">(</span><span class="n">wall_time</span><span class="p">),</span>
     <span class="p">}</span>
 
 
 <div class="viewcode-block" id="main">
 <a class="viewcode-back" href="../../../api/vibespin.scripts.ising.html#scripts.ising.measure_z.main">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">main</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Execute the dynamical critical exponent measurement sweep.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="n">parser</span> <span class="o">=</span> <span class="n">argparse</span><span class="o">.</span><span class="n">ArgumentParser</span><span class="p">(</span>
-        <span class="n">description</span><span class="o">=</span><span class="s1">&#39;Measure dynamical critical exponent z for the 2D Ising model.&#39;</span><span class="p">,</span>
+        <span class="n">description</span><span class="o">=</span><span class="s1">'Measure dynamical critical exponent z for the 2D Ising model.'</span><span class="p">,</span>
     <span class="p">)</span>
     <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span>
-        <span class="s1">&#39;--sizes&#39;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">int</span><span class="p">,</span> <span class="n">nargs</span><span class="o">=</span><span class="s1">&#39;+&#39;</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="p">[</span><span class="mi">16</span><span class="p">,</span> <span class="mi">32</span><span class="p">,</span> <span class="mi">48</span><span class="p">,</span> <span class="mi">64</span><span class="p">,</span> <span class="mi">96</span><span class="p">,</span> <span class="mi">128</span><span class="p">],</span>
-        <span class="n">help</span><span class="o">=</span><span class="s1">&#39;Lattice sizes L to sweep (default: 16 32 48 64 96 128)&#39;</span><span class="p">,</span>
+        <span class="s1">'--sizes'</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">int</span><span class="p">,</span> <span class="n">nargs</span><span class="o">=</span><span class="s1">'+'</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="p">[</span><span class="mi">16</span><span class="p">,</span> <span class="mi">32</span><span class="p">,</span> <span class="mi">48</span><span class="p">,</span> <span class="mi">64</span><span class="p">,</span> <span class="mi">96</span><span class="p">,</span> <span class="mi">128</span><span class="p">],</span>
+        <span class="n">help</span><span class="o">=</span><span class="s1">'Lattice sizes L to sweep (default: 16 32 48 64 96 128)'</span><span class="p">,</span>
     <span class="p">)</span>
     <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span>
-        <span class="s1">&#39;--eq-probe-steps&#39;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">int</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="mi">1000</span><span class="p">,</span>
-        <span class="n">help</span><span class="o">=</span><span class="s1">&#39;Chunk size for convergence check during equilibration (default: 1000)&#39;</span><span class="p">,</span>
+        <span class="s1">'--eq-probe-steps'</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">int</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="mi">1000</span><span class="p">,</span>
+        <span class="n">help</span><span class="o">=</span><span class="s1">'Chunk size for convergence check during equilibration (default: 1000)'</span><span class="p">,</span>
     <span class="p">)</span>
     <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span>
-        <span class="s1">&#39;--eq-max-steps&#39;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">int</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="mi">500000</span><span class="p">,</span>
-        <span class="n">help</span><span class="o">=</span><span class="s1">&#39;Hard cap on equilibration steps at Tc (default: 500000)&#39;</span><span class="p">,</span>
+        <span class="s1">'--eq-max-steps'</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">int</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="mi">500000</span><span class="p">,</span>
+        <span class="n">help</span><span class="o">=</span><span class="s1">'Hard cap on equilibration steps at Tc (default: 500000)'</span><span class="p">,</span>
     <span class="p">)</span>
     <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span>
-        <span class="s1">&#39;--meas-steps-metro&#39;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">int</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="mi">400000</span><span class="p">,</span>
-        <span class="n">help</span><span class="o">=</span><span class="s1">&#39;Measurement steps for Metropolis (default: 400000)&#39;</span><span class="p">,</span>
+        <span class="s1">'--meas-steps-metro'</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">int</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="mi">400000</span><span class="p">,</span>
+        <span class="n">help</span><span class="o">=</span><span class="s1">'Measurement steps for Metropolis (default: 400000)'</span><span class="p">,</span>
     <span class="p">)</span>
     <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span>
-        <span class="s1">&#39;--meas-steps-wolff&#39;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">int</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="mi">100000</span><span class="p">,</span>
-        <span class="n">help</span><span class="o">=</span><span class="s1">&#39;Measurement steps for Wolff (default: 100000)&#39;</span><span class="p">,</span>
+        <span class="s1">'--meas-steps-wolff'</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">int</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="mi">100000</span><span class="p">,</span>
+        <span class="n">help</span><span class="o">=</span><span class="s1">'Measurement steps for Wolff (default: 100000)'</span><span class="p">,</span>
     <span class="p">)</span>
     <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span>
-        <span class="s1">&#39;--n-seeds&#39;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">int</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span>
-        <span class="n">help</span><span class="o">=</span><span class="s1">&#39;Independent seed replicas per (algorithm, L) point (default: 10)&#39;</span><span class="p">,</span>
+        <span class="s1">'--n-seeds'</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">int</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span>
+        <span class="n">help</span><span class="o">=</span><span class="s1">'Independent seed replicas per (algorithm, L) point (default: 10)'</span><span class="p">,</span>
     <span class="p">)</span>
     <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span>
-        <span class="s1">&#39;--output-dir&#39;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">str</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="s1">&#39;results/ising&#39;</span><span class="p">,</span>
-        <span class="n">help</span><span class="o">=</span><span class="s1">&#39;Output directory (default: results/ising)&#39;</span><span class="p">,</span>
+        <span class="s1">'--output-dir'</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">str</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="s1">'results/ising'</span><span class="p">,</span>
+        <span class="n">help</span><span class="o">=</span><span class="s1">'Output directory (default: results/ising)'</span><span class="p">,</span>
     <span class="p">)</span>
-    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;--verbose&#39;</span><span class="p">,</span> <span class="n">action</span><span class="o">=</span><span class="s1">&#39;store_true&#39;</span><span class="p">,</span> <span class="n">help</span><span class="o">=</span><span class="s1">&#39;Enable verbose logging&#39;</span><span class="p">)</span>
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">'--verbose'</span><span class="p">,</span> <span class="n">action</span><span class="o">=</span><span class="s1">'store_true'</span><span class="p">,</span> <span class="n">help</span><span class="o">=</span><span class="s1">'Enable verbose logging'</span><span class="p">)</span>
     <span class="n">args</span> <span class="o">=</span> <span class="n">parser</span><span class="o">.</span><span class="n">parse_args</span><span class="p">()</span>
 
     <span class="n">log_level</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">DEBUG</span> <span class="k">if</span> <span class="n">args</span><span class="o">.</span><span class="n">verbose</span> <span class="k">else</span> <span class="n">logging</span><span class="o">.</span><span class="n">INFO</span>
@@ -219,7 +219,7 @@
     <span class="n">sizes</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">args</span><span class="o">.</span><span class="n">sizes</span><span class="p">)</span>
     <span class="n">n_seeds</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">args</span><span class="o">.</span><span class="n">n_seeds</span><span class="p">)</span>
     <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
-        <span class="s1">&#39;Measuring dynamical exponent z at Tc=</span><span class="si">%.6f</span><span class="s1"> for L in </span><span class="si">%s</span><span class="s1">, </span><span class="si">%d</span><span class="s1"> seed replicas.&#39;</span><span class="p">,</span>
+        <span class="s1">'Measuring dynamical exponent z at Tc=</span><span class="si">%.6f</span><span class="s1"> for L in </span><span class="si">%s</span><span class="s1">, </span><span class="si">%d</span><span class="s1"> seed replicas.'</span><span class="p">,</span>
         <span class="n">TC_ISING</span><span class="p">,</span> <span class="n">sizes</span><span class="p">,</span> <span class="n">n_seeds</span><span class="p">,</span>
     <span class="p">)</span>
 
@@ -231,12 +231,12 @@
         <span class="k">for</span> <span class="n">seed_idx</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n_seeds</span><span class="p">):</span>
             <span class="n">base</span> <span class="o">=</span> <span class="n">size_idx</span> <span class="o">*</span> <span class="mi">100_000</span> <span class="o">+</span> <span class="n">seed_idx</span> <span class="o">*</span> <span class="mi">1_000</span>
             <span class="n">sweep_params</span><span class="o">.</span><span class="n">append</span><span class="p">((</span>
-                <span class="n">size_idx</span><span class="p">,</span> <span class="n">seed_idx</span><span class="p">,</span> <span class="s1">&#39;random&#39;</span><span class="p">,</span> <span class="n">L</span><span class="p">,</span>
+                <span class="n">size_idx</span><span class="p">,</span> <span class="n">seed_idx</span><span class="p">,</span> <span class="s1">'random'</span><span class="p">,</span> <span class="n">L</span><span class="p">,</span>
                 <span class="n">args</span><span class="o">.</span><span class="n">eq_probe_steps</span><span class="p">,</span> <span class="n">args</span><span class="o">.</span><span class="n">eq_max_steps</span><span class="p">,</span> <span class="n">args</span><span class="o">.</span><span class="n">meas_steps_metro</span><span class="p">,</span>
                 <span class="n">base</span><span class="p">,</span>
             <span class="p">))</span>
             <span class="n">sweep_params</span><span class="o">.</span><span class="n">append</span><span class="p">((</span>
-                <span class="n">size_idx</span><span class="p">,</span> <span class="n">seed_idx</span><span class="p">,</span> <span class="s1">&#39;wolff&#39;</span><span class="p">,</span> <span class="n">L</span><span class="p">,</span>
+                <span class="n">size_idx</span><span class="p">,</span> <span class="n">seed_idx</span><span class="p">,</span> <span class="s1">'wolff'</span><span class="p">,</span> <span class="n">L</span><span class="p">,</span>
                 <span class="n">args</span><span class="o">.</span><span class="n">eq_probe_steps</span><span class="p">,</span> <span class="n">args</span><span class="o">.</span><span class="n">eq_max_steps</span><span class="p">,</span> <span class="n">args</span><span class="o">.</span><span class="n">meas_steps_wolff</span><span class="p">,</span>
                 <span class="n">base</span> <span class="o">+</span> <span class="mi">50_000</span><span class="p">,</span>
             <span class="p">))</span>
@@ -250,15 +250,15 @@
     <span class="n">tau_wolff_samples</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">full</span><span class="p">((</span><span class="n">n_sizes</span><span class="p">,</span> <span class="n">n_seeds</span><span class="p">),</span> <span class="n">np</span><span class="o">.</span><span class="n">nan</span><span class="p">)</span>
 
     <span class="k">for</span> <span class="n">r</span> <span class="ow">in</span> <span class="n">raw</span><span class="p">:</span>
-        <span class="n">i</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">r</span><span class="p">[</span><span class="s1">&#39;size_idx&#39;</span><span class="p">])</span>
-        <span class="n">s</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">r</span><span class="p">[</span><span class="s1">&#39;seed_idx&#39;</span><span class="p">])</span>
-        <span class="k">if</span> <span class="n">r</span><span class="p">[</span><span class="s1">&#39;update&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;random&#39;</span><span class="p">:</span>
-            <span class="n">tau_metro_samples</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="n">s</span><span class="p">]</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">r</span><span class="p">[</span><span class="s1">&#39;tau_int&#39;</span><span class="p">])</span>
+        <span class="n">i</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">r</span><span class="p">[</span><span class="s1">'size_idx'</span><span class="p">])</span>
+        <span class="n">s</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">r</span><span class="p">[</span><span class="s1">'seed_idx'</span><span class="p">])</span>
+        <span class="k">if</span> <span class="n">r</span><span class="p">[</span><span class="s1">'update'</span><span class="p">]</span> <span class="o">==</span> <span class="s1">'random'</span><span class="p">:</span>
+            <span class="n">tau_metro_samples</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="n">s</span><span class="p">]</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">r</span><span class="p">[</span><span class="s1">'tau_int'</span><span class="p">])</span>
         <span class="k">else</span><span class="p">:</span>
-            <span class="n">tau_wolff_samples</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="n">s</span><span class="p">]</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">r</span><span class="p">[</span><span class="s1">&#39;tau_int&#39;</span><span class="p">])</span>
+            <span class="n">tau_wolff_samples</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="n">s</span><span class="p">]</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">r</span><span class="p">[</span><span class="s1">'tau_int'</span><span class="p">])</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">_summary</span><span class="p">(</span><span class="n">samples</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">]:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Compute median and 16-84 percentile envelopes across seeds.&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""Compute median and 16-84 percentile envelopes across seeds."""</span>
         <span class="n">med</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">nanmedian</span><span class="p">(</span><span class="n">samples</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
         <span class="n">p16</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">nanpercentile</span><span class="p">(</span><span class="n">samples</span><span class="p">,</span> <span class="mi">16</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
         <span class="n">p84</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">nanpercentile</span><span class="p">(</span><span class="n">samples</span><span class="p">,</span> <span class="mi">84</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
@@ -272,7 +272,7 @@
     <span class="n">wolff_summary</span> <span class="o">=</span> <span class="n">summarize_replicate_samples</span><span class="p">(</span><span class="n">samples</span><span class="o">=</span><span class="n">tau_wolff_samples</span><span class="p">)</span>
 
     <span class="n">os</span><span class="o">.</span><span class="n">makedirs</span><span class="p">(</span><span class="n">args</span><span class="o">.</span><span class="n">output_dir</span><span class="p">,</span> <span class="n">exist_ok</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
-    <span class="n">npz_path</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">args</span><span class="o">.</span><span class="n">output_dir</span><span class="p">,</span> <span class="s1">&#39;dynamic_exponent_z.npz&#39;</span><span class="p">)</span>
+    <span class="n">npz_path</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">args</span><span class="o">.</span><span class="n">output_dir</span><span class="p">,</span> <span class="s1">'dynamic_exponent_z.npz'</span><span class="p">)</span>
     <span class="n">np</span><span class="o">.</span><span class="n">savez</span><span class="p">(</span>
         <span class="n">npz_path</span><span class="p">,</span>
         <span class="n">L_metro</span><span class="o">=</span><span class="n">L_arr</span><span class="p">,</span>
@@ -287,22 +287,22 @@
         <span class="n">tau_wolff_samples</span><span class="o">=</span><span class="n">tau_wolff_samples</span><span class="p">,</span>
         <span class="n">Tc</span><span class="o">=</span><span class="n">TC_ISING</span><span class="p">,</span>
         <span class="n">n_seeds</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">int64</span><span class="p">(</span><span class="n">n_seeds</span><span class="p">),</span>
-        <span class="n">tau_metro_value</span><span class="o">=</span><span class="n">metro_summary</span><span class="p">[</span><span class="s1">&#39;value&#39;</span><span class="p">],</span>
-        <span class="n">tau_metro_err</span><span class="o">=</span><span class="n">metro_summary</span><span class="p">[</span><span class="s1">&#39;err&#39;</span><span class="p">],</span>
-        <span class="n">tau_metro_ci_low</span><span class="o">=</span><span class="n">metro_summary</span><span class="p">[</span><span class="s1">&#39;ci_low&#39;</span><span class="p">],</span>
-        <span class="n">tau_metro_ci_high</span><span class="o">=</span><span class="n">metro_summary</span><span class="p">[</span><span class="s1">&#39;ci_high&#39;</span><span class="p">],</span>
-        <span class="n">tau_wolff_value</span><span class="o">=</span><span class="n">wolff_summary</span><span class="p">[</span><span class="s1">&#39;value&#39;</span><span class="p">],</span>
-        <span class="n">tau_wolff_err</span><span class="o">=</span><span class="n">wolff_summary</span><span class="p">[</span><span class="s1">&#39;err&#39;</span><span class="p">],</span>
-        <span class="n">tau_wolff_ci_low</span><span class="o">=</span><span class="n">wolff_summary</span><span class="p">[</span><span class="s1">&#39;ci_low&#39;</span><span class="p">],</span>
-        <span class="n">tau_wolff_ci_high</span><span class="o">=</span><span class="n">wolff_summary</span><span class="p">[</span><span class="s1">&#39;ci_high&#39;</span><span class="p">],</span>
+        <span class="n">tau_metro_value</span><span class="o">=</span><span class="n">metro_summary</span><span class="p">[</span><span class="s1">'value'</span><span class="p">],</span>
+        <span class="n">tau_metro_err</span><span class="o">=</span><span class="n">metro_summary</span><span class="p">[</span><span class="s1">'err'</span><span class="p">],</span>
+        <span class="n">tau_metro_ci_low</span><span class="o">=</span><span class="n">metro_summary</span><span class="p">[</span><span class="s1">'ci_low'</span><span class="p">],</span>
+        <span class="n">tau_metro_ci_high</span><span class="o">=</span><span class="n">metro_summary</span><span class="p">[</span><span class="s1">'ci_high'</span><span class="p">],</span>
+        <span class="n">tau_wolff_value</span><span class="o">=</span><span class="n">wolff_summary</span><span class="p">[</span><span class="s1">'value'</span><span class="p">],</span>
+        <span class="n">tau_wolff_err</span><span class="o">=</span><span class="n">wolff_summary</span><span class="p">[</span><span class="s1">'err'</span><span class="p">],</span>
+        <span class="n">tau_wolff_ci_low</span><span class="o">=</span><span class="n">wolff_summary</span><span class="p">[</span><span class="s1">'ci_low'</span><span class="p">],</span>
+        <span class="n">tau_wolff_ci_high</span><span class="o">=</span><span class="n">wolff_summary</span><span class="p">[</span><span class="s1">'ci_high'</span><span class="p">],</span>
         <span class="n">uncertainty_method</span><span class="o">=</span><span class="n">UNCERTAINTY_METHOD_BLOCKING</span><span class="p">,</span>
         <span class="n">confidence_level</span><span class="o">=</span><span class="n">DEFAULT_CONFIDENCE_LEVEL</span><span class="p">,</span>
     <span class="p">)</span>
-    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;Data saved to </span><span class="si">%s</span><span class="s1">&#39;</span><span class="p">,</span> <span class="n">npz_path</span><span class="p">)</span></div>
+    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">'Data saved to </span><span class="si">%s</span><span class="s1">'</span><span class="p">,</span> <span class="n">npz_path</span><span class="p">)</span></div>
 
 
 
-<span class="k">if</span> <span class="vm">__name__</span> <span class="o">==</span> <span class="s1">&#39;__main__&#39;</span><span class="p">:</span>
+<span class="k">if</span> <span class="vm">__name__</span> <span class="o">==</span> <span class="s1">'__main__'</span><span class="p">:</span>
     <span class="n">main</span><span class="p">()</span>
 </pre></div>
 

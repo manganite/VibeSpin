@@ -157,7 +157,7 @@ uv<span class="w"> </span>run<span class="w"> </span>pre-commit<span class="w"> 
 </pre></div>
 </div>
 <p>Or for full development capabilities with standard pip:</p>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>pip<span class="w"> </span>install<span class="w"> </span>-e<span class="w"> </span><span class="s2">&quot;.[dev,notebook,docs]&quot;</span>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>pip<span class="w"> </span>install<span class="w"> </span>-e<span class="w"> </span><span class="s2">".[dev,notebook,docs]"</span>
 pre-commit<span class="w"> </span>install<span class="w"> </span>--hook-type<span class="w"> </span>pre-commit<span class="w"> </span>--hook-type<span class="w"> </span>pre-push
 </pre></div>
 </div>
@@ -237,7 +237,7 @@ make<span class="w"> </span>html
 <section id="sphinx-setup-notes">
 <h3>Sphinx Setup Notes<a class="headerlink" href="#sphinx-setup-notes" title="Link to this heading"></a></h3>
 <p>The documentation stack uses Sphinx with MyST Markdown and nbsphinx for notebook pages. A standard development install for documentation is:</p>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>pip<span class="w"> </span>install<span class="w"> </span>-e<span class="w"> </span><span class="s2">&quot;.[docs]&quot;</span>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>pip<span class="w"> </span>install<span class="w"> </span>-e<span class="w"> </span><span class="s2">".[docs]"</span>
 </pre></div>
 </div>
 <p>In this repository’s devcontainer, documentation dependencies are installed automatically during container creation via the <code class="docutils literal notranslate"><span class="pre">.[dev,notebook,docs]</span></code> extras group.</p>
@@ -246,7 +246,7 @@ make<span class="w"> </span>html
 <section id="docs-troubleshooting">
 <h3>Docs Troubleshooting<a class="headerlink" href="#docs-troubleshooting" title="Link to this heading"></a></h3>
 <p>If <code class="docutils literal notranslate"><span class="pre">make</span> <span class="pre">html</span></code> fails after opening or rebuilding the container, verify the project environment was created successfully and reinstall extras:</p>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>pip<span class="w"> </span>install<span class="w"> </span>-e<span class="w"> </span><span class="s2">&quot;.[dev,notebook,docs]&quot;</span>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>pip<span class="w"> </span>install<span class="w"> </span>-e<span class="w"> </span><span class="s2">".[dev,notebook,docs]"</span>
 <span class="nb">cd</span><span class="w"> </span>docs
 make<span class="w"> </span>html
 </pre></div>
