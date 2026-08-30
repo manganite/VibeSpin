@@ -86,7 +86,7 @@ The three kinetics scripts and three evolution scripts are now thin wrappers: ea
 
 ## Bibliography
 
-The engineering and algorithmic choices in VibeSpin are grounded in standard practices for scientific computing and statistical physics. For the complete list of all references used in the project, see [BIBLIOGRAPHY.md](https://github.com/manganite/VibeSpin/blob/master/BIBLIOGRAPHY.md).
+The engineering and algorithmic choices in VibeSpin are grounded in standard practices for scientific computing and statistical physics. For the complete list of all references used in the project, see [BIBLIOGRAPHY.md](https://github.com/manganite/VibeSpin/blob/HEAD/BIBLIOGRAPHY.md).
 
 [[1]](#Bibliography) W. K. Hastings, "Monte Carlo sampling methods using Markov chains and their applications," *Biometrika*, vol. 57, no. 1, pp. 97–109, 1970. [Oxford Academic Open Access](https://academic.oup.com/biomet/article/57/1/97/252073)
 

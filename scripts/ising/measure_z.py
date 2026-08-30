@@ -132,8 +132,8 @@ def main() -> None:
     )
 
     # Seeds are derived deterministically from (size_idx, seed_idx) via
-    # derive_point_seed; Wolff uses a 50_000 stream offset so its seed
-    # sequences never overlap the Metropolis ones at the same grid point.
+    # derive_point_seed; Wolff draws from stream 1 so its seed sequences
+    # cannot overlap the Metropolis ones at the same grid point.
     sweep_params: list[tuple[int, int, str, int, int, int, int, int]] = []
     for size_idx, L in enumerate(sizes):
         for seed_idx in range(n_seeds):
@@ -147,7 +147,7 @@ def main() -> None:
                 size_idx, seed_idx, 'wolff', L,
                 args.eq_probe_steps, args.eq_max_steps, args.meas_steps_wolff,
                 derive_point_seed(
-                    temperature_index=size_idx, seed_index=seed_idx, stream_offset=50_000,
+                    temperature_index=size_idx, seed_index=seed_idx, stream_index=1,
                 ),
             ))
 

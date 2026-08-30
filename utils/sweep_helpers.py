@@ -98,19 +98,47 @@ def validate_sweep_uncertainty_args(
         raise ValueError(f'n-seeds must be >= 1, got {n_seeds}')
 
 
+#: Spacing between the base seeds of two replicas at the same grid point and
+#: stream. Callers derive short sub-streams by small addition, such as the
+#: ``seed + 1`` and ``seed + 2`` runs of the efficiency worker, so a replica
+#: needs room around its base rather than the next integer.
+SEED_REPLICA_STRIDE = 1_000
+
+#: Replicas a single stream can hold. The sweeps allow ten attempts per
+#: requested replica, so this covers ``--n-seeds 100``.
+SEED_REPLICAS_PER_STREAM = 1_000
+
+#: Independent algorithm streams a grid point can hold, such as the separate
+#: Metropolis and Wolff streams that ``measure_z`` runs at the same point.
+SEED_STREAMS_PER_POINT = 4
+
+#: Size of the seed block one stream owns within a grid point.
+SEED_STREAM_STRIDE = SEED_REPLICA_STRIDE * SEED_REPLICAS_PER_STREAM
+
+#: Size of the seed block one grid point owns.
+SEED_POINT_STRIDE = SEED_STREAM_STRIDE * SEED_STREAMS_PER_POINT
+
+#: Largest seed the numba and numpy generators accept without truncation.
+_MAX_SEED = 2**32 - 1
+
+
 def derive_point_seed(
     *,
     temperature_index: int,
     seed_index: int,
-    stream_offset: int = 0,
+    stream_index: int = 0,
 ) -> int:
-    """Derive a deterministic RNG seed for one sweep grid point.
+    """
+    Derive a deterministic RNG seed for one sweep grid point.
 
-    The spacing keeps seed streams disjoint across the sweep grid: each
-    temperature (or size) index claims a block of 100 000 seeds, each replica
-    within it a block of 1 000, leaving room for per-point offsets such as
-    separate streams for different algorithms (e.g. a Wolff stream offset by
-    50 000 from the Metropolis stream at the same grid point).
+    The three indices address three nested blocks: a grid point owns
+    ``SEED_POINT_STRIDE`` seeds, a stream within it owns
+    ``SEED_STREAM_STRIDE``, and a replica within that owns
+    ``SEED_REPLICA_STRIDE``, leaving room for the sub-streams callers derive
+    by small addition. Because each index scales its own block rather than
+    being added into a shared range, two different index triples cannot
+    produce the same seed, and an index that would leave its block is
+    rejected rather than silently reusing a neighbour's seeds.
 
     Parameters
     ----------
@@ -118,16 +146,51 @@ def derive_point_seed(
         Index of the outer sweep axis (temperature or lattice-size grid).
     seed_index : int
         Replica index within the seed ensemble for this grid point.
-    stream_offset : int
-        Additive offset separating independent seed streams at the same
-        grid point (default 0).
+    stream_index : int
+        Index of the independent seed stream at this grid point, used where
+        one point runs more than one algorithm; ``measure_z`` gives its Wolff
+        runs a different stream from its Metropolis runs (default 0).
 
     Returns
     -------
     int
-        ``temperature_index * 100_000 + seed_index * 1_000 + stream_offset``.
+        The seed addressed by the three indices.
+
+    Raises
+    ------
+    ValueError
+        If any index is negative or outside the capacity of its block, or if
+        the resulting seed exceeds the 32-bit range the generators accept.
     """
-    return temperature_index * 100_000 + seed_index * 1_000 + stream_offset
+    if temperature_index < 0 or seed_index < 0 or stream_index < 0:
+        raise ValueError(
+            'derive_point_seed requires non-negative indices, got '
+            f'temperature_index={temperature_index}, seed_index={seed_index}, '
+            f'stream_index={stream_index}.'
+        )
+    if seed_index >= SEED_REPLICAS_PER_STREAM:
+        raise ValueError(
+            f'seed_index={seed_index} exceeds the {SEED_REPLICAS_PER_STREAM} replicas a '
+            'stream can hold; a larger ensemble would collide with the next stream.'
+        )
+    if stream_index >= SEED_STREAMS_PER_POINT:
+        raise ValueError(
+            f'stream_index={stream_index} exceeds the {SEED_STREAMS_PER_POINT} streams a '
+            'grid point can hold; another stream would collide with the next grid point.'
+        )
+
+    seed = (
+        temperature_index * SEED_POINT_STRIDE
+        + stream_index * SEED_STREAM_STRIDE
+        + seed_index * SEED_REPLICA_STRIDE
+    )
+    if seed > _MAX_SEED:
+        raise ValueError(
+            f'Derived seed {seed} for grid point {temperature_index} exceeds the 32-bit '
+            f'generator range; a sweep can hold at most {_MAX_SEED // SEED_POINT_STRIDE} '
+            'grid points.'
+        )
+    return seed
 
 
 # ---------------------------------------------------------------------------

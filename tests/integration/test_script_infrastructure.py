@@ -70,16 +70,57 @@ class TestDeterministicSeeds:
         assert seed_a != seed_c
         assert seed_b != seed_c
 
-    def test_derive_point_seed_matches_legacy_formula(self) -> None:
-        """Shared helper must reproduce the legacy inline seed formula exactly."""
+    def test_derive_point_seed_never_collides_across_the_grid(self) -> None:
+        """No two index triples may share a seed, which is the helper's whole point."""
         if not HAS_TEMPERATURE_SWEEP:
             pytest.skip("sweep_helpers not available")
-        from utils.sweep_helpers import derive_point_seed
-        for t_idx, s_idx, offset in [(0, 0, 0), (3, 7, 0), (12, 2, 50_000), (39, 9, 0)]:
-            expected = t_idx * 100_000 + s_idx * 1_000 + offset
-            assert derive_point_seed(
-                temperature_index=t_idx, seed_index=s_idx, stream_offset=offset,
-            ) == expected
+        from utils.sweep_helpers import (
+            SEED_REPLICAS_PER_STREAM,
+            SEED_STREAMS_PER_POINT,
+            derive_point_seed,
+        )
+        seen: dict[int, tuple[int, int, int]] = {}
+        for t_idx in range(120):
+            for s_idx in (0, 1, 9, 50, 99, 100, SEED_REPLICAS_PER_STREAM - 1):
+                for stream in range(SEED_STREAMS_PER_POINT):
+                    seed = derive_point_seed(
+                        temperature_index=t_idx, seed_index=s_idx, stream_index=stream,
+                    )
+                    assert seed not in seen, (
+                        f'({t_idx}, {s_idx}, {stream}) collides with {seen[seed]} at {seed}'
+                    )
+                    seen[seed] = (t_idx, s_idx, stream)
+
+    def test_derive_point_seed_leaves_room_for_derived_substreams(self) -> None:
+        """Callers add small offsets to a base seed, so replicas must not be adjacent."""
+        if not HAS_TEMPERATURE_SWEEP:
+            pytest.skip("sweep_helpers not available")
+        from utils.sweep_helpers import SEED_REPLICA_STRIDE, derive_point_seed
+        first = derive_point_seed(temperature_index=4, seed_index=0)
+        second = derive_point_seed(temperature_index=4, seed_index=1)
+        assert second - first == SEED_REPLICA_STRIDE
+        # The efficiency worker derives seed + 1 and seed + 2 from each base.
+        assert first + 2 < second
+
+    def test_derive_point_seed_rejects_indices_outside_their_block(self) -> None:
+        """An index past its capacity must raise rather than reuse another block."""
+        if not HAS_TEMPERATURE_SWEEP:
+            pytest.skip("sweep_helpers not available")
+        from utils.sweep_helpers import (
+            SEED_REPLICAS_PER_STREAM,
+            SEED_STREAMS_PER_POINT,
+            derive_point_seed,
+        )
+        with pytest.raises(ValueError, match='replicas a stream can hold'):
+            derive_point_seed(temperature_index=0, seed_index=SEED_REPLICAS_PER_STREAM)
+        with pytest.raises(ValueError, match='streams a grid point can hold'):
+            derive_point_seed(
+                temperature_index=0, seed_index=0, stream_index=SEED_STREAMS_PER_POINT,
+            )
+        with pytest.raises(ValueError, match='non-negative'):
+            derive_point_seed(temperature_index=-1, seed_index=0)
+        with pytest.raises(ValueError, match='32-bit'):
+            derive_point_seed(temperature_index=10_000, seed_index=0)
 
 
 class TestEquilibriumCorrelationHelper:

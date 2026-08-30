@@ -5,7 +5,7 @@ This file collects all scientific references used throughout the VibeSpin projec
 
 ## Referencing Policy
 
-Referencing policy is defined in [AGENTS.md](https://github.com/manganite/VibeSpin/blob/master/AGENTS.md#7-scientific-referencing). Please consult that file for the official rules and enforcement details.
+Referencing policy is defined in [AGENTS.md](https://github.com/manganite/VibeSpin/blob/HEAD/AGENTS.md#7-scientific-referencing). Please consult that file for the official rules and enforcement details.
 
 
 ## 1. Physical Models
