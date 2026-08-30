@@ -133,7 +133,7 @@ dynamic universality class <a class="reference internal" href="#Bibliography"><s
 <p>This notebook presents both topics side by side for the three VibeSpin models (Ising, XY, and <span class="math notranslate nohighlight">\(q\)</span>-state clock), connecting the equilibrium correlation structure in Part I to the non-equilibrium coarsening dynamics in Part II. Part I loads or computes equilibrium <span class="math notranslate nohighlight">\(G(r)\)</span> at representative temperatures. Part II loads or computes ordering kinetics traces showing how the coarsening length scale <span class="math notranslate nohighlight">\(R(t)\)</span> evolves after a quench, with power-law fits that extract the growth exponent. The
 setup cell below imports the required libraries and defines the physical constants and color palette used throughout.</p>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[56]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[1]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">__future__</span><span class="w"> </span><span class="kn">import</span> <span class="n">annotations</span>
@@ -177,8 +177,7 @@ setup cell below imports the required libraries and defines the physical constan
 
 <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;T_c (Ising, exact) = </span><span class="si">{</span><span class="n">TC_ISING</span><span class="si">:</span><span class="s1">.4f</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
 <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;T_BKT (XY, theoretical) = </span><span class="si">{</span><span class="n">T_BKT</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
-<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Repository root: </span><span class="si">{</span><span class="n">REPO_ROOT</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
-</pre></div>
+<br/></pre></div>
 </div>
 </div>
 <div class="nboutput nblast docutils container">
@@ -188,7 +187,6 @@ setup cell below imports the required libraries and defines the physical constan
 <div class="highlight"><pre>
 T_c (Ising, exact) = 2.2692
 T_BKT (XY, theoretical) = 0.893
-Repository root: /workspaces/vibespin
 </pre></div></div>
 </div>
 <hr class="docutils" />
@@ -199,7 +197,7 @@ Repository root: /workspaces/vibespin
 <h3>Ising Correlations<a class="headerlink" href="#Ising-Correlations" title="Link to this heading"></a></h3>
 <p>The Ising model has three qualitatively different correlation regimes. In the ferromagnetic phase (<span class="math notranslate nohighlight">\(T &lt; T_c\)</span>) correlations saturate to a long-range plateau. At the critical point (<span class="math notranslate nohighlight">\(T = T_c\)</span>) the decay is algebraic: <span class="math notranslate nohighlight">\(G(r) \sim r^{-\eta}\)</span> with the exact exponent <span class="math notranslate nohighlight">\(\eta = 1/4\)</span> <a class="reference internal" href="#Bibliography"><span class="std std-ref">[3]</span></a>. In the paramagnetic phase (<span class="math notranslate nohighlight">\(T &gt; T_c\)</span>) the decay is exponential with a correlation length <span class="math notranslate nohighlight">\(\xi(T)\)</span> that diverges as <span class="math notranslate nohighlight">\(T \to T_c^+\)</span>.</p>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[80]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[2]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">ising_corr_cache</span> <span class="o">=</span> <span class="n">REPO_ROOT</span> <span class="o">/</span> <span class="s1">&#39;results&#39;</span> <span class="o">/</span> <span class="s1">&#39;ising&#39;</span> <span class="o">/</span> <span class="s1">&#39;correlation_comparison.npz&#39;</span>
@@ -252,17 +250,25 @@ Repository root: /workspaces/vibespin
 <br/></pre></div>
 </div>
 </div>
+<div class="nboutput docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area stderr docutils container">
+<div class="highlight"><pre>
+convergence_equilibrate: detected quasi-steady stuck state before max_steps=6000; stopping early without convergence.
+</pre></div></div>
+</div>
 <div class="nboutput nblast docutils container">
 <div class="prompt empty docutils container">
 </div>
 <div class="output_area docutils container">
 <div class="highlight"><pre>
-Loaded Ising correlations from cache
+Computed fallback Ising correlations (L=128)
 </pre></div></div>
 </div>
 <p>The log-log plot below shows <span class="math notranslate nohighlight">\(G(r)\)</span> at the three representative Ising temperatures. The critical curve should appear approximately straight with slope <span class="math notranslate nohighlight">\(-1/4\)</span>.</p>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[81]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[3]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">fig</span><span class="p">,</span> <span class="n">ax</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mf">7.5</span><span class="p">,</span> <span class="mi">5</span><span class="p">))</span>
@@ -312,7 +318,7 @@ bends sharply away from the guide on log-log axes and decays exponentially with 
 <a class="reference internal" href="#Bibliography"><span class="std std-ref">[4]</span></a>. At <span class="math notranslate nohighlight">\(T = 0.4\)</span>, the lower temperature used below, this formula predicts <span class="math notranslate nohighlight">\(\eta \approx 0.064\)</span>, meaning <span class="math notranslate nohighlight">\(G(r)\)</span> should decay very slowly as a barely visible downward slope on log-log axes. Above <span class="math notranslate nohighlight">\(T_{\mathrm{BKT}}\)</span> unbound vortex-antivortex pairs proliferate, the spin stiffness drops to zero, and the correlation function crosses over to exponential decay with a finite correlation length. The cell below loads precomputed <span class="math notranslate nohighlight">\(G(r)\)</span> data at
 <span class="math notranslate nohighlight">\(T = 0.4\)</span> and <span class="math notranslate nohighlight">\(T = 1.5\)</span>, falling back to an in-kernel short run if the cache is absent.</p>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[78]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[4]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">xy_corr_cache</span> <span class="o">=</span> <span class="n">REPO_ROOT</span> <span class="o">/</span> <span class="s1">&#39;results&#39;</span> <span class="o">/</span> <span class="s1">&#39;xy&#39;</span> <span class="o">/</span> <span class="s1">&#39;correlation_comparison.npz&#39;</span>
@@ -368,17 +374,25 @@ bends sharply away from the guide on log-log axes and decays exponentially with 
 </pre></div>
 </div>
 </div>
+<div class="nboutput docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area stderr docutils container">
+<div class="highlight"><pre>
+convergence_equilibrate: detected quasi-steady stuck state before max_steps=6000; stopping early without convergence.
+</pre></div></div>
+</div>
 <div class="nboutput nblast docutils container">
 <div class="prompt empty docutils container">
 </div>
 <div class="output_area docutils container">
 <div class="highlight"><pre>
-Loaded XY correlations from cache
+Computed fallback XY correlations at L=64, 6000 measurement steps (reduced for interactive runtime)
 </pre></div></div>
 </div>
 <p>The plot below shows the two XY curves on log-log axes together with a power-law fit to the low-temperature one, so the measured exponent can be read directly against the spin-wave prediction <span class="math notranslate nohighlight">\(\eta(0.4) \approx 0.064\)</span> quoted above. A straight line on these axes is algebraic decay; curvature that steepens with <span class="math notranslate nohighlight">\(r\)</span> is the signature of the exponential decay expected above the transition.</p>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[79]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[5]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">fig</span><span class="p">,</span> <span class="n">ax</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mf">7.5</span><span class="p">,</span> <span class="mi">5</span><span class="p">))</span>
@@ -440,7 +454,7 @@ Loaded XY correlations from cache
 plateau, structurally identical to the Ising ferromagnetic phase. Between <span class="math notranslate nohighlight">\(T_1\)</span> and <span class="math notranslate nohighlight">\(T_2\)</span> the discrete anisotropy is irrelevant at long wavelengths and the model flows to the XY fixed point, producing algebraic quasi-long-range order with <span class="math notranslate nohighlight">\(G(r) \sim r^{-\eta(T)}\)</span>. For <span class="math notranslate nohighlight">\(q = 6\)</span> the exponent is bounded by <span class="math notranslate nohighlight">\(\eta(T_1) = 4/q^2 = 1/9 \approx 0.111\)</span> at the lower transition and <span class="math notranslate nohighlight">\(\eta(T_2) = 1/4\)</span> at the upper transition, and follows the same spin-wave formula
 <span class="math notranslate nohighlight">\(\eta(T) \approx T/(2\pi J)\)</span> as the XY model in between. At the representative quasi-ordered temperature <span class="math notranslate nohighlight">\(T = 0.8\)</span> used below, this gives an expected <span class="math notranslate nohighlight">\(\eta \approx 0.13\)</span>. Above <span class="math notranslate nohighlight">\(T_2\)</span> correlations decay exponentially. The cell below loads or computes <span class="math notranslate nohighlight">\(G(r)\)</span> for the <span class="math notranslate nohighlight">\(q = 6\)</span> clock model at three representative temperatures: <span class="math notranslate nohighlight">\(T = 0.5\)</span> (ordered), <span class="math notranslate nohighlight">\(T = 0.8\)</span> (quasi-ordered), and <span class="math notranslate nohighlight">\(T = 1.2\)</span> (disordered).</p>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[82]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[6]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">clock_corr_cache</span> <span class="o">=</span> <span class="n">REPO_ROOT</span> <span class="o">/</span> <span class="s1">&#39;results&#39;</span> <span class="o">/</span> <span class="s1">&#39;clock&#39;</span> <span class="o">/</span> <span class="s1">&#39;correlation_comparison.npz&#39;</span>
@@ -499,17 +513,27 @@ plateau, structurally identical to the Ising ferromagnetic phase. Between <span 
 </pre></div>
 </div>
 </div>
+<div class="nboutput docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area stderr docutils container">
+<div class="highlight"><pre>
+convergence_equilibrate: detected quasi-steady stuck state before max_steps=20000; stopping early without convergence.
+convergence_equilibrate: detected quasi-steady stuck state before max_steps=20000; stopping early without convergence.
+convergence_equilibrate: detected quasi-steady stuck state before max_steps=20000; stopping early without convergence.
+</pre></div></div>
+</div>
 <div class="nboutput nblast docutils container">
 <div class="prompt empty docutils container">
 </div>
 <div class="output_area docutils container">
 <div class="highlight"><pre>
-Loaded clock correlations from cache
+Computed fallback clock correlations (L=64, q=6)
 </pre></div></div>
 </div>
 <p>The plot below shows all three clock curves on log-log axes, so the saturating plateau of the ordered phase, the straight-line algebraic decay of the quasi-ordered one, and the downward curvature of exponential decay above <span class="math notranslate nohighlight">\(T_2\)</span> can be compared on a single set of axes rather than read one at a time.</p>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[83]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[7]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">fig</span><span class="p">,</span> <span class="n">ax</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mf">7.5</span><span class="p">,</span> <span class="mi">5</span><span class="p">))</span>
@@ -594,7 +618,7 @@ are insensitive to outlier seeds trapped in metastable configurations.</p>
 <h3>Load Kinetics Data<a class="headerlink" href="#Load-Kinetics-Data" title="Link to this heading"></a></h3>
 <p>The precomputed kinetics data comes from <code class="docutils literal notranslate"><span class="pre">scripts/{model}/ordering_kinetics.py</span></code>. The fallback computes a short kinetics run using <code class="docutils literal notranslate"><span class="pre">utils.kinetics_helpers.run_ordering_kinetics</span></code>. Since kinetics simulations require random-site updates (physical dynamics), the fallback necessarily uses smaller lattices and fewer time steps.</p>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[63]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[8]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">kinetics_data</span> <span class="o">=</span> <span class="p">{}</span>
@@ -642,9 +666,11 @@ are insensitive to outlier seeds trapped in metastable configurations.</p>
 </div>
 <div class="output_area docutils container">
 <div class="highlight"><pre>
-Ising: loaded from cache (L=256, T=0.10)
-XY: loaded from cache (L=256, T=0.50)
-Clock: loaded from cache (L=256, T=0.50)
+Ising: cache not found, skipping
+XY: cache not found, skipping
+Clock: cache not found, skipping
+
+No kinetics data found. Run the ordering_kinetics scripts to populate the cache.
 </pre></div></div>
 </div>
 </section>
@@ -654,7 +680,7 @@ Clock: loaded from cache (L=256, T=0.50)
 <p>At <span class="math notranslate nohighlight">\(t = 1\)</span> the lattice is nearly random with <span class="math notranslate nohighlight">\(\xi \approx 1\)</span> lattice unit. Nuclei of aligned spins emerge by <span class="math notranslate nohighlight">\(t = 10\)</span> and <span class="math notranslate nohighlight">\(\xi\)</span> has grown to a few lattice spacings. By <span class="math notranslate nohighlight">\(t = 100\)</span>, well-connected domains of scale <span class="math notranslate nohighlight">\(\xi \approx 12\)</span> lattice units are established and the <span class="math notranslate nohighlight">\(S(|k|)\)</span> peak has shifted visibly to lower spatial frequencies. At <span class="math notranslate nohighlight">\(t = 1000\)</span> with <span class="math notranslate nohighlight">\(T = 0.1\)</span> the deep quench drives the system to full order within the simulation box:
 <span class="math notranslate nohighlight">\(\xi &gt; L/2\)</span>, the structure factor has no spectral power above <span class="math notranslate nohighlight">\(k = 0\)</span>, and <span class="math notranslate nohighlight">\(G(r) \approx 1\)</span> across the entire lattice. This rapid approach to the ground state reflects the low-temperature acceptance rate, which severely suppresses domain-wall nucleation in the asymptotic regime.</p>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[74]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[9]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">utils.observables</span><span class="w"> </span><span class="kn">import</span> <span class="n">radial_average_sk</span>
@@ -707,7 +733,7 @@ Clock: loaded from cache (L=256, T=0.50)
 </div>
 <div class="output_area docutils container">
 <div class="highlight"><pre>
-xi at each snapshot (lattice units): t=1: 1.0, t=10: 3.7, t=100: 12.5, t=1000: &gt;L/2 (fully ordered)
+xi at each snapshot (lattice units): t=1: 1.0, t=10: 3.6, t=100: 10.2, t=1000: 30.2
 </pre></div></div>
 </div>
 <p>The correlation length <span class="math notranslate nohighlight">\(\xi(t)\)</span> extracted from each snapshot grows by more than an order of magnitude across the four frames. This visual progression directly connects domain morphology to the quantitative kinetics analysis below: <span class="math notranslate nohighlight">\(R_\xi\)</span> from the ordering kinetics traces is the same estimator applied to an ensemble average rather than a single snapshot, so the two measurements should agree in trend. The growth from <span class="math notranslate nohighlight">\(\xi \sim 1\)</span> at <span class="math notranslate nohighlight">\(t = 1\)</span> to <span class="math notranslate nohighlight">\(\xi \gg 1\)</span> at
@@ -718,7 +744,7 @@ xi at each snapshot (lattice units): t=1: 1.0, t=10: 3.7, t=100: 12.5, t=1000: &
 <p>The two coarsening mechanisms described above produce qualitatively different spatial textures. In the Ising model, the binary spin variable creates sharp domain walls: each site is either <span class="math notranslate nohighlight">\(+1\)</span> or <span class="math notranslate nohighlight">\(-1\)</span>, and the boundary between aligned regions is a well-defined one-dimensional curve. In the XY model, the continuous angle variable produces a smooth field that interpolates gradually between regions of different orientation. Domain walls in the Ising sense do not exist; instead, the
 non-trivial topological objects are point-like vortices (winding number <span class="math notranslate nohighlight">\(\pm 1\)</span>) where the angle field is singular. The side-by-side comparison below shows an Ising configuration and an XY angle field at the same Monte Carlo time (<span class="math notranslate nohighlight">\(t = 100\)</span>) after an infinite-temperature quench, making the structural contrast immediate.</p>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[65]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[10]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># XY simulation at same parameters as Ising evolution</span>
@@ -765,7 +791,7 @@ non-trivial topological objects are point-like vortices (winding number <span cl
 <p>The smooth angle field shown above hides the topological objects that actually drive XY coarsening. A vortex is a point where the spin angle winds by <span class="math notranslate nohighlight">\(\pm 2\pi\)</span> around a closed plaquette; the winding number is <span class="math notranslate nohighlight">\(+1\)</span> for a vortex and <span class="math notranslate nohighlight">\(-1\)</span> for an antivortex. At high temperature the system contains a dense gas of unbound defects. After the quench, vortex-antivortex pairs annihilate and the mean inter-vortex spacing <span class="math notranslate nohighlight">\(R_v = n_v^{-1/2}\)</span> grows as <span class="math notranslate nohighlight">\(t^{1/2}\)</span>. The vorticity
 field, computed from the discrete plaquette winding number, makes this annihilation process directly visible. The panels below show both the angle field and the vorticity map at four successive times after the quench, with vortices in red (<span class="math notranslate nohighlight">\(\omega = +1\)</span>) and antivortices in blue (<span class="math notranslate nohighlight">\(\omega = -1\)</span>).</p>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[66]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[11]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">VORTEX_TARGETS</span> <span class="o">=</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">10</span><span class="p">,</span> <span class="mi">100</span><span class="p">,</span> <span class="mi">1000</span><span class="p">]</span>
@@ -830,7 +856,7 @@ field, computed from the discrete plaquette winding number, makes this annihilat
 </div>
 <div class="output_area docutils container">
 <div class="highlight"><pre>
-Vortex densities: t=1: n_v=0.3081, t=10: n_v=0.1653, t=100: n_v=0.0175, t=1000: n_v=0.0027
+Vortex densities: t=1: n_v=0.3077, t=10: n_v=0.1593, t=100: n_v=0.0173, t=1000: n_v=0.0032
 </pre></div></div>
 </div>
 <p>At <span class="math notranslate nohighlight">\(t = 1\)</span> the angle field is essentially random and the vorticity map is dense with defects: roughly one in every three plaquettes carries a nonzero winding number. By <span class="math notranslate nohighlight">\(t = 10\)</span> local alignment has begun, and the vortex density has dropped by a factor of several as nearby pairs annihilate. At <span class="math notranslate nohighlight">\(t = 100\)</span> large vortex-free domains are clearly visible on both maps, with surviving defects concentrated along the boundaries between misaligned regions. By <span class="math notranslate nohighlight">\(t = 1000\)</span> only a
@@ -842,7 +868,7 @@ handful of widely separated pairs remain, and the vortex spacing <span class="ma
 <p>The coarsening-length estimators <span class="math notranslate nohighlight">\(R_{S(k)}\)</span> and <span class="math notranslate nohighlight">\(R_\xi\)</span> are plotted on log-log axes for each model that has cached data. A straight line on these axes indicates power-law growth <span class="math notranslate nohighlight">\(R \sim t^n\)</span>. The fitted exponents from the late-time regime are shown in the legend. For the Ising model, <span class="math notranslate nohighlight">\(R(t)\)</span> measures the average domain size set by curvature-driven wall motion (Allen-Cahn prediction <span class="math notranslate nohighlight">\(n = 1/2\)</span>). For the XY model, <span class="math notranslate nohighlight">\(R(t)\)</span> tracks the characteristic spacing between
 unpaired vortices as they annihilate; the same <span class="math notranslate nohighlight">\(t^{1/2}\)</span> exponent applies at late times <a class="reference internal" href="#Bibliography"><span class="std std-ref">[1]</span></a> <a class="reference internal" href="#Bibliography"><span class="std std-ref">[2]</span></a>.</p>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[67]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[12]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="k">if</span> <span class="n">kinetics_data</span><span class="p">:</span>
@@ -894,8 +920,9 @@ unpaired vortices as they annihilate; the same <span class="math notranslate noh
 <div class="prompt empty docutils container">
 </div>
 <div class="output_area docutils container">
-<img alt="_images/correlation_and_coarsening_29_0.png" src="_images/correlation_and_coarsening_29_0.png" />
-</div>
+<div class="highlight"><pre>
+No kinetics data available for plotting.
+</pre></div></div>
 </div>
 <p>All three models produce approximately straight lines on log-log axes across the fit window, with exponents within 10% of the Allen-Cahn prediction <span class="math notranslate nohighlight">\(n = 1/2\)</span>. In every panel <span class="math notranslate nohighlight">\(R_{S(k)}\)</span> sits above <span class="math notranslate nohighlight">\(R_\xi\)</span> by a roughly constant factor throughout the run; the detailed physical origin of this offset is examined in the estimator comparison below. The Ising run reaches larger absolute values of <span class="math notranslate nohighlight">\(R(t)\)</span> at comparable time because the deep quench to <span class="math notranslate nohighlight">\(T = 0.10\)</span> drives
 coarsening efficiently with a low probability of wall nucleation back into the ordered phase. The XY and clock curves grow more slowly in absolute terms but display the same qualitative power-law trend, with fit-window exponents confirming the universality of the <span class="math notranslate nohighlight">\(t^{1/2}\)</span> law.</p>
@@ -905,7 +932,7 @@ coarsening efficiently with a low probability of wall nucleation back into the o
 <p>The Allen-Cahn theory predicts that the growth exponent <span class="math notranslate nohighlight">\(n = 1/2\)</span> is universal for non-conserved order-parameter dynamics and does not depend on the quench temperature, provided the system is quenched into the ordered phase. The prefactor and the duration of the early-time transient, however, do depend on the quench depth: a shallow quench near <span class="math notranslate nohighlight">\(T_c\)</span> leaves stronger thermal fluctuations that interfere with domain nucleation, slowing the onset of scaling behavior. The cell below loads
 precomputed coarsening data from <code class="docutils literal notranslate"><span class="pre">scripts/ising/coarsening_analysis.py</span></code>, which runs short Ising coarsening simulations at three different quench temperatures with multi-seed ensemble averaging and stores median <span class="math notranslate nohighlight">\(R_\xi(t)\)</span> traces. If the precomputed cache is absent, the notebook falls back to an inline computation at <span class="math notranslate nohighlight">\(L = 64\)</span> with four seeds.</p>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[68]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[13]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># --- A3: Quench-depth sensitivity ---</span>
@@ -991,7 +1018,7 @@ precomputed coarsening data from <code class="docutils literal notranslate"><spa
 </div>
 <div class="output_area docutils container">
 <div class="highlight"><pre>
-Loaded quench-depth data from cache (L=64, 3 temps, 4 seeds each)
+Computed fallback quench-depth data (L=64)
 </pre></div></div>
 </div>
 <div class="nboutput nblast docutils container">
@@ -1009,7 +1036,7 @@ late-time slope still tracks the Allen-Cahn prediction. This universality of the
 <p>Parts I and II of this notebook measure different aspects of spatial order: equilibrium correlations quantify the steady-state extent of spin-spin coherence, while coarsening tracks the transient growth of that coherence after a quench. The two perspectives connect through the equilibrium correlation length <span class="math notranslate nohighlight">\(\xi_{\mathrm{eq}}\)</span>, which sets the saturation scale for domain growth. Once <span class="math notranslate nohighlight">\(R_\xi(t)\)</span> approaches <span class="math notranslate nohighlight">\(\xi_{\mathrm{eq}}\)</span>, the system has thermalised and the power-law growth
 regime ends. The cell below loads precomputed crossover data from <code class="docutils literal notranslate"><span class="pre">scripts/ising/coarsening_analysis.py</span></code>, which measures <span class="math notranslate nohighlight">\(\xi_{\mathrm{eq}}\)</span> from an equilibrated simulation and runs a long coarsening trajectory averaged over four seeds to show the median <span class="math notranslate nohighlight">\(R_\xi(t)\)</span> saturating at the equilibrium value. If the cache is absent, the notebook computes the same analysis inline on a small lattice (<span class="math notranslate nohighlight">\(L = 64\)</span>).</p>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[69]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[14]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># --- A2: Quantitative bridge — ξ_eq vs coarsening R_ξ(t) ---</span>
@@ -1091,7 +1118,7 @@ regime ends. The cell below loads precomputed crossover data from <code class="d
 </div>
 <div class="output_area docutils container">
 <div class="highlight"><pre>
-Loaded crossover data from cache (L=64, T=1.135, xi_eq=31.0, 4 seeds)
+Computed fallback crossover data (L=64)
 </pre></div></div>
 </div>
 <div class="nboutput docutils container">
@@ -1121,7 +1148,7 @@ biggest domains) most heavily, <span class="math notranslate nohighlight">\(R_{S
 irregular, curved walls of the Ising coarsening morphology place <span class="math notranslate nohighlight">\(R_{\mathrm{MIL}}\)</span> between <span class="math notranslate nohighlight">\(R_\xi\)</span> and <span class="math notranslate nohighlight">\(R_{S(k)}\)</span>.</p>
 <p>The vertical dashed line marks the fit-start time <span class="math notranslate nohighlight">\(t_{\min}\)</span>; only points to its right enter the power-law fits that produce the quoted exponents. The dotted black reference is the exact Allen-Cahn <span class="math notranslate nohighlight">\(t^{1/2}\)</span> slope anchored to the geometric midpoint of the <span class="math notranslate nohighlight">\(R_{S(k)}\)</span> trace.</p>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[70]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[15]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="k">if</span> <span class="s1">&#39;Ising&#39;</span> <span class="ow">in</span> <span class="n">kinetics_data</span><span class="p">:</span>
@@ -1192,8 +1219,9 @@ irregular, curved walls of the Ising coarsening morphology place <span class="ma
 <div class="prompt empty docutils container">
 </div>
 <div class="output_area docutils container">
-<img alt="_images/correlation_and_coarsening_37_0.png" src="_images/correlation_and_coarsening_37_0.png" />
-</div>
+<div class="highlight"><pre>
+No Ising kinetics data available for comparison plot.
+</pre></div></div>
 </div>
 <p>The ordering <span class="math notranslate nohighlight">\(R_{S(k)} &gt; R_{\mathrm{MIL}} &gt; R_\xi\)</span> seen throughout the run is not a measurement artifact; it reflects genuine differences in what each estimator is sensitive to. <span class="math notranslate nohighlight">\(R_{S(k)}\)</span> picks up the longest periodicity in the domain pattern (the largest surviving domains dominate the Fourier power spectrum), so it gives the most optimistic estimate of domain size. <span class="math notranslate nohighlight">\(R_\xi\)</span> integrates across domain walls, whose anti-correlation shortens the apparent decay length below the true
 domain half-width, so it gives the most conservative reading. <span class="math notranslate nohighlight">\(R_{\mathrm{MIL}}\)</span> lies between the two because it averages chord lengths across all intercepted domains without preferentially weighting the large ones.</p>
@@ -1205,7 +1233,7 @@ estimator responds differently to the diffuse initial texture, widening the gap 
 <p>A single coarsening trajectory is one realization of a stochastic process. Independent runs from different random seeds follow the same average power law but fluctuate around it, especially at early times when the domain pattern is sensitive to the initial random configuration. To visualize this run-to-run variability, the cell below loads an 8-seed Ising ensemble (<span class="math notranslate nohighlight">\(L = 64\)</span>, <span class="math notranslate nohighlight">\(T = 0.1\,T_c\)</span>) precomputed by <code class="docutils literal notranslate"><span class="pre">scripts/ising/coarsening_analysis.py</span></code> and plots the individual
 <span class="math notranslate nohighlight">\(R_\xi(t)\)</span> traces together with the ensemble median and interquartile range envelope. The IQR band shows where the central half of the ensemble falls and quantifies how rapidly the inter-seed spread narrows as scaling sets in. If the precomputed data is unavailable, a shorter fallback ensemble is computed inline.</p>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[71]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[16]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># --- B9: Stochastic ensemble ---</span>
@@ -1281,7 +1309,7 @@ estimator responds differently to the diffuse initial texture, widening the gap 
 </div>
 <div class="output_area docutils container">
 <div class="highlight"><pre>
-Loaded ensemble data from cache (L=64, T=0.227, 8 seeds)
+Computed fallback ensemble data (L=64)
 </pre></div></div>
 </div>
 <div class="nboutput nblast docutils container">
@@ -1301,7 +1329,7 @@ the tails and reports the spread of the central half of the ensemble. By <span c
 <p>Note that <span class="math notranslate nohighlight">\(R_\xi\)</span> is particularly compressed for XY and Clock relative to Ising. In an Ising system <span class="math notranslate nohighlight">\(G(r)\)</span> decays steeply to zero between domains, so its <span class="math notranslate nohighlight">\(1/e\)</span> crossing captures the domain half-width reasonably well. In a vortex-glass texture, <span class="math notranslate nohighlight">\(G(r)\)</span> decays only algebraically, because the continuous order parameter interpolates smoothly between defects rather than jumping abruptly, so <span class="math notranslate nohighlight">\(R_\xi\)</span> saturates to a small fraction of the true inter-vortex spacing and
 separates from <span class="math notranslate nohighlight">\(R_{S(k)}\)</span> by a much larger factor than in the Ising case.</p>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[72]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[17]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">xy_clock_models</span> <span class="o">=</span> <span class="p">[</span><span class="n">name</span> <span class="k">for</span> <span class="n">name</span> <span class="ow">in</span> <span class="p">[</span><span class="s1">&#39;XY&#39;</span><span class="p">,</span> <span class="s1">&#39;Clock&#39;</span><span class="p">]</span> <span class="k">if</span> <span class="n">name</span> <span class="ow">in</span> <span class="n">kinetics_data</span><span class="p">]</span>
@@ -1378,8 +1406,9 @@ separates from <span class="math notranslate nohighlight">\(R_{S(k)}\)</span> by
 <div class="prompt empty docutils container">
 </div>
 <div class="output_area docutils container">
-<img alt="_images/correlation_and_coarsening_43_0.png" src="_images/correlation_and_coarsening_43_0.png" />
-</div>
+<div class="highlight"><pre>
+No XY or Clock kinetics data available for comparison plot.
+</pre></div></div>
 </div>
 <p>The ordering <span class="math notranslate nohighlight">\(R_{S(k)} &gt; R_v &gt; R_\xi\)</span> mirrors the Ising situation, but the gaps between the three curves are wider, and for a physically transparent reason. <span class="math notranslate nohighlight">\(R_\xi\)</span> is the <span class="math notranslate nohighlight">\(1/e\)</span> drop of <span class="math notranslate nohighlight">\(G(r)\)</span>, which for the XY order parameter means capturing the scale at which the smooth phase field loses its short-range coherence. Because the phase field interpolates continuously between vortex cores rather than flipping abruptly at a wall, <span class="math notranslate nohighlight">\(G(r)\)</span> decays slowly and the <span class="math notranslate nohighlight">\(1/e\)</span>
 crossing falls well short of the actual inter-vortex spacing. <span class="math notranslate nohighlight">\(R_v = n_v^{-1/2}\)</span> directly counts the mean area per defect and therefore sits much closer to <span class="math notranslate nohighlight">\(R_{S(k)}\)</span>, which is set by the dominant correlation wavelength in the Fourier spectrum of the same defect texture.</p>
@@ -1389,7 +1418,7 @@ crossing falls well short of the actual inter-vortex spacing. <span class="math 
 <h3>Exponent Comparison<a class="headerlink" href="#Exponent-Comparison" title="Link to this heading"></a></h3>
 <p>The table below collects fitted growth exponents for all three estimators across every model. For Ising, the third column gives the mean-intercept-length exponent <span class="math notranslate nohighlight">\(n(R_{\mathrm{MIL}})\)</span>. For XY and Clock, the third column gives <span class="math notranslate nohighlight">\(n(R_v)\)</span>, derived from the vortex-density exponent via <span class="math notranslate nohighlight">\(n(R_v) = -n(n_v)/2\)</span>, since <span class="math notranslate nohighlight">\(R_v = n_v^{-1/2}\)</span>. All values are compared to the Allen-Cahn prediction of <span class="math notranslate nohighlight">\(n = 1/2\)</span>.</p>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[73]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[18]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="k">if</span> <span class="n">kinetics_data</span><span class="p">:</span>
@@ -1419,15 +1448,7 @@ crossing falls well short of the actual inter-vortex spacing. <span class="math 
 </div>
 <div class="output_area docutils container">
 <div class="highlight"><pre>
-Model         n(R_sk)    n(R_xi)    n(R_3rd) 3rd estimator              L      T
---------------------------------------------------------------------------------
-Ising          0.4947     0.5487      0.5464 R_MIL                    256   0.10
-XY             0.4368     0.4661      0.4471 R_v = n_v^{-1/2}         256   0.50
-Clock          0.4178     0.4575      0.4137 R_v = n_v^{-1/2}         256   0.50
-
-Allen-Cahn prediction: n = 0.5
-
-Note: n(R_v) = -n(n_v)/2 (XY/Clock); R_v = n_v^{-1/2} is the mean vortex spacing.
+No kinetics data available.
 </pre></div></div>
 </div>
 <p>All nine fitted exponents fall between 0.41 and 0.52, within statistical scatter of the theoretical <span class="math notranslate nohighlight">\(n = 1/2\)</span>. The spread within each row, typically 0.03 to 0.05 between <span class="math notranslate nohighlight">\(n(R_{S(k)})\)</span> and <span class="math notranslate nohighlight">\(n(R_\xi)\)</span>, reflects the different early-time transient sensitivity of the two estimators rather than a genuine dynamical distinction. The third-estimator exponents (<span class="math notranslate nohighlight">\(n(R_\mathrm{MIL})\)</span> for Ising, <span class="math notranslate nohighlight">\(n(R_v)\)</span> for XY and Clock) agree closely with the structure-factor exponents in each
