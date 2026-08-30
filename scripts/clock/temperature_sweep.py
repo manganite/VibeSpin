@@ -46,7 +46,7 @@ def main() -> None:
     companion diagnostics figures.
     """
     parser = argparse.ArgumentParser(description='2D Clock Model Temperature Sweep')
-    parser.add_argument('--size', type=int, default=32, help='Linear lattice size L')
+    parser.add_argument('--size', type=int, default=48, help='Linear lattice size L')
     parser.add_argument('--q', type=int, default=6, help='Number of clock states')
     parser.add_argument('--aniso', type=float, default=0.0, help='Anisotropy parameter A')
     parser.add_argument('--discrete', action='store_true', help='Use discrete angle representation')
@@ -66,14 +66,14 @@ def main() -> None:
         '--eq-qs-min-steps', type=int, default=_EQ_QS_MIN_STEPS_DEFAULT,
         help='Minimum accumulated equilibration steps before stuck detection can fire',
     )
-    parser.add_argument('--meas-steps', type=int, default=5000, help='Measurement steps')
+    parser.add_argument('--meas-steps', type=int, default=20000, help='Measurement steps')
     parser.add_argument('--t-min', type=float, default=0.1, help='Minimum temperature')
     parser.add_argument('--t-max', type=float, default=2.0, help='Maximum temperature')
-    parser.add_argument('--t-points', type=int, default=40, help='Number of temperature points')
+    parser.add_argument('--t-points', type=int, default=60, help='Number of temperature points')
     parser.add_argument(
         '--n-seeds',
         type=int,
-        default=1,
+        default=5,
         help='Target number of fully converged seed replicas to retain',
     )
     parser.add_argument(
@@ -332,6 +332,8 @@ def main() -> None:
         uncertainty_method=str(args.derived_uncertainty_method),
         confidence_level=float(args.confidence_level),
         n_seeds=max_seeds_retained,
+        size=int(args.size),
+        meas_steps=int(args.meas_steps),
         bootstrap_resamples=int(args.derived_bootstrap_resamples),
         requested_n_seeds=target_n_seeds,
         max_seed_attempts=max_seed_attempts,

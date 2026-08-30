@@ -434,7 +434,10 @@ class TestTemperatureSweepMainPayloads:
                 'model_cls',
                 'model_kwargs',
             ),
-            ['xy_temperature_sweep', '--size', '8', '--meas-steps', '20', '--t-points', '2'],
+            [
+                'xy_temperature_sweep', '--size', '8', '--meas-steps', '20',
+                '--t-points', '2', '--n-seeds', '1',
+            ],
             expected_len=2,
         )
 
@@ -463,7 +466,10 @@ class TestTemperatureSweepMainPayloads:
                 'model_cls',
                 'model_kwargs',
             ),
-            ['clock_temperature_sweep', '--size', '8', '--meas-steps', '20', '--t-points', '2'],
+            [
+                'clock_temperature_sweep', '--size', '8', '--meas-steps', '20',
+                '--t-points', '2', '--n-seeds', '1',
+            ],
             expected_len=2,
         )
 
@@ -570,6 +576,8 @@ class TestTemperatureSweepUncertaintySchema:
                 # Metadata contract from AGENTS.md section 8
                 'uncertainty_method', 'confidence_level', 'n_seeds',
                 'bootstrap_resamples', 'nan_or_undefined_count',
+                # Run provenance, so a plot can state the lattice it came from
+                'size', 'meas_steps',
             }
             present = set(data.keys())
             missing = required - present

@@ -47,6 +47,20 @@ As mandated in `AGENTS.md`, each script hardcodes the physically appropriate upd
 ### Results
 All scripts save their output (plots and data files) to the `results/` directory, sub-divided by model and experiment type.
 
+## Production Defaults and Notebook Fallbacks
+
+Scripts and notebooks serve different goals, so their parameters differ deliberately.
+Script defaults favour data quality: the three temperature sweeps now run 60 temperature
+points with 20 000 measurement steps and 5 seed replicas (Ising and XY at L=64, Clock at
+L=48), which is what makes the hierarchical between-seed uncertainty meaningful; with the
+previous single-seed default no between-seed component existed at all. A full sweep takes
+roughly 3 minutes (Ising), 11 minutes (XY) and 16 minutes (Clock) on four cores.
+
+Notebook fallbacks favour responsiveness: they run only when the cached NPZ is absent and
+are sized so a reader never waits on a seemingly frozen cell. Each sweep fallback completes
+in well under a minute and still resolves the transition; the notebooks print the lattice
+size and step count they used, so a fallback figure is never mistaken for production data.
+
 ## Data Pipeline
 
 Scripts serve a dual role: they generate cached NPZ data files for notebooks and produce quick-check PNG figures for immediate visual verification. Notebooks are the curated presentation layer and load precomputed NPZ files to avoid re-running expensive simulations. When NPZ data is absent, notebooks provide lightweight fallback computations for demonstration purposes.
