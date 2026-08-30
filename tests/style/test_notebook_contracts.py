@@ -25,6 +25,10 @@ PROJECT_MODULES = (
 )
 
 
+#: Filesystem roots that identify one machine rather than the repository.
+_ABSOLUTE_PATH = re.compile(r'(?:^|[\s\'"(=])(/home/|/Users/|[A-Z]:\\\\)')
+
+
 def _code_cells(path: Path) -> list[tuple[int, str]]:
     """Return (index, source) for each code cell, with Jupyter magics blanked."""
     nb = json.loads(path.read_text(encoding='utf-8'))
@@ -131,3 +135,48 @@ def test_notebooks_call_keyword_only_functions_by_keyword() -> None:
                         f'keyword-only parameters are {kw_only[canonical]}'
                     )
     assert not failures, 'Positional calls to keyword-only helpers:\n' + '\n'.join(failures)
+
+
+def test_notebooks_carry_no_execution_timing_metadata() -> None:
+    """
+    Committed notebooks must not store per-cell execution timestamps.
+
+    Executing a notebook writes ``metadata.execution`` with iopub timestamps
+    into every code cell. They change on every run, so committing them turns a
+    figure refresh into a diff against every cell and makes merges conflict for
+    no reason, while contributing nothing to the rendered page.
+    """
+    offenders = [
+        f'{path.name} cell {index}'
+        for path in NOTEBOOKS
+        for index, cell in enumerate(json.loads(path.read_text(encoding='utf-8'))['cells'])
+        if 'execution' in cell.get('metadata', {})
+    ]
+    assert not offenders, (
+        'Execution timing metadata in committed notebooks; strip '
+        "metadata['execution'] after executing:\n" + '\n'.join(offenders)
+    )
+
+
+def test_notebook_outputs_contain_no_absolute_paths() -> None:
+    """
+    Stored outputs must not name a filesystem path from the machine that ran them.
+
+    The documentation renders these outputs verbatim, so an absolute path both
+    publishes one contributor's directory layout and produces a spurious diff
+    whenever the notebooks are regenerated somewhere else.
+    """
+    offenders = []
+    for path in NOTEBOOKS:
+        for index, cell in enumerate(json.loads(path.read_text(encoding='utf-8'))['cells']):
+            for output in cell.get('outputs', []):
+                text = output.get('text') or (output.get('data') or {}).get('text/plain', '')
+                if isinstance(text, list):
+                    text = ''.join(text)
+                for line in (text or '').split('\n'):
+                    if _ABSOLUTE_PATH.search(line):
+                        offenders.append(f'{path.name} cell {index}: {line.strip()[:90]}')
+    assert not offenders, (
+        'Absolute paths in stored notebook outputs; print them relative to the '
+        'repository root instead:\n' + '\n'.join(offenders)
+    )
