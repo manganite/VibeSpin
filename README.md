@@ -3,25 +3,25 @@
 [![Documentation](https://img.shields.io/badge/docs-GitHub%20Pages-blue)](https://manganite.github.io/VibeSpin/)
 [![Tests](https://github.com/manganite/VibeSpin/actions/workflows/tests.yml/badge.svg)](https://github.com/manganite/VibeSpin/actions/workflows/tests.yml)
 
-VibeSpin is a Python framework for high-performance simulation and analysis of two-dimensional lattice spin models. The codebase focuses on three foundational systems: the **Ising model**, the **XY model**, and the **q-state Clock model** — provided as `ClockSimulation` (continuous XY-plus-anisotropy form) and `DiscreteClockSimulation` (integer state indices with cosine lookup tables). It combines Numba-accelerated Monte Carlo dynamics with a robust analysis suite for equilibrium observables, coarsening kinetics, and topological defect tracking.
+VibeSpin is a Python framework for high-performance simulation and analysis of two-dimensional lattice spin models. The codebase focuses on three foundational systems: the **Ising model**, the **XY model**, and the **q-state Clock model**, provided as `ClockSimulation` (continuous XY-plus-anisotropy form) and `DiscreteClockSimulation` (integer state indices with cosine lookup tables). It combines Numba-accelerated Monte Carlo dynamics with an analysis suite for equilibrium observables, coarsening kinetics, and topological defect tracking.
 
-The implementation is optimized for speed, scalability, and physical repeatability. Core kernels utilize **Numba JIT compilation** with optional **multi-core parallelization**, periodic boundaries are handled via precomputed index arrays, and all stochastic trajectories are fully deterministic when seeded.
+The implementation is optimized for speed, scalability, and physical repeatability. Core kernels use **Numba JIT compilation** with optional **multi-core parallelization**, periodic boundaries are handled via precomputed index arrays, and all stochastic trajectories are fully deterministic when seeded (serial kernels; the optional parallel checkerboard kernels are not seed-reproducible because Numba seeds only the calling thread's RNG).
 
 ## Project Policies & Scope Discipline
 
-VibeSpin enforces strict development policies for physical correctness, code quality, reproducibility, and documentation. All edits must follow the **Scope Discipline**: never change, rewrite, or delete code/text unrelated to the current task. See [AGENTS.md](./agents.md) for the full list of mandatory development policies.
+VibeSpin enforces strict development policies for physical correctness, code quality, reproducibility, and documentation. All edits must follow the **Scope Discipline**: never change, rewrite, or delete code/text unrelated to the current task. See [AGENTS.md](https://github.com/manganite/VibeSpin/blob/HEAD/AGENTS.md) for the full list of mandatory development policies.
 
-## Bibliography
-All references used in VibeSpin are listed in [BIBLIOGRAPHY.md](./bibliography.md). Reference policy and link validation are enforced as described in AGENTS.md.
+## Reference Policy
+All references used in VibeSpin are listed in [BIBLIOGRAPHY.md](https://github.com/manganite/VibeSpin/blob/HEAD/BIBLIOGRAPHY.md). Reference policy and link validation are enforced as described in AGENTS.md.
 
 ### Background and References
-The Ising model [[1]](#Bibliography), XY model [[2]](#Bibliography), and q-state Clock model [[3]](#Bibliography) are canonical systems in statistical physics for studying phase transitions, critical phenomena, and topological defects. Monte Carlo methods, especially the Metropolis-Hastings algorithm [[4]](#Bibliography), are standard for simulating these models. The Wolff cluster algorithm [[5]](#Bibliography) is highly effective near criticality, reducing autocorrelation times by exploiting collective spin updates. For a comprehensive introduction to these models and algorithms, see the references below.
+The Ising model [[1]](#bibliography), XY model [[2]](#bibliography), and q-state Clock model [[3]](#bibliography) are canonical systems in statistical physics for studying phase transitions, critical phenomena, and topological defects. Monte Carlo methods, especially the Metropolis-Hastings algorithm [[4]](#bibliography), are standard for simulating these models. The Wolff cluster algorithm [[5]](#bibliography) is highly effective near criticality, reducing autocorrelation times by exploiting collective spin updates. For a thorough introduction to these models and algorithms, see the references below.
 
 ## Scope and Methods
 
 VibeSpin supports three update schemes tailored to specific physical regimes. **Checkerboard Updates** maximize equilibrium throughput via SIMD vectorization and multi-core execution. **Random Site Selection** is mandatory for non-equilibrium kinetics and aging studies, where preserving the stochastic trajectory is essential for physical validity. The **Wolff Cluster Algorithm** provides high efficiency near critical temperatures by mitigating critical slowing down through collective spin updates.
 
-The framework provides a comprehensive suite of diagnostics for physical analysis. Thermodynamic measurements include magnetization magnitude, total energy, susceptibility, and specific heat. Spatial correlations are analyzed through radially averaged spin-spin correlation functions and 2D structure factor mapping. For topological systems, the engine supports directed phase-wrapping for vorticity maps, vortex density tracking, and helicity modulus calculations. Kinetics studies utilize integrated autocorrelation times and phase-ordering growth law extraction to quantify the temporal evolution of the system.
+The framework provides a full suite of diagnostics for physical analysis. Thermodynamic measurements include magnetization magnitude, total energy, susceptibility, and specific heat. Spatial correlations are analyzed through radially averaged spin-spin correlation functions and 2D structure factor mapping. For topological systems, the engine supports directed phase-wrapping for vorticity maps, vortex density tracking, and helicity modulus calculations. Kinetics studies use integrated autocorrelation times and phase-ordering growth law extraction to quantify the temporal evolution of the system.
 
 ## Installation
 
@@ -51,7 +51,7 @@ The repository enforces documentation consistency at both commit and push time. 
 
 ### Devcontainer Jupyter Auto-Start
 
-In this repository's devcontainer, JupyterLab starts automatically and listens on port 8888. The startup path is defined in the repository's [devcontainer.json on GitHub](https://github.com/manganite/VibeSpin/blob/master/.devcontainer/devcontainer.json) and launches the companion [start-jupyter.sh helper on GitHub](https://github.com/manganite/VibeSpin/blob/master/.devcontainer/scripts/start-jupyter.sh), which waits for the project virtual environment to be ready and then starts JupyterLab in detached mode.
+In this repository's devcontainer, JupyterLab starts automatically and listens on port 8888. The startup path is defined in the repository's [devcontainer.json on GitHub](https://github.com/manganite/VibeSpin/blob/HEAD/.devcontainer/devcontainer.json) and launches the companion [start-jupyter.sh helper on GitHub](https://github.com/manganite/VibeSpin/blob/HEAD/.devcontainer/scripts/start-jupyter.sh), which waits for the project virtual environment to be ready and then starts JupyterLab in detached mode.
 
 After rebuilding the container, verify the server with the venv binary directly:
 
@@ -70,7 +70,7 @@ tail -n 200 /tmp/jupyter.log
 
 ## Benchmarking & Performance
 
-VibeSpin includes a comprehensive performance analysis suite that measures throughput and identifies hardware-bound scaling regimes. The benchmark tool quantifies simulation efficiency in terms of sweeps per second and nanoseconds per site, while also isolating the overhead of thermodynamic and topological measurements from the pure simulation time. This granularity allows for deep algorithmic profiling across different lattice sizes and update schemes.
+VibeSpin includes a performance analysis suite that measures throughput and identifies hardware-bound scaling regimes. The benchmark tool quantifies simulation efficiency in terms of sweeps per second and nanoseconds per site, while also isolating the overhead of thermodynamic and topological measurements from the pure simulation time. This granularity allows for deep algorithmic profiling across different lattice sizes and update schemes.
 
 ```bash
 # Run a scaling benchmark across multiple lattice sizes
@@ -81,7 +81,15 @@ Key engineering features ensure high performance across all models. Checkerboard
 
 ## Typical Usage
 
-Launch an equilibrium temperature sweep for the XY model:
+Regenerate every dataset the notebooks read, so that they render published-quality figures
+instead of their inline fallbacks:
+
+```bash
+python -m scripts.generate_all             # production parameters, about an hour on four cores
+python -m scripts.generate_all --quick     # the same sixteen scripts in about a minute, as a smoke test
+```
+
+Run an individual experiment instead. Launch an equilibrium temperature sweep for the XY model:
 
 ```bash
 python scripts/xy/temperature_sweep.py --size 64 --t-min 0.2 --t-max 1.5 --t-points 20
@@ -117,9 +125,9 @@ python scripts/ising/measure_z.py --sizes 16 32 48 64 96 128 --n-seeds 10
 
 ## Development Guidance
 
-VibeSpin maintains rigorous engineering and physical standards. All update algorithms must strictly satisfy **detailed balance** and **ergodicity** — whether via the Metropolis-Hastings acceptance rule (for single-spin updates) or the Fortuin-Kasteleyn bond construction (for Wolff cluster updates).
+VibeSpin maintains rigorous engineering and physical standards. All update algorithms must strictly satisfy **detailed balance** and **ergodicity**, whether via the Metropolis-Hastings acceptance rule (for single-spin updates) or the Fortuin-Kasteleyn bond construction (for Wolff cluster updates).
 
-Performance-critical kernels are implemented with Numba JIT compilation to minimize execution time and memory allocation. These kernels utilize `@njit(cache=True, fastmath=True)` and avoid expensive modulo operations by using precomputed neighbor index arrays. To maintain reproducibility, models synchronize Numba's internal random number generator with the project seed.
+Performance-critical kernels are implemented with Numba JIT compilation to minimize execution time and memory allocation. These kernels use `@njit(cache=True, fastmath=True)` and avoid expensive modulo operations by using precomputed neighbor index arrays. To maintain reproducibility, models synchronize Numba's internal random number generator with the project seed.
 
 ### Verification Suite
 Before proposing changes, ensure all verification checks pass using `uv run` (or standard environment commands):
@@ -169,8 +177,8 @@ If this still fails, check that the selected interpreter is the project virtual 
 For deeper insights, refer to the source guides:
 - {doc}`Physics and Algorithm Guide <physics>`: Detailed explanation of physical models, observables, and algorithm prerequisites.
 - {doc}`Architecture and Developer Guide <code>`: Technical blueprint, engineering rationale, and testing strategy.
-- {doc}`Scripts Catalog <scripts>`: Comprehensive catalog of entry-point scripts.
-- {doc}`Agent Instruction Guide <agents>`: Mandatory technical constraints for AI Agents.
+- {doc}`Scripts Catalog <scripts>`: Complete catalog of entry-point scripts.
+- {doc}`Agent Instruction Guide <AGENTS>`: Mandatory technical constraints for AI Agents.
 - {doc}`Performance Benchmarks <benchmarks>`: Detailed scaling analysis.
 - {doc}`Ising Temperature Sweep <ising_temperature_sweep>`: Equilibrium thermodynamics of the 2D Ising model across the Onsager transition.
 - {doc}`XY Temperature Sweep <xy_temperature_sweep>`: Thermodynamic sweep across the BKT crossover for the XY model.
@@ -185,16 +193,16 @@ For deeper insights, refer to the source guides:
 
 VibeSpin was developed using AI-assisted scientific coding workflows. The framework demonstrates how high-level physical design and validation can be accelerated through iterative modeling, benchmarking, and automated testing.
 
-For detailed procedural instructions, see {doc}`Agent Instruction Guide <agents>`.
+For detailed procedural instructions, see {doc}`Agent Instruction Guide <AGENTS>`.
 
 ## Bibliography
 
-[[1]](#Bibliography) L. Onsager, "Crystal Statistics. I. A Two-Dimensional Model with an Order-Disorder Transition," *Physical Review*, vol. 65, no. 3-4, pp. 117–149, 1944. [APS Open Access](https://journals.aps.org/pr/abstract/10.1103/PhysRev.65.117)
+[[1]](#bibliography) L. Onsager, "Crystal Statistics. I. A Two-Dimensional Model with an Order-Disorder Transition," *Physical Review*, vol. 65, no. 3-4, pp. 117–149, 1944. [APS Open Access](https://journals.aps.org/pr/abstract/10.1103/PhysRev.65.117)
 
-[[2]](#Bibliography) J. M. Kosterlitz and D. J. Thouless, "Ordering, metastability and phase transitions in two-dimensional systems," *Journal of Physics C: Solid State Physics*, vol. 6, no. 7, pp. 1181–1203, 1973. [IOP Open Access](https://iopscience.iop.org/article/10.1088/0022-3719/6/7/010)
+[[2]](#bibliography) J. M. Kosterlitz and D. J. Thouless, "Ordering, metastability and phase transitions in two-dimensional systems," *Journal of Physics C: Solid State Physics*, vol. 6, no. 7, pp. 1181–1203, 1973. [IOP Open Access](https://iopscience.iop.org/article/10.1088/0022-3719/6/7/010)
 
-[[3]](#Bibliography) J. Villain, "Theory of one- and two-dimensional magnets with an easy magnetization plane. II. The planar, classical, two-dimensional magnet," *J. Phys. France* 36, 581-590 (1975). [Open Access](https://doi.org/10.1051/jphys:01975003606058100)
+[[3]](#bibliography) J. Villain, "Theory of one- and two-dimensional magnets with an easy magnetization plane. II. The planar, classical, two-dimensional magnet," *J. Phys. France* 36, 581-590 (1975). [Open Access](https://doi.org/10.1051/jphys:01975003606058100)
 
-[[4]](#Bibliography) W. K. Hastings, "Monte Carlo sampling methods using Markov chains and their applications," *Biometrika*, vol. 57, no. 1, pp. 97–109, 1970. [Oxford Academic Open Access](https://academic.oup.com/biomet/article/57/1/97/252073)
+[[4]](#bibliography) W. K. Hastings, "Monte Carlo sampling methods using Markov chains and their applications," *Biometrika*, vol. 57, no. 1, pp. 97–109, 1970. [Oxford Academic Open Access](https://academic.oup.com/biomet/article/57/1/97/252073)
 
-[[5]](#Bibliography) U. Wolff, "Collective Monte Carlo Updating for Spin Systems," *Physical Review Letters*, vol. 62, no. 4, pp. 361–364, 1989. [APS Open Access](https://journals.aps.org/prl/abstract/10.1103/PhysRevLett.62.361)
+[[5]](#bibliography) U. Wolff, "Collective Monte Carlo Updating for Spin Systems," *Physical Review Letters*, vol. 62, no. 4, pp. 361–364, 1989. [APS Open Access](https://journals.aps.org/prl/abstract/10.1103/PhysRevLett.62.361)

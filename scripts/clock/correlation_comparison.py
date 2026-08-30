@@ -11,81 +11,24 @@ from __future__ import annotations
 
 import argparse
 import logging
+from typing import Any
 
 import matplotlib.pyplot as plt
 import numpy as np
 
 from models.clock_model import ClockSimulation
-from utils.equilibration import convergence_equilibrate_with_status
-from utils.observables import get_averaged_correlation
+from utils.observables import (
+    CorrelationPoint,
+    fit_correlation_exponent,
+    fit_correlation_length,
+    measure_correlation_point,
+)
 from utils.plotting import ensure_results_dir, save_plot
-from utils.system import parse_args_compat, setup_logging
+from utils.system import parallel_sweep, parse_args_compat, setup_logging
 
 # Approximate KT transition temperatures for q=6 (José et al. 1977).
 T1_CLOCK6: float = 0.68
 T2_CLOCK6: float = 0.92
-
-
-def simulate_correlation(
-    *,
-    T: float,
-    L: int,
-    q: int,
-    steps: int,
-    eq_probe: int,
-    eq_max: int,
-    sample_interval: int,
-    seed: int,
-    logger: logging.Logger,
-) -> tuple[np.ndarray, np.ndarray]:
-    """Equilibrate and measure the averaged correlation function at temperature T.
-
-    Uses two-start convergence equilibration to avoid initialization bias.
-
-    Parameters
-    ----------
-    T : float
-        Temperature for the measurement.
-    L : int
-        Linear lattice size.
-    q : int
-        Number of clock states.
-    steps : int
-        Measurement steps after equilibration.
-    eq_probe : int
-        Chunk size for convergence equilibration probes.
-    eq_max : int
-        Maximum equilibration steps.
-    sample_interval : int
-        Spacing between correlation samples during measurement.
-    seed : int
-        Random seed for reproducibility.
-    logger : logging.Logger
-        Logger instance.
-
-    Returns
-    -------
-    tuple[np.ndarray, np.ndarray]
-        Radial distances r and averaged correlations G(r).
-    """
-    logger.debug(f'Equilibrating at T={T:.3f} (q={q}, L={L}, seed={seed})...')
-    sim_r = ClockSimulation(
-        size=L, temp=T, q=q, update='checkerboard', init_state='random', seed=seed,
-    )
-    sim_o = ClockSimulation(
-        size=L, temp=T, q=q, update='checkerboard', init_state='ordered', seed=seed,
-    )
-    _, converged = convergence_equilibrate_with_status(
-        sim_r, sim_o, chunk_size=eq_probe, max_steps=eq_max,
-    )
-    # Fall back to ordered-start simulation when random-start is stuck.
-    sim_meas = sim_r if converged else sim_o
-    if not converged:
-        logger.info(f'T={T:.3f}: convergence not reached, falling back to ordered start')
-    logger.debug(f'Measuring correlations at T={T:.3f}...')
-    return get_averaged_correlation(
-        sim=sim_meas, total_steps=steps, sample_interval=sample_interval,
-    )
 
 
 def main() -> None:
@@ -99,12 +42,15 @@ def main() -> None:
     parser.add_argument('--eq-probe', type=int, default=200, help='Convergence probe chunk size')
     parser.add_argument('--eq-max', type=int, default=50000, help='Max equilibration steps')
     parser.add_argument('--interval', type=int, default=20, help='Sample interval')
-    parser.add_argument('--seed', type=int, default=520, help='Base random seed')
+    parser.add_argument(
+        '--seed', type=int, default=520,
+        help='Random seed shared by all three temperature points',
+    )
     parser.add_argument('--output-dir', type=str, default='results/clock', help='Output directory')
     parser.add_argument('--log-file', type=str, default=None, help='Optional log file path')
     parser.add_argument('--verbose', action='store_true', help='Enable verbose logging')
 
-    args = parse_args_compat(parser)
+    args = parse_args_compat(parser=parser)
 
     log_level = logging.DEBUG if args.verbose else logging.INFO
     logger = setup_logging(level=log_level, log_file=args.log_file)
@@ -122,19 +68,46 @@ def main() -> None:
         f'Temperatures: ordered={T_ORDERED}, quasi={T_QUASI}, disordered={T_DISORDERED}'
     )
 
-    common = dict(
-        L=args.size, q=args.q, steps=args.steps,
-        eq_probe=args.eq_probe, eq_max=args.eq_max,
-        sample_interval=args.interval, seed=args.seed, logger=logger,
+    common: dict[str, Any] = dict(
+        model_cls=ClockSimulation, model_kwargs={'q': args.q}, size=args.size,
+        seed=args.seed, eq_probe=args.eq_probe, eq_max=args.eq_max,
+        meas_steps=args.steps, interval=args.interval,
     )
-
-    r_ordered, G_ordered = simulate_correlation(T=T_ORDERED, **common)
-    r_quasi, G_quasi = simulate_correlation(T=T_QUASI, **common)
-    r_disordered, G_disordered = simulate_correlation(T=T_DISORDERED, **common)
+    points = [
+        CorrelationPoint(label=label, temperature=T, **common)
+        for label, T in (
+            ('ordered', T_ORDERED), ('quasi', T_QUASI), ('disordered', T_DISORDERED),
+        )
+    ]
+    results = {
+        label: (r, G)
+        for label, r, G in parallel_sweep(
+            worker_func=measure_correlation_point, params=points,
+        )
+    }
+    r_ordered, G_ordered = results['ordered']
+    r_quasi, G_quasi = results['quasi']
+    r_disordered, G_disordered = results['disordered']
 
     # Verify r arrays are identical (all from same lattice size).
-    assert np.array_equal(r_ordered, r_quasi) and np.array_equal(r_quasi, r_disordered)
+    if not (np.array_equal(r_ordered, r_quasi) and np.array_equal(r_quasi, r_disordered)):
+        raise RuntimeError(
+            'Radial distance arrays differ between temperature points; '
+            'all three measurements must share the same lattice size.'
+        )
     r = r_ordered
+
+    # Between T1 and T2 the discrete anisotropy is irrelevant at long distances
+    # and the model behaves like XY, so the same spin-wave exponent applies;
+    # above T2 correlations decay exponentially with a finite length.
+    eta_quasi = fit_correlation_exponent(r=r, G=G_quasi)
+    xi_disordered = fit_correlation_length(r=r, G=G_disordered)
+    eta_spin_wave = T_QUASI / (2.0 * np.pi)
+    logger.info(
+        f'T={T_QUASI}: fitted eta = {eta_quasi:.4f} '
+        f'(spin-wave prediction {eta_spin_wave:.4f})'
+    )
+    logger.info(f'T={T_DISORDERED}: fitted correlation length xi = {xi_disordered:.4f}')
 
     # --- Plotting ---
     fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(14, 6))
@@ -186,6 +159,9 @@ def main() -> None:
         eq_max=args.eq_max,
         sample_interval=args.interval,
         seed=args.seed,
+        eta_quasi=eta_quasi,
+        eta_quasi_spin_wave=eta_spin_wave,
+        xi_disordered=xi_disordered,
     )
     logger.info(f'Data saved to {npz_path}')
 

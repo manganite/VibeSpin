@@ -27,21 +27,23 @@ from tqdm import tqdm
 
 from models.ising_model import IsingSimulation
 from utils.equilibration import convergence_equilibrate
-from utils.observables import get_averaged_correlation
+from utils.observables import correlation_length_1e, get_averaged_correlation
 from utils.plotting import ensure_results_dir
-from utils.system import parse_args_compat, setup_logging
+from utils.system import _BAR_FORMAT, parse_args_compat, setup_logging
 
 TC_ISING: float = 2.0 / np.log(1.0 + np.sqrt(2.0))
 
-# tqdm bar format matching the project convention.
-_BAR_FORMAT = '{l_bar}{bar}| {n_fmt}/{total_fmt} [{elapsed}<{remaining}, {rate_noinv_fmt}{postfix}]'
-
 
 def _correlation_length_1e(r: np.ndarray, G: np.ndarray) -> float:
-    """Extract correlation length as the first r where G(r) < G(0)/e."""
-    threshold = G[0] / np.e
-    idx = np.where(G < threshold)[0]
-    return float(r[idx[0]]) if len(idx) > 0 else float(r[-1])
+    """Correlation length via the shared 1/e-crossing helper.
+
+    Normalizes G defensively before delegating, and falls back to the
+    largest available r when G never drops below 1/e (correlation extends
+    beyond the accessible range).
+    """
+    G_norm = G / G[0] if G[0] != 0.0 else G
+    xi = correlation_length_1e(r=r, G=G_norm)
+    return xi if np.isfinite(xi) else float(r[-1])
 
 
 def _run_coarsening_traces(
@@ -150,7 +152,9 @@ def _measure_xi_eq(
     sim_o = IsingSimulation(
         size=size, temp=temp, update='checkerboard', init_state='ordered', seed=seed,
     )
-    convergence_equilibrate(sim_r, sim_o, chunk_size=eq_probe, max_steps=eq_max)
+    convergence_equilibrate(
+        sim_random=sim_r, sim_ordered=sim_o, chunk_size=eq_probe, max_steps=eq_max,
+    )
     r_eq, G_eq = get_averaged_correlation(
         sim=sim_r, total_steps=meas_steps, sample_interval=meas_interval,
     )
@@ -200,10 +204,28 @@ def main() -> None:
     parser.add_argument('--ens-interval', type=int, default=2, help='Sample interval for ensemble')
     parser.add_argument('--ens-seeds', type=int, default=8, help='Number of ensemble seeds')
 
+    # Equilibrium-measurement parameters (crossover xi_eq).
+    parser.add_argument(
+        '--xi-eq-probe', type=int, default=150,
+        help='Convergence probe chunk size for the xi_eq measurement',
+    )
+    parser.add_argument(
+        '--xi-eq-max', type=int, default=6000,
+        help='Max equilibration steps for the xi_eq measurement',
+    )
+    parser.add_argument(
+        '--xi-eq-steps', type=int, default=2000,
+        help='Measurement steps for the xi_eq measurement',
+    )
+    parser.add_argument(
+        '--xi-eq-interval', type=int, default=20,
+        help='Sample interval for the xi_eq measurement',
+    )
+
     # Seed control.
     parser.add_argument('--base-seed', type=int, default=42, help='Starting seed')
 
-    args = parse_args_compat(parser)
+    args = parse_args_compat(parser=parser)
 
     log_level = logging.DEBUG if args.verbose else logging.INFO
     logger = setup_logging(level=log_level, log_file=args.log_file)
@@ -217,10 +239,11 @@ def main() -> None:
     logger.info('=== Quench-depth sensitivity ===')
     quench_temps = [f * TC_ISING for f in args.quench_fracs]
     quench_all_traces: dict[float, np.ndarray] = {}
+    quench_times = np.empty(0, dtype=np.float64)
 
     for frac, T_q in zip(args.quench_fracs, quench_temps, strict=True):
         logger.info(f'Quench fraction={frac} -> T={T_q:.4f}')
-        times_q, traces_q = _run_coarsening_traces(
+        quench_times, traces_q = _run_coarsening_traces(
             size=args.size, temp=T_q,
             n_steps=args.quench_steps, sample_interval=args.quench_interval,
             n_seeds=args.quench_seeds, base_seed=args.base_seed,
@@ -230,7 +253,7 @@ def main() -> None:
 
     npz_data['quench_fracs'] = np.array(args.quench_fracs)
     npz_data['quench_temps'] = np.array(quench_temps)
-    npz_data['quench_times'] = times_q
+    npz_data['quench_times'] = quench_times
     npz_data['quench_n_seeds'] = args.quench_seeds
     for i, frac in enumerate(args.quench_fracs):
         traces = quench_all_traces[frac]
@@ -245,14 +268,17 @@ def main() -> None:
 
     xi_eq = _measure_xi_eq(
         size=args.size, temp=T_bridge, seed=args.base_seed + 200,
-        eq_probe=150, eq_max=6000, meas_steps=2000, meas_interval=20,
+        eq_probe=args.xi_eq_probe, eq_max=args.xi_eq_max,
+        meas_steps=args.xi_eq_steps, meas_interval=args.xi_eq_interval,
         logger=logger,
     )
 
+    # Offset the bridge seed block so its trajectories are independent of the
+    # quench-depth traces (frac=0.5 shares T_bridge and previously also seeds).
     times_b, traces_b = _run_coarsening_traces(
         size=args.size, temp=T_bridge,
         n_steps=args.bridge_steps, sample_interval=args.bridge_interval,
-        n_seeds=args.bridge_seeds, base_seed=args.base_seed,
+        n_seeds=args.bridge_seeds, base_seed=args.base_seed + 300,
         logger=logger, desc='Crossover',
     )
 

@@ -10,6 +10,7 @@ API_DIR = ROOT / 'docs' / 'source' / 'api'
 PACKAGE_TITLES = {
     'models': 'vibespin.models package',
     'scripts': 'vibespin.scripts package',
+    'scripts.benchmarks': 'vibespin.scripts.benchmarks package',
     'scripts.clock': 'vibespin.scripts.clock package',
     'scripts.ising': 'vibespin.scripts.ising package',
     'scripts.xy': 'vibespin.scripts.xy package',
@@ -18,7 +19,12 @@ PACKAGE_TITLES = {
 
 TOCTREE_CHILDREN = {
     'vibespin': ['vibespin.models', 'vibespin.scripts', 'vibespin.utils'],
-    'scripts': ['vibespin.scripts.clock', 'vibespin.scripts.ising', 'vibespin.scripts.xy'],
+    'scripts': [
+        'vibespin.scripts.benchmarks',
+        'vibespin.scripts.clock',
+        'vibespin.scripts.ising',
+        'vibespin.scripts.xy',
+    ],
 }
 
 def _title(text: str) -> str:
@@ -107,6 +113,7 @@ def main() -> None:
         'vibespin.rst': _render_root_package(),
         'vibespin.models.rst': _render_package('models'),
         'vibespin.scripts.rst': _render_package('scripts'),
+        'vibespin.scripts.benchmarks.rst': _render_package('scripts.benchmarks'),
         'vibespin.scripts.clock.rst': _render_package('scripts.clock'),
         'vibespin.scripts.ising.rst': _render_package('scripts.ising'),
         'vibespin.scripts.xy.rst': _render_package('scripts.xy'),

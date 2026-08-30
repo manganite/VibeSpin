@@ -18,12 +18,10 @@ from tqdm import tqdm
 from utils.observables import compute_kinetics_metrics
 from utils.plotting import ensure_results_dir, plot_ordering_kinetics
 from utils.statistics import power_fit
-
-# tqdm bar format that always shows rate as iterations/s (never inverts to s/it).
-_BAR_FORMAT = '{l_bar}{bar}| {n_fmt}/{total_fmt} [{elapsed}<{remaining}, {rate_noinv_fmt}{postfix}]'
+from utils.system import _BAR_FORMAT
 
 
-def compute_mean_intercept_length(sim: Any) -> float:
+def compute_mean_intercept_length(*, sim: Any) -> float:
     """Estimate domain size via the stereological mean intercept length (MIL).
 
     Counts domain-wall crossings along every row and column of the lattice,
@@ -46,11 +44,11 @@ def compute_mean_intercept_length(sim: Any) -> float:
         return 0.0
     spins = sim.spins.astype(np.int8)
     N = sim.size
-    row_walls = np.sum(spins[:, :-1] * spins[:, 1:] < 0)
-    col_walls = np.sum(spins[:-1, :] * spins[1:, :] < 0)
+    row_walls = int(np.sum(spins[:, :-1] * spins[:, 1:] < 0))
+    col_walls = int(np.sum(spins[:-1, :] * spins[1:, :] < 0))
     row_wrap = int(np.sum(spins[:, -1] * spins[:, 0] < 0))
     col_wrap = int(np.sum(spins[-1, :] * spins[0, :] < 0))
-    total_walls = int(row_walls) + int(col_walls) + row_wrap + col_wrap
+    total_walls = row_walls + col_walls + row_wrap + col_wrap
     mean_walls = total_walls / (2 * N)
     return float(N) / mean_walls if mean_walls != 0.0 else float(N)
 
@@ -203,12 +201,18 @@ def run_ordering_kinetics(
     """
     _log = logger or logging.getLogger(__name__)
 
+    if max_steps < 1:
+        raise ValueError(f'max_steps must be >= 1, got {max_steps}')
+    if samples < 2:
+        raise ValueError(f'samples must be >= 2, got {samples}')
+    if fit_min < 0:
+        raise ValueError(f'fit_min must be >= 0, got {fit_min}')
+    if n_seeds < 1:
+        raise ValueError(f'n_seeds must be >= 1, got {n_seeds}')
+
     step_targets = np.unique(
         np.logspace(0, np.log10(max_steps), num=samples).astype(int)
     )
-
-    if n_seeds < 1:
-        raise ValueError(f'n_seeds must be >= 1, got {n_seeds}')
 
     # --- Run ensemble ---
     N_data = len(step_targets)
@@ -255,7 +259,7 @@ def run_ordering_kinetics(
     for key, data in [('R_sk', R_sk), ('xi', R_xi), ('third', third)]:
         exp, pre = power_fit(t_arr=t, y_arr=data, mask=fit_mask)
         exponents[key], prefactors[key] = exp, pre
-        if exp:
+        if exp is not None:
             _log.info(f'{key} exponent: {exp:.3f}')
 
     # --- Save NPZ ---

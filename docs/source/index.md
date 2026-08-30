@@ -14,8 +14,8 @@ introduction
 physics
 code
 scripts
-agents
-bibliography
+AGENTS
+BIBLIOGRAPHY
 changelog
 ```
 

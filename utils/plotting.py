@@ -1,11 +1,9 @@
 """Domain plotting and file-output helpers for VibeSpin simulations.
 
-Groups the filesystem output helper (:func:`save_plot`,
-:func:`ensure_results_dir`) together with the three domain-specific
-visualisation functions that were previously embedded in
-``utils.system``.  Keeping visualisation logic here makes
-``system_helpers`` a pure infrastructure module (logging, parallelism) with
-no matplotlib dependency.
+Groups the filesystem output helpers (:func:`save_plot`,
+:func:`ensure_results_dir`) together with the domain-specific visualisation
+functions.  Keeping visualisation logic here leaves ``utils.system`` a pure
+infrastructure module (logging, parallelism) with no matplotlib dependency.
 """
 from __future__ import annotations
 
@@ -18,6 +16,8 @@ from collections.abc import Mapping, Sequence
 import matplotlib.pyplot as plt
 import numpy as np
 
+from utils.observables import correlation_length_1e, radial_average_sk
+
 
 def ensure_results_dir(*, directory: str = 'results') -> str:
     """
@@ -25,10 +25,12 @@ def ensure_results_dir(*, directory: str = 'results') -> str:
 
     Parameters
     ----------
-        directory: Name of the directory to create.
+    directory : str
+        Name of the directory to create.
 
     Returns
     -------
+    str
         The path to the directory.
     """
     if directory:
@@ -46,55 +48,60 @@ def plot_ordering_evolution_snapshots(
     temp: float,
 ) -> tuple[plt.Figure, np.ndarray, list[float]]:
     """
-    Generate a 3-row diagnostic grid of ordering evolution snapshots.
+    Build a 3-row diagnostic grid of ordering-evolution snapshots.
 
-    Row 1 shows binary spin matrices. Row 2 shows the structure factor
-    :math:`S(|k|)` on log-log axes. Row 3 shows the spatial correlation
+    Row 1 shows binary spin matrices, row 2 the structure factor
+    :math:`S(|k|)` on log-log axes, and row 3 the spatial correlation
     function G(r) with the 1/e crossing (correlation length xi) annotated.
+
+    Unlike :func:`plot_ordering_evolution`, this helper returns the figure
+    instead of writing it to disk, so notebooks can render the grid inline.
 
     Parameters
     ----------
-        targets: Target Monte Carlo sweep counts for each column.
-        snapshots: Spin matrices, one per target.
-        gr_data: Correlation data tuples ``(r, G(r))``, one per target.
-        sk_data: Structure factor tuples ``(k, S(|k|))``, one per target.
-        size: Lattice size L used in the suptitle.
-        temp: Quench temperature used in the suptitle.
+    targets : Sequence[int]
+        Target Monte Carlo sweep counts, one per column.
+    snapshots : Sequence[np.ndarray]
+        Spin matrices, one per target.
+    gr_data : Sequence[tuple[np.ndarray, np.ndarray]]
+        Correlation data ``(r, G(r))``, one per target.
+    sk_data : Sequence[tuple[np.ndarray, np.ndarray]]
+        Structure-factor data ``(k, S(|k|))``, one per target.
+    size : int
+        Lattice size L, used in the suptitle.
+    temp : float
+        Quench temperature, used in the suptitle.
 
     Returns
     -------
-        fig: The matplotlib Figure object.
-        axes: The matplotlib Axes grid.
-        xi_values: List of extracted correlation lengths (np.nan if undefined).
+    fig : plt.Figure
+        The figure holding the grid.
+    axes : np.ndarray
+        The (3, n_targets) axes grid.
+    xi_values : list[float]
+        Correlation length per target; NaN where G(r) never crosses 1/e.
     """
     n_cols = len(targets)
     fig, axes = plt.subplots(
         3, n_cols, figsize=(n_cols * 3.5, 10.5),
-        gridspec_kw={'hspace': 0.45, 'wspace': 0.25}
+        gridspec_kw={'hspace': 0.45, 'wspace': 0.25},
     )
-    fig.suptitle(
-        f'Ising ordering evolution  (L = {size}, T = {temp})', fontsize=13, y=0.99
-    )
+    fig.suptitle(f'Ising ordering evolution  (L = {size}, T = {temp})', fontsize=13, y=0.99)
     inv_e = 1.0 / np.e
-    xi_values = []
+    xi_values: list[float] = []
 
     for col, target in enumerate(targets):
-        spins = snapshots[col]
         r_ev, G_ev = gr_data[col]
         k_vals, S_r = sk_data[col]
 
-        # Row 0: spin configuration
         ax_s = axes[0, col]
-        ax_s.imshow(spins, cmap='binary', interpolation='none', vmin=-1, vmax=1)
+        ax_s.imshow(snapshots[col], cmap='binary', interpolation='none', vmin=-1, vmax=1)
         ax_s.set_title(f't = {target} sweep{"s" if target != 1 else ""}', fontsize=11)
         ax_s.axis('off')
 
-        # Row 1: structure factor S(|k|)
         ax_sk = axes[1, col]
-        S_pos = S_r[1:]
-        k_pos = k_vals[1:]
-        has_positive = np.any(S_pos > 0)
-        if has_positive:
+        S_pos, k_pos = S_r[1:], k_vals[1:]
+        if np.any(S_pos > 0):
             ax_sk.plot(k_pos[S_pos > 0], S_pos[S_pos > 0], lw=1.2)
             ax_sk.set_xscale('log')
             ax_sk.set_yscale('log')
@@ -107,7 +114,6 @@ def plot_ordering_evolution_snapshots(
         if col == 0:
             ax_sk.set_ylabel('$S(|k|)$', fontsize=9)
 
-        # Row 2: G(r) with xi marked
         ax_gr = axes[2, col]
         r_plot, G_plot = r_ev[1:], G_ev[1:]
         ax_gr.plot(r_plot, G_plot, lw=1.5)
@@ -120,43 +126,56 @@ def plot_ordering_evolution_snapshots(
         ax_gr.grid(True, which='both', alpha=0.3)
         ax_gr.set_ylim(-0.1, 1.1)
 
-        below = np.where(G_plot < inv_e)[0]
-        if len(below) > 0:
-            idx = below[0]
-            xi = (
-                float(r_plot[idx - 1]) + (inv_e - float(G_plot[idx - 1]))
-                * (float(r_plot[idx]) - float(r_plot[idx - 1]))
-                / (float(G_plot[idx]) - float(G_plot[idx - 1]))
-                if idx > 0 else float(r_plot[idx])
-            )
+        # Shared 1/e-crossing helper keeps this consistent with the kinetics metrics.
+        xi = correlation_length_1e(r=r_plot, G=G_plot)
+        if np.isfinite(xi):
             ax_gr.axvline(xi, color='tab:red', lw=1.0, ls='--', alpha=0.8)
             ax_gr.text(xi * 1.15, inv_e + 0.04, rf'$\xi = {xi:.1f}$', fontsize=9, color='tab:red')
-        else:
-            xi = float('nan')
         xi_values.append(xi)
 
     return fig, axes, xi_values
 
 
-def save_plot(*, filename: str, directory: str = 'results', tight_layout: bool = True) -> None:
+def save_plot(
+    *,
+    filename: str,
+    directory: str = 'results',
+    tight_layout: bool = True,
+    fig: plt.Figure | None = None,
+    close: bool = False,
+) -> None:
     """
-    Save the current matplotlib plot to the results directory.
+    Save a matplotlib figure to the results directory.
 
     Parameters
     ----------
-        filename: Name of the output file (e.g., 'plot.png').
-        directory: Output directory name.
-        tight_layout: Whether to apply plt.tight_layout() before saving.
+    filename : str
+        Name of the output file (e.g., 'plot.png').
+    directory : str
+        Output directory name.
+    tight_layout : bool
+        Whether to apply tight_layout() before saving.
+    fig : plt.Figure | None
+        Figure to save. Defaults to the current figure; passing it
+        explicitly removes the dependence on pyplot's global state and is
+        required for correctness when several figures are open.
+    close : bool
+        Whether to close the figure after saving. Long-running sweeps
+        otherwise accumulate open figures in pyplot's global registry.
     """
     logger = logging.getLogger('vibespin')
     ensure_results_dir(directory=directory)
+    if fig is None:
+        fig = plt.gcf()
     if tight_layout:
         with warnings.catch_warnings():
             warnings.simplefilter('ignore', UserWarning)
-            plt.tight_layout()
+            fig.tight_layout()
     path = os.path.join(directory, filename)
-    plt.savefig(path)
+    fig.savefig(path)
     logger.info(f'Plot saved to {path}')
+    if close:
+        plt.close(fig)
 
 
 def plot_temperature_sweep(
@@ -202,46 +221,72 @@ def plot_temperature_sweep(
 
     Parameters
     ----------
-        temperatures: Array of temperature values (x-axis).
-        avg_m: Average absolute magnetization per temperature point.
-        avg_e: Average energy per temperature point.
-        susc: Magnetic susceptibility per temperature point.
-        spec_h: Specific heat per temperature point.
-        title: Figure-level suptitle string (e.g. '2D Ising Model: Temperature Sweep (L=50)').
-        filename: Output filename passed to :func:`save_plot` (e.g. 'temperature_sweep.png').
-        directory: Output directory passed to :func:`save_plot` (e.g. 'results/ising').
-        entropy: Optional entropy per temperature point.
-        entropy_err: Optional symmetric uncertainty for entropy.
-        entropy_ci_low: Optional lower confidence band for entropy.
-        entropy_ci_high: Optional upper confidence band for entropy.
-        tau_int: Optional integrated autocorrelation time per temperature point.
-            Reveals critical slowing down as a peak near T_c.
-        tau_int_ci_low: Optional lower confidence band for tau_int.
-        tau_int_ci_high: Optional upper confidence band for tau_int.
-        tau_unstable_flag: Optional per-temperature mask flagging unstable
-            tau_int intervals.
-        low_effective_sample_flag: Optional per-temperature mask identifying
-            points with low effective sample size.
-        diagnostics_note: Optional text shown on diagnostics figure summarizing
-            uncertainty quality metrics.
-        run_metadata_note: Optional concise metadata line for the diagnostics
-            header (for example lattice size, seeds, confidence level, method).
-        quality_summary: Optional dictionary containing quality counts. Expected
-            keys are ``total_points``, ``well_conditioned_count``,
-            ``low_effective_count``, ``unstable_interval_count``, and
-            ``undefined_count``.
-        transition_temperatures: Optional mapping of transition-marker labels
-            to temperatures rendered as vertical dashed guide lines.
-        transition_window: Optional (low, high) temperature window highlighted
-            with a light background band.
-        entropy_reference: Optional ``(label, value)`` rendered as a horizontal
-            reference on the entropy diagnostics panel.
-        annotate_peaks: If True, annotate peak temperatures for susceptibility,
-            specific heat, and tau_int when present.
-        min_visible_rel_error: Minimum relative error bar size used for visibility
-            when finite uncertainties are extremely small.
-        mark_invalid_uncertainty: If True, points with non-finite uncertainty are
-            marked with ``x`` markers and a legend label.
+    temperatures : np.ndarray
+        Array of temperature values (x-axis).
+    avg_m : Sequence[float]
+        Average absolute magnetization per temperature point.
+    avg_e : Sequence[float]
+        Average energy per temperature point.
+    susc : Sequence[float]
+        Magnetic susceptibility per temperature point.
+    spec_h : Sequence[float]
+        Specific heat per temperature point.
+    title : str
+        Figure-level suptitle string (e.g. '2D Ising Model: Temperature Sweep (L=50)').
+    filename : str
+        Output filename passed to :func:`save_plot` (e.g. 'temperature_sweep.png').
+    directory : str
+        Output directory passed to :func:`save_plot` (e.g. 'results/ising').
+    entropy : np.ndarray | Sequence[float] | None
+        Optional entropy per temperature point.
+    entropy_err : np.ndarray | Sequence[float] | None
+        Optional symmetric uncertainty for entropy.
+    entropy_ci_low : np.ndarray | Sequence[float] | None
+        Optional lower confidence band for entropy.
+    entropy_ci_high : np.ndarray | Sequence[float] | None
+        Optional upper confidence band for entropy.
+    tau_int : np.ndarray | Sequence[float] | None
+        Optional integrated autocorrelation time per temperature point.
+        Reveals critical slowing down as a peak near T_c.
+    tau_int_ci_low : np.ndarray | Sequence[float] | None
+        Optional lower confidence band for tau_int.
+    tau_int_ci_high : np.ndarray | Sequence[float] | None
+        Optional upper confidence band for tau_int.
+    tau_unstable_flag : np.ndarray | Sequence[float] | None
+        Optional per-temperature mask flagging unstable
+        tau_int intervals.
+    low_effective_sample_flag : np.ndarray | Sequence[float] | None
+        Optional per-temperature mask identifying
+        points with low effective sample size.
+    diagnostics_note : str | None
+        Optional text shown on diagnostics figure summarizing
+        uncertainty quality metrics.
+    run_metadata_note : str | None
+        Optional concise metadata line for the diagnostics
+        header (for example lattice size, seeds, confidence level, method).
+    quality_summary : Mapping[str, int | float] | None
+        Optional dictionary containing quality counts. Expected
+        keys are ``total_points``, ``well_conditioned_count``,
+        ``low_effective_count``, ``unstable_interval_count``, and
+        ``undefined_count``.
+    transition_temperatures : dict[str, float] | None
+        Optional mapping of transition-marker labels
+        to temperatures rendered as vertical dashed guide lines.
+    transition_window : tuple[float, float] | None
+        Optional (low, high) temperature window highlighted
+        with a light background band.
+    entropy_reference : tuple[str, float] | None
+        Optional ``(label, value)`` rendered as a horizontal
+        reference on the entropy diagnostics panel.
+    annotate_peaks : bool
+        If True, annotate peak temperatures for susceptibility,
+        specific heat, and tau_int when present.
+    min_visible_rel_error : float
+        Minimum relative error bar size used for visibility
+        when finite uncertainties are extremely small.
+    mark_invalid_uncertainty : bool
+        If True, points with non-finite uncertainty are
+        marked with ``x`` markers and a legend label.
     """
     temperatures_arr = np.asarray(temperatures, dtype=np.float64)
     use_extra = entropy is not None or tau_int is not None
@@ -395,7 +440,7 @@ def plot_temperature_sweep(
         )
 
     if avg_m_err is None:
-        ax1.plot(temperatures, avg_m, 'o-', markersize=4)
+        ax1.plot(temperatures_arr, avg_m, 'o-', markersize=4)
     else:
         ax1.errorbar(
             temperatures_arr,
@@ -499,7 +544,7 @@ def plot_temperature_sweep(
         if ax.get_visible():
             ax.set_xlabel('Temperature (T)')
 
-    save_plot(filename=filename, directory=directory)
+    save_plot(filename=filename, directory=directory, fig=fig, close=True)
 
     if not use_extra:
         return
@@ -715,7 +760,10 @@ def plot_temperature_sweep(
     else:
         ax6.set_visible(False)
 
-    save_plot(filename=diagnostics_filename, directory=directory, tight_layout=False)
+    save_plot(
+        filename=diagnostics_filename, directory=directory,
+        tight_layout=False, fig=diag_fig, close=True,
+    )
 
 
 def plot_ordering_kinetics(
@@ -743,20 +791,34 @@ def plot_ordering_kinetics(
 
     Parameters
     ----------
-        t: Time array (Monte Carlo sweeps).
-        R_sk: Domain size from structure factor.
-        R_xi: Correlation length from G(r).
-        third_metric: Optional third metric array.
-        third_metric_label: Label for the third metric.
-        exponents: Dict of fitted exponents.
-        prefactors: Dict of fitted prefactors.
-        fit_mask: Mask used for fitting.
-        title: Figure-level suptitle.
-        filename: Output filename.
-        directory: Output directory.
-        y_label: Y-axis label for the left panel.
-        left_title: Title for the left subplot.
-        right_title: Title for the right subplot.
+    t : np.ndarray
+        Time array (Monte Carlo sweeps).
+    R_sk : np.ndarray
+        Domain size from structure factor.
+    R_xi : np.ndarray
+        Correlation length from G(r).
+    third_metric : np.ndarray | None
+        Optional third metric array.
+    third_metric_label : str | None
+        Label for the third metric.
+    exponents : dict[str, float | None]
+        Dict of fitted exponents.
+    prefactors : dict[str, float | None]
+        Dict of fitted prefactors.
+    fit_mask : np.ndarray
+        Mask used for fitting.
+    title : str
+        Figure-level suptitle.
+    filename : str
+        Output filename.
+    directory : str
+        Output directory.
+    y_label : str
+        Y-axis label for the left panel.
+    left_title : str
+        Title for the left subplot.
+    right_title : str
+        Title for the right subplot.
     """
     fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(14, 6))
     fig.suptitle(title, fontsize=13)
@@ -806,7 +868,7 @@ def plot_ordering_kinetics(
     else:
         ax2.axis('off')
 
-    save_plot(filename=filename, directory=directory)
+    save_plot(filename=filename, directory=directory, fig=fig, close=True)
 
 
 def plot_ordering_evolution(
@@ -829,14 +891,22 @@ def plot_ordering_evolution(
 
     Parameters
     ----------
-        targets: List of MC steps for each snapshot.
-        snapshots: List of spin arrays.
-        gr_data: List of (r, G) tuples.
-        vorticity_data: Optional list of vorticity arrays.
-        title: Figure-level suptitle.
-        filename: Output filename.
-        directory: Output directory.
-        is_vector: Whether the spins are 2D vectors (True) or scalars (False).
+    targets : Sequence[int]
+        List of MC steps for each snapshot.
+    snapshots : Sequence[np.ndarray]
+        List of spin arrays.
+    gr_data : Sequence[tuple[np.ndarray, np.ndarray]]
+        List of (r, G) tuples.
+    vorticity_data : Sequence[np.ndarray] | None
+        Optional list of vorticity arrays.
+    title : str
+        Figure-level suptitle.
+    filename : str
+        Output filename.
+    directory : str
+        Output directory.
+    is_vector : bool
+        Whether the spins are 2D vectors (True) or scalars (False).
     """
     n_cols = len(targets)
     fig, axes = plt.subplots(
@@ -872,8 +942,6 @@ def plot_ordering_evolution(
             if col == n_cols - 1:
                 plt.colorbar(im_v, ax=ax_mid, ticks=[-1, 0, 1], label='Winding No.', shrink=0.8)
         else:
-            from .observables import radial_average_sk
-
             k_vals, S_radial = radial_average_sk(spins=spins)
             ax_mid.plot(k_vals[1:], S_radial[1:], linewidth=1.2)
             ax_mid.set_xscale('log')
@@ -901,19 +969,10 @@ def plot_ordering_evolution(
         ax_gr.grid(True, which='both', alpha=0.3)
         ax_gr.set_ylim(-0.1, 1.1)
 
-        # Find xi where G(r) first drops below 1/e
-        r_plot = r[1:]
-        G_plot = G[1:]
-        below = np.where(G_plot < inv_e)[0]
-        if len(below) > 0:
-            idx = below[0]
-            if idx > 0:
-                r0, r1 = float(r_plot[idx - 1]), float(r_plot[idx])
-                g0, g1 = float(G_plot[idx - 1]), float(G_plot[idx])
-                xi = r0 + (inv_e - g0) * (r1 - r0) / (g1 - g0)
-            else:
-                xi = float(r_plot[idx])
+        # Mark xi where G(r) first drops below 1/e (skipped when no crossing)
+        xi = correlation_length_1e(r=r[1:], G=G[1:])
+        if np.isfinite(xi):
             ax_gr.axvline(xi, color='tab:red', linewidth=1.0, linestyle='--', alpha=0.8)
             ax_gr.text(xi * 1.15, inv_e + 0.04, f'$\\xi = {xi:.1f}$', fontsize=9, color='tab:red')
 
-    save_plot(filename=filename, directory=directory)
+    save_plot(filename=filename, directory=directory, fig=fig, close=True)

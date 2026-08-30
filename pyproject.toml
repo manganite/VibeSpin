@@ -66,7 +66,15 @@ exclude_lines = [
 # Target Python version (matches local .venv / Python 3.12)
 target-version = "py312"
 line-length = 100
-extend-exclude = ["*.ipynb"]
+# Notebooks are linted too: excluding them previously let a dead import and
+# several keyword-only violations survive a refactor unnoticed.
+extend-exclude = []
+
+[tool.ruff.lint.per-file-ignores]
+# Notebooks are linted for real defects (pyflakes, bugbear, import order) but
+# not for prose-layout rules: long lines, trailing whitespace and one-line
+# compound statements are idiomatic in exploratory cells.
+"*.ipynb" = ["E501", "W291", "W293", "E701", "E702", "E741"]
 
 [tool.ruff.lint]
 # Enable specific rule sets:

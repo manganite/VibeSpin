@@ -22,14 +22,20 @@ def ising_step_numba(
 
     Parameters
     ----------
-        spins: (N, N) array of spins (+1 or -1).
-        beta: Inverse temperature 1/kT.
-        J: Coupling constant.
-        idx_next: Pre-calculated next-neighbor indices.
-        idx_prev: Pre-calculated previous-neighbor indices.
+    spins : np.ndarray
+        (N, N) array of spins (+1 or -1).
+    beta : float
+        Inverse temperature 1/kT.
+    J : float
+        Coupling constant.
+    idx_next : np.ndarray
+        Pre-calculated next-neighbor indices.
+    idx_prev : np.ndarray
+        Pre-calculated previous-neighbor indices.
 
     Returns
     -------
+    np.ndarray
         Updated spins array.
     """
     N = spins.shape[0]
@@ -72,14 +78,20 @@ def ising_step_parallel_numba(
 
     Parameters
     ----------
-        spins: (N, N) array of spins (+1 or -1).
-        beta: Inverse temperature 1/kT.
-        J: Coupling constant.
-        idx_next: Pre-calculated next-neighbor indices.
-        idx_prev: Pre-calculated previous-neighbor indices.
+    spins : np.ndarray
+        (N, N) array of spins (+1 or -1).
+    beta : float
+        Inverse temperature 1/kT.
+    J : float
+        Coupling constant.
+    idx_next : np.ndarray
+        Pre-calculated next-neighbor indices.
+    idx_prev : np.ndarray
+        Pre-calculated previous-neighbor indices.
 
     Returns
     -------
+    np.ndarray
         Updated spins array.
     """
     N = spins.shape[0]
@@ -114,13 +126,17 @@ def ising_energy_numba(*, spins: np.ndarray, J: float, idx_next: np.ndarray) -> 
 
     Parameters
     ----------
-        spins: (N, N) array of spins.
-        J: Coupling constant.
-        idx_next: Pre-calculated next-neighbor indices.
+    spins : np.ndarray
+        (N, N) array of spins.
+    J : float
+        Coupling constant.
+    idx_next : np.ndarray
+        Pre-calculated next-neighbor indices.
 
     Returns
     -------
-        energy: Total energy per site.
+    energy : float
+        Total energy per site.
     """
     N = spins.shape[0]
     energy = 0.0
@@ -151,14 +167,20 @@ def ising_step_random_numba(
 
     Parameters
     ----------
-        spins: (N, N) array of spins (+1 or -1).
-        beta: Inverse temperature 1/kT.
-        J: Coupling constant.
-        idx_next: Pre-calculated next-neighbor indices.
-        idx_prev: Pre-calculated previous-neighbor indices.
+    spins : np.ndarray
+        (N, N) array of spins (+1 or -1).
+    beta : float
+        Inverse temperature 1/kT.
+    J : float
+        Coupling constant.
+    idx_next : np.ndarray
+        Pre-calculated next-neighbor indices.
+    idx_prev : np.ndarray
+        Pre-calculated previous-neighbor indices.
 
     Returns
     -------
+    np.ndarray
         Updated spins array.
     """
     N = spins.shape[0]
@@ -216,19 +238,29 @@ def ising_wolff_step_numba(
 
     Parameters
     ----------
-        spins: (N, N) array of spins (+1 or -1).
-        beta: Inverse temperature 1/kT.
-        J: Coupling constant.
-        idx_next: Pre-calculated next-neighbor indices (PBC).
-        idx_prev: Pre-calculated previous-neighbor indices (PBC).
-        in_cluster: Pre-allocated (N, N) boolean array for cluster membership mask.
-        stack: Pre-allocated (N*N) int64 array for DFS stack.
-        cluster_spins: Pre-allocated (N*N) int64 array to track cluster elements.
+    spins : np.ndarray
+        (N, N) array of spins (+1 or -1).
+    beta : float
+        Inverse temperature 1/kT.
+    J : float
+        Coupling constant.
+    idx_next : np.ndarray
+        Pre-calculated next-neighbor indices (PBC).
+    idx_prev : np.ndarray
+        Pre-calculated previous-neighbor indices (PBC).
+    in_cluster : np.ndarray
+        Pre-allocated (N, N) boolean array for cluster membership mask.
+    stack : np.ndarray
+        Pre-allocated (N*N) int64 array for DFS stack.
+    cluster_spins : np.ndarray
+        Pre-allocated (N*N) int64 array to track cluster elements.
 
     Returns
     -------
-        spins: Updated spins array.
-        cluster_size: Number of spins flipped in this step.
+    spins
+        Updated spins array.
+    cluster_size
+        Number of spins flipped in this step.
     """
     N = spins.shape[0]
     p_add = 1.0 - np.exp(-2.0 * J * beta)
@@ -330,21 +362,32 @@ class IsingSimulation(MonteCarloSimulation):
 
         Parameters
         ----------
-            size: Linear dimension L of the L x L lattice.
-            temp: Temperature T.
-            J: Coupling constant (default 1.0).
-            update: Update scheme - ``'checkerboard'`` (default, faster),
-                ``'random'`` (random sequential Metropolis, physical
-                stochastic dynamics for coarsening studies), or
-                ``'wolff'`` (Wolff cluster algorithm, highly efficient near T_c
-                due to vanishing critical slowing down).
-            init_state: Initial spin configuration: ``'random'`` (default) or ``'ordered'``.
-            parallel: Whether to use parallelized Numba kernels (only for checkerboard).
-            seed: Optional random seed for reproducibility.
+        size : int
+            Linear dimension L of the L x L lattice.
+        temp : float
+            Temperature T.
+        J : float
+            Coupling constant (default 1.0).
+        update : str
+            Update scheme - ``'checkerboard'`` (default, faster),
+            ``'random'`` (random sequential Metropolis, physical
+            stochastic dynamics for coarsening studies), or
+            ``'wolff'`` (Wolff cluster algorithm, highly efficient near T_c
+            due to vanishing critical slowing down).
+        init_state : str
+            Initial spin configuration: ``'random'`` (default) or ``'ordered'``.
+        parallel : bool
+            Whether to use parallelized Numba kernels (only for
+            checkerboard). Parallel kernels are NOT seed-reproducible:
+            only the calling thread's Numba RNG is seeded, so two runs
+            with the same seed may differ.
+        seed : int | None
+            Optional random seed for reproducibility.
 
         Raises
         ------
-            ValueError: If ``update`` is not one of the recognised schemes.
+        ValueError
+            If ``update`` is not one of the recognised schemes.
         """
         super().__init__(size=size, temp=temp, init_state=init_state, seed=seed)
         if update not in self._VALID_UPDATES:
@@ -359,18 +402,10 @@ class IsingSimulation(MonteCarloSimulation):
         else:
             self.spins = self.rng.choice(np.array([-1, 1], dtype=np.int8), size=(size, size))
 
-        # Last Wolff cluster size (0 for non-Wolff updates or before any step)
-        self.last_cluster_size: int = 0
-
     def step(self) -> None:
         """Perform one Monte Carlo sweep using the configured update scheme."""
         if self.spins is not None:
-            # For Numba compatibility with reproducibility, we seed numba's
-            # random generator if a seed was provided.
-            if self.seed is not None:
-                from .simulation_base import _seed_numba
-
-                _seed_numba(seed=self.seed + self.steps)
+            self._reseed_numba_for_step()
 
             if self.update == 'random':
                 self.spins = ising_step_random_numba(
@@ -408,38 +443,6 @@ class IsingSimulation(MonteCarloSimulation):
                     idx_prev=self.idx_prev,
                 )
         self.steps += 1
-
-    def run_with_cluster_sizes(self, *, n_steps: int) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
-        """Run the simulation and additionally record the Wolff cluster size at every step.
-
-        For non-Wolff update schemes the cluster-size array is filled with zeros because
-        local Metropolis flips exactly one spin at a time (cluster size = 1 by convention
-        would also be valid, but zero makes it easy to detect misuse).
-
-        Parameters
-        ----------
-        n_steps:
-            Number of MC steps to perform and record.
-
-        Returns
-        -------
-        magnetization:
-            Array of `|M|` per spin at each step.
-        energies:
-            Array of energy per spin at each step.
-        cluster_sizes:
-            Array of cluster sizes (number of spins flipped) at each step.
-            Always zero for non-Wolff algorithms.
-        """
-        magnetization = np.empty(n_steps, dtype=float)
-        energies = np.empty(n_steps, dtype=float)
-        cluster_sizes = np.zeros(n_steps, dtype=int)
-        for i in range(n_steps):
-            self.step()
-            magnetization[i] = self._get_magnetization()
-            energies[i] = self._get_energy()
-            cluster_sizes[i] = self.last_cluster_size
-        return magnetization, energies, cluster_sizes
 
     def _get_magnetization(self) -> float:
         """Calculate magnetization per spin."""
@@ -520,7 +523,7 @@ def main() -> None:
     ax2.legend()
 
     # Correlation
-    r, G_r = sim._calculate_correlation_function()
+    r, G_r = sim.calculate_correlation_function()
     ax3.plot(r, G_r, 'o-', markersize=3)
     ax3.set_title('Spin-Spin Correlation G(r)')
     ax3.set_xlabel('Distance r')

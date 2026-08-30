@@ -9,7 +9,7 @@ import os
 import sys
 from collections.abc import Callable, Iterable, Sized
 from multiprocessing import Pool
-from typing import cast
+from typing import Any, cast
 
 from tqdm import tqdm
 
@@ -20,31 +20,45 @@ def setup_logging(*, level: int = logging.INFO, log_file: str | None = None) -> 
 
     Parameters
     ----------
-        level: Logging level (e.g., logging.INFO).
-        log_file: Optional path to a file to save logs to.
+    level : int
+        Logging level (e.g., logging.INFO).
+    log_file : str | None
+        Optional path to a file to save logs to.
 
     Returns
     -------
+    logging.Logger
         The configured logger instance.
     """
     logger = logging.getLogger('vibespin')
     logger.setLevel(level)
 
-    # Avoid duplicate handlers if setup_logging is called multiple times
-    if not logger.handlers:
-        formatter = logging.Formatter(
-            '%(asctime)s - %(levelname)s - %(message)s', datefmt='%Y-%m-%d %H:%M:%S'
-        )
+    formatter = logging.Formatter(
+        '%(asctime)s - %(levelname)s - %(message)s', datefmt='%Y-%m-%d %H:%M:%S'
+    )
 
-        # Console handler
+    # Guard each handler kind separately: previously a first call without
+    # log_file silently prevented any later call from attaching one.
+    if not any(
+        isinstance(h, logging.StreamHandler) and not isinstance(h, logging.FileHandler)
+        for h in logger.handlers
+    ):
         ch = logging.StreamHandler(sys.stdout)
         ch.setFormatter(formatter)
         logger.addHandler(ch)
 
-        # File handler
-        if log_file:
-            os.makedirs(os.path.dirname(log_file), exist_ok=True)
-            fh = logging.FileHandler(log_file)
+    if log_file:
+        target = os.path.abspath(log_file)
+        already_attached = any(
+            isinstance(h, logging.FileHandler)
+            and os.path.abspath(getattr(h, 'baseFilename', '')) == target
+            for h in logger.handlers
+        )
+        if not already_attached:
+            parent = os.path.dirname(target)
+            if parent:
+                os.makedirs(parent, exist_ok=True)
+            fh = logging.FileHandler(target)
             fh.setFormatter(formatter)
             logger.addHandler(fh)
 
@@ -56,20 +70,24 @@ _BAR_FORMAT = '{l_bar}{bar}| {n_fmt}/{total_fmt} [{elapsed}<{remaining}, {rate_n
 
 
 def parallel_sweep(
-    *, worker_func: Callable, params: Iterable, num_processes: int | None = None
-) -> list:
+    *, worker_func: Callable[[Any], Any], params: Iterable[Any], num_processes: int | None = None
+) -> list[Any]:
     """
     Run a parallel sweep over a set of parameters using a worker function.
     Uses multiprocessing.Pool and tqdm for progress tracking.
 
     Parameters
     ----------
-        worker_func: Function to execute in parallel.
-        params: Iterable of parameters to pass to the worker function.
-        num_processes: Number of processes to use. Defaults to CPU count.
+    worker_func : Callable[[Any], Any]
+        Function to execute in parallel.
+    params : Iterable[Any]
+        Iterable of parameters to pass to the worker function.
+    num_processes : int | None
+        Number of processes to use. Defaults to CPU count.
 
     Returns
     -------
+    list[Any]
         List of results from the worker function.
     """
     # Try to get the length of params for tqdm without converting to list if possible
@@ -79,7 +97,7 @@ def parallel_sweep(
         return list(tqdm(pool.imap(worker_func, params), total=total_len, bar_format=_BAR_FORMAT))
 
 
-def parse_args_compat(parser: argparse.ArgumentParser) -> argparse.Namespace:
+def parse_args_compat(*, parser: argparse.ArgumentParser) -> argparse.Namespace:
     """Parse CLI args with compatibility for parser wrappers used by some runners."""
     parse_arguments = getattr(parser, 'parse_arguments', None)
     if callable(parse_arguments):

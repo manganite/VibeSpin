@@ -11,68 +11,14 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 from models.xy_model import XYSimulation
-from utils.equilibration import convergence_equilibrate_with_status
-from utils.observables import get_averaged_correlation
+from utils.observables import (
+    CorrelationPoint,
+    fit_correlation_exponent,
+    fit_correlation_length,
+    measure_correlation_point,
+)
 from utils.plotting import ensure_results_dir, save_plot
-from utils.system import parse_args_compat, setup_logging
-
-
-def simulate_correlation(
-    *,
-    T: float,
-    L: int,
-    steps: int,
-    eq_probe: int,
-    eq_max: int,
-    sample_interval: int,
-    seed: int,
-    logger: logging.Logger,
-) -> tuple[np.ndarray, np.ndarray]:
-    """Equilibrate and measure the averaged correlation function at temperature T.
-
-    Uses two-start convergence equilibration to avoid initialization bias.
-
-    Parameters
-    ----------
-    T : float
-        Temperature for the measurement.
-    L : int
-        Linear lattice size.
-    steps : int
-        Measurement steps after equilibration.
-    eq_probe : int
-        Chunk size for convergence equilibration probes.
-    eq_max : int
-        Maximum equilibration steps.
-    sample_interval : int
-        Spacing between correlation samples during measurement.
-    seed : int
-        Random seed for reproducibility.
-    logger : logging.Logger
-        Logger instance.
-
-    Returns
-    -------
-    tuple[np.ndarray, np.ndarray]
-        Radial distances r and averaged correlations G(r).
-    """
-    logger.debug(f'Equilibrating at T={T:.3f} (L={L}, seed={seed})...')
-    sim_r = XYSimulation(
-        size=L, temp=T, update='checkerboard', init_state='random', seed=seed,
-    )
-    sim_o = XYSimulation(
-        size=L, temp=T, update='checkerboard', init_state='ordered', seed=seed,
-    )
-    _, converged = convergence_equilibrate_with_status(
-        sim_r, sim_o, chunk_size=eq_probe, max_steps=eq_max,
-    )
-    sim_meas = sim_r if converged else sim_o
-    if not converged:
-        logger.info(f'T={T:.3f}: convergence not reached, falling back to ordered start')
-    logger.debug(f'Measuring correlations at T={T:.3f}...')
-    return get_averaged_correlation(
-        sim=sim_meas, total_steps=steps, sample_interval=sample_interval,
-    )
+from utils.system import parallel_sweep, parse_args_compat, setup_logging
 
 
 def main() -> None:
@@ -88,7 +34,7 @@ def main() -> None:
     parser.add_argument('--log-file', type=str, default=None, help='Optional log file path')
     parser.add_argument('--verbose', action='store_true', help='Enable verbose logging')
 
-    args = parse_args_compat(parser)
+    args = parse_args_compat(parser=parser)
 
     # Configure logging
     log_level = logging.DEBUG if args.verbose else logging.INFO
@@ -100,17 +46,35 @@ def main() -> None:
 
     logger.info(f'Starting XY correlation comparison (L={args.size})...')
 
-    results = {}
-    for label, T in [('low', T_LOW), ('high', T_HIGH)]:
-        r, G = simulate_correlation(
-            T=T, L=args.size, steps=args.steps, eq_probe=args.eq_probe,
-            eq_max=args.eq_max, sample_interval=args.interval, seed=args.seed,
-            logger=logger,
+    points = [
+        CorrelationPoint(
+            label=label, temperature=T, model_cls=XYSimulation, model_kwargs={},
+            size=args.size, seed=args.seed, eq_probe=args.eq_probe,
+            eq_max=args.eq_max, meas_steps=args.steps, interval=args.interval,
         )
-        results[label] = (r, G)
+        for label, T in (('low', T_LOW), ('high', T_HIGH))
+    ]
+    results = {
+        label: (r, G)
+        for label, r, G in parallel_sweep(
+            worker_func=measure_correlation_point, params=points,
+        )
+    }
 
     r_low, G_low = results['low']
     r_high, G_high = results['high']
+
+    # Below the transition the XY model is quasi-ordered, so the expected form
+    # is a power law whose exponent spin-wave theory fixes at eta = T/(2 pi J);
+    # above it correlations decay exponentially with a finite length.
+    eta_low = fit_correlation_exponent(r=r_low, G=G_low)
+    xi_high = fit_correlation_length(r=r_high, G=G_high)
+    eta_spin_wave = T_LOW / (2.0 * np.pi)
+    logger.info(
+        f'T={T_LOW}: fitted eta = {eta_low:.4f} '
+        f'(spin-wave prediction {eta_spin_wave:.4f})'
+    )
+    logger.info(f'T={T_HIGH}: fitted correlation length xi = {xi_high:.4f}')
 
     # Plotting
     fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(14, 6))
@@ -154,6 +118,9 @@ def main() -> None:
         eq_max=args.eq_max,
         sample_interval=args.interval,
         seed=args.seed,
+        eta_low=eta_low,
+        eta_low_spin_wave=eta_spin_wave,
+        xi_high=xi_high,
     )
     logger.info(f'Data saved to {npz_path}')
 

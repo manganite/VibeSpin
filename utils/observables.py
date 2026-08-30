@@ -3,10 +3,13 @@ Physics-related utility functions for calculating thermodynamic observables and 
 """
 from __future__ import annotations
 
-from typing import Protocol
+import logging
+from typing import Any, NamedTuple, Protocol
 
 import numpy as np
 from scipy.integrate import cumulative_trapezoid
+
+from utils.equilibration import convergence_equilibrate_with_status
 
 
 class _Sim(Protocol):
@@ -16,7 +19,48 @@ class _Sim(Protocol):
 
     def step(self) -> None: ...
 
-    def _calculate_correlation_function(self) -> tuple[np.ndarray, np.ndarray]: ...
+    def calculate_correlation_function(self) -> tuple[np.ndarray, np.ndarray]: ...
+
+
+def derived_thermo_estimate(
+    *, series: np.ndarray, temperature: float, L: int, observable: str
+) -> float:
+    """Compute a fluctuation-based derived observable from a time series.
+
+    Single authoritative implementation of the fluctuation-dissipation
+    formulas, shared by :func:`calculate_thermodynamics` and the uncertainty
+    summarizers in ``utils.statistics``.
+
+    Parameters
+    ----------
+    series : np.ndarray
+        1-D time series (magnetization for ``'chi'``, energy per
+        site for ``'cv'``).
+    temperature : float
+        Temperature T of the measurement.
+    L : int
+        Linear lattice size.
+    observable : str
+        ``'chi'`` (susceptibility, N Var(M)/T) or ``'cv'``
+        (specific heat, N Var(E)/T^2).
+
+    Returns
+    -------
+    float
+        The derived observable value.
+
+    Raises
+    ------
+    ValueError
+        If ``observable`` is not ``'chi'`` or ``'cv'``.
+    """
+    N = float(L * L)
+    variance = float(np.var(series))
+    if observable == 'chi':
+        return float(N * variance / temperature)
+    if observable == 'cv':
+        return float(N * variance / (temperature**2))
+    raise ValueError(f"observable must be one of 'chi' or 'cv', got {observable!r}")
 
 
 def calculate_thermodynamics(
@@ -27,18 +71,24 @@ def calculate_thermodynamics(
 
     Parameters
     ----------
-        mags: Array of magnetization measurements.
-        engs: Array of energy measurements.
-        T: Temperature.
-        L: Linear lattice size.
+    mags : np.ndarray
+        Array of magnetization measurements.
+    engs : np.ndarray
+        Array of energy measurements.
+    T : float
+        Temperature.
+    L : int
+        Linear lattice size.
 
     Returns
     -------
+    tuple[float, float, float, float]
         A tuple of (avg_mag, avg_eng, susceptibility, specific_heat).
 
     Raises
     ------
-        ValueError: If ``T`` is not positive or ``L`` is not a positive integer.
+    ValueError
+        If ``T`` is not positive or ``L`` is not a positive integer.
     """
     if T <= 0.0:
         raise ValueError(f'T must be positive (T > 0), got {T}')
@@ -46,13 +96,8 @@ def calculate_thermodynamics(
         raise ValueError(f'L must be a positive integer, got {L!r}')
     avg_mag = float(np.mean(mags))
     avg_eng = float(np.mean(engs))
-    N = L * L
-
-    # Susceptibility: chi = N * Var(M) / T
-    susceptibility = float(N * np.var(mags) / T)
-
-    # Specific Heat: Cv = N * Var(E) / T^2
-    specific_heat = float(N * np.var(engs) / (T**2))
+    susceptibility = derived_thermo_estimate(series=mags, temperature=T, L=L, observable='chi')
+    specific_heat = derived_thermo_estimate(series=engs, temperature=T, L=L, observable='cv')
 
     return avg_mag, avg_eng, susceptibility, specific_heat
 
@@ -73,21 +118,26 @@ def calculate_entropy(
 
     Parameters
     ----------
-        temperatures: 1-D array of temperature values. Need not be sorted.
-        specific_heat: Specific heat C_v at each temperature (same length).
-        s_ref: Reference entropy at the highest temperature. Pass ``0.0``
-            for relative entropy or ``np.log(q)`` (per site, in units of
-            k_B) for absolute entropy of a q-state model.
+    temperatures : np.ndarray
+        1-D array of temperature values. Need not be sorted.
+    specific_heat : np.ndarray
+        Specific heat C_v at each temperature (same length).
+    s_ref : float
+        Reference entropy at the highest temperature. Pass ``0.0``
+        for relative entropy or ``np.log(q)`` (per site, in units of
+        k_B) for absolute entropy of a q-state model.
 
     Returns
     -------
+    np.ndarray
         1-D array of entropy values, one per temperature, in the original
         unsorted order of ``temperatures``.
 
     Raises
     ------
-        ValueError: If arrays differ in length, contain fewer than 2 points,
-            or include non-positive temperatures.
+    ValueError
+        If arrays differ in length, contain fewer than 2 points,
+        or include non-positive temperatures.
     """
     temperatures = np.asarray(temperatures, dtype=np.float64)
     specific_heat = np.asarray(specific_heat, dtype=np.float64)
@@ -125,28 +175,6 @@ def calculate_entropy(
     return entropy
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 def get_averaged_correlation(
     *, sim: _Sim, total_steps: int, sample_interval: int
 ) -> tuple[np.ndarray, np.ndarray]:
@@ -155,18 +183,24 @@ def get_averaged_correlation(
 
     Parameters
     ----------
-        sim: An instance of MonteCarloSimulation.
-        total_steps: Total number of MC steps to run.
-        sample_interval: Interval between correlation samples. Must be ≥ 1.
+    sim : _Sim
+        An instance of MonteCarloSimulation.
+    total_steps : int
+        Total number of MC steps to run.
+    sample_interval : int
+        Interval between correlation samples. Must be ≥ 1.
 
     Returns
     -------
-        r: Radial distances.
-        G_r_avg: Averaged correlation values.
+    r : np.ndarray
+        Radial distances.
+    G_r_avg : np.ndarray
+        Averaged correlation values.
 
     Raises
     ------
-        ValueError: If ``sample_interval`` is less than 1 or ``total_steps`` is negative.
+    ValueError
+        If ``sample_interval`` is less than 1 or ``total_steps`` is negative.
     """
     if sample_interval < 1:
         raise ValueError(f'sample_interval must be >= 1, got {sample_interval}')
@@ -179,7 +213,7 @@ def get_averaged_correlation(
     for i in range(total_steps):
         sim.step()
         if i % sample_interval == 0:
-            r, G_r = sim._calculate_correlation_function()
+            r, G_r = sim.calculate_correlation_function()
             if G_r_avg is None:
                 G_r_avg = np.zeros_like(G_r)
             G_r_avg += G_r
@@ -189,11 +223,292 @@ def get_averaged_correlation(
         G_r_avg /= count
     else:
         # Fallback if no samples were taken
-        _, G_r_dummy = sim._calculate_correlation_function()
+        r, G_r_dummy = sim.calculate_correlation_function()
         G_r_avg = np.zeros_like(G_r_dummy)
-        r = _
 
     return r, G_r_avg
+
+
+def simulate_equilibrium_correlation(
+    *,
+    model_cls: type,
+    model_kwargs: dict[str, Any],
+    size: int,
+    temp: float,
+    seed: int,
+    eq_probe: int,
+    eq_max: int,
+    meas_steps: int,
+    interval: int,
+    logger: logging.Logger | None = None,
+) -> tuple[np.ndarray, np.ndarray]:
+    """
+    Equilibrate a model and measure its averaged correlation function.
+
+    Runs two-start convergence equilibration (random start vs. ordered start,
+    checkerboard updates) to avoid initialization bias, then averages the
+    correlation function over ``meas_steps`` Monte Carlo steps, sampling every
+    ``interval`` steps. When convergence is not reached within ``eq_max``
+    steps, measurement falls back to the ordered-start simulation.
+
+    Parameters
+    ----------
+    model_cls : type
+        Simulation class to instantiate (e.g. ``IsingSimulation``).
+    model_kwargs : dict[str, Any]
+        Extra keyword arguments forwarded to the model
+        constructor beyond ``size``, ``temp``, ``update``, ``init_state``,
+        and ``seed`` (e.g. ``{'q': 6}`` for the clock model).
+    size : int
+        Linear lattice size L.
+    temp : float
+        Temperature for the measurement.
+    seed : int
+        Random seed used for both start states.
+    eq_probe : int
+        Chunk size for convergence equilibration probes.
+    eq_max : int
+        Maximum equilibration steps.
+    meas_steps : int
+        Measurement steps after equilibration.
+    interval : int
+        Spacing between correlation samples during measurement.
+    logger : logging.Logger | None
+        Optional logger for progress and fallback messages.
+
+    Returns
+    -------
+    r : np.ndarray
+        Radial distances.
+    G_r_avg : np.ndarray
+        Averaged correlation values G(r).
+    """
+    if logger is not None:
+        logger.debug(f'Equilibrating at T={temp:.3f} (L={size}, seed={seed})...')
+    sim_r = model_cls(
+        size=size, temp=temp, update='checkerboard', init_state='random', seed=seed,
+        **model_kwargs,
+    )
+    sim_o = model_cls(
+        size=size, temp=temp, update='checkerboard', init_state='ordered', seed=seed,
+        **model_kwargs,
+    )
+    _, converged = convergence_equilibrate_with_status(
+        sim_random=sim_r, sim_ordered=sim_o, chunk_size=eq_probe, max_steps=eq_max,
+    )
+    # Fall back to ordered-start simulation when random-start is stuck.
+    sim_meas = sim_r if converged else sim_o
+    if not converged and logger is not None:
+        logger.info(f'T={temp:.3f}: convergence not reached, falling back to ordered start')
+    if logger is not None:
+        logger.debug(f'Measuring correlations at T={temp:.3f}...')
+    return get_averaged_correlation(
+        sim=sim_meas, total_steps=meas_steps, sample_interval=interval,
+    )
+
+
+class CorrelationPoint(NamedTuple):
+    """
+    Typed worker payload for one temperature of a correlation comparison.
+
+    Parameters
+    ----------
+    label : str
+        Name of the phase this temperature represents, carried through so the
+        caller can match results back to the temperature that produced them
+        without relying on the order the pool returns them in.
+    temperature : float
+        Simulation temperature T.
+    model_cls : type
+        Simulation class to instantiate.  It must be importable under its
+        qualified name so that it survives the multiprocessing pickle.
+    model_kwargs : dict[str, typing.Any]
+        Extra constructor arguments beyond size, temperature, update, start,
+        and seed.
+    size : int
+        Linear lattice size L.
+    seed : int
+        Random seed used for both start states.
+    eq_probe : int
+        Chunk size for convergence equilibration probes.
+    eq_max : int
+        Maximum equilibration steps.
+    meas_steps : int
+        Measurement steps after equilibration.
+    interval : int
+        Spacing between correlation samples during measurement.
+    """
+
+    label: str
+    temperature: float
+    model_cls: type
+    model_kwargs: dict[str, Any]
+    size: int
+    seed: int
+    eq_probe: int
+    eq_max: int
+    meas_steps: int
+    interval: int
+
+
+def measure_correlation_point(
+    point: CorrelationPoint,
+) -> tuple[str, np.ndarray, np.ndarray]:
+    """
+    Worker: equilibrate and measure G(r) at one temperature.
+
+    This exists as a module-level function taking a single argument so that it
+    can be handed to ``parallel_sweep``, which pickles the worker and its
+    payload across processes.
+
+    Parameters
+    ----------
+    point : CorrelationPoint
+        Payload describing the measurement.
+
+    Returns
+    -------
+    tuple[str, numpy.ndarray, numpy.ndarray]
+        The point's label, the radial distances, and the averaged G(r).
+    """
+    logger = logging.getLogger('vibespin')
+    r, G = simulate_equilibrium_correlation(
+        model_cls=point.model_cls,
+        model_kwargs=point.model_kwargs,
+        size=point.size,
+        temp=point.temperature,
+        seed=point.seed,
+        eq_probe=point.eq_probe,
+        eq_max=point.eq_max,
+        meas_steps=point.meas_steps,
+        interval=point.interval,
+        logger=logger,
+    )
+    return point.label, r, G
+
+
+def _fit_window(
+    *, r: np.ndarray, G: np.ndarray, r_min: int, r_max: int | None,
+) -> tuple[np.ndarray, np.ndarray]:
+    """
+    Select the distances a decay fit may use.
+
+    The upper end defaults to L/4.  Beyond that the periodic images of a site
+    are closer than the nominal distance suggests, so G(r) flattens for a
+    reason that has nothing to do with the decay being fitted.  Values at or
+    below zero are dropped because both fits work in log space.
+
+    Parameters
+    ----------
+    r : numpy.ndarray
+        Radial distances, running out to L/2.
+    G : numpy.ndarray
+        Correlation values at those distances.
+    r_min : int
+        Smallest distance to fit, excluding the lattice-scale points where the
+        asymptotic form does not hold yet.
+    r_max : int or None
+        Largest distance to fit, or None for L/4.
+
+    Returns
+    -------
+    tuple[numpy.ndarray, numpy.ndarray]
+        The distances and correlation values inside the window.
+    """
+    if len(r) == 0:
+        return np.array([]), np.array([])
+    upper = float(r[-1]) / 2.0 if r_max is None else float(r_max)
+    mask = (r >= r_min) & (r <= upper) & (G > 1e-10) & np.isfinite(G)
+    return r[mask], G[mask]
+
+
+def fit_correlation_length(
+    *,
+    r: np.ndarray,
+    G: np.ndarray,
+    r_min: int = 2,
+    r_max: int | None = None,
+) -> float:
+    """
+    Fit the correlation length of an exponentially decaying G(r).
+
+    A straight line through log G against r has slope -1/xi, so this is the
+    right estimator only where exponential decay is the expected form, which
+    means above the transition.  Applying it inside a critical or quasi-ordered
+    phase returns a number, but that number describes nothing.
+
+    Parameters
+    ----------
+    r : numpy.ndarray
+        Radial distances.
+    G : numpy.ndarray
+        Correlation values.
+    r_min : int, optional
+        Smallest distance to fit.
+    r_max : int or None, optional
+        Largest distance to fit, or None for L/4.
+
+    Returns
+    -------
+    float
+        The correlation length xi, or NaN when fewer than two usable points
+        remain, the fit fails, or the fitted slope is not negative.
+    """
+    r_fit, G_fit = _fit_window(r=r, G=G, r_min=r_min, r_max=r_max)
+    if len(r_fit) < 2:
+        return float('nan')
+    try:
+        slope, _ = np.polyfit(r_fit, np.log(G_fit), 1)
+    except (np.linalg.LinAlgError, ValueError):
+        return float('nan')
+    if not np.isfinite(slope) or slope >= 0.0:
+        return float('nan')
+    return float(-1.0 / slope)
+
+
+def fit_correlation_exponent(
+    *,
+    r: np.ndarray,
+    G: np.ndarray,
+    r_min: int = 2,
+    r_max: int | None = None,
+) -> float:
+    """
+    Fit the anomalous dimension of an algebraically decaying G(r).
+
+    A straight line through log G against log r has slope -eta, so this is the
+    right estimator where power-law decay is expected: at the critical point of
+    the Ising model, where eta is exactly 1/4, and throughout the quasi-ordered
+    phase of the XY and clock models, where spin-wave theory predicts
+    eta = T / (2 pi J).
+
+    Parameters
+    ----------
+    r : numpy.ndarray
+        Radial distances.
+    G : numpy.ndarray
+        Correlation values.
+    r_min : int, optional
+        Smallest distance to fit.
+    r_max : int or None, optional
+        Largest distance to fit, or None for L/4.
+
+    Returns
+    -------
+    float
+        The exponent eta, or NaN when fewer than two usable points remain or
+        the fit fails.
+    """
+    r_fit, G_fit = _fit_window(r=r, G=G, r_min=r_min, r_max=r_max)
+    if len(r_fit) < 2:
+        return float('nan')
+    try:
+        slope, _ = np.polyfit(np.log(r_fit), np.log(G_fit), 1)
+    except (np.linalg.LinAlgError, ValueError):
+        return float('nan')
+    if not np.isfinite(slope):
+        return float('nan')
+    return float(-slope)
 
 
 def radial_average_sk(*, spins: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
@@ -204,12 +519,15 @@ def radial_average_sk(*, spins: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
 
     Parameters
     ----------
-        spins: (N, N) or (N, N, 2) spin array.
+    spins : np.ndarray
+        (N, N) or (N, N, 2) spin array.
 
     Returns
     -------
-        k_vals: Wavevector magnitudes in units of 2π/N (reciprocal lattice).
-        S_radial: Mean S(k) value for each annular bin.
+    k_vals : np.ndarray
+        Wavevector magnitudes in units of 2π/N (reciprocal lattice).
+    S_radial : np.ndarray
+        Mean S(k) value for each annular bin.
     """
     N = spins.shape[0]
     if spins.ndim == 3:  # Vector spins (XY/Clock)
@@ -248,12 +566,15 @@ def pair_correlation_x(*, spins: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
 
     Parameters
     ----------
-        spins: (N, N) or (N, N, 2) spin array.
+    spins : np.ndarray
+        (N, N) or (N, N, 2) spin array.
 
     Returns
     -------
-        r_vals: Lag distances r = 0 … N//2 in lattice units.
-        G: Normalised pair correlation G(r) / G(0).
+    r_vals : np.ndarray
+        Lag distances r = 0 … N//2 in lattice units.
+    G : np.ndarray
+        Normalised pair correlation G(r) / G(0).
     """
     N = spins.shape[0]
 
@@ -279,16 +600,50 @@ def pair_correlation_x(*, spins: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
     return r_vals, G
 
 
+def correlation_length_1e(*, r: np.ndarray, G: np.ndarray) -> float:
+    """Estimate the correlation length as the 1/e crossing of G(r).
+
+    Linearly interpolates between the last point above 1/e and the first
+    point below it. Returns ``r[0]`` when the very first point is already
+    below 1/e, and NaN when G never drops below 1/e within the given range
+    (callers decide the appropriate fallback for their context).
+
+    Parameters
+    ----------
+    r : np.ndarray
+        Radial distances (monotonically increasing).
+    G : np.ndarray
+        Correlation values G(r), normalised so G(0) = 1.
+
+    Returns
+    -------
+    float
+        The interpolated 1/e crossing radius, or NaN if no crossing exists.
+    """
+    inv_e = 1.0 / np.e
+    below = np.where(np.asarray(G) < inv_e)[0]
+    if len(below) == 0:
+        return float('nan')
+    idx = int(below[0])
+    if idx == 0:
+        return float(r[0])
+    r0, r1 = float(r[idx - 1]), float(r[idx])
+    g0, g1 = float(G[idx - 1]), float(G[idx])
+    return r0 + (inv_e - g0) * (r1 - r0) / (g1 - g0)
+
+
 def compute_kinetics_metrics(*, sim: _Sim) -> dict[str, float]:
     """
     Calculate common kinetics metrics (R_sk, xi) for a simulation state.
 
     Parameters
     ----------
-        sim: MonteCarloSimulation instance.
+    sim : _Sim
+        MonteCarloSimulation instance.
 
     Returns
     -------
+    dict[str, float]
         Dictionary containing 'R_sk' and 'xi'.
     """
     if sim.spins is None:
@@ -301,19 +656,12 @@ def compute_kinetics_metrics(*, sim: _Sim) -> dict[str, float]:
     denom = float(np.sum(K_k * S_k))
     R_sk = (2.0 * np.pi * float(np.sum(S_k) / denom)) if denom != 0 else 0.0
 
-    # 2. xi from G(r) 1/e decay
+    # 2. xi from G(r) 1/e decay; no crossing means the correlation extends
+    # beyond the accessible range, so fall back to the largest distance.
     r_vals, G = pair_correlation_x(spins=sim.spins)
-    inv_e = 1.0 / np.e
-    below = np.where(G < inv_e)[0]
-    if len(below) == 0:
+    xi = correlation_length_1e(r=r_vals, G=G)
+    if not np.isfinite(xi):
         xi = float(r_vals[-1])
-    elif below[0] == 0:
-        xi = float(r_vals[0])
-    else:
-        idx = below[0]
-        r0, r1 = float(r_vals[idx - 1]), float(r_vals[idx])
-        g0, g1 = float(G[idx - 1]), float(G[idx])
-        xi = r0 + (inv_e - g0) * (r1 - r0) / (g1 - g0)
 
     return {'R_sk': R_sk, 'xi': xi}
 

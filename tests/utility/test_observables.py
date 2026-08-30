@@ -1,5 +1,5 @@
 """
-Unit tests for physics-related utility functions in utils/physics_helpers.py.
+Unit tests for physics-related utility functions in utils/observables.py.
 Covers thermodynamic averages, entropy, autocorrelation, spatial diagnostics,
 kinetics metrics, and power-law fitting.
 """
@@ -385,7 +385,7 @@ def test_clock_energy_calc():
 
 
 class TestPhysicsHelpersValidation:
-    """Verify error handling for invalid inputs in physics_helpers.py."""
+    """Verify error handling for invalid inputs in observables.py."""
 
     def test_validate_confidence_errors(self) -> None:
         """Should raise ValueError for confidence outside (0, 1)."""

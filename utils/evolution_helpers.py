@@ -75,17 +75,23 @@ def run_ordering_evolution(
             sim.step()
         current_step = target
 
-        if sim.spins is not None:
-            snapshots.append(sim.spins.copy())
-            snapshots_gr.append(sim._calculate_correlation_function())
-            if capture_vorticity:
-                snapshots_vort.append(sim._calculate_vorticity())
-                _log.debug(
-                    f'Captured snapshot at step {target}'
-                    f' (n_v={sim._get_vortex_density():.4f})'
-                )
-            else:
-                _log.debug(f'Captured snapshot at step {target}')
+        if sim.spins is None:
+            # Silently skipping would desynchronize snapshots from targets and
+            # surface later as an opaque IndexError inside the plot helper.
+            raise RuntimeError(
+                f'Simulation lattice is uninitialized (spins is None) at step {target}; '
+                'cannot capture ordering-evolution snapshots.'
+            )
+        snapshots.append(sim.spins.copy())
+        snapshots_gr.append(sim.calculate_correlation_function())
+        if capture_vorticity:
+            snapshots_vort.append(sim.calculate_vorticity())
+            _log.debug(
+                f'Captured snapshot at step {target}'
+                f' (n_v={sim.get_vortex_density():.4f})'
+            )
+        else:
+            _log.debug(f'Captured snapshot at step {target}')
 
     _log.info(f'Collected {n_targets} snapshots. Saving figure ...')
 

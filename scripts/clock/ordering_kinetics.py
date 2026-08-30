@@ -26,7 +26,7 @@ def main() -> None:
     parser.add_argument('--samples', type=int, default=30, help='Number of measurement points')
     parser.add_argument('--fit-min', type=int, default=5, help='Min step for power-law fit')
     parser.add_argument(
-        '--seeds', type=int, default=4,
+        '--n-seeds', '--seeds', dest='seeds', type=int, default=4,
         help='Number of independent seeds for ensemble averaging',
     )
     parser.add_argument('--base-seed', type=int, default=42, help='Starting seed for the ensemble')
@@ -34,7 +34,7 @@ def main() -> None:
     parser.add_argument('--log-file', type=str, default=None, help='Optional log file path')
     parser.add_argument('--verbose', action='store_true', help='Enable verbose logging')
 
-    args = parse_args_compat(parser)
+    args = parse_args_compat(parser=parser)
 
     log_level = logging.DEBUG if args.verbose else logging.INFO
     logger = setup_logging(level=log_level, log_file=args.log_file)
@@ -47,7 +47,7 @@ def main() -> None:
     run_ordering_kinetics(
         model_cls=ClockSimulation,
         model_kwargs={'q': args.q, 'A': args.aniso},
-        third_metric_fn=lambda sim: sim._get_vortex_density(),
+        third_metric_fn=lambda sim: sim.get_vortex_density(),
         third_metric_label='Vortex Density $n_v(t)$',
         title=(
             f'2D {args.q}-state Clock Ordering Kinetics -'

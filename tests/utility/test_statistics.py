@@ -1,5 +1,5 @@
 """
-Unit tests for physics-related utility functions in utils/physics_helpers.py.
+Unit tests for statistical utility functions in utils/statistics.py.
 Covers thermodynamic averages, entropy, autocorrelation, spatial diagnostics,
 kinetics metrics, and power-law fitting.
 """
@@ -206,6 +206,34 @@ def test_entropy_invalid_shape_mismatch():
             temperatures=np.array([1.0, 2.0, 3.0]),
             specific_heat=np.array([1.0, 2.0]),
         )
+
+
+def test_propagate_entropy_uncertainty_nan_poisoning():
+    """A non-finite Cv error must poison its point and all lower temperatures.
+
+    The propagated entropy variance at temperature T_i is the tail sum of the
+    segment variances from T_i up to the high-temperature anchor. A NaN in a
+    segment therefore invalidates every temperature at or below that segment,
+    while all higher temperatures keep exact finite errors.
+    """
+    from utils.statistics import _propagate_entropy_uncertainty_from_cv_errors
+
+    t = np.linspace(0.5, 3.0, 8)
+    cv_err = np.full(8, 0.1)
+    cv_err[3] = np.nan
+
+    err = _propagate_entropy_uncertainty_from_cv_errors(
+        temperatures=t, specific_heat_err=cv_err,
+    )
+
+    # Segments 2 and 3 touch the NaN point, so indices 0..3 are poisoned.
+    assert np.all(np.isnan(err[:4]))
+    assert np.all(np.isfinite(err[4:]))
+    # The anchor point (highest T) carries zero propagated variance.
+    assert err[-1] == pytest.approx(0.0)
+    # Errors grow monotonically toward lower temperatures on the finite side.
+    finite = err[4:]
+    assert np.all(np.diff(finite) <= 0.0)
 
 
 def test_summarize_entropy_observable_multi_replicate_finite_error():
@@ -451,7 +479,22 @@ def test_summarize_replicate_samples_2d_nan_safe():
     assert isinstance(summary['value'], np.ndarray)
     assert isinstance(summary['ci_low'], np.ndarray)
     assert isinstance(summary['ci_high'], np.ndarray)
+    assert isinstance(summary['err'], np.ndarray)
+    np.testing.assert_allclose(summary['err'], 0.5 * (summary['ci_high'] - summary['ci_low']))
     assert summary['samples'] == pytest.approx(4.0)
+
+
+def test_summarize_replicate_samples_1d_has_err_field():
+    """1-D replicate summaries must expose the scalar 'err' schema field.
+
+    Regression test: scripts/ising/measure_z.py reads summary['err'] when
+    saving its NPZ output, which previously raised KeyError after the full
+    sweep had completed.
+    """
+    summary = summarize_replicate_samples(samples=np.array([1.0, 2.0, 3.0]))
+    assert summary['err'] == pytest.approx(0.5 * (summary['ci_high'] - summary['ci_low']))
+    for key in ('value', 'err', 'ci_low', 'ci_high'):
+        assert np.isfinite(summary[key])
 
 
 def test_summarize_seed_ensemble_single_seed_matches_within_seed_error():
@@ -592,7 +635,7 @@ def test_estimate_relaxation_time_two_start_short():
     """Should return 0 for very short traces."""
     r = np.array([0.1, 0.2])
     o = np.array([0.9, 0.8])
-    assert estimate_relaxation_time_two_start(r, o) == 0
+    assert estimate_relaxation_time_two_start(trace_random=r, trace_ordered=o) == 0
 
 
 def test_estimate_relaxation_time_two_start_no_convergence():
@@ -601,7 +644,7 @@ def test_estimate_relaxation_time_two_start_no_convergence():
     r = np.zeros(n)
     o = np.ones(n)
     # Use small k to ensure they don't accidentally converge
-    tau = estimate_relaxation_time_two_start(r, o, k=0.1)
+    tau = estimate_relaxation_time_two_start(trace_random=r, trace_ordered=o, k=0.1)
     assert tau == n
 
 
@@ -794,7 +837,7 @@ def test_detect_quasi_steady_stuck_l_scaling_true_for_low_t_stuck():
 
 
 class TestPhysicsHelpersValidation:
-    """Verify error handling for invalid inputs in physics_helpers.py."""
+    """Verify error handling for invalid inputs in statistics.py."""
 
     def test_validate_confidence_errors(self) -> None:
         """Should raise ValueError for confidence outside (0, 1)."""
