@@ -157,6 +157,164 @@ def get_helicity_data_numba(*, spins: np.ndarray, idx_next: np.ndarray) -> tuple
     return cos_sum, sin_sum
 
 
+@njit(cache=True, fastmath=True)
+def o2_wolff_step_numba(
+    *,
+    spins: np.ndarray,
+    beta: float,
+    J: float,
+    idx_next: np.ndarray,
+    idx_prev: np.ndarray,
+    in_cluster: np.ndarray,
+    stack: np.ndarray,
+    cluster_spins: np.ndarray
+) -> tuple:
+    """
+    Perform one Wolff-Evertz cluster reflection on a planar unit-vector field.
+
+    A random mirror-plane axis is sampled uniformly from the unit circle, and
+    each spin is projected onto it.  Bonds between neighbours whose projections
+    share a sign are activated with probability
+    ``P_add = 1 - exp(-2 beta J sigma_i sigma_j)``, and every spin in the
+    resulting cluster is reflected through the plane perpendicular to the axis.
+    The reflection preserves unit length exactly.
+
+    The bond construction sees only the exchange term, so every O(2) model in
+    this project shares this update unchanged.  Where the Hamiltonian adds a
+    single-site term that breaks the reflection symmetry, such as the
+    crystal-field anisotropy of the clock model, detailed balance then holds
+    for the exchange part alone, and ``ClockSimulation`` warns when it is asked
+    to combine this update with a non-zero anisotropy.
+
+    One call constitutes one cluster sweep.  ``parallel=True`` is silently
+    ignored.
+
+    Parameters
+    ----------
+    spins : np.ndarray
+        (N, N, 2) array of unit vectors.
+    beta : float
+        Inverse temperature 1/kT.
+    J : float
+        Coupling constant.
+    idx_next : np.ndarray
+        Pre-calculated next-neighbor indices (PBC).
+    idx_prev : np.ndarray
+        Pre-calculated previous-neighbor indices (PBC).
+    in_cluster : np.ndarray
+        Pre-allocated (N, N) boolean array for cluster membership mask.
+    stack : np.ndarray
+        Pre-allocated (N*N) int64 array for DFS stack.
+    cluster_spins : np.ndarray
+        Pre-allocated (N*N) int64 array to track cluster elements.
+
+    Returns
+    -------
+    spins
+        Updated spins array.
+    cluster_size
+        Number of spins reflected in this step.
+    """
+    # The caller hands in an all-False in_cluster mask; the reflection loop
+    # below clears every entry it set, so the buffer stays reusable.
+    N = spins.shape[0]
+
+    # Random mirror-plane axis r\u0302 = (cos phi, sin phi)
+    phi = np.random.uniform(0.0, 2.0 * np.pi)
+    rx = np.cos(phi)
+    ry = np.sin(phi)
+
+    # Random seed site
+    si = np.random.randint(0, N)
+    sj = np.random.randint(0, N)
+
+    # Setup DFS from seed
+    seed_flat = si * N + sj
+    in_cluster[si, sj] = True
+    stack[0] = seed_flat
+    stack_top = 1
+
+    cluster_spins[0] = seed_flat
+    cluster_size = 1
+
+    while stack_top > 0:
+        stack_top -= 1
+        flat = stack[stack_top]
+        ci = flat // N
+        cj = flat % N
+
+        proj_c = spins[ci, cj, 0] * rx + spins[ci, cj, 1] * ry
+        inxt = idx_next[ci]
+        iprv = idx_prev[ci]
+        jnxt = idx_next[cj]
+        jprv = idx_prev[cj]
+
+        # North
+        if not in_cluster[iprv, cj]:
+            proj_n = spins[iprv, cj, 0] * rx + spins[iprv, cj, 1] * ry
+            prod = proj_c * proj_n
+            if prod > 0.0:
+                p_add = 1.0 - np.exp(-2.0 * beta * J * prod)
+                if np.random.random() < p_add:
+                    in_cluster[iprv, cj] = True
+                    new_idx = iprv * N + cj
+                    stack[stack_top] = new_idx
+                    stack_top += 1
+                    cluster_spins[cluster_size] = new_idx
+                    cluster_size += 1
+        # South
+        if not in_cluster[inxt, cj]:
+            proj_n = spins[inxt, cj, 0] * rx + spins[inxt, cj, 1] * ry
+            prod = proj_c * proj_n
+            if prod > 0.0:
+                p_add = 1.0 - np.exp(-2.0 * beta * J * prod)
+                if np.random.random() < p_add:
+                    in_cluster[inxt, cj] = True
+                    new_idx = inxt * N + cj
+                    stack[stack_top] = new_idx
+                    stack_top += 1
+                    cluster_spins[cluster_size] = new_idx
+                    cluster_size += 1
+        # West
+        if not in_cluster[ci, jprv]:
+            proj_n = spins[ci, jprv, 0] * rx + spins[ci, jprv, 1] * ry
+            prod = proj_c * proj_n
+            if prod > 0.0:
+                p_add = 1.0 - np.exp(-2.0 * beta * J * prod)
+                if np.random.random() < p_add:
+                    in_cluster[ci, jprv] = True
+                    new_idx = ci * N + jprv
+                    stack[stack_top] = new_idx
+                    stack_top += 1
+                    cluster_spins[cluster_size] = new_idx
+                    cluster_size += 1
+        # East
+        if not in_cluster[ci, jnxt]:
+            proj_n = spins[ci, jnxt, 0] * rx + spins[ci, jnxt, 1] * ry
+            prod = proj_c * proj_n
+            if prod > 0.0:
+                p_add = 1.0 - np.exp(-2.0 * beta * J * prod)
+                if np.random.random() < p_add:
+                    in_cluster[ci, jnxt] = True
+                    new_idx = ci * N + jnxt
+                    stack[stack_top] = new_idx
+                    stack_top += 1
+                    cluster_spins[cluster_size] = new_idx
+                    cluster_size += 1
+
+    # Reflect all cluster spins in-place and reset in_cluster mask
+    for i in range(cluster_size):
+        flat = cluster_spins[i]
+        ci = flat // N
+        cj = flat % N
+        proj = spins[ci, cj, 0] * rx + spins[ci, cj, 1] * ry
+        spins[ci, cj, 0] -= 2.0 * proj * rx
+        spins[ci, cj, 1] -= 2.0 * proj * ry
+        in_cluster[ci, cj] = False
+
+    return spins, cluster_size
+
+
 class VectorSpinObservablesMixin:
     """Public topological-observable accessors for vector-spin models.
 

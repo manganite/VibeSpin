@@ -68,6 +68,14 @@ utils.sweep\_helpers module
    :show-inheritance:
    :undoc-members:
 
+utils.sweep\_runner module
+--------------------------
+
+.. automodule:: utils.sweep_runner
+   :members:
+   :show-inheritance:
+   :undoc-members:
+
 utils.system module
 -------------------
 

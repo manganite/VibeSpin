@@ -196,7 +196,7 @@ def test_xy_step_uses_wolff_kernel(monkeypatch) -> None:
         calls.append('wolff')
         return kwargs['spins'], 5
 
-    monkeypatch.setattr(xy_model, 'xy_wolff_step_numba', _fake_wolff)
+    monkeypatch.setattr(xy_model, 'o2_wolff_step_numba', _fake_wolff)
 
     sim.step()
 
@@ -324,7 +324,7 @@ def test_clock_step_uses_wolff_kernel(monkeypatch) -> None:
         calls.append('wolff')
         return kwargs['spins'], 0
 
-    monkeypatch.setattr(clock_model, 'clock_wolff_step_numba', _fake_wolff)
+    monkeypatch.setattr(clock_model, 'o2_wolff_step_numba', _fake_wolff)
 
     sim.step()
 

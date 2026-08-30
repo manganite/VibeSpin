@@ -26,6 +26,7 @@ import pytest
 from scripts.ising.measure_z import (
     _measure_tau_point,
 )
+from utils import sweep_runner
 
 try:
     from models.clock_model import ClockSimulation
@@ -360,8 +361,8 @@ class TestTemperatureSweepMainPayloads:
                 for p in params_list
             ]
 
-        monkeypatch.setattr(module, 'parallel_sweep', _fake_parallel_sweep)
-        monkeypatch.setattr(module, 'plot_temperature_sweep', lambda **kwargs: None)
+        monkeypatch.setattr(sweep_runner, 'parallel_sweep', _fake_parallel_sweep)
+        monkeypatch.setattr(sweep_runner, 'plot_temperature_sweep', lambda **kwargs: None)
         monkeypatch.setattr(sys, 'argv', argv)
 
         module.main()
@@ -543,8 +544,8 @@ class TestTemperatureSweepUncertaintySchema:
                 for p in params_list
             ]
 
-        monkeypatch.setattr(ising_module, 'parallel_sweep', _fake_parallel_sweep)
-        monkeypatch.setattr(ising_module, 'plot_temperature_sweep', lambda **kwargs: None)
+        monkeypatch.setattr(sweep_runner, 'parallel_sweep', _fake_parallel_sweep)
+        monkeypatch.setattr(sweep_runner, 'plot_temperature_sweep', lambda **kwargs: None)
 
         with tempfile.TemporaryDirectory() as tmpdir:
             monkeypatch.setattr(
@@ -681,8 +682,8 @@ class TestTemperatureSweepPlotPayloads:
         def _capture_plot_kwargs(**kwargs: Any) -> None:
             captured_plot_kwargs.update(kwargs)
 
-        monkeypatch.setattr(ising_module, 'parallel_sweep', _fake_parallel_sweep)
-        monkeypatch.setattr(ising_module, 'plot_temperature_sweep', _capture_plot_kwargs)
+        monkeypatch.setattr(sweep_runner, 'parallel_sweep', _fake_parallel_sweep)
+        monkeypatch.setattr(sweep_runner, 'plot_temperature_sweep', _capture_plot_kwargs)
 
         with tempfile.TemporaryDirectory() as tmpdir:
             monkeypatch.setattr(
@@ -754,8 +755,8 @@ class TestTemperatureSweepPlotPayloads:
         def _capture_plot_kwargs(**kwargs: Any) -> None:
             captured_plot_kwargs.update(kwargs)
 
-        monkeypatch.setattr(ising_module, 'parallel_sweep', _fake_parallel_sweep)
-        monkeypatch.setattr(ising_module, 'plot_temperature_sweep', _capture_plot_kwargs)
+        monkeypatch.setattr(sweep_runner, 'parallel_sweep', _fake_parallel_sweep)
+        monkeypatch.setattr(sweep_runner, 'plot_temperature_sweep', _capture_plot_kwargs)
 
         with tempfile.TemporaryDirectory() as tmpdir:
             monkeypatch.setattr(

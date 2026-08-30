@@ -23,6 +23,7 @@ from .simulation_base import (
     calculate_vortex_density_numba,
     calculate_vorticity_numba,
     get_helicity_data_numba,
+    o2_wolff_step_numba,
 )
 
 
@@ -318,162 +319,6 @@ def clock_energy_numba(
     return energy / (N * N)
 
 
-@njit(cache=True, fastmath=True)
-def clock_wolff_step_numba(
-    *,
-    spins: np.ndarray,
-    beta: float,
-    J: float,
-    idx_next: np.ndarray,
-    idx_prev: np.ndarray,
-    in_cluster: np.ndarray,
-    stack: np.ndarray,
-    cluster_spins: np.ndarray
-) -> tuple:
-    """
-    Perform one Wolff cluster flip on the continuous Clock Model lattice.
-
-    Implements the Wolff-Evertz reflection scheme for O(2) spins using only
-    the Heisenberg exchange coupling J.  A random mirror-plane axis r\u0302 is
-    sampled from S^1, and bonds are activated with probability
-    ``P_add = 1 - exp(-2 beta J sigma_i sigma_j)`` where
-    ``sigma_i = s_i \u00b7 r\u0302``.  Cluster spins are reflected:
-    ``s -> s - 2 (s \u00b7 r\u0302) r\u0302``.
-
-    **Limitation**: the crystal-field anisotropy term ``A cos(q phi)`` breaks
-    the O(2) reflection symmetry required by the Fortuin-Kasteleyn bond
-    construction.  This kernel therefore satisfies detailed balance only for
-    the exchange part of the Hamiltonian; use it at parameters where the
-    anisotropy is weak relative to J, or set A=0 for pure XY-like studies.
-
-    One call constitutes one cluster sweep.  ``parallel=True`` is silently
-    ignored.
-
-    Parameters
-    ----------
-    spins : np.ndarray
-        (N, N, 2) array of unit vectors.
-    beta : float
-        Inverse temperature 1/kT.
-    J : float
-        Coupling constant.
-    idx_next : np.ndarray
-        Pre-calculated next-neighbor indices (PBC).
-    idx_prev : np.ndarray
-        Pre-calculated previous-neighbor indices (PBC).
-    in_cluster : np.ndarray
-        Pre-allocated (N, N) boolean array for cluster membership mask.
-    stack : np.ndarray
-        Pre-allocated (N*N) int64 array for DFS stack.
-    cluster_spins : np.ndarray
-        Pre-allocated (N*N) int64 array to track cluster elements.
-
-    Returns
-    -------
-    spins
-        Updated spins array.
-    cluster_size
-        Number of spins reflected in this step.
-    """
-    N = spins.shape[0]
-
-    # Random mirror-plane axis r\u0302 = (cos phi, sin phi)
-    phi = np.random.uniform(0.0, 2.0 * np.pi)
-    rx = np.cos(phi)
-    ry = np.sin(phi)
-
-    # Random seed site
-    si = np.random.randint(0, N)
-    sj = np.random.randint(0, N)
-
-    # Setup DFS from seed
-    # Notice: in_cluster is assumed to be fully False upon entry!
-    seed_flat = si * N + sj
-    in_cluster[si, sj] = True
-    stack[0] = seed_flat
-    stack_top = 1
-
-    cluster_spins[0] = seed_flat
-    cluster_size = 1
-
-    while stack_top > 0:
-        stack_top -= 1
-        flat = stack[stack_top]
-        ci = flat // N
-        cj = flat % N
-
-        proj_c = spins[ci, cj, 0] * rx + spins[ci, cj, 1] * ry
-        inxt = idx_next[ci]
-        iprv = idx_prev[ci]
-        jnxt = idx_next[cj]
-        jprv = idx_prev[cj]
-
-        # North
-        if not in_cluster[iprv, cj]:
-            proj_n = spins[iprv, cj, 0] * rx + spins[iprv, cj, 1] * ry
-            prod = proj_c * proj_n
-            if prod > 0.0:
-                p_add = 1.0 - np.exp(-2.0 * beta * J * prod)
-                if np.random.random() < p_add:
-                    in_cluster[iprv, cj] = True
-                    new_idx = iprv * N + cj
-                    stack[stack_top] = new_idx
-                    stack_top += 1
-                    cluster_spins[cluster_size] = new_idx
-                    cluster_size += 1
-        # South
-        if not in_cluster[inxt, cj]:
-            proj_n = spins[inxt, cj, 0] * rx + spins[inxt, cj, 1] * ry
-            prod = proj_c * proj_n
-            if prod > 0.0:
-                p_add = 1.0 - np.exp(-2.0 * beta * J * prod)
-                if np.random.random() < p_add:
-                    in_cluster[inxt, cj] = True
-                    new_idx = inxt * N + cj
-                    stack[stack_top] = new_idx
-                    stack_top += 1
-                    cluster_spins[cluster_size] = new_idx
-                    cluster_size += 1
-        # West
-        if not in_cluster[ci, jprv]:
-            proj_n = spins[ci, jprv, 0] * rx + spins[ci, jprv, 1] * ry
-            prod = proj_c * proj_n
-            if prod > 0.0:
-                p_add = 1.0 - np.exp(-2.0 * beta * J * prod)
-                if np.random.random() < p_add:
-                    in_cluster[ci, jprv] = True
-                    new_idx = ci * N + jprv
-                    stack[stack_top] = new_idx
-                    stack_top += 1
-                    cluster_spins[cluster_size] = new_idx
-                    cluster_size += 1
-        # East
-        if not in_cluster[ci, jnxt]:
-            proj_n = spins[ci, jnxt, 0] * rx + spins[ci, jnxt, 1] * ry
-            prod = proj_c * proj_n
-            if prod > 0.0:
-                p_add = 1.0 - np.exp(-2.0 * beta * J * prod)
-                if np.random.random() < p_add:
-                    in_cluster[ci, jnxt] = True
-                    new_idx = ci * N + jnxt
-                    stack[stack_top] = new_idx
-                    stack_top += 1
-                    cluster_spins[cluster_size] = new_idx
-                    cluster_size += 1
-
-    # Reflect all cluster spins in-place and reset in_cluster mask
-    for i in range(cluster_size):
-        flat = cluster_spins[i]
-        ci = flat // N
-        cj = flat % N
-        proj = spins[ci, cj, 0] * rx + spins[ci, cj, 1] * ry
-        spins[ci, cj, 0] -= 2.0 * proj * rx
-        spins[ci, cj, 1] -= 2.0 * proj * ry
-        in_cluster[ci, cj] = False
-
-    return spins, cluster_size
-
-
 class ClockSimulation(VectorSpinObservablesMixin, MonteCarloSimulation):
     """
     Simulation of the 2D q-state clock model on a square lattice.
@@ -578,7 +423,7 @@ class ClockSimulation(VectorSpinObservablesMixin, MonteCarloSimulation):
                     idx_prev=self.idx_prev,
                 )
             elif self.update == 'wolff':
-                self.spins, self.last_cluster_size = clock_wolff_step_numba(
+                self.spins, self.last_cluster_size = o2_wolff_step_numba(
                     spins=self.spins,
                     beta=self.beta,
                     J=self.J,
