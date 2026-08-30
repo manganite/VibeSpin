@@ -26,7 +26,8 @@ from utils.statistics import (
     calculate_autocorr,
     summarize_replicate_samples,
 )
-from utils.system import parallel_sweep, setup_logging
+from utils.sweep_helpers import derive_point_seed
+from utils.system import parallel_sweep, parse_args_compat, setup_logging
 
 #: Exact Onsager critical temperature for the 2D nearest-neighbour Ising model.
 TC_ISING: float = 2.0 / np.log(1.0 + np.sqrt(2.0))
@@ -118,7 +119,7 @@ def main() -> None:
         help='Output directory (default: results/ising)',
     )
     parser.add_argument('--verbose', action='store_true', help='Enable verbose logging')
-    args = parser.parse_args()
+    args = parse_args_compat(parser=parser)
 
     log_level = logging.DEBUG if args.verbose else logging.INFO
     logger = setup_logging(level=log_level)
@@ -130,13 +131,13 @@ def main() -> None:
         TC_ISING, sizes, n_seeds,
     )
 
-    # Seeds are derived deterministically from (size_idx, seed_idx).
-    # Metropolis uses base = size_idx * 100_000 + seed_idx * 1_000.
-    # Wolff uses base + 50_000 to ensure non-overlapping sequences.
+    # Seeds are derived deterministically from (size_idx, seed_idx) via
+    # derive_point_seed; Wolff uses a 50_000 stream offset so its seed
+    # sequences never overlap the Metropolis ones at the same grid point.
     sweep_params: list[tuple[int, int, str, int, int, int, int, int]] = []
     for size_idx, L in enumerate(sizes):
         for seed_idx in range(n_seeds):
-            base = size_idx * 100_000 + seed_idx * 1_000
+            base = derive_point_seed(temperature_index=size_idx, seed_index=seed_idx)
             sweep_params.append((
                 size_idx, seed_idx, 'random', L,
                 args.eq_probe_steps, args.eq_max_steps, args.meas_steps_metro,
@@ -145,7 +146,9 @@ def main() -> None:
             sweep_params.append((
                 size_idx, seed_idx, 'wolff', L,
                 args.eq_probe_steps, args.eq_max_steps, args.meas_steps_wolff,
-                base + 50_000,
+                derive_point_seed(
+                    temperature_index=size_idx, seed_index=seed_idx, stream_offset=50_000,
+                ),
             ))
 
     raw: list[dict[str, Any]] = parallel_sweep(
@@ -164,19 +167,17 @@ def main() -> None:
         else:
             tau_wolff_samples[i, s] = float(r['tau_int'])
 
-    def _summary(samples: np.ndarray) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
-        """Compute median and 16-84 percentile envelopes across seeds."""
-        med = np.nanmedian(samples, axis=1)
-        p16 = np.nanpercentile(samples, 16, axis=1)
-        p84 = np.nanpercentile(samples, 84, axis=1)
-        return med, p16, p84
-
     L_arr = np.asarray(sizes, dtype=float)
-    tau_metro, tau_metro_p16, tau_metro_p84 = _summary(tau_metro_samples)
-    tau_wolff, tau_wolff_p16, tau_wolff_p84 = _summary(tau_wolff_samples)
-
+    # summarize_replicate_samples at the default 0.68 confidence yields exactly
+    # the median and 16-84 percentile envelope previously computed inline.
     metro_summary = summarize_replicate_samples(samples=tau_metro_samples)
     wolff_summary = summarize_replicate_samples(samples=tau_wolff_samples)
+    tau_metro = np.asarray(metro_summary['value'])
+    tau_metro_p16 = np.asarray(metro_summary['ci_low'])
+    tau_metro_p84 = np.asarray(metro_summary['ci_high'])
+    tau_wolff = np.asarray(wolff_summary['value'])
+    tau_wolff_p16 = np.asarray(wolff_summary['ci_low'])
+    tau_wolff_p84 = np.asarray(wolff_summary['ci_high'])
 
     os.makedirs(args.output_dir, exist_ok=True)
     npz_path = os.path.join(args.output_dir, 'dynamic_exponent_z.npz')

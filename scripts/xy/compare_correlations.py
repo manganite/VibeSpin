@@ -11,68 +11,9 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 from models.xy_model import XYSimulation
-from utils.equilibration import convergence_equilibrate_with_status
-from utils.observables import get_averaged_correlation
+from utils.observables import simulate_equilibrium_correlation
 from utils.plotting import ensure_results_dir, save_plot
 from utils.system import parse_args_compat, setup_logging
-
-
-def simulate_correlation(
-    *,
-    T: float,
-    L: int,
-    steps: int,
-    eq_probe: int,
-    eq_max: int,
-    sample_interval: int,
-    seed: int,
-    logger: logging.Logger,
-) -> tuple[np.ndarray, np.ndarray]:
-    """Equilibrate and measure the averaged correlation function at temperature T.
-
-    Uses two-start convergence equilibration to avoid initialization bias.
-
-    Parameters
-    ----------
-    T : float
-        Temperature for the measurement.
-    L : int
-        Linear lattice size.
-    steps : int
-        Measurement steps after equilibration.
-    eq_probe : int
-        Chunk size for convergence equilibration probes.
-    eq_max : int
-        Maximum equilibration steps.
-    sample_interval : int
-        Spacing between correlation samples during measurement.
-    seed : int
-        Random seed for reproducibility.
-    logger : logging.Logger
-        Logger instance.
-
-    Returns
-    -------
-    tuple[np.ndarray, np.ndarray]
-        Radial distances r and averaged correlations G(r).
-    """
-    logger.debug(f'Equilibrating at T={T:.3f} (L={L}, seed={seed})...')
-    sim_r = XYSimulation(
-        size=L, temp=T, update='checkerboard', init_state='random', seed=seed,
-    )
-    sim_o = XYSimulation(
-        size=L, temp=T, update='checkerboard', init_state='ordered', seed=seed,
-    )
-    _, converged = convergence_equilibrate_with_status(
-        sim_random=sim_r, sim_ordered=sim_o, chunk_size=eq_probe, max_steps=eq_max,
-    )
-    sim_meas = sim_r if converged else sim_o
-    if not converged:
-        logger.info(f'T={T:.3f}: convergence not reached, falling back to ordered start')
-    logger.debug(f'Measuring correlations at T={T:.3f}...')
-    return get_averaged_correlation(
-        sim=sim_meas, total_steps=steps, sample_interval=sample_interval,
-    )
 
 
 def main() -> None:
@@ -102,10 +43,10 @@ def main() -> None:
 
     results = {}
     for label, T in [('low', T_LOW), ('high', T_HIGH)]:
-        r, G = simulate_correlation(
-            T=T, L=args.size, steps=args.steps, eq_probe=args.eq_probe,
-            eq_max=args.eq_max, sample_interval=args.interval, seed=args.seed,
-            logger=logger,
+        r, G = simulate_equilibrium_correlation(
+            model_cls=XYSimulation, model_kwargs={}, size=args.size, temp=T,
+            seed=args.seed, eq_probe=args.eq_probe, eq_max=args.eq_max,
+            meas_steps=args.steps, interval=args.interval, logger=logger,
         )
         results[label] = (r, G)
 

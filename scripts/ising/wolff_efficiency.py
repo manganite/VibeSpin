@@ -23,8 +23,14 @@ from models.ising_model import IsingSimulation
 from utils.equilibration import convergence_equilibrate
 from utils.exceptions import ZeroVarianceAutocorrelationError
 from utils.observables import calculate_thermodynamics
-from utils.statistics import calculate_autocorr
-from utils.system import parallel_sweep, setup_logging
+from utils.statistics import (
+    DEFAULT_CONFIDENCE_LEVEL,
+    UNCERTAINTY_METHOD_REPLICATE,
+    calculate_autocorr,
+    summarize_replicate_samples,
+)
+from utils.sweep_helpers import derive_point_seed
+from utils.system import parallel_sweep, parse_args_compat, setup_logging
 
 #: Exact Onsager critical temperature for the 2D nearest-neighbour Ising model.
 TC_ISING: float = 2.0 / np.log(1.0 + np.sqrt(2.0))
@@ -58,7 +64,7 @@ def _measure_efficiency_point(
         ``iss_wolff``, ``mean_cluster_frac``, ``chi_metro``, ``chi_wolff``.
     """
     temp_idx, seed_idx, T, L, eq_probe_steps, eq_max_steps, meas_steps = params
-    seed = int(temp_idx * 100_000 + seed_idx * 1_000)
+    seed = derive_point_seed(temperature_index=temp_idx, seed_index=seed_idx)
 
     # ---- Metropolis checkerboard ----
     sim_m_r = IsingSimulation(
@@ -359,7 +365,7 @@ def main() -> None:
     )
     parser.add_argument('--log-file', type=str, default=None, help='Optional log file path')
     parser.add_argument('--verbose', action='store_true', help='Enable verbose logging')
-    args = parser.parse_args()
+    args = parse_args_compat(parser=parser)
 
     log_level = logging.DEBUG if args.verbose else logging.INFO
     logger = setup_logging(level=log_level, log_file=args.log_file)
@@ -406,10 +412,13 @@ def main() -> None:
         chi_wolff_samples[i, s] = float(r['chi_wolff'])
 
     def _summary(samples: np.ndarray) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
-        med = np.nanmedian(samples, axis=1)
-        p16 = np.nanpercentile(samples, 16, axis=1)
-        p84 = np.nanpercentile(samples, 84, axis=1)
-        return med, p16, p84
+        """Median and 16-84 percentile envelope via the shared replicate summarizer."""
+        summary = summarize_replicate_samples(samples=samples)
+        return (
+            np.asarray(summary['value']),
+            np.asarray(summary['ci_low']),
+            np.asarray(summary['ci_high']),
+        )
 
     tau_metro, tau_metro_p16, tau_metro_p84 = _summary(tau_metro_samples)
     tau_wolff, tau_wolff_p16, tau_wolff_p84 = _summary(tau_wolff_samples)
@@ -431,10 +440,21 @@ def main() -> None:
 
     os.makedirs(args.output_dir, exist_ok=True)
     npz_path = os.path.join(args.output_dir, 'wolff_efficiency.npz')
+    nan_or_undefined_count = int(sum(
+        int(np.isnan(arr).sum())
+        for arr in (
+            tau_metro_samples, tau_wolff_samples, iss_metro_samples,
+            iss_wolff_samples, mean_cluster_frac_samples,
+            chi_metro_samples, chi_wolff_samples,
+        )
+    ))
     np.savez(
         npz_path,
         temperatures=temperatures,
         n_seeds=np.int64(n_seed),
+        uncertainty_method=UNCERTAINTY_METHOD_REPLICATE,
+        confidence_level=DEFAULT_CONFIDENCE_LEVEL,
+        nan_or_undefined_count=nan_or_undefined_count,
         tau_metro=tau_metro,
         tau_metro_p16=tau_metro_p16,
         tau_metro_p84=tau_metro_p84,

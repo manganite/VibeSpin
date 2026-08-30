@@ -97,6 +97,39 @@ def validate_sweep_uncertainty_args(
     if n_seeds < 1:
         raise ValueError(f'n-seeds must be >= 1, got {n_seeds}')
 
+
+def derive_point_seed(
+    *,
+    temperature_index: int,
+    seed_index: int,
+    stream_offset: int = 0,
+) -> int:
+    """Derive a deterministic RNG seed for one sweep grid point.
+
+    The spacing keeps seed streams disjoint across the sweep grid: each
+    temperature (or size) index claims a block of 100 000 seeds, each replica
+    within it a block of 1 000, leaving room for per-point offsets such as
+    separate streams for different algorithms (e.g. a Wolff stream offset by
+    50 000 from the Metropolis stream at the same grid point).
+
+    Parameters
+    ----------
+    temperature_index : int
+        Index of the outer sweep axis (temperature or lattice-size grid).
+    seed_index : int
+        Replica index within the seed ensemble for this grid point.
+    stream_offset : int
+        Additive offset separating independent seed streams at the same
+        grid point (default 0).
+
+    Returns
+    -------
+    int
+        ``temperature_index * 100_000 + seed_index * 1_000 + stream_offset``.
+    """
+    return temperature_index * 100_000 + seed_index * 1_000 + stream_offset
+
+
 # ---------------------------------------------------------------------------
 # Input type
 # ---------------------------------------------------------------------------

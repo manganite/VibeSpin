@@ -160,30 +160,32 @@ def main() -> None:
     sweeps = np.arange(1, max_steps + 1)
     smooth_window = 120
 
+    # Cache full-length traces so the T=2.00 detail figure below can reuse
+    # them instead of re-simulating each (seed, start) pair.
+    trace_cache: dict[tuple[float, int, str], np.ndarray] = {}
+
     for t_idx, (temp, label) in enumerate(zip(temperatures, t_labels, strict=True)):
         for s_idx, seed in enumerate(seeds_all):
             ax = axes[t_idx, s_idx]
 
-            tr = collect_trace(
+            tr = np.asarray(collect_trace(
                 size=size,
                 temp=temp,
                 seed=seed,
                 init_state='random',
                 n_chunks=n_chunks,
                 chunk_size=chunk_size,
-            )
-            to = collect_trace(
+            ), dtype=float)
+            to = np.asarray(collect_trace(
                 size=size,
                 temp=temp,
                 seed=seed,
                 init_state='ordered',
                 n_chunks=n_chunks,
                 chunk_size=chunk_size,
-            )
-
-            # Convert to numpy arrays for processing
-            tr = np.asarray(tr, dtype=float)
-            to = np.asarray(to, dtype=float)
+            ), dtype=float)
+            trace_cache[(temp, seed, 'random')] = tr
+            trace_cache[(temp, seed, 'ordered')] = to
 
             # Calculate smoothed traces
             tr_smooth = np.convolve(tr, np.ones(smooth_window) / smooth_window, mode='valid')
@@ -280,25 +282,9 @@ def main() -> None:
     for s_idx, seed in enumerate(seeds_all):
         ax = axes2_flat[s_idx]
 
-        tr = collect_trace(
-            size=size,
-            temp=t200_temp,
-            seed=seed,
-            init_state='random',
-            n_chunks=n_chunks,
-            chunk_size=chunk_size,
-        )
-        to = collect_trace(
-            size=size,
-            temp=t200_temp,
-            seed=seed,
-            init_state='ordered',
-            n_chunks=n_chunks,
-            chunk_size=chunk_size,
-        )
-
-        tr = np.asarray(np.abs(tr), dtype=float)
-        to = np.asarray(np.abs(to), dtype=float)
+        # Reuse the traces computed for the overview grid above.
+        tr = np.abs(trace_cache[(t200_temp, seed, 'random')])
+        to = np.abs(trace_cache[(t200_temp, seed, 'ordered')])
 
         # Smoothed traces aligned to the right edge of the rolling window
         tr_smooth = np.convolve(tr, np.ones(smooth_window) / smooth_window, mode='valid')
@@ -317,7 +303,8 @@ def main() -> None:
         band_r = TOLERANCE_K * sig_r   # ordered must enter random's band
         band_o = TOLERANCE_K * sig_o   # random must enter ordered's band
 
-        # Estimate convergence time (index into smoothed array)
+        # Estimate convergence time (raw-trace index, already mapped from the
+        # smoothed array by the estimator)
         tau_est = estimate_relaxation_time_two_start(
             trace_random=tr, trace_ordered=to,
             smooth_window=smooth_window, dwell_window=smooth_window,

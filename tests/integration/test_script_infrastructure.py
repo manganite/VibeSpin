@@ -69,6 +69,41 @@ class TestDeterministicSeeds:
         assert seed_a != seed_c
         assert seed_b != seed_c
 
+    def test_derive_point_seed_matches_legacy_formula(self) -> None:
+        """Shared helper must reproduce the legacy inline seed formula exactly."""
+        if not HAS_TEMPERATURE_SWEEP:
+            pytest.skip("sweep_helpers not available")
+        from utils.sweep_helpers import derive_point_seed
+        for t_idx, s_idx, offset in [(0, 0, 0), (3, 7, 0), (12, 2, 50_000), (39, 9, 0)]:
+            expected = t_idx * 100_000 + s_idx * 1_000 + offset
+            assert derive_point_seed(
+                temperature_index=t_idx, seed_index=s_idx, stream_offset=offset,
+            ) == expected
+
+
+class TestEquilibriumCorrelationHelper:
+    """Smoke tests for the shared correlation-simulation helper."""
+
+    def test_returns_matching_arrays_for_tiny_ising(self) -> None:
+        """Helper must equilibrate and return (r, G) arrays of equal length."""
+        if not HAS_TEMPERATURE_SWEEP:
+            pytest.skip("models not available")
+        from utils.observables import simulate_equilibrium_correlation
+        r, G = simulate_equilibrium_correlation(
+            model_cls=IsingSimulation,
+            model_kwargs={},
+            size=8,
+            temp=2.0,
+            seed=3,
+            eq_probe=50,
+            eq_max=200,
+            meas_steps=20,
+            interval=5,
+        )
+        assert len(r) == len(G)
+        assert len(r) > 0
+        assert np.all(np.isfinite(G))
+
 
 class TestMeasureTauPoint:
     """Test the worker function for a single (L, algorithm, seed) point."""

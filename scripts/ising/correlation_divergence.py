@@ -6,6 +6,7 @@ from __future__ import annotations
 
 import argparse
 import logging
+from typing import Any
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -147,29 +148,18 @@ def run_divergence_analysis() -> None:
 
     # Save data for notebook consumption
     npz_path = f'{output_dir}/correlation_divergence.npz'
+    save_kwargs: dict[str, Any] = dict(
+        temperatures=temps,
+        xi=xis,
+        T_c=TC_THEORETICAL,
+        L=args.size,
+        steps=args.steps,
+        eq_steps=args.eq_steps,
+        sample_interval=args.interval,
+    )
     if nu is not None:
-        np.savez_compressed(
-            npz_path,
-            temperatures=temps,
-            xi=xis,
-            T_c=TC_THEORETICAL,
-            L=args.size,
-            steps=args.steps,
-            eq_steps=args.eq_steps,
-            sample_interval=args.interval,
-            nu=nu,
-        )
-    else:
-        np.savez_compressed(
-            npz_path,
-            temperatures=temps,
-            xi=xis,
-            T_c=TC_THEORETICAL,
-            L=args.size,
-            steps=args.steps,
-            eq_steps=args.eq_steps,
-            sample_interval=args.interval,
-        )
+        save_kwargs['nu'] = nu
+    np.savez_compressed(npz_path, **save_kwargs)
     logger.info(f'Data saved to {npz_path}')
 
 

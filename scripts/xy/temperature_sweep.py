@@ -1,6 +1,7 @@
 """
 Standardized temperature sweep for the 2D XY model.
-Calculates and plots magnetization, energy, susceptibility, and specific heat.
+Calculates magnetization, energy, susceptibility, and specific heat, and
+produces a thermodynamics figure plus a companion diagnostics figure.
 """
 from __future__ import annotations
 
@@ -23,6 +24,7 @@ from utils.sweep_helpers import (
     ThermoPoint,
     build_quality_flags,
     build_uncertainty_bundle,
+    derive_point_seed,
     simulate_thermo_point,
     validate_sweep_uncertainty_args,
 )
@@ -30,15 +32,15 @@ from utils.system import parallel_sweep, parse_args_compat, setup_logging
 
 _TBKT_XY_THEORY = 0.893
 
-# Default equilibration parameters forwarded to convergence_equilibrate_with_status
-# when not exposed as CLI arguments.
+# Default equilibration parameters for the quasi-steady stuck-detection CLI flags.
 _EQ_QS_SIGMA_THRESHOLD_DEFAULT = 0.05
 _EQ_QS_MIN_STEPS_DEFAULT = 1500
 
 
 def main() -> None:
     """
-    Execute the temperature sweep and generate standardized 4-panel plots.
+    Execute the temperature sweep and generate the thermodynamics and
+    companion diagnostics figures.
     """
     parser = argparse.ArgumentParser(description='2D XY Model Temperature Sweep')
     parser.add_argument('--size', type=int, default=48, help='Linear lattice size L')
@@ -49,6 +51,14 @@ def main() -> None:
     parser.add_argument(
         '--eq-max-steps', type=int, default=200_000,
         help='Hard cap on total equilibration steps',
+    )
+    parser.add_argument(
+        '--eq-qs-sigma-threshold', type=float, default=_EQ_QS_SIGMA_THRESHOLD_DEFAULT,
+        help='Tail-std threshold for quasi-steady stuck detection (0 disables)',
+    )
+    parser.add_argument(
+        '--eq-qs-min-steps', type=int, default=_EQ_QS_MIN_STEPS_DEFAULT,
+        help='Minimum accumulated equilibration steps before stuck detection can fire',
     )
     parser.add_argument('--meas-steps', type=int, default=5000, help='Measurement steps')
     parser.add_argument('--t-min', type=float, default=0.1, help='Minimum temperature')
@@ -126,7 +136,10 @@ def main() -> None:
         type=str,
         default='auto',
         choices=['auto', 'none', 'theory'],
-        help='Transition overlay preset for plotting',
+        help=(
+            'Transition overlay preset for plotting; auto (default) shows the '
+            'known theoretical transition, none disables the overlay'
+        ),
     )
     parser.add_argument('--output-dir', type=str, default='results/xy', help='Output directory')
     parser.add_argument('--log-file', type=str, default=None, help='Optional log file path')
@@ -172,16 +185,16 @@ def main() -> None:
             needed = target_n_seeds - len(results_grid[t])
             if needed > 0 and attempts_per_temp[t] < max_seed_attempts:
                 for _ in range(needed):
-                    seed_idx = attempts_per_temp[t]
-                    seed = t * 100_000 + seed_idx * 1_000
+                    seed_idx = int(attempts_per_temp[t])
+                    seed = derive_point_seed(temperature_index=t, seed_index=seed_idx)
                     points_to_calculate.append(ThermoPoint(
                         temperature=float(temperatures[t]),
                         size=L,
                         meas_steps=args.meas_steps,
                         eq_probe_steps=args.eq_probe_steps,
                         eq_max_steps=args.eq_max_steps,
-                        eq_qs_sigma_threshold=_EQ_QS_SIGMA_THRESHOLD_DEFAULT,
-                        eq_qs_min_steps=_EQ_QS_MIN_STEPS_DEFAULT,
+                        eq_qs_sigma_threshold=args.eq_qs_sigma_threshold,
+                        eq_qs_min_steps=args.eq_qs_min_steps,
                         qs_allow_stuck=False,
                         prefer_ordered_start=False,
                         temperature_index=t,
@@ -207,6 +220,14 @@ def main() -> None:
             t_idx = int(res['temperature_index'])
             if res.get('equilibrated_flag', 0.0) > 0:
                 results_grid[t_idx].append(res)
+
+    # Warn about temperatures that did not reach the target replica count.
+    dropped_counts = [target_n_seeds - len(results_grid[t]) for t in range(t_points)]
+    if any(dropped_counts):
+        logger.warning(
+            f"Could not reach target_n_seeds={target_n_seeds} for all temperatures. "
+            f"Missing points: {sum(dropped_counts)}"
+        )
 
     valid_t_mask = np.array([len(results_grid[t]) > 0 for t in range(t_points)])
     valid_temperatures = temperatures[valid_t_mask]
@@ -278,7 +299,10 @@ def main() -> None:
     if args.strict_uncertainty:
         undef_frac = np.mean(quality['undefined_autocorr_flag'])
         if undef_frac > args.max_undefined_fraction:
-            raise RuntimeError(f'Strict uncertainty failed: {undef_frac:.1%} undefined.')
+            raise RuntimeError(
+                f'Strict uncertainty failed: {undef_frac:.1%} of points have '
+                'undefined autocorrelation.'
+            )
 
     os.makedirs(args.output_dir, exist_ok=True)
     outpath = os.path.join(args.output_dir, 'temperature_sweep_data.npz')
@@ -308,7 +332,12 @@ def main() -> None:
         nan_or_undefined_count=int(np.sum(quality['undefined_autocorr_flag'])),
     )
 
-    transitions = {"Theory (BKT)": _TBKT_XY_THEORY} if args.transition_preset == "theory" else None
+    # Theory transition overlay: 'auto' and 'theory' enable it, 'none' disables it.
+    transitions = (
+        {"Theory (BKT)": _TBKT_XY_THEORY}
+        if args.transition_preset in ("auto", "theory")
+        else None
+    )
     metadata = f"L={args.size}, target_n_seeds={args.n_seeds}, meas_steps={args.meas_steps}"
 
     plot_temperature_sweep(

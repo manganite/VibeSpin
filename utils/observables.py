@@ -3,10 +3,13 @@ Physics-related utility functions for calculating thermodynamic observables and 
 """
 from __future__ import annotations
 
-from typing import Protocol
+import logging
+from typing import Any, Protocol
 
 import numpy as np
 from scipy.integrate import cumulative_trapezoid
+
+from utils.equilibration import convergence_equilibrate_with_status
 
 
 class _Sim(Protocol):
@@ -193,6 +196,72 @@ def get_averaged_correlation(
         G_r_avg = np.zeros_like(G_r_dummy)
 
     return r, G_r_avg
+
+
+def simulate_equilibrium_correlation(
+    *,
+    model_cls: type,
+    model_kwargs: dict[str, Any],
+    size: int,
+    temp: float,
+    seed: int,
+    eq_probe: int,
+    eq_max: int,
+    meas_steps: int,
+    interval: int,
+    logger: logging.Logger | None = None,
+) -> tuple[np.ndarray, np.ndarray]:
+    """
+    Equilibrate a model and measure its averaged correlation function.
+
+    Runs two-start convergence equilibration (random start vs. ordered start,
+    checkerboard updates) to avoid initialization bias, then averages the
+    correlation function over ``meas_steps`` Monte Carlo steps, sampling every
+    ``interval`` steps. When convergence is not reached within ``eq_max``
+    steps, measurement falls back to the ordered-start simulation.
+
+    Parameters
+    ----------
+        model_cls: Simulation class to instantiate (e.g. ``IsingSimulation``).
+        model_kwargs: Extra keyword arguments forwarded to the model
+            constructor beyond ``size``, ``temp``, ``update``, ``init_state``,
+            and ``seed`` (e.g. ``{'q': 6}`` for the clock model).
+        size: Linear lattice size L.
+        temp: Temperature for the measurement.
+        seed: Random seed used for both start states.
+        eq_probe: Chunk size for convergence equilibration probes.
+        eq_max: Maximum equilibration steps.
+        meas_steps: Measurement steps after equilibration.
+        interval: Spacing between correlation samples during measurement.
+        logger: Optional logger for progress and fallback messages.
+
+    Returns
+    -------
+        r: Radial distances.
+        G_r_avg: Averaged correlation values G(r).
+    """
+    if logger is not None:
+        logger.debug(f'Equilibrating at T={temp:.3f} (L={size}, seed={seed})...')
+    sim_r = model_cls(
+        size=size, temp=temp, update='checkerboard', init_state='random', seed=seed,
+        **model_kwargs,
+    )
+    sim_o = model_cls(
+        size=size, temp=temp, update='checkerboard', init_state='ordered', seed=seed,
+        **model_kwargs,
+    )
+    _, converged = convergence_equilibrate_with_status(
+        sim_random=sim_r, sim_ordered=sim_o, chunk_size=eq_probe, max_steps=eq_max,
+    )
+    # Fall back to ordered-start simulation when random-start is stuck.
+    sim_meas = sim_r if converged else sim_o
+    if not converged and logger is not None:
+        logger.info(f'T={temp:.3f}: convergence not reached, falling back to ordered start')
+    if logger is not None:
+        logger.debug(f'Measuring correlations at T={temp:.3f}...')
+    return get_averaged_correlation(
+        sim=sim_meas, total_steps=meas_steps, sample_interval=interval,
+    )
 
 
 def radial_average_sk(*, spins: np.ndarray) -> tuple[np.ndarray, np.ndarray]:

@@ -1,6 +1,7 @@
 """
 Standardized temperature sweep for the 2D Ising model.
-Calculates and plots magnetization, energy, susceptibility, and specific heat.
+Calculates magnetization, energy, susceptibility, and specific heat, and
+produces a thermodynamics figure plus a companion diagnostics figure.
 """
 from __future__ import annotations
 
@@ -23,6 +24,7 @@ from utils.sweep_helpers import (
     ThermoPoint,
     build_quality_flags,
     build_uncertainty_bundle,
+    derive_point_seed,
     simulate_thermo_point,
     validate_sweep_uncertainty_args,
 )
@@ -33,7 +35,8 @@ _TC_ISING_THEORY = 2.26918531421
 
 def main() -> None:
     """
-    Execute the temperature sweep and generate standardized 4-panel plots.
+    Execute the temperature sweep and generate the thermodynamics and
+    companion diagnostics figures.
     """
     parser = argparse.ArgumentParser(description='2D Ising Model Temperature Sweep')
     parser.add_argument('--size', type=int, default=64, help='Linear lattice size L')
@@ -129,7 +132,10 @@ def main() -> None:
         type=str,
         default='auto',
         choices=['auto', 'none', 'theory'],
-        help='Transition overlay preset for plotting',
+        help=(
+            'Transition overlay preset for plotting; auto (default) shows the '
+            'known theoretical transition, none disables the overlay'
+        ),
     )
     parser.add_argument('--output-dir', type=str, default='results/ising', help='Output directory')
     parser.add_argument('--log-file', type=str, default=None, help='Optional log file path')
@@ -184,8 +190,8 @@ def main() -> None:
 
                 # Add up to 'needed' attempts
                 for _ in range(needed):
-                    seed_idx = attempts_per_temp[t]
-                    seed = t * 100_000 + seed_idx * 1_000
+                    seed_idx = int(attempts_per_temp[t])
+                    seed = derive_point_seed(temperature_index=t, seed_index=seed_idx)
                     T_val = float(temperatures[t])
                     points_to_calculate.append(ThermoPoint(
                         temperature=T_val,
@@ -373,8 +379,12 @@ def main() -> None:
         f"confidence={args.confidence_level}"
     )
 
-    # Optional theory transition for Ising
-    transitions = {"Theory": _TC_ISING_THEORY} if args.transition_preset == "theory" else None
+    # Theory transition overlay: 'auto' and 'theory' enable it, 'none' disables it.
+    transitions = (
+        {"Theory": _TC_ISING_THEORY}
+        if args.transition_preset in ("auto", "theory")
+        else None
+    )
 
     plot_temperature_sweep(
         temperatures=valid_temperatures,
