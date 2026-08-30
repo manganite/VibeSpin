@@ -537,10 +537,10 @@ def build_uncertainty_bundle(
         if np.any(nan_mask):
             logger = logging.getLogger('vibespin')
             logger.warning(
-                'Autocorrelation diagnostics are undefined for %d temperature '
-                'points (all seeds returned NaN). This is expected in the deep '
-                'ordered/frozen phase.',
-                int(np.sum(nan_mask)),
+                f'Autocorrelation diagnostics are undefined for '
+                f'{int(np.sum(nan_mask))} temperature points (all seeds '
+                f'returned NaN). This is expected in the deep ordered/frozen '
+                f'phase.'
             )
     else:
         # Apply the same Gaussian z-multiplier as the multi-seed path so that

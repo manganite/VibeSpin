@@ -129,20 +129,29 @@ def estimate_relaxation_time_two_start(
 
     Parameters
     ----------
-        trace_random: 1-D magnetization trace from a random initial state.
-        trace_ordered: 1-D magnetization trace from an ordered initial state.
-        k: Half-width of each convergence band in units of the respective tail
-            standard deviation.  Larger values are more permissive.
-        smooth_window: Window length (steps) for the moving-average smoother.
-        dwell_window: Window length (steps) for the sustained-convergence test.
-        min_fraction_inside: Fraction of steps within ``dwell_window`` that must
-            satisfy the mutual cross-band condition to declare convergence.
-        sigma_floor: Minimum allowed standard deviation for each tail, preventing
-            band collapse when a trajectory is nearly flat.
-        skip_validation: If True, skip np.asarray and finite-prefix checks.
+    trace_random : np.ndarray
+        1-D magnetization trace from a random initial state.
+    trace_ordered : np.ndarray
+        1-D magnetization trace from an ordered initial state.
+    k : float
+        Half-width of each convergence band in units of the respective tail
+        standard deviation.  Larger values are more permissive.
+    smooth_window : int
+        Window length (steps) for the moving-average smoother.
+    dwell_window : int
+        Window length (steps) for the sustained-convergence test.
+    min_fraction_inside : float
+        Fraction of steps within ``dwell_window`` that must
+        satisfy the mutual cross-band condition to declare convergence.
+    sigma_floor : float
+        Minimum allowed standard deviation for each tail, preventing
+        band collapse when a trajectory is nearly flat.
+    skip_validation : bool
+        If True, skip np.asarray and finite-prefix checks.
 
     Returns
     -------
+    int
         Estimated relaxation time as a 0-indexed position in the original input
         traces (i.e. a sweep count minus one).  The first index at which both
         smoothed traces have been mutually inside each other's band for
@@ -288,20 +297,27 @@ def adaptive_equilibrate(
 
     Parameters
     ----------
-        sim: Any simulation object implementing ``equilibrate`` and ``run``.
-        min_steps: Mandatory burn-in passed to ``sim.equilibrate`` before probing.
-        probe_steps: MC steps per probe run (default 500).
-        factor: Required ratio ``probe_steps / tau_int`` (default 50.0).
-        max_steps: Hard cap on total steps to prevent unbounded runtime near
-            criticality (default 200 000).
+    sim : _Sim
+        Any simulation object implementing ``equilibrate`` and ``run``.
+    min_steps : int
+        Mandatory burn-in passed to ``sim.equilibrate`` before probing.
+    probe_steps : int
+        MC steps per probe run (default 500).
+    factor : float
+        Required ratio ``probe_steps / tau_int`` (default 50.0).
+    max_steps : int
+        Hard cap on total steps to prevent unbounded runtime near
+        criticality (default 200 000).
 
     Returns
     -------
+    int
         Total number of MC steps run (burn-in + probes).
 
     Raises
     ------
-        ValueError: If the adaptive-equilibration parameters are invalid.
+    ValueError
+        If the adaptive-equilibration parameters are invalid.
     """
     from utils.statistics import calculate_autocorr  # lazy import; avoids pickle issues
 
@@ -365,21 +381,29 @@ def convergence_equilibrate(
 
     Parameters
     ----------
-        sim_random: Simulation instance started from a random state.
-        sim_ordered: Simulation instance started from an ordered state.
-        chunk_size: Number of steps to run between convergence checks.
-        max_steps: Hard cap on total steps.
-        qs_sigma_threshold: Tail-std threshold used to detect a quasi-steady,
-            non-converged stuck state and exit early.
-        qs_min_steps: Minimum accumulated steps before stuck detection is allowed
-            to fire.  Ensures tail statistics are computed from enough data to be
-            reliable, preventing false positives when traces have not yet had time
-            to settle.
-        **kwargs: Passed to ``estimate_relaxation_time_two_start`` (k, smooth_window,
-            dwell_window, min_fraction_inside, sigma_floor, etc.).
+    sim_random : _Sim
+        Simulation instance started from a random state.
+    sim_ordered : _Sim
+        Simulation instance started from an ordered state.
+    chunk_size : int
+        Number of steps to run between convergence checks.
+    max_steps : int
+        Hard cap on total steps.
+    qs_sigma_threshold : float
+        Tail-std threshold used to detect a quasi-steady,
+        non-converged stuck state and exit early.
+    qs_min_steps : int
+        Minimum accumulated steps before stuck detection is allowed
+        to fire.  Ensures tail statistics are computed from enough data to be
+        reliable, preventing false positives when traces have not yet had time
+        to settle.
+    **kwargs : Any
+        Passed to ``estimate_relaxation_time_two_start`` (k, smooth_window,
+        dwell_window, min_fraction_inside, sigma_floor, etc.).
 
     Returns
     -------
+    int
         Total number of MC steps run per simulation.
     """
     total, _ = convergence_equilibrate_with_status(
@@ -416,25 +440,34 @@ def convergence_equilibrate_with_status(
 
     Parameters
     ----------
-        sim_random: Simulation instance started from a random state.
-        sim_ordered: Simulation instance started from an ordered state.
-        chunk_size: Number of steps to run between convergence checks.
-        max_steps: Hard cap on total steps.
-        qs_sigma_threshold: Tail-std threshold used to detect a quasi-steady,
-            non-converged stuck state and exit early.
-        qs_min_steps: Minimum accumulated steps before stuck detection is allowed
-            to fire.  Ensures tail statistics are computed from enough data to be
-            reliable, preventing false positives when traces have not yet had time
-            to settle.
-        qs_allow_stuck: If True, detecting a quasi-steady stuck state (where the
-            ordered trace is stable but the random trace is stranded) is treated
-            as a successful equilibration. Useful for Ising sweeps where
-            random-start domain-wall trapping is physically expected.
-        **kwargs: Passed to ``estimate_relaxation_time_two_start`` (k, smooth_window,
-            dwell_window, min_fraction_inside, sigma_floor, etc.).
+    sim_random : _Sim
+        Simulation instance started from a random state.
+    sim_ordered : _Sim
+        Simulation instance started from an ordered state.
+    chunk_size : int
+        Number of steps to run between convergence checks.
+    max_steps : int
+        Hard cap on total steps.
+    qs_sigma_threshold : float
+        Tail-std threshold used to detect a quasi-steady,
+        non-converged stuck state and exit early.
+    qs_min_steps : int
+        Minimum accumulated steps before stuck detection is allowed
+        to fire.  Ensures tail statistics are computed from enough data to be
+        reliable, preventing false positives when traces have not yet had time
+        to settle.
+    qs_allow_stuck : bool
+        If True, detecting a quasi-steady stuck state (where the
+        ordered trace is stable but the random trace is stranded) is treated
+        as a successful equilibration. Useful for Ising sweeps where
+        random-start domain-wall trapping is physically expected.
+    **kwargs : Any
+        Passed to ``estimate_relaxation_time_two_start`` (k, smooth_window,
+        dwell_window, min_fraction_inside, sigma_floor, etc.).
 
     Returns
     -------
+    tuple[int, bool]
         Tuple ``(total_steps, converged)``.
     """
     logger = logging.getLogger('vibespin')

@@ -135,17 +135,19 @@ def _propagate_entropy_uncertainty_from_cv_errors(
     dt = np.diff(t_sorted)
     seg_var = 0.25 * (dt * dt) * (sigma_f[:-1] * sigma_f[:-1] + sigma_f[1:] * sigma_f[1:])
 
+    # Tail sums of the segment variances: var_sorted[i] = sum(seg_var[i:]).
+    # The reversed cumulative sum accumulates from the high-temperature anchor
+    # downward, exactly like the previous explicit loop. A non-finite segment
+    # poisons its own point and every lower-temperature point (whose tail sum
+    # would include it), while higher-temperature points stay exact because
+    # their tail sums never touch it.
     n_t = t_sorted.size
     var_sorted = np.zeros(n_t, dtype=np.float64)
-    running = 0.0
-    running_finite = True
-    for i in range(n_t - 2, -1, -1):
-        if running_finite and np.isfinite(seg_var[i]):
-            running += float(seg_var[i])
-            var_sorted[i] = running
-        else:
-            running_finite = False
-            var_sorted[i] = np.nan
+    if n_t > 1:
+        var_sorted[:-1] = np.cumsum(seg_var[::-1])[::-1]
+        nonfinite = np.where(~np.isfinite(seg_var))[0]
+        if nonfinite.size:
+            var_sorted[: int(nonfinite.max()) + 1] = np.nan
 
     err_sorted = np.sqrt(var_sorted)
     err = np.empty_like(err_sorted)
@@ -287,11 +289,14 @@ def summarize_asymmetric_replicate_uncertainty(
 
     Parameters
     ----------
-        samples: 1-D replicate values; NaN entries are ignored.
-        confidence: Two-sided confidence level for the percentile band.
+    samples : np.ndarray
+        1-D replicate values; NaN entries are ignored.
+    confidence : float
+        Two-sided confidence level for the percentile band.
 
     Returns
     -------
+    dict[str, float]
         Dict with ``value`` (median), asymmetric ``ci_low``/``ci_high``,
         the symmetric ``err`` (half band width) plus ``err_low``/``err_high``
         offsets, ``samples``, and ``nan_or_undefined_count``.
@@ -363,20 +368,26 @@ def calculate_autocorr(
 
     Parameters
     ----------
-        time_series: 1-D array of sequential measurements (e.g. magnetization).
-        max_lag: Maximum lag to compute.  Defaults to ``len(time_series) // 2``.
-        window_constant: Multiplier for the Madras-Sokal window (default 6.0).
+    time_series : np.ndarray
+        1-D array of sequential measurements (e.g. magnetization).
+    max_lag : int | None
+        Maximum lag to compute.  Defaults to ``len(time_series) // 2``.
+    window_constant : float
+        Multiplier for the Madras-Sokal window (default 6.0).
 
     Returns
     -------
+    tuple[np.ndarray, float]
         A tuple ``(C_t, tau_int)`` where ``C_t`` is the normalized autocorrelation
         array truncated at the window endpoint, and ``tau_int`` is the integrated
         autocorrelation time (scalar).
 
     Raises
     ------
-        ValueError: If ``time_series`` has fewer than 3 elements.
-        ZeroVarianceAutocorrelationError: If ``time_series`` has zero variance.
+    ValueError
+        If ``time_series`` has fewer than 3 elements.
+    ZeroVarianceAutocorrelationError
+        If ``time_series`` has zero variance.
     """
     x = np.asarray(time_series, dtype=np.float64)
     N = len(x)
@@ -427,13 +438,16 @@ def estimate_effective_sample_size(
 
     Parameters
     ----------
-        time_series: 1-D time series of at least 2 samples.
-        tau_int: Optional precomputed integrated autocorrelation time; when
-            omitted it is estimated from the series. Must be positive when
-            provided.
+    time_series : np.ndarray
+        1-D time series of at least 2 samples.
+    tau_int : float | None
+        Optional precomputed integrated autocorrelation time; when
+        omitted it is estimated from the series. Must be positive when
+        provided.
 
     Returns
     -------
+    float
         N_eff = N / (2 tau_int), clipped to [1, N]; NaN when tau_int is
         undefined, non-finite, or non-positive.
     """
@@ -461,13 +475,17 @@ def blocking_error(
 
     Parameters
     ----------
-        time_series: 1-D time series of at least 2 samples.
-        min_block_size: Smallest block size to test (>= 2).
-        max_block_size: Largest block size to test; defaults to half the
-            series length.
+    time_series : np.ndarray
+        1-D time series of at least 2 samples.
+    min_block_size : int
+        Smallest block size to test (>= 2).
+    max_block_size : int | None
+        Largest block size to test; defaults to half the
+        series length.
 
     Returns
     -------
+    dict[str, float]
         Dict with keys ``stderr`` (plateau-selected standard error),
         ``stderr_naive``, ``block_size``, ``n_blocks``, and
         ``tau_int_from_blocking``.
@@ -578,13 +596,18 @@ def summarize_primary_observable(
 
     Parameters
     ----------
-        time_series: 1-D time series of at least 2 samples.
-        confidence: Two-sided confidence level for the CI bounds.
-        blocking: Optional precomputed ``blocking_error`` result dict.
-        tau_int: Optional precomputed integrated autocorrelation time.
+    time_series : np.ndarray
+        1-D time series of at least 2 samples.
+    confidence : float
+        Two-sided confidence level for the CI bounds.
+    blocking : dict[str, float] | None
+        Optional precomputed ``blocking_error`` result dict.
+    tau_int : float | None
+        Optional precomputed integrated autocorrelation time.
 
     Returns
     -------
+    dict[str, float]
         Dict with the standard uncertainty-schema fields ``value``, ``err``,
         ``ci_low``, ``ci_high``, ``tau_int``, ``n_eff``, and ``samples``.
     """
@@ -648,20 +671,32 @@ def summarize_derived_observable(
 
     Parameters
     ----------
-        magnetization_series: Base series for ``observable='chi'``.
-        energy_series: Base series for ``observable='cv'``.
-        temperature: Measurement temperature (> 0).
-        L: Linear lattice size.
-        observable: ``'chi'`` or ``'cv'``.
-        method: ``'blocking'`` (default) or ``'bootstrap'``.
-        confidence: Two-sided confidence level for the CI bounds.
-        bootstrap_resamples: Resample count; required > 0 for bootstrap.
-        rng_seed: Seed for the block-bootstrap RNG.
-        blocking: Optional precomputed ``blocking_error`` result dict.
-        tau_int: Optional precomputed integrated autocorrelation time.
+    magnetization_series : np.ndarray | None
+        Base series for ``observable='chi'``.
+    energy_series : np.ndarray | None
+        Base series for ``observable='cv'``.
+    temperature : float
+        Measurement temperature (> 0).
+    L : int
+        Linear lattice size.
+    observable : str
+        ``'chi'`` or ``'cv'``.
+    method : str
+        ``'blocking'`` (default) or ``'bootstrap'``.
+    confidence : float
+        Two-sided confidence level for the CI bounds.
+    bootstrap_resamples : int
+        Resample count; required > 0 for bootstrap.
+    rng_seed : int
+        Seed for the block-bootstrap RNG.
+    blocking : dict[str, float] | None
+        Optional precomputed ``blocking_error`` result dict.
+    tau_int : float | None
+        Optional precomputed integrated autocorrelation time.
 
     Returns
     -------
+    dict[str, float]
         Dict with the standard uncertainty-schema fields ``value``, ``err``,
         ``ci_low``, ``ci_high``, ``tau_int``, ``n_eff``, and ``samples``.
     """
@@ -768,14 +803,17 @@ def summarize_replicate_samples(
 
     Parameters
     ----------
-        samples: Replicate values, either 1-D (one grid point) or 2-D with
-            shape ``(n_points, n_replicates)``.
-        confidence: Two-sided confidence level; the band spans the
-            ``alpha`` and ``1 - alpha`` quantiles with
-            ``alpha = (1 - confidence) / 2``.
+    samples : np.ndarray
+        Replicate values, either 1-D (one grid point) or 2-D with
+        shape ``(n_points, n_replicates)``.
+    confidence : float
+        Two-sided confidence level; the band spans the
+        ``alpha`` and ``1 - alpha`` quantiles with
+        ``alpha = (1 - confidence) / 2``.
 
     Returns
     -------
+    dict[str, np.ndarray | float]
         Dict with ``value`` (median), ``err`` (half the band width),
         ``ci_low``, ``ci_high``, ``samples`` (replicate count), and
         ``nan_or_undefined_count``.
@@ -890,15 +928,20 @@ def power_fit(
 
     Parameters
     ----------
-        t_arr: Independent variable array (e.g., time or length scale); only
-            positive values are used in the fit.
-        y_arr: Dependent variable array; only positive values are used in the fit.
-        mask: Boolean mask selecting the subset of points to include.
+    t_arr : np.ndarray
+        Independent variable array (e.g., time or length scale); only
+        positive values are used in the fit.
+    y_arr : np.ndarray
+        Dependent variable array; only positive values are used in the fit.
+    mask : np.ndarray
+        Boolean mask selecting the subset of points to include.
 
     Returns
     -------
-        exponent: Fitted power-law exponent, or None if fewer than 3 valid points.
-        prefactor: Fitted prefactor, or None if fewer than 3 valid points.
+    exponent
+        Fitted power-law exponent, or None if fewer than 3 valid points.
+    prefactor
+        Fitted prefactor, or None if fewer than 3 valid points.
     """
     valid = mask & (y_arr > 0) & (t_arr > 0)
     if valid.sum() < 3:

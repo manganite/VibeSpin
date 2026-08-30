@@ -20,11 +20,14 @@ def setup_logging(*, level: int = logging.INFO, log_file: str | None = None) -> 
 
     Parameters
     ----------
-        level: Logging level (e.g., logging.INFO).
-        log_file: Optional path to a file to save logs to.
+    level : int
+        Logging level (e.g., logging.INFO).
+    log_file : str | None
+        Optional path to a file to save logs to.
 
     Returns
     -------
+    logging.Logger
         The configured logger instance.
     """
     logger = logging.getLogger('vibespin')
@@ -75,12 +78,16 @@ def parallel_sweep(
 
     Parameters
     ----------
-        worker_func: Function to execute in parallel.
-        params: Iterable of parameters to pass to the worker function.
-        num_processes: Number of processes to use. Defaults to CPU count.
+    worker_func : Callable[[Any], Any]
+        Function to execute in parallel.
+    params : Iterable[Any]
+        Iterable of parameters to pass to the worker function.
+    num_processes : int | None
+        Number of processes to use. Defaults to CPU count.
 
     Returns
     -------
+    list[Any]
         List of results from the worker function.
     """
     # Try to get the length of params for tqdm without converting to list if possible

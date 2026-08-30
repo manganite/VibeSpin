@@ -43,16 +43,24 @@ def clock_step_numba(
 
     Parameters
     ----------
-        spins: (N, N, 2) array of unit vectors.
-        beta: Inverse temperature 1/kT.
-        J: Coupling constant.
-        A: Anisotropy strength.
-        q: Number of clock states.
-        idx_next: Pre-calculated next-neighbor indices.
-        idx_prev: Pre-calculated previous-neighbor indices.
+    spins : np.ndarray
+        (N, N, 2) array of unit vectors.
+    beta : float
+        Inverse temperature 1/kT.
+    J : float
+        Coupling constant.
+    A : float
+        Anisotropy strength.
+    q : int
+        Number of clock states.
+    idx_next : np.ndarray
+        Pre-calculated next-neighbor indices.
+    idx_prev : np.ndarray
+        Pre-calculated previous-neighbor indices.
 
     Returns
     -------
+    np.ndarray
         Updated spins array.
     """
     N = spins.shape[0]
@@ -120,16 +128,24 @@ def clock_step_parallel_numba(
 
     Parameters
     ----------
-        spins: (N, N, 2) array of unit vectors.
-        beta: Inverse temperature 1/kT.
-        J: Coupling constant.
-        A: Anisotropy strength.
-        q: Number of clock states.
-        idx_next: Pre-calculated next-neighbor indices.
-        idx_prev: Pre-calculated previous-neighbor indices.
+    spins : np.ndarray
+        (N, N, 2) array of unit vectors.
+    beta : float
+        Inverse temperature 1/kT.
+    J : float
+        Coupling constant.
+    A : float
+        Anisotropy strength.
+    q : int
+        Number of clock states.
+    idx_next : np.ndarray
+        Pre-calculated next-neighbor indices.
+    idx_prev : np.ndarray
+        Pre-calculated previous-neighbor indices.
 
     Returns
     -------
+    np.ndarray
         Updated spins array.
     """
     N = spins.shape[0]
@@ -189,16 +205,24 @@ def clock_step_random_numba(
 
     Parameters
     ----------
-        spins: (N, N, 2) array of unit vectors.
-        beta: Inverse temperature 1/kT.
-        J: Coupling constant.
-        A: Anisotropy strength.
-        q: Number of clock states.
-        idx_next: Pre-calculated next-neighbor indices.
-        idx_prev: Pre-calculated previous-neighbor indices.
+    spins : np.ndarray
+        (N, N, 2) array of unit vectors.
+    beta : float
+        Inverse temperature 1/kT.
+    J : float
+        Coupling constant.
+    A : float
+        Anisotropy strength.
+    q : int
+        Number of clock states.
+    idx_next : np.ndarray
+        Pre-calculated next-neighbor indices.
+    idx_prev : np.ndarray
+        Pre-calculated previous-neighbor indices.
 
     Returns
     -------
+    np.ndarray
         Updated spins array.
     """
     N = spins.shape[0]
@@ -261,15 +285,21 @@ def clock_energy_numba(
 
     Parameters
     ----------
-        spins: (N, N, 2) array of unit vectors.
-        J: Coupling constant.
-        A: Anisotropy strength.
-        q: Number of clock states.
-        idx_next: Pre-calculated next-neighbor indices.
+    spins : np.ndarray
+        (N, N, 2) array of unit vectors.
+    J : float
+        Coupling constant.
+    A : float
+        Anisotropy strength.
+    q : int
+        Number of clock states.
+    idx_next : np.ndarray
+        Pre-calculated next-neighbor indices.
 
     Returns
     -------
-        energy: Total energy per site.
+    energy : float
+        Total energy per site.
     """
     N = spins.shape[0]
     energy = 0.0
@@ -321,19 +351,29 @@ def clock_wolff_step_numba(
 
     Parameters
     ----------
-        spins: (N, N, 2) array of unit vectors.
-        beta: Inverse temperature 1/kT.
-        J: Coupling constant.
-        idx_next: Pre-calculated next-neighbor indices (PBC).
-        idx_prev: Pre-calculated previous-neighbor indices (PBC).
-        in_cluster: Pre-allocated (N, N) boolean array for cluster membership mask.
-        stack: Pre-allocated (N*N) int64 array for DFS stack.
-        cluster_spins: Pre-allocated (N*N) int64 array to track cluster elements.
+    spins : np.ndarray
+        (N, N, 2) array of unit vectors.
+    beta : float
+        Inverse temperature 1/kT.
+    J : float
+        Coupling constant.
+    idx_next : np.ndarray
+        Pre-calculated next-neighbor indices (PBC).
+    idx_prev : np.ndarray
+        Pre-calculated previous-neighbor indices (PBC).
+    in_cluster : np.ndarray
+        Pre-allocated (N, N) boolean array for cluster membership mask.
+    stack : np.ndarray
+        Pre-allocated (N*N) int64 array for DFS stack.
+    cluster_spins : np.ndarray
+        Pre-allocated (N*N) int64 array to track cluster elements.
 
     Returns
     -------
-        spins: Updated spins array.
-        cluster_size: Number of spins reflected in this step.
+    spins
+        Updated spins array.
+    cluster_size
+        Number of spins reflected in this step.
     """
     N = spins.shape[0]
 
@@ -459,26 +499,36 @@ class ClockSimulation(VectorSpinObservablesMixin, MonteCarloSimulation):
 
         Parameters
         ----------
-            size: Linear dimension L of the L x L lattice.
-            temp: Temperature T.
-            J: Coupling constant (default 1.0).
-            A: Anisotropy strength (default 1.0).
-            q: Number of clock states (default 6). Must be \u2265 2.
-            update: Update scheme - ``'checkerboard'`` (default, faster),
-                ``'random'`` (random sequential Metropolis, physical
-                stochastic dynamics for kinetics studies), or
-                ``'wolff'`` (Wolff-Evertz cluster algorithm using the exchange
-                term J; detailed balance holds exactly only when A=0).
-            init_state: Initial spin configuration: ``'random'`` (default) or ``'ordered'``.
-            parallel: Whether to use parallelized Numba kernels (only for
-                checkerboard). Parallel kernels are NOT seed-reproducible:
-                only the calling thread's Numba RNG is seeded, so two runs
-                with the same seed may differ.
-            seed: Optional random seed for reproducibility.
+        size : int
+            Linear dimension L of the L x L lattice.
+        temp : float
+            Temperature T.
+        J : float
+            Coupling constant (default 1.0).
+        A : float
+            Anisotropy strength (default 1.0).
+        q : int
+            Number of clock states (default 6). Must be \u2265 2.
+        update : str
+            Update scheme - ``'checkerboard'`` (default, faster),
+            ``'random'`` (random sequential Metropolis, physical
+            stochastic dynamics for kinetics studies), or
+            ``'wolff'`` (Wolff-Evertz cluster algorithm using the exchange
+            term J; detailed balance holds exactly only when A=0).
+        init_state : str
+            Initial spin configuration: ``'random'`` (default) or ``'ordered'``.
+        parallel : bool
+            Whether to use parallelized Numba kernels (only for
+            checkerboard). Parallel kernels are NOT seed-reproducible:
+            only the calling thread's Numba RNG is seeded, so two runs
+            with the same seed may differ.
+        seed : int | None
+            Optional random seed for reproducibility.
 
         Raises
         ------
-            ValueError: If ``q`` is less than 2 or update scheme is unknown.
+        ValueError
+            If ``q`` is less than 2 or update scheme is unknown.
         """
         super().__init__(size=size, temp=temp, init_state=init_state, seed=seed)
         if q < 2:
@@ -628,16 +678,24 @@ def discrete_clock_step_numba(
 
     Parameters
     ----------
-        spins: (N, N) array of integer spin states in {0, ..., q-1}.
-        beta: Inverse temperature 1/kT.
-        J: Coupling constant.
-        q: Number of clock states.
-        cos_table: Pre-computed cos(2*pi*d/q) for d in {0, ..., q-1}.
-        idx_next: Pre-calculated next-neighbor indices.
-        idx_prev: Pre-calculated previous-neighbor indices.
+    spins : np.ndarray
+        (N, N) array of integer spin states in {0, ..., q-1}.
+    beta : float
+        Inverse temperature 1/kT.
+    J : float
+        Coupling constant.
+    q : int
+        Number of clock states.
+    cos_table : np.ndarray
+        Pre-computed cos(2*pi*d/q) for d in {0, ..., q-1}.
+    idx_next : np.ndarray
+        Pre-calculated next-neighbor indices.
+    idx_prev : np.ndarray
+        Pre-calculated previous-neighbor indices.
 
     Returns
     -------
+    np.ndarray
         Updated spins array.
     """
     N = spins.shape[0]
@@ -697,16 +755,24 @@ def discrete_clock_step_parallel_numba(
 
     Parameters
     ----------
-        spins: (N, N) array of integer spin states in {0, ..., q-1}.
-        beta: Inverse temperature 1/kT.
-        J: Coupling constant.
-        q: Number of clock states.
-        cos_table: Pre-computed cos(2*pi*d/q) for d in {0, ..., q-1}.
-        idx_next: Pre-calculated next-neighbor indices.
-        idx_prev: Pre-calculated previous-neighbor indices.
+    spins : np.ndarray
+        (N, N) array of integer spin states in {0, ..., q-1}.
+    beta : float
+        Inverse temperature 1/kT.
+    J : float
+        Coupling constant.
+    q : int
+        Number of clock states.
+    cos_table : np.ndarray
+        Pre-computed cos(2*pi*d/q) for d in {0, ..., q-1}.
+    idx_next : np.ndarray
+        Pre-calculated next-neighbor indices.
+    idx_prev : np.ndarray
+        Pre-calculated previous-neighbor indices.
 
     Returns
     -------
+    np.ndarray
         Updated spins array.
     """
     N = spins.shape[0]
@@ -765,16 +831,24 @@ def discrete_clock_step_random_numba(
 
     Parameters
     ----------
-        spins: (N, N) array of integer spin states in {0, ..., q-1}.
-        beta: Inverse temperature 1/kT.
-        J: Coupling constant.
-        q: Number of clock states.
-        cos_table: Pre-computed cos(2*pi*d/q) for d in {0, ..., q-1}.
-        idx_next: Pre-calculated next-neighbor indices.
-        idx_prev: Pre-calculated previous-neighbor indices.
+    spins : np.ndarray
+        (N, N) array of integer spin states in {0, ..., q-1}.
+    beta : float
+        Inverse temperature 1/kT.
+    J : float
+        Coupling constant.
+    q : int
+        Number of clock states.
+    cos_table : np.ndarray
+        Pre-computed cos(2*pi*d/q) for d in {0, ..., q-1}.
+    idx_next : np.ndarray
+        Pre-calculated next-neighbor indices.
+    idx_prev : np.ndarray
+        Pre-calculated previous-neighbor indices.
 
     Returns
     -------
+    np.ndarray
         Updated spins array.
     """
     N = spins.shape[0]
@@ -835,14 +909,20 @@ def discrete_clock_energy_numba(
 
     Parameters
     ----------
-        spins: (N, N) array of integer spin states in {0, ..., q-1}.
-        J: Coupling constant.
-        q: Number of clock states.
-        cos_table: Pre-computed cos(2*pi*d/q) for d in {0, ..., q-1}.
-        idx_next: Pre-calculated next-neighbor indices.
+    spins : np.ndarray
+        (N, N) array of integer spin states in {0, ..., q-1}.
+    J : float
+        Coupling constant.
+    q : int
+        Number of clock states.
+    cos_table : np.ndarray
+        Pre-computed cos(2*pi*d/q) for d in {0, ..., q-1}.
+    idx_next : np.ndarray
+        Pre-calculated next-neighbor indices.
 
     Returns
     -------
+    float
         Energy per site.
     """
     N = spins.shape[0]
@@ -889,23 +969,32 @@ class DiscreteClockSimulation(VectorSpinObservablesMixin, MonteCarloSimulation):
 
         Parameters
         ----------
-            size: Linear dimension L of the L x L lattice.
-            temp: Temperature T.
-            J: Coupling constant (default 1.0).
-            q: Number of clock states (default 6). Must be >= 2.
-            update: Update scheme - ``'checkerboard'`` (default, faster) or
-                ``'random'`` (random sequential Metropolis, more physical
-                stochastic dynamics for kinetics studies).
-            init_state: Initial spin configuration: ``'random'`` (default) or ``'ordered'``.
-            parallel: Whether to use parallelized Numba kernels (only for
-                checkerboard). Parallel kernels are NOT seed-reproducible:
-                only the calling thread's Numba RNG is seeded, so two runs
-                with the same seed may differ.
-            seed: Optional random seed for reproducibility.
+        size : int
+            Linear dimension L of the L x L lattice.
+        temp : float
+            Temperature T.
+        J : float
+            Coupling constant (default 1.0).
+        q : int
+            Number of clock states (default 6). Must be >= 2.
+        update : str
+            Update scheme - ``'checkerboard'`` (default, faster) or
+            ``'random'`` (random sequential Metropolis, more physical
+            stochastic dynamics for kinetics studies).
+        init_state : str
+            Initial spin configuration: ``'random'`` (default) or ``'ordered'``.
+        parallel : bool
+            Whether to use parallelized Numba kernels (only for
+            checkerboard). Parallel kernels are NOT seed-reproducible:
+            only the calling thread's Numba RNG is seeded, so two runs
+            with the same seed may differ.
+        seed : int | None
+            Optional random seed for reproducibility.
 
         Raises
         ------
-            ValueError: If ``q`` is less than 2 or update scheme is unknown.
+        ValueError
+            If ``q`` is less than 2 or update scheme is unknown.
         """
         super().__init__(size=size, temp=temp, init_state=init_state, seed=seed)
         if q < 2:

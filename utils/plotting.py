@@ -25,10 +25,12 @@ def ensure_results_dir(*, directory: str = 'results') -> str:
 
     Parameters
     ----------
-        directory: Name of the directory to create.
+    directory : str
+        Name of the directory to create.
 
     Returns
     -------
+    str
         The path to the directory.
     """
     if directory:
@@ -49,14 +51,19 @@ def save_plot(
 
     Parameters
     ----------
-        filename: Name of the output file (e.g., 'plot.png').
-        directory: Output directory name.
-        tight_layout: Whether to apply tight_layout() before saving.
-        fig: Figure to save. Defaults to the current figure; passing it
-            explicitly removes the dependence on pyplot's global state and is
-            required for correctness when several figures are open.
-        close: Whether to close the figure after saving. Long-running sweeps
-            otherwise accumulate open figures in pyplot's global registry.
+    filename : str
+        Name of the output file (e.g., 'plot.png').
+    directory : str
+        Output directory name.
+    tight_layout : bool
+        Whether to apply tight_layout() before saving.
+    fig : plt.Figure | None
+        Figure to save. Defaults to the current figure; passing it
+        explicitly removes the dependence on pyplot's global state and is
+        required for correctness when several figures are open.
+    close : bool
+        Whether to close the figure after saving. Long-running sweeps
+        otherwise accumulate open figures in pyplot's global registry.
     """
     logger = logging.getLogger('vibespin')
     ensure_results_dir(directory=directory)
@@ -116,46 +123,72 @@ def plot_temperature_sweep(
 
     Parameters
     ----------
-        temperatures: Array of temperature values (x-axis).
-        avg_m: Average absolute magnetization per temperature point.
-        avg_e: Average energy per temperature point.
-        susc: Magnetic susceptibility per temperature point.
-        spec_h: Specific heat per temperature point.
-        title: Figure-level suptitle string (e.g. '2D Ising Model: Temperature Sweep (L=50)').
-        filename: Output filename passed to :func:`save_plot` (e.g. 'temperature_sweep.png').
-        directory: Output directory passed to :func:`save_plot` (e.g. 'results/ising').
-        entropy: Optional entropy per temperature point.
-        entropy_err: Optional symmetric uncertainty for entropy.
-        entropy_ci_low: Optional lower confidence band for entropy.
-        entropy_ci_high: Optional upper confidence band for entropy.
-        tau_int: Optional integrated autocorrelation time per temperature point.
-            Reveals critical slowing down as a peak near T_c.
-        tau_int_ci_low: Optional lower confidence band for tau_int.
-        tau_int_ci_high: Optional upper confidence band for tau_int.
-        tau_unstable_flag: Optional per-temperature mask flagging unstable
-            tau_int intervals.
-        low_effective_sample_flag: Optional per-temperature mask identifying
-            points with low effective sample size.
-        diagnostics_note: Optional text shown on diagnostics figure summarizing
-            uncertainty quality metrics.
-        run_metadata_note: Optional concise metadata line for the diagnostics
-            header (for example lattice size, seeds, confidence level, method).
-        quality_summary: Optional dictionary containing quality counts. Expected
-            keys are ``total_points``, ``well_conditioned_count``,
-            ``low_effective_count``, ``unstable_interval_count``, and
-            ``undefined_count``.
-        transition_temperatures: Optional mapping of transition-marker labels
-            to temperatures rendered as vertical dashed guide lines.
-        transition_window: Optional (low, high) temperature window highlighted
-            with a light background band.
-        entropy_reference: Optional ``(label, value)`` rendered as a horizontal
-            reference on the entropy diagnostics panel.
-        annotate_peaks: If True, annotate peak temperatures for susceptibility,
-            specific heat, and tau_int when present.
-        min_visible_rel_error: Minimum relative error bar size used for visibility
-            when finite uncertainties are extremely small.
-        mark_invalid_uncertainty: If True, points with non-finite uncertainty are
-            marked with ``x`` markers and a legend label.
+    temperatures : np.ndarray
+        Array of temperature values (x-axis).
+    avg_m : Sequence[float]
+        Average absolute magnetization per temperature point.
+    avg_e : Sequence[float]
+        Average energy per temperature point.
+    susc : Sequence[float]
+        Magnetic susceptibility per temperature point.
+    spec_h : Sequence[float]
+        Specific heat per temperature point.
+    title : str
+        Figure-level suptitle string (e.g. '2D Ising Model: Temperature Sweep (L=50)').
+    filename : str
+        Output filename passed to :func:`save_plot` (e.g. 'temperature_sweep.png').
+    directory : str
+        Output directory passed to :func:`save_plot` (e.g. 'results/ising').
+    entropy : np.ndarray | Sequence[float] | None
+        Optional entropy per temperature point.
+    entropy_err : np.ndarray | Sequence[float] | None
+        Optional symmetric uncertainty for entropy.
+    entropy_ci_low : np.ndarray | Sequence[float] | None
+        Optional lower confidence band for entropy.
+    entropy_ci_high : np.ndarray | Sequence[float] | None
+        Optional upper confidence band for entropy.
+    tau_int : np.ndarray | Sequence[float] | None
+        Optional integrated autocorrelation time per temperature point.
+        Reveals critical slowing down as a peak near T_c.
+    tau_int_ci_low : np.ndarray | Sequence[float] | None
+        Optional lower confidence band for tau_int.
+    tau_int_ci_high : np.ndarray | Sequence[float] | None
+        Optional upper confidence band for tau_int.
+    tau_unstable_flag : np.ndarray | Sequence[float] | None
+        Optional per-temperature mask flagging unstable
+        tau_int intervals.
+    low_effective_sample_flag : np.ndarray | Sequence[float] | None
+        Optional per-temperature mask identifying
+        points with low effective sample size.
+    diagnostics_note : str | None
+        Optional text shown on diagnostics figure summarizing
+        uncertainty quality metrics.
+    run_metadata_note : str | None
+        Optional concise metadata line for the diagnostics
+        header (for example lattice size, seeds, confidence level, method).
+    quality_summary : Mapping[str, int | float] | None
+        Optional dictionary containing quality counts. Expected
+        keys are ``total_points``, ``well_conditioned_count``,
+        ``low_effective_count``, ``unstable_interval_count``, and
+        ``undefined_count``.
+    transition_temperatures : dict[str, float] | None
+        Optional mapping of transition-marker labels
+        to temperatures rendered as vertical dashed guide lines.
+    transition_window : tuple[float, float] | None
+        Optional (low, high) temperature window highlighted
+        with a light background band.
+    entropy_reference : tuple[str, float] | None
+        Optional ``(label, value)`` rendered as a horizontal
+        reference on the entropy diagnostics panel.
+    annotate_peaks : bool
+        If True, annotate peak temperatures for susceptibility,
+        specific heat, and tau_int when present.
+    min_visible_rel_error : float
+        Minimum relative error bar size used for visibility
+        when finite uncertainties are extremely small.
+    mark_invalid_uncertainty : bool
+        If True, points with non-finite uncertainty are
+        marked with ``x`` markers and a legend label.
     """
     temperatures_arr = np.asarray(temperatures, dtype=np.float64)
     use_extra = entropy is not None or tau_int is not None
@@ -660,20 +693,34 @@ def plot_ordering_kinetics(
 
     Parameters
     ----------
-        t: Time array (Monte Carlo sweeps).
-        R_sk: Domain size from structure factor.
-        R_xi: Correlation length from G(r).
-        third_metric: Optional third metric array.
-        third_metric_label: Label for the third metric.
-        exponents: Dict of fitted exponents.
-        prefactors: Dict of fitted prefactors.
-        fit_mask: Mask used for fitting.
-        title: Figure-level suptitle.
-        filename: Output filename.
-        directory: Output directory.
-        y_label: Y-axis label for the left panel.
-        left_title: Title for the left subplot.
-        right_title: Title for the right subplot.
+    t : np.ndarray
+        Time array (Monte Carlo sweeps).
+    R_sk : np.ndarray
+        Domain size from structure factor.
+    R_xi : np.ndarray
+        Correlation length from G(r).
+    third_metric : np.ndarray | None
+        Optional third metric array.
+    third_metric_label : str | None
+        Label for the third metric.
+    exponents : dict[str, float | None]
+        Dict of fitted exponents.
+    prefactors : dict[str, float | None]
+        Dict of fitted prefactors.
+    fit_mask : np.ndarray
+        Mask used for fitting.
+    title : str
+        Figure-level suptitle.
+    filename : str
+        Output filename.
+    directory : str
+        Output directory.
+    y_label : str
+        Y-axis label for the left panel.
+    left_title : str
+        Title for the left subplot.
+    right_title : str
+        Title for the right subplot.
     """
     fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(14, 6))
     fig.suptitle(title, fontsize=13)
@@ -746,14 +793,22 @@ def plot_ordering_evolution(
 
     Parameters
     ----------
-        targets: List of MC steps for each snapshot.
-        snapshots: List of spin arrays.
-        gr_data: List of (r, G) tuples.
-        vorticity_data: Optional list of vorticity arrays.
-        title: Figure-level suptitle.
-        filename: Output filename.
-        directory: Output directory.
-        is_vector: Whether the spins are 2D vectors (True) or scalars (False).
+    targets : Sequence[int]
+        List of MC steps for each snapshot.
+    snapshots : Sequence[np.ndarray]
+        List of spin arrays.
+    gr_data : Sequence[tuple[np.ndarray, np.ndarray]]
+        List of (r, G) tuples.
+    vorticity_data : Sequence[np.ndarray] | None
+        Optional list of vorticity arrays.
+    title : str
+        Figure-level suptitle.
+    filename : str
+        Output filename.
+    directory : str
+        Output directory.
+    is_vector : bool
+        Whether the spins are 2D vectors (True) or scalars (False).
     """
     n_cols = len(targets)
     fig, axes = plt.subplots(

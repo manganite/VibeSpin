@@ -26,10 +26,12 @@ def simulate_correlation(
 
     Parameters
     ----------
-        params: Tuple of (T, L, steps, eq_probe, eq_max, sample_interval, seed).
+    params : tuple[float, int, int, int, int, int, int]
+        Tuple of (T, L, steps, eq_probe, eq_max, sample_interval, seed).
 
     Returns
     -------
+    tuple[np.ndarray, np.ndarray]
         A tuple of (r, G_r) - radial distances and averaged correlations.
     """
     T, L, steps, eq_probe, eq_max, sample_interval, seed = params

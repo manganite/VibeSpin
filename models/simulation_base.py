@@ -30,11 +30,14 @@ def _derive_step_seed(*, seed: int, step: int) -> int:
 
     Parameters
     ----------
-        seed: Simulation base seed (non-negative integer).
-        step: Zero-based sweep index.
+    seed : int
+        Simulation base seed (non-negative integer).
+    step : int
+        Zero-based sweep index.
 
     Returns
     -------
+    int
         A seed in [0, 2**32) suitable for ``np.random.seed`` inside Numba.
     """
     z = (seed * 0xD1B54A32D192ED03 + step * 0x9E3779B97F4A7C15) & _MASK64
@@ -75,12 +78,15 @@ def calculate_vorticity_numba(*, spins: np.ndarray, idx_next: np.ndarray) -> np.
 
     Parameters
     ----------
-        spins: (N, N, 2) array of unit vectors.
-        idx_next: Pre-calculated next-neighbor indices.
+    spins : np.ndarray
+        (N, N, 2) array of unit vectors.
+    idx_next : np.ndarray
+        Pre-calculated next-neighbor indices.
 
     Returns
     -------
-        vorticity: (N, N) array containing winding numbers (+1, -1, or 0).
+    vorticity : np.ndarray
+        (N, N) array containing winding numbers (+1, -1, or 0).
     """
     # Vectorized arctan2 is much faster than calling it inside a Numba loop
     angles = np.arctan2(spins[..., 1], spins[..., 0])
@@ -105,11 +111,14 @@ def calculate_vortex_density_numba(*, spins: np.ndarray, idx_next: np.ndarray) -
 
     Parameters
     ----------
-        spins: (N, N, 2) array of unit vectors.
-        idx_next: Pre-calculated next-neighbor indices.
+    spins : np.ndarray
+        (N, N, 2) array of unit vectors.
+    idx_next : np.ndarray
+        Pre-calculated next-neighbor indices.
 
     Returns
     -------
+    float
         Vortex density n_v in [0, 1].
     """
     vorticity = calculate_vorticity_numba(spins=spins, idx_next=idx_next)
@@ -123,13 +132,17 @@ def get_helicity_data_numba(*, spins: np.ndarray, idx_next: np.ndarray) -> tuple
 
     Parameters
     ----------
-        spins: (N, N, 2) array of unit vectors.
-        idx_next: Pre-calculated next-neighbor indices for PBCs.
+    spins : np.ndarray
+        (N, N, 2) array of unit vectors.
+    idx_next : np.ndarray
+        Pre-calculated next-neighbor indices for PBCs.
 
     Returns
     -------
-        cos_sum: Sum of cosine of angle differences.
-        sin_sum: Sum of sine of angle differences.
+    cos_sum : float
+        Sum of cosine of angle differences.
+    sin_sum : float
+        Sum of sine of angle differences.
     """
     N = spins.shape[0]
     cos_sum = 0.0
@@ -158,6 +171,7 @@ class VectorSpinObservablesMixin:
 
         Returns
         -------
+        np.ndarray
             (N, N) array of winding numbers (+1, -1, or 0).
         """
         return self._calculate_vorticity()  # type: ignore[attr-defined]
@@ -167,6 +181,7 @@ class VectorSpinObservablesMixin:
 
         Returns
         -------
+        float
             Fraction of plaquettes with non-zero winding, in [0, 1].
         """
         return self._get_vortex_density()  # type: ignore[attr-defined]
@@ -176,8 +191,10 @@ class VectorSpinObservablesMixin:
 
         Returns
         -------
-            cos_sum: Sum of cosine of nearest-neighbor angle differences.
-            sin_sum: Sum of sine of nearest-neighbor angle differences.
+        cos_sum : float
+            Sum of cosine of nearest-neighbor angle differences.
+        sin_sum : float
+            Sum of sine of nearest-neighbor angle differences.
         """
         return self._get_helicity_data()  # type: ignore[attr-defined]
 
@@ -196,14 +213,19 @@ class MonteCarloSimulation(ABC):
 
         Parameters
         ----------
-            size: Linear dimension L of the N x N lattice.
-            temp: Temperature T of the system.
-            init_state: Initial spin configuration: ``'random'`` (default) or ``'ordered'``.
-            seed: Optional random seed for reproducibility.
+        size : int
+            Linear dimension L of the N x N lattice.
+        temp : float
+            Temperature T of the system.
+        init_state : str
+            Initial spin configuration: ``'random'`` (default) or ``'ordered'``.
+        seed : int | None
+            Optional random seed for reproducibility.
 
         Raises
         ------
-            ValueError: If ``size`` is not a positive integer or ``temp`` is not positive.
+        ValueError
+            If ``size`` is not a positive integer or ``temp`` is not positive.
         """
         if not isinstance(size, (int, np.integer)) or size < 1:
             raise ValueError(f'size must be a positive integer, got {size!r}')
@@ -275,8 +297,10 @@ class MonteCarloSimulation(ABC):
 
         Returns
         -------
-            r: Radial distances.
-            G_r: Radially averaged correlation values.
+        r : np.ndarray
+            Radial distances.
+        G_r : np.ndarray
+            Radially averaged correlation values.
         """
         Sk_sq = self._get_structure_factor_squared_unshifted()
 
@@ -309,6 +333,7 @@ class MonteCarloSimulation(ABC):
 
         Returns
         -------
+        float
             Absolute magnetization per site.
         """
         return self._get_magnetization()
@@ -321,6 +346,7 @@ class MonteCarloSimulation(ABC):
 
         Returns
         -------
+        float
             Energy per site.
         """
         return self._get_energy()
@@ -332,8 +358,10 @@ class MonteCarloSimulation(ABC):
 
         Returns
         -------
-            r: Radial distances.
-            G_r: Radially averaged correlation values, normalized to G(0) = 1.
+        r : np.ndarray
+            Radial distances.
+        G_r : np.ndarray
+            Radially averaged correlation values, normalized to G(0) = 1.
         """
         return self._calculate_correlation_function()
 
@@ -343,7 +371,8 @@ class MonteCarloSimulation(ABC):
 
         Parameters
         ----------
-            n_steps: Number of MC steps to perform.
+        n_steps : int
+            Number of MC steps to perform.
         """
         for _ in range(n_steps):
             self.step()
@@ -354,12 +383,15 @@ class MonteCarloSimulation(ABC):
 
         Parameters
         ----------
-            n_steps: Number of MC steps to perform and record.
+        n_steps : int
+            Number of MC steps to perform and record.
 
         Returns
         -------
-            magnetization: Array of recorded magnetization values.
-            energies: Array of recorded energy values.
+        magnetization : np.ndarray
+            Array of recorded magnetization values.
+        energies : np.ndarray
+            Array of recorded energy values.
         """
         magnetization: np.ndarray = np.empty(n_steps)
         energies: np.ndarray = np.empty(n_steps)

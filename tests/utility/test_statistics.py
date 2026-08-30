@@ -208,6 +208,34 @@ def test_entropy_invalid_shape_mismatch():
         )
 
 
+def test_propagate_entropy_uncertainty_nan_poisoning():
+    """A non-finite Cv error must poison its point and all lower temperatures.
+
+    The propagated entropy variance at temperature T_i is the tail sum of the
+    segment variances from T_i up to the high-temperature anchor. A NaN in a
+    segment therefore invalidates every temperature at or below that segment,
+    while all higher temperatures keep exact finite errors.
+    """
+    from utils.statistics import _propagate_entropy_uncertainty_from_cv_errors
+
+    t = np.linspace(0.5, 3.0, 8)
+    cv_err = np.full(8, 0.1)
+    cv_err[3] = np.nan
+
+    err = _propagate_entropy_uncertainty_from_cv_errors(
+        temperatures=t, specific_heat_err=cv_err,
+    )
+
+    # Segments 2 and 3 touch the NaN point, so indices 0..3 are poisoned.
+    assert np.all(np.isnan(err[:4]))
+    assert np.all(np.isfinite(err[4:]))
+    # The anchor point (highest T) carries zero propagated variance.
+    assert err[-1] == pytest.approx(0.0)
+    # Errors grow monotonically toward lower temperatures on the finite side.
+    finite = err[4:]
+    assert np.all(np.diff(finite) <= 0.0)
+
+
 def test_summarize_entropy_observable_multi_replicate_finite_error():
     """Entropy summary should provide finite uncertainty with >=2 replicates."""
     temperatures = np.linspace(1.0, 3.0, 5)

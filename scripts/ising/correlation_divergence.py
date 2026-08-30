@@ -22,10 +22,12 @@ def get_correlation_length(params: tuple[float, int, int, int, int]) -> tuple[fl
 
     Parameters
     ----------
-        params: Tuple of (T, L, steps, eq_steps, sample_interval).
+    params : tuple[float, int, int, int, int]
+        Tuple of (T, L, steps, eq_steps, sample_interval).
 
     Returns
     -------
+    tuple[float, float]
         A tuple of (T, xi).
     """
     T, L, steps, eq_steps, sample_interval = params

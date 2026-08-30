@@ -373,11 +373,9 @@ def main() -> None:
     L = args.size
     temperatures: np.ndarray = np.linspace(args.t_min, args.t_max, args.t_points)
     logger.info(
-        (
-            'Wolff efficiency demo: L=%d, T in [%.2f, %.2f], %d points, '
-            '%d seed replicas, %d meas steps.'
-        ),
-        L, args.t_min, args.t_max, args.t_points, args.n_seeds, args.meas_steps,
+        f'Wolff efficiency demo: L={L}, T in [{args.t_min:.2f}, {args.t_max:.2f}], '
+        f'{args.t_points} points, {args.n_seeds} seed replicas, '
+        f'{args.meas_steps} meas steps.'
     )
 
     sweep_params = [
@@ -485,7 +483,7 @@ def main() -> None:
         chi_wolff_samples=chi_wolff_samples,
         L=np.int64(L),
     )
-    logger.info('Data saved to %s', npz_path)
+    logger.info(f'Data saved to {npz_path}')
 
     _plot_efficiency(
         temperatures=temperatures,
@@ -514,7 +512,7 @@ def main() -> None:
         L=L,
         directory=args.output_dir,
     )
-    logger.info('Figure saved to %s', os.path.join(args.output_dir, 'wolff_efficiency.png'))
+    logger.info(f"Figure saved to {os.path.join(args.output_dir, 'wolff_efficiency.png')}")
 
 
 if __name__ == '__main__':

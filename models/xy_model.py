@@ -28,14 +28,20 @@ def xy_step_numba(
 
     Parameters
     ----------
-        spins: (N, N, 2) array of unit vectors.
-        beta: Inverse temperature 1/kT.
-        J: Coupling constant.
-        idx_next: Pre-calculated next-neighbor indices.
-        idx_prev: Pre-calculated previous-neighbor indices.
+    spins : np.ndarray
+        (N, N, 2) array of unit vectors.
+    beta : float
+        Inverse temperature 1/kT.
+    J : float
+        Coupling constant.
+    idx_next : np.ndarray
+        Pre-calculated next-neighbor indices.
+    idx_prev : np.ndarray
+        Pre-calculated previous-neighbor indices.
 
     Returns
     -------
+    np.ndarray
         Updated spins array.
     """
     N = spins.shape[0]
@@ -92,14 +98,20 @@ def xy_step_parallel_numba(
 
     Parameters
     ----------
-        spins: (N, N, 2) array of unit vectors.
-        beta: Inverse temperature 1/kT.
-        J: Coupling constant.
-        idx_next: Pre-calculated next-neighbor indices.
-        idx_prev: Pre-calculated previous-neighbor indices.
+    spins : np.ndarray
+        (N, N, 2) array of unit vectors.
+    beta : float
+        Inverse temperature 1/kT.
+    J : float
+        Coupling constant.
+    idx_next : np.ndarray
+        Pre-calculated next-neighbor indices.
+    idx_prev : np.ndarray
+        Pre-calculated previous-neighbor indices.
 
     Returns
     -------
+    np.ndarray
         Updated spins array.
     """
     N = spins.shape[0]
@@ -146,14 +158,20 @@ def xy_step_random_numba(
 
     Parameters
     ----------
-        spins: (N, N, 2) array of unit vectors.
-        beta: Inverse temperature 1/kT.
-        J: Coupling constant.
-        idx_next: Pre-calculated next-neighbor indices.
-        idx_prev: Pre-calculated previous-neighbor indices.
+    spins : np.ndarray
+        (N, N, 2) array of unit vectors.
+    beta : float
+        Inverse temperature 1/kT.
+    J : float
+        Coupling constant.
+    idx_next : np.ndarray
+        Pre-calculated next-neighbor indices.
+    idx_prev : np.ndarray
+        Pre-calculated previous-neighbor indices.
 
     Returns
     -------
+    np.ndarray
         Updated spins array.
     """
     N = spins.shape[0]
@@ -210,13 +228,17 @@ def xy_energy_numba(*, spins: np.ndarray, J: float, idx_next: np.ndarray) -> flo
 
     Parameters
     ----------
-        spins: (N, N, 2) array of unit vectors.
-        J: Coupling constant.
-        idx_next: Pre-calculated next-neighbor indices.
+    spins : np.ndarray
+        (N, N, 2) array of unit vectors.
+    J : float
+        Coupling constant.
+    idx_next : np.ndarray
+        Pre-calculated next-neighbor indices.
 
     Returns
     -------
-        energy: Total energy per site.
+    energy : float
+        Total energy per site.
     """
     N = spins.shape[0]
     energy = 0.0
@@ -259,19 +281,29 @@ def xy_wolff_step_numba(
 
     Parameters
     ----------
-        spins: (N, N, 2) array of unit vectors.
-        beta: Inverse temperature 1/kT.
-        J: Coupling constant.
-        idx_next: Pre-calculated next-neighbor indices (PBC).
-        idx_prev: Pre-calculated previous-neighbor indices (PBC).
-        in_cluster: Pre-allocated (N, N) boolean array for cluster membership mask.
-        stack: Pre-allocated (N*N) int64 array for DFS stack.
-        cluster_spins: Pre-allocated (N*N) int64 array to track cluster elements.
+    spins : np.ndarray
+        (N, N, 2) array of unit vectors.
+    beta : float
+        Inverse temperature 1/kT.
+    J : float
+        Coupling constant.
+    idx_next : np.ndarray
+        Pre-calculated next-neighbor indices (PBC).
+    idx_prev : np.ndarray
+        Pre-calculated previous-neighbor indices (PBC).
+    in_cluster : np.ndarray
+        Pre-allocated (N, N) boolean array for cluster membership mask.
+    stack : np.ndarray
+        Pre-allocated (N*N) int64 array for DFS stack.
+    cluster_spins : np.ndarray
+        Pre-allocated (N*N) int64 array to track cluster elements.
 
     Returns
     -------
-        spins: Updated spins array.
-        cluster_size: Number of spins flipped in this step.
+    spins
+        Updated spins array.
+    cluster_size
+        Number of spins flipped in this step.
     """
     N = spins.shape[0]
 
@@ -394,24 +426,32 @@ class XYSimulation(VectorSpinObservablesMixin, MonteCarloSimulation):
 
         Parameters
         ----------
-            size: Linear dimension L of the L x L lattice.
-            temp: Temperature T.
-            J: Coupling constant (default 1.0).
-            update: Update scheme - ``'checkerboard'`` (default, faster),
-                ``'random'`` (random sequential Metropolis, physical
-                stochastic dynamics for kinetics studies), or
-                ``'wolff'`` (Wolff-Evertz cluster algorithm, efficient near
-                the BKT transition).
-            init_state: Initial spin configuration: ``'random'`` (default) or ``'ordered'``.
-            parallel: Whether to use parallelized Numba kernels (only for
-                checkerboard). Parallel kernels are NOT seed-reproducible:
-                only the calling thread's Numba RNG is seeded, so two runs
-                with the same seed may differ.
-            seed: Optional random seed for reproducibility.
+        size : int
+            Linear dimension L of the L x L lattice.
+        temp : float
+            Temperature T.
+        J : float
+            Coupling constant (default 1.0).
+        update : str
+            Update scheme - ``'checkerboard'`` (default, faster),
+            ``'random'`` (random sequential Metropolis, physical
+            stochastic dynamics for kinetics studies), or
+            ``'wolff'`` (Wolff-Evertz cluster algorithm, efficient near
+            the BKT transition).
+        init_state : str
+            Initial spin configuration: ``'random'`` (default) or ``'ordered'``.
+        parallel : bool
+            Whether to use parallelized Numba kernels (only for
+            checkerboard). Parallel kernels are NOT seed-reproducible:
+            only the calling thread's Numba RNG is seeded, so two runs
+            with the same seed may differ.
+        seed : int | None
+            Optional random seed for reproducibility.
 
         Raises
         ------
-            ValueError: If ``update`` is not one of the recognised schemes.
+        ValueError
+            If ``update`` is not one of the recognised schemes.
         """
         super().__init__(size=size, temp=temp, init_state=init_state, seed=seed)
         if update not in self._VALID_UPDATES:

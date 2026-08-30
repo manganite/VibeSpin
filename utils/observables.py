@@ -33,20 +33,26 @@ def derived_thermo_estimate(
 
     Parameters
     ----------
-        series: 1-D time series (magnetization for ``'chi'``, energy per
-            site for ``'cv'``).
-        temperature: Temperature T of the measurement.
-        L: Linear lattice size.
-        observable: ``'chi'`` (susceptibility, N Var(M)/T) or ``'cv'``
-            (specific heat, N Var(E)/T^2).
+    series : np.ndarray
+        1-D time series (magnetization for ``'chi'``, energy per
+        site for ``'cv'``).
+    temperature : float
+        Temperature T of the measurement.
+    L : int
+        Linear lattice size.
+    observable : str
+        ``'chi'`` (susceptibility, N Var(M)/T) or ``'cv'``
+        (specific heat, N Var(E)/T^2).
 
     Returns
     -------
+    float
         The derived observable value.
 
     Raises
     ------
-        ValueError: If ``observable`` is not ``'chi'`` or ``'cv'``.
+    ValueError
+        If ``observable`` is not ``'chi'`` or ``'cv'``.
     """
     N = float(L * L)
     variance = float(np.var(series))
@@ -65,18 +71,24 @@ def calculate_thermodynamics(
 
     Parameters
     ----------
-        mags: Array of magnetization measurements.
-        engs: Array of energy measurements.
-        T: Temperature.
-        L: Linear lattice size.
+    mags : np.ndarray
+        Array of magnetization measurements.
+    engs : np.ndarray
+        Array of energy measurements.
+    T : float
+        Temperature.
+    L : int
+        Linear lattice size.
 
     Returns
     -------
+    tuple[float, float, float, float]
         A tuple of (avg_mag, avg_eng, susceptibility, specific_heat).
 
     Raises
     ------
-        ValueError: If ``T`` is not positive or ``L`` is not a positive integer.
+    ValueError
+        If ``T`` is not positive or ``L`` is not a positive integer.
     """
     if T <= 0.0:
         raise ValueError(f'T must be positive (T > 0), got {T}')
@@ -106,21 +118,26 @@ def calculate_entropy(
 
     Parameters
     ----------
-        temperatures: 1-D array of temperature values. Need not be sorted.
-        specific_heat: Specific heat C_v at each temperature (same length).
-        s_ref: Reference entropy at the highest temperature. Pass ``0.0``
-            for relative entropy or ``np.log(q)`` (per site, in units of
-            k_B) for absolute entropy of a q-state model.
+    temperatures : np.ndarray
+        1-D array of temperature values. Need not be sorted.
+    specific_heat : np.ndarray
+        Specific heat C_v at each temperature (same length).
+    s_ref : float
+        Reference entropy at the highest temperature. Pass ``0.0``
+        for relative entropy or ``np.log(q)`` (per site, in units of
+        k_B) for absolute entropy of a q-state model.
 
     Returns
     -------
+    np.ndarray
         1-D array of entropy values, one per temperature, in the original
         unsorted order of ``temperatures``.
 
     Raises
     ------
-        ValueError: If arrays differ in length, contain fewer than 2 points,
-            or include non-positive temperatures.
+    ValueError
+        If arrays differ in length, contain fewer than 2 points,
+        or include non-positive temperatures.
     """
     temperatures = np.asarray(temperatures, dtype=np.float64)
     specific_heat = np.asarray(specific_heat, dtype=np.float64)
@@ -166,18 +183,24 @@ def get_averaged_correlation(
 
     Parameters
     ----------
-        sim: An instance of MonteCarloSimulation.
-        total_steps: Total number of MC steps to run.
-        sample_interval: Interval between correlation samples. Must be ≥ 1.
+    sim : _Sim
+        An instance of MonteCarloSimulation.
+    total_steps : int
+        Total number of MC steps to run.
+    sample_interval : int
+        Interval between correlation samples. Must be ≥ 1.
 
     Returns
     -------
-        r: Radial distances.
-        G_r_avg: Averaged correlation values.
+    r : np.ndarray
+        Radial distances.
+    G_r_avg : np.ndarray
+        Averaged correlation values.
 
     Raises
     ------
-        ValueError: If ``sample_interval`` is less than 1 or ``total_steps`` is negative.
+    ValueError
+        If ``sample_interval`` is less than 1 or ``total_steps`` is negative.
     """
     if sample_interval < 1:
         raise ValueError(f'sample_interval must be >= 1, got {sample_interval}')
@@ -230,23 +253,35 @@ def simulate_equilibrium_correlation(
 
     Parameters
     ----------
-        model_cls: Simulation class to instantiate (e.g. ``IsingSimulation``).
-        model_kwargs: Extra keyword arguments forwarded to the model
-            constructor beyond ``size``, ``temp``, ``update``, ``init_state``,
-            and ``seed`` (e.g. ``{'q': 6}`` for the clock model).
-        size: Linear lattice size L.
-        temp: Temperature for the measurement.
-        seed: Random seed used for both start states.
-        eq_probe: Chunk size for convergence equilibration probes.
-        eq_max: Maximum equilibration steps.
-        meas_steps: Measurement steps after equilibration.
-        interval: Spacing between correlation samples during measurement.
-        logger: Optional logger for progress and fallback messages.
+    model_cls : type
+        Simulation class to instantiate (e.g. ``IsingSimulation``).
+    model_kwargs : dict[str, Any]
+        Extra keyword arguments forwarded to the model
+        constructor beyond ``size``, ``temp``, ``update``, ``init_state``,
+        and ``seed`` (e.g. ``{'q': 6}`` for the clock model).
+    size : int
+        Linear lattice size L.
+    temp : float
+        Temperature for the measurement.
+    seed : int
+        Random seed used for both start states.
+    eq_probe : int
+        Chunk size for convergence equilibration probes.
+    eq_max : int
+        Maximum equilibration steps.
+    meas_steps : int
+        Measurement steps after equilibration.
+    interval : int
+        Spacing between correlation samples during measurement.
+    logger : logging.Logger | None
+        Optional logger for progress and fallback messages.
 
     Returns
     -------
-        r: Radial distances.
-        G_r_avg: Averaged correlation values G(r).
+    r : np.ndarray
+        Radial distances.
+    G_r_avg : np.ndarray
+        Averaged correlation values G(r).
     """
     if logger is not None:
         logger.debug(f'Equilibrating at T={temp:.3f} (L={size}, seed={seed})...')
@@ -280,12 +315,15 @@ def radial_average_sk(*, spins: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
 
     Parameters
     ----------
-        spins: (N, N) or (N, N, 2) spin array.
+    spins : np.ndarray
+        (N, N) or (N, N, 2) spin array.
 
     Returns
     -------
-        k_vals: Wavevector magnitudes in units of 2π/N (reciprocal lattice).
-        S_radial: Mean S(k) value for each annular bin.
+    k_vals : np.ndarray
+        Wavevector magnitudes in units of 2π/N (reciprocal lattice).
+    S_radial : np.ndarray
+        Mean S(k) value for each annular bin.
     """
     N = spins.shape[0]
     if spins.ndim == 3:  # Vector spins (XY/Clock)
@@ -324,12 +362,15 @@ def pair_correlation_x(*, spins: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
 
     Parameters
     ----------
-        spins: (N, N) or (N, N, 2) spin array.
+    spins : np.ndarray
+        (N, N) or (N, N, 2) spin array.
 
     Returns
     -------
-        r_vals: Lag distances r = 0 … N//2 in lattice units.
-        G: Normalised pair correlation G(r) / G(0).
+    r_vals : np.ndarray
+        Lag distances r = 0 … N//2 in lattice units.
+    G : np.ndarray
+        Normalised pair correlation G(r) / G(0).
     """
     N = spins.shape[0]
 
@@ -365,11 +406,14 @@ def correlation_length_1e(*, r: np.ndarray, G: np.ndarray) -> float:
 
     Parameters
     ----------
-        r: Radial distances (monotonically increasing).
-        G: Correlation values G(r), normalised so G(0) = 1.
+    r : np.ndarray
+        Radial distances (monotonically increasing).
+    G : np.ndarray
+        Correlation values G(r), normalised so G(0) = 1.
 
     Returns
     -------
+    float
         The interpolated 1/e crossing radius, or NaN if no crossing exists.
     """
     inv_e = 1.0 / np.e
@@ -390,10 +434,12 @@ def compute_kinetics_metrics(*, sim: _Sim) -> dict[str, float]:
 
     Parameters
     ----------
-        sim: MonteCarloSimulation instance.
+    sim : _Sim
+        MonteCarloSimulation instance.
 
     Returns
     -------
+    dict[str, float]
         Dictionary containing 'R_sk' and 'xi'.
     """
     if sim.spins is None:

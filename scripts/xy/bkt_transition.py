@@ -22,10 +22,12 @@ def simulate_bkt_point(params: tuple[float, int, int, int, int]) -> float:
 
     Parameters
     ----------
-        params: Tuple of (T, L, eq_probe_steps, eq_max_steps, meas_steps).
+    params : tuple[float, int, int, int, int]
+        Tuple of (T, L, eq_probe_steps, eq_max_steps, meas_steps).
 
     Returns
     -------
+    float
         Average vortex density n_v.
     """
     T, L, eq_probe_steps, eq_max_steps, meas_steps = params

@@ -127,8 +127,8 @@ def main() -> None:
     sizes = sorted(args.sizes)
     n_seeds = int(args.n_seeds)
     logger.info(
-        'Measuring dynamical exponent z at Tc=%.6f for L in %s, %d seed replicas.',
-        TC_ISING, sizes, n_seeds,
+        f'Measuring dynamical exponent z at Tc={TC_ISING:.6f} for L in {sizes}, '
+        f'{n_seeds} seed replicas.'
     )
 
     # Seeds are derived deterministically from (size_idx, seed_idx) via
@@ -206,7 +206,7 @@ def main() -> None:
         uncertainty_method=UNCERTAINTY_METHOD_REPLICATE,
         confidence_level=DEFAULT_CONFIDENCE_LEVEL,
     )
-    logger.info('Data saved to %s', npz_path)
+    logger.info(f'Data saved to {npz_path}')
 
 
 if __name__ == '__main__':

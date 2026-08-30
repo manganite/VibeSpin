@@ -36,21 +36,31 @@ def sweep_model(
 
     Parameters
     ----------
-        model_cls: Simulation class (``ClockSimulation`` or
-            ``DiscreteClockSimulation``).
-        temperatures: Temperature grid to sweep.
-        L: Linear lattice size.
-        q: Number of clock states.
-        eq_probe_steps: Chunk size for convergence-equilibration probes.
-        eq_max_steps: Hard cap on equilibration steps per point.
-        meas_steps: Measurement steps per point.
-        base_seed: Base RNG seed; each temperature point uses
-            ``base_seed + point_index`` so points are reproducible yet
-            distinct.
-        extra_kwargs: Extra constructor arguments (e.g. ``{'A': aniso}``).
+    model_cls : type
+        Simulation class (``ClockSimulation`` or
+        ``DiscreteClockSimulation``).
+    temperatures : np.ndarray
+        Temperature grid to sweep.
+    L : int
+        Linear lattice size.
+    q : int
+        Number of clock states.
+    eq_probe_steps : int
+        Chunk size for convergence-equilibration probes.
+    eq_max_steps : int
+        Hard cap on equilibration steps per point.
+    meas_steps : int
+        Measurement steps per point.
+    base_seed : int
+        Base RNG seed; each temperature point uses
+        ``base_seed + point_index`` so points are reproducible yet
+        distinct.
+    extra_kwargs : dict
+        Extra constructor arguments (e.g. ``{'A': aniso}``).
 
     Returns
     -------
+    tuple[list[float], list[float], list[float], list[float]]
         Lists of per-temperature (avg_m, avg_e, susceptibility, specific heat).
     """
     avg_m_list: list[float] = []
