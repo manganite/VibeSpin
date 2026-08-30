@@ -74,7 +74,7 @@ def main() -> None:
         '--max-seed-attempts',
         type=int,
         default=None,
-        help='Hard cap on total seed attempts, including replacements; defaults to 10*n-seeds',
+        help='Per-temperature cap on seed attempts, including replacements; defaults to 10*n-seeds',
     )
     parser.add_argument(
         '--derived-uncertainty-method',
@@ -168,7 +168,7 @@ def main() -> None:
     target_n_seeds = int(args.n_seeds)
     max_seed_attempts = args.max_seed_attempts
     if max_seed_attempts is None:
-        max_seed_attempts = max(target_n_seeds, 10 * target_n_seeds)
+        max_seed_attempts = 10 * target_n_seeds
     max_seed_attempts = int(max_seed_attempts)
 
     logger.info(

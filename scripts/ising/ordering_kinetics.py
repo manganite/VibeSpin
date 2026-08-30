@@ -24,7 +24,7 @@ def main() -> None:
     parser.add_argument('--samples', type=int, default=25, help='Number of measurement points')
     parser.add_argument('--fit-min', type=int, default=5, help='Min step for power-law fit')
     parser.add_argument(
-        '--seeds', type=int, default=4,
+        '--n-seeds', '--seeds', dest='seeds', type=int, default=4,
         help='Number of independent seeds for ensemble averaging',
     )
     parser.add_argument('--base-seed', type=int, default=42, help='Starting seed for the ensemble')

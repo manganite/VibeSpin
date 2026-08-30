@@ -44,11 +44,11 @@ def compute_mean_intercept_length(*, sim: Any) -> float:
         return 0.0
     spins = sim.spins.astype(np.int8)
     N = sim.size
-    row_walls = np.sum(spins[:, :-1] * spins[:, 1:] < 0)
-    col_walls = np.sum(spins[:-1, :] * spins[1:, :] < 0)
+    row_walls = int(np.sum(spins[:, :-1] * spins[:, 1:] < 0))
+    col_walls = int(np.sum(spins[:-1, :] * spins[1:, :] < 0))
     row_wrap = int(np.sum(spins[:, -1] * spins[:, 0] < 0))
     col_wrap = int(np.sum(spins[-1, :] * spins[0, :] < 0))
-    total_walls = int(row_walls) + int(col_walls) + row_wrap + col_wrap
+    total_walls = row_walls + col_walls + row_wrap + col_wrap
     mean_walls = total_walls / (2 * N)
     return float(N) / mean_walls if mean_walls != 0.0 else float(N)
 

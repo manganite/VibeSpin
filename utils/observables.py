@@ -22,6 +22,41 @@ class _Sim(Protocol):
     def calculate_correlation_function(self) -> tuple[np.ndarray, np.ndarray]: ...
 
 
+def derived_thermo_estimate(
+    *, series: np.ndarray, temperature: float, L: int, observable: str
+) -> float:
+    """Compute a fluctuation-based derived observable from a time series.
+
+    Single authoritative implementation of the fluctuation-dissipation
+    formulas, shared by :func:`calculate_thermodynamics` and the uncertainty
+    summarizers in ``utils.statistics``.
+
+    Parameters
+    ----------
+        series: 1-D time series (magnetization for ``'chi'``, energy per
+            site for ``'cv'``).
+        temperature: Temperature T of the measurement.
+        L: Linear lattice size.
+        observable: ``'chi'`` (susceptibility, N Var(M)/T) or ``'cv'``
+            (specific heat, N Var(E)/T^2).
+
+    Returns
+    -------
+        The derived observable value.
+
+    Raises
+    ------
+        ValueError: If ``observable`` is not ``'chi'`` or ``'cv'``.
+    """
+    N = float(L * L)
+    variance = float(np.var(series))
+    if observable == 'chi':
+        return float(N * variance / temperature)
+    if observable == 'cv':
+        return float(N * variance / (temperature**2))
+    raise ValueError(f"observable must be one of 'chi' or 'cv', got {observable!r}")
+
+
 def calculate_thermodynamics(
     *, mags: np.ndarray, engs: np.ndarray, T: float, L: int
 ) -> tuple[float, float, float, float]:
@@ -49,13 +84,8 @@ def calculate_thermodynamics(
         raise ValueError(f'L must be a positive integer, got {L!r}')
     avg_mag = float(np.mean(mags))
     avg_eng = float(np.mean(engs))
-    N = L * L
-
-    # Susceptibility: chi = N * Var(M) / T
-    susceptibility = float(N * np.var(mags) / T)
-
-    # Specific Heat: Cv = N * Var(E) / T^2
-    specific_heat = float(N * np.var(engs) / (T**2))
+    susceptibility = derived_thermo_estimate(series=mags, temperature=T, L=L, observable='chi')
+    specific_heat = derived_thermo_estimate(series=engs, temperature=T, L=L, observable='cv')
 
     return avg_mag, avg_eng, susceptibility, specific_heat
 
@@ -126,28 +156,6 @@ def calculate_entropy(
     entropy: np.ndarray = np.empty_like(entropy_sorted)
     entropy[sort_idx] = entropy_sorted
     return entropy
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 def get_averaged_correlation(

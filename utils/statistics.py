@@ -8,7 +8,7 @@ import numpy as np
 from scipy.stats import norm
 
 from utils.exceptions import ZeroVarianceAutocorrelationError
-from utils.observables import calculate_entropy
+from utils.observables import calculate_entropy, derived_thermo_estimate
 
 DEFAULT_CONFIDENCE_LEVEL = 0.68
 UNCERTAINTY_METHOD_BLOCKING = 'blocking'
@@ -89,7 +89,22 @@ def _safe_n_eff_from_tau(*, n_samples: int, tau_int: float) -> float:
     return float(min(n_samples, max(1.0, n_samples / (2.0 * tau_int))))
 
 
-
+def _entropy_result(
+    *,
+    value: np.ndarray,
+    err: np.ndarray,
+    ci_low: np.ndarray,
+    ci_high: np.ndarray,
+    samples: np.ndarray,
+) -> dict[str, np.ndarray]:
+    """Assemble the standard entropy summary dict (one construction site)."""
+    return {
+        'value': value,
+        'err': err,
+        'ci_low': ci_low,
+        'ci_high': ci_high,
+        'samples': samples,
+    }
 
 
 
@@ -204,13 +219,10 @@ def summarize_entropy_observable(
         )
         ci_low[:] = value - z * err
         ci_high[:] = value + z * err
-        return {
-            'value': value,
-            'err': err,
-            'ci_low': ci_low,
-            'ci_high': ci_high,
-            'samples': entropy_samples,
-        }
+        return _entropy_result(
+            value=value, err=err, ci_low=ci_low, ci_high=ci_high,
+            samples=entropy_samples,
+        )
 
     if method == UNCERTAINTY_METHOD_BOOTSTRAP:
         if n_rep < 2:
@@ -218,13 +230,10 @@ def summarize_entropy_observable(
             err[:] = np.nan
             ci_low[:] = np.nan
             ci_high[:] = np.nan
-            return {
-                'value': value,
-                'err': err,
-                'ci_low': ci_low,
-                'ci_high': ci_high,
-                'samples': entropy_samples,
-            }
+            return _entropy_result(
+                value=value, err=err, ci_low=ci_low, ci_high=ci_high,
+                samples=entropy_samples,
+            )
         rng = np.random.default_rng(rng_seed)
         boot_curves = np.empty((n_t, bootstrap_resamples), dtype=np.float64)
         for b in range(bootstrap_resamples):
@@ -235,13 +244,10 @@ def summarize_entropy_observable(
         err[:] = np.nanstd(boot_curves, axis=1, ddof=1)
         ci_low[:] = np.nanquantile(boot_curves, alpha, axis=1)
         ci_high[:] = np.nanquantile(boot_curves, 1.0 - alpha, axis=1)
-        return {
-            'value': value,
-            'err': err,
-            'ci_low': ci_low,
-            'ci_high': ci_high,
-            'samples': entropy_samples,
-        }
+        return _entropy_result(
+            value=value, err=err, ci_low=ci_low, ci_high=ci_high,
+            samples=entropy_samples,
+        )
 
     for i in range(n_t):
         row = entropy_samples[i]
@@ -266,13 +272,10 @@ def summarize_entropy_observable(
         ci_low[i] = float(mean_i - z * stderr_i)
         ci_high[i] = float(mean_i + z * stderr_i)
 
-    return {
-        'value': value,
-        'err': err,
-        'ci_low': ci_low,
-        'ci_high': ci_high,
-        'samples': entropy_samples,
-    }
+    return _entropy_result(
+        value=value, err=err, ci_low=ci_low, ci_high=ci_high,
+        samples=entropy_samples,
+    )
 
 
 def summarize_asymmetric_replicate_uncertainty(
@@ -280,7 +283,19 @@ def summarize_asymmetric_replicate_uncertainty(
     samples: np.ndarray,
     confidence: float = DEFAULT_CONFIDENCE_LEVEL,
 ) -> dict[str, float]:
-    """Summarize 1-D replicate samples with asymmetric percentile intervals."""
+    """Summarize 1-D replicate samples with asymmetric percentile intervals.
+
+    Parameters
+    ----------
+        samples: 1-D replicate values; NaN entries are ignored.
+        confidence: Two-sided confidence level for the percentile band.
+
+    Returns
+    -------
+        Dict with ``value`` (median), asymmetric ``ci_low``/``ci_high``,
+        the symmetric ``err`` (half band width) plus ``err_low``/``err_high``
+        offsets, ``samples``, and ``nan_or_undefined_count``.
+    """
     _validate_confidence(confidence=confidence)
     arr = np.asarray(samples, dtype=np.float64)
     if arr.ndim != 1:
@@ -380,11 +395,13 @@ def calculate_autocorr(
     x_centered = x - np.mean(x)
     n_fft = 2 * N
     fx = np.fft.rfft(x_centered, n=n_fft)
-    power = fx * np.conj(fx)
-    acf_raw: np.ndarray = np.fft.irfft(power, n=n_fft)[:N].real
+    power = np.abs(fx) ** 2
+    acf_raw: np.ndarray = np.fft.irfft(power, n=n_fft)[:max_lag + 1]
 
-    # Normalize: divide by variance and by (N - t) pairs at each lag t
-    lags = np.arange(N, dtype=np.float64)
+    # Normalize: divide by variance and by (N - t) pairs at each lag t.
+    # Only lags up to max_lag are ever consumed, so the full-length division
+    # of the previous implementation is avoided.
+    lags = np.arange(max_lag + 1, dtype=np.float64)
     norm = variance * (N - lags)
     C_t_full: np.ndarray = acf_raw / norm
 
@@ -406,7 +423,20 @@ def estimate_effective_sample_size(
     time_series: np.ndarray,
     tau_int: float | None = None,
 ) -> float:
-    """Estimate effective sample size from integrated autocorrelation time."""
+    """Estimate effective sample size from integrated autocorrelation time.
+
+    Parameters
+    ----------
+        time_series: 1-D time series of at least 2 samples.
+        tau_int: Optional precomputed integrated autocorrelation time; when
+            omitted it is estimated from the series. Must be positive when
+            provided.
+
+    Returns
+    -------
+        N_eff = N / (2 tau_int), clipped to [1, N]; NaN when tau_int is
+        undefined, non-finite, or non-positive.
+    """
     arr = _as_1d_float_array(time_series=time_series, name='time_series')
     if tau_int is None:
         _, tau_est = calculate_autocorr(time_series=arr)
@@ -428,6 +458,19 @@ def blocking_error(
     Any series containing NaN values (e.g. from failed measurements) yields
     the all-NaN result dict: a partially NaN series would otherwise poison
     the block means and produce a meaningless plateau selection.
+
+    Parameters
+    ----------
+        time_series: 1-D time series of at least 2 samples.
+        min_block_size: Smallest block size to test (>= 2).
+        max_block_size: Largest block size to test; defaults to half the
+            series length.
+
+    Returns
+    -------
+        Dict with keys ``stderr`` (plateau-selected standard error),
+        ``stderr_naive``, ``block_size``, ``n_blocks``, and
+        ``tau_int_from_blocking``.
     """
     arr = _as_1d_float_array(time_series=time_series, name='time_series')
     if min_block_size < 2:
@@ -532,6 +575,18 @@ def summarize_primary_observable(
     a caller that also summarizes a derived observable of that series does
     not pay for the blocking scan and autocorrelation FFT twice. When omitted
     they are computed here. A passed ``tau_int`` may be NaN (undefined).
+
+    Parameters
+    ----------
+        time_series: 1-D time series of at least 2 samples.
+        confidence: Two-sided confidence level for the CI bounds.
+        blocking: Optional precomputed ``blocking_error`` result dict.
+        tau_int: Optional precomputed integrated autocorrelation time.
+
+    Returns
+    -------
+        Dict with the standard uncertainty-schema fields ``value``, ``err``,
+        ``ci_low``, ``ci_high``, ``tau_int``, ``n_eff``, and ``samples``.
     """
     _validate_confidence(confidence=confidence)
     arr = _as_1d_float_array(time_series=time_series, name='time_series')
@@ -565,13 +620,9 @@ def _derived_point_estimate(
     observable: str,
 ) -> float:
     """Compute derived thermodynamic point estimates from a time series."""
-    N = float(L * L)
-    variance = float(np.var(series))
-    if observable == 'chi':
-        return float(N * variance / temperature)
-    if observable == 'cv':
-        return float(N * variance / (temperature**2))
-    raise ValueError(f"observable must be one of 'chi' or 'cv', got {observable!r}")
+    return derived_thermo_estimate(
+        series=series, temperature=temperature, L=L, observable=observable,
+    )
 
 
 def summarize_derived_observable(
@@ -594,6 +645,25 @@ def summarize_derived_observable(
     the previously hardcoded stream). ``blocking`` and ``tau_int`` accept
     precomputed results for the base series, as in
     ``summarize_primary_observable``.
+
+    Parameters
+    ----------
+        magnetization_series: Base series for ``observable='chi'``.
+        energy_series: Base series for ``observable='cv'``.
+        temperature: Measurement temperature (> 0).
+        L: Linear lattice size.
+        observable: ``'chi'`` or ``'cv'``.
+        method: ``'blocking'`` (default) or ``'bootstrap'``.
+        confidence: Two-sided confidence level for the CI bounds.
+        bootstrap_resamples: Resample count; required > 0 for bootstrap.
+        rng_seed: Seed for the block-bootstrap RNG.
+        blocking: Optional precomputed ``blocking_error`` result dict.
+        tau_int: Optional precomputed integrated autocorrelation time.
+
+    Returns
+    -------
+        Dict with the standard uncertainty-schema fields ``value``, ``err``,
+        ``ci_low``, ``ci_high``, ``tau_int``, ``n_eff``, and ``samples``.
     """
     _validate_confidence(confidence=confidence)
     if temperature <= 0.0:
@@ -694,7 +764,22 @@ def summarize_replicate_samples(
     samples: np.ndarray,
     confidence: float = DEFAULT_CONFIDENCE_LEVEL,
 ) -> dict[str, np.ndarray | float]:
-    """Summarize replicate samples using NaN-safe median and percentile bands."""
+    """Summarize replicate samples using NaN-safe median and percentile bands.
+
+    Parameters
+    ----------
+        samples: Replicate values, either 1-D (one grid point) or 2-D with
+            shape ``(n_points, n_replicates)``.
+        confidence: Two-sided confidence level; the band spans the
+            ``alpha`` and ``1 - alpha`` quantiles with
+            ``alpha = (1 - confidence) / 2``.
+
+    Returns
+    -------
+        Dict with ``value`` (median), ``err`` (half the band width),
+        ``ci_low``, ``ci_high``, ``samples`` (replicate count), and
+        ``nan_or_undefined_count``.
+    """
     _validate_confidence(confidence=confidence)
     arr = np.asarray(samples, dtype=np.float64)
     if arr.size == 0:
@@ -795,14 +880,6 @@ def summarize_seed_ensemble(
         'samples': float(n),
         'nan_or_undefined_count': float(values_arr.size - n),
     }
-
-
-
-
-
-
-
-
 
 
 def power_fit(

@@ -37,7 +37,10 @@ def main() -> None:
     parser.add_argument('--eq-probe', type=int, default=200, help='Convergence probe chunk size')
     parser.add_argument('--eq-max', type=int, default=50000, help='Max equilibration steps')
     parser.add_argument('--interval', type=int, default=20, help='Sample interval')
-    parser.add_argument('--seed', type=int, default=520, help='Base random seed')
+    parser.add_argument(
+        '--seed', type=int, default=520,
+        help='Random seed shared by all three temperature points',
+    )
     parser.add_argument('--output-dir', type=str, default='results/clock', help='Output directory')
     parser.add_argument('--log-file', type=str, default=None, help='Optional log file path')
     parser.add_argument('--verbose', action='store_true', help='Enable verbose logging')

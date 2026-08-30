@@ -9,7 +9,7 @@ import os
 import sys
 from collections.abc import Callable, Iterable, Sized
 from multiprocessing import Pool
-from typing import cast
+from typing import Any, cast
 
 from tqdm import tqdm
 
@@ -30,21 +30,32 @@ def setup_logging(*, level: int = logging.INFO, log_file: str | None = None) -> 
     logger = logging.getLogger('vibespin')
     logger.setLevel(level)
 
-    # Avoid duplicate handlers if setup_logging is called multiple times
-    if not logger.handlers:
-        formatter = logging.Formatter(
-            '%(asctime)s - %(levelname)s - %(message)s', datefmt='%Y-%m-%d %H:%M:%S'
-        )
+    formatter = logging.Formatter(
+        '%(asctime)s - %(levelname)s - %(message)s', datefmt='%Y-%m-%d %H:%M:%S'
+    )
 
-        # Console handler
+    # Guard each handler kind separately: previously a first call without
+    # log_file silently prevented any later call from attaching one.
+    if not any(
+        isinstance(h, logging.StreamHandler) and not isinstance(h, logging.FileHandler)
+        for h in logger.handlers
+    ):
         ch = logging.StreamHandler(sys.stdout)
         ch.setFormatter(formatter)
         logger.addHandler(ch)
 
-        # File handler
-        if log_file:
-            os.makedirs(os.path.dirname(log_file), exist_ok=True)
-            fh = logging.FileHandler(log_file)
+    if log_file:
+        target = os.path.abspath(log_file)
+        already_attached = any(
+            isinstance(h, logging.FileHandler)
+            and os.path.abspath(getattr(h, 'baseFilename', '')) == target
+            for h in logger.handlers
+        )
+        if not already_attached:
+            parent = os.path.dirname(target)
+            if parent:
+                os.makedirs(parent, exist_ok=True)
+            fh = logging.FileHandler(target)
             fh.setFormatter(formatter)
             logger.addHandler(fh)
 
@@ -56,8 +67,8 @@ _BAR_FORMAT = '{l_bar}{bar}| {n_fmt}/{total_fmt} [{elapsed}<{remaining}, {rate_n
 
 
 def parallel_sweep(
-    *, worker_func: Callable, params: Iterable, num_processes: int | None = None
-) -> list:
+    *, worker_func: Callable[[Any], Any], params: Iterable[Any], num_processes: int | None = None
+) -> list[Any]:
     """
     Run a parallel sweep over a set of parameters using a worker function.
     Uses multiprocessing.Pool and tqdm for progress tracking.

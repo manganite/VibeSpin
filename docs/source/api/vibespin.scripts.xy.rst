@@ -12,10 +12,10 @@ scripts.xy.bkt\_transition module
    :show-inheritance:
    :undoc-members:
 
-scripts.xy.compare\_correlations module
----------------------------------------
+scripts.xy.correlation\_comparison module
+-----------------------------------------
 
-.. automodule:: scripts.xy.compare_correlations
+.. automodule:: scripts.xy.correlation_comparison
    :members:
    :show-inheritance:
    :undoc-members:

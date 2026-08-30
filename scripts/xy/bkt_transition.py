@@ -36,12 +36,12 @@ def simulate_bkt_point(params: tuple[float, int, int, int, int]) -> float:
         chunk_size=eq_probe_steps, max_steps=eq_max_steps,
     )
 
-    total_vortex_density = 0.0
-    for _ in range(meas_steps):
+    densities = np.empty(meas_steps, dtype=np.float64)
+    for k in range(meas_steps):
         sim_r.step()
-        total_vortex_density += sim_r.get_vortex_density()
+        densities[k] = sim_r.get_vortex_density()
 
-    return total_vortex_density / meas_steps
+    return float(np.mean(densities))
 
 
 def main() -> None:

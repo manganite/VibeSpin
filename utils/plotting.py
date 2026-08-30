@@ -309,7 +309,7 @@ def plot_temperature_sweep(
         )
 
     if avg_m_err is None:
-        ax1.plot(temperatures, avg_m, 'o-', markersize=4)
+        ax1.plot(temperatures_arr, avg_m, 'o-', markersize=4)
     else:
         ax1.errorbar(
             temperatures_arr,

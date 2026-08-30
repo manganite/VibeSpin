@@ -5,7 +5,7 @@ VibeSpin provides a suite of entry-point scripts for conducting physics experime
 ## 1. Ising Model (`scripts/ising/`)
 
 - **`temperature_sweep.py`**: Conducts a full thermodynamic sweep across a range of temperatures. Reports $|M|$, $E$, $\chi$, $C_v$, entropy $S(T)$ from $C_v/T$ integration, and integrated autocorrelation time $\tau_{\mathrm{int}}$. Supports `--n-seeds` for seeded ensembles and uncertainty controls including `--confidence-level`, `--derived-uncertainty-method`, `--derived-bootstrap-resamples`, `--entropy-uncertainty-method`, and `--entropy-bootstrap-resamples`. Convergence diagnostics can be tuned via `--eq-qs-sigma-threshold` and `--eq-qs-min-steps` to detect and stop early on low-temperature stuck states. Strict quality control is available via `--strict-uncertainty` with threshold controls for undefined and unstable points. For `n_seeds=1`, primary and derived observables use single-trajectory blocking, while entropy uncertainty falls back to propagation from the specific-heat uncertainty. For `n_seeds>1`, uncertainty combines between-seed spread and within-seed blocking error. Saves a standardized NPZ file `results/ising/temperature_sweep_data.npz` containing both legacy scalar arrays and per-observable uncertainty schema keys (`<obs>_value`, `<obs>_err`, `<obs>_ci_low`, `<obs>_ci_high`, `<obs>_tau_int`, `<obs>_n_eff`, `<obs>_samples`) plus additive extras (`entropy_*` and per-temperature quality flags). The plotting output is split into a thermodynamics summary figure and a companion diagnostics figure, where entropy and $\tau_{\mathrm{int}}$ intervals are shown as ribbons and unavailable uncertainty is marked explicitly.
-- **`diag_eq_traces.py`**: Generates a comprehensive 4x6 diagnostic visualization of two-start equilibration traces (random vs. ordered start) covering 6 representative seeds across 4 temperatures. Pre-screens seeds at low temperature to identify and highlight trajectories that become stuck in metastable states (marked with a star). The script also produces a detailed 2x3 panel for $T=2.00$ showing mutual cross-bands and automatic convergence markers for each seed. Results are saved as PNG figures in the output directory.
+- **`diag_eq_traces.py`**: Generates a 4x6 diagnostic visualization of two-start equilibration traces (random vs. ordered start) covering 6 representative seeds across 4 temperatures. Pre-screens seeds at low temperature to identify and highlight trajectories that become stuck in metastable states (marked with a star). The script also produces a detailed 2x3 panel for $T=2.00$ showing mutual cross-bands and automatic convergence markers for each seed. Results are saved as PNG figures in the output directory.
 - **`ordering_kinetics.py`**: Quenches the system to $T < T_c$ and tracks the growth of domain size $R(t)$ over time. Supports `--seeds N` and `--base-seed` for multi-seed ensemble averaging with IQR-based error bars. Saves per-seed arrays and median trajectory to `results/ising/ordering_kinetics.npz`.
 - **`ordering_evolution.py`**: Generates visual snapshots of the lattice configuration, structure factor, and correlation functions during a quench.
 - **`correlation_divergence.py`**: Extracts the critical exponent $\nu$ by fitting the correlation length divergence near $T_c$.
@@ -21,7 +21,7 @@ VibeSpin provides a suite of entry-point scripts for conducting physics experime
 - **`ordering_evolution.py`**: Visual snapshots including phase maps and vorticity configurations during ordering.
 - **`bkt_transition.py`**: Specifically focuses on the BKT transition by measuring average vortex density vs. temperature.
 - **`helicity_modulus.py`**: Calculates the superfluid stiffness to identify the universal jump at $T_{BKT}$.
-- **`compare_correlations.py`**: Contrasts power-law decay (topological order) with exponential decay (disordered phase).
+- **`correlation_comparison.py`**: Contrasts power-law decay (topological order) with exponential decay (disordered phase). Renamed from `compare_correlations.py` to match its Ising and Clock siblings.
 
 ## 3. Clock Model (`scripts/clock/`)
 
@@ -69,7 +69,7 @@ The table below maps each script to its data output and the notebook(s) that con
 | `scripts/xy/temperature_sweep.py` | `results/xy/temperature_sweep_data.npz` | `XY_Temperature_Sweep.ipynb` |
 | `scripts/xy/bkt_transition.py` | `results/xy/bkt_transition.npz` | `BKT_Transition.ipynb` |
 | `scripts/xy/helicity_modulus.py` | `results/xy/helicity_modulus.npz` | `BKT_Transition.ipynb` |
-| `scripts/xy/compare_correlations.py` | `results/xy/correlation_comparison.npz` | `BKT_Transition.ipynb`, `Correlation_and_Coarsening.ipynb` |
+| `scripts/xy/correlation_comparison.py` | `results/xy/correlation_comparison.npz` | `BKT_Transition.ipynb`, `Correlation_and_Coarsening.ipynb` |
 | `scripts/xy/ordering_kinetics.py` | `results/xy/ordering_kinetics.npz` | `Correlation_and_Coarsening.ipynb` |
 | `scripts/xy/ordering_evolution.py` | *(figure only)* | — |
 | **Clock** | | |
