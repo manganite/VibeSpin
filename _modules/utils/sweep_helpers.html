@@ -16,6 +16,7 @@
       <script src="../../_static/doctools.js?v=fd6eb6e6"></script>
       <script src="../../_static/sphinx_highlight.js?v=6ffebe34"></script>
       <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+      <script src="https://cdn.jsdelivr.net/npm/@jupyter-widgets/html-manager@^1.0.1/dist/embed-amd.js"></script>
     <script src="../../_static/js/theme.js"></script>
     <link rel="index" title="Index" href="../../genindex.html" />
     <link rel="search" title="Search" href="../../search.html" /> 
@@ -46,8 +47,8 @@
 <li class="toctree-l1"><a class="reference internal" href="../../physics.html">Physics and Algorithm Guide: VibeSpin</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../code.html">Developer and Architecture Guide</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../scripts.html">Scripts Catalog: VibeSpin</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../agents.html">Agent Instruction Guide: VibeSpin</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../bibliography.html">Project Bibliography: VibeSpin</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../AGENTS.html">Agent Instruction Guide: VibeSpin</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../BIBLIOGRAPHY.html">Project Bibliography: VibeSpin</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../changelog.html">Changelog</a></li>
 </ul>
 <p class="caption" role="heading"><span class="caption-text">Research &amp; Analysis:</span></p>
@@ -92,7 +93,7 @@
            <div itemprop="articleBody">
              
   <h1>Source code for utils.sweep_helpers</h1><div class="highlight"><pre>
-<span></span><span class="sd">"""</span>
+<span></span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">Shared infrastructure for per-temperature Monte Carlo sweep workers.</span>
 
 <span class="sd">This module provides the two-layer decomposition used by all three model</span>
@@ -106,7 +107,7 @@
 <span class="sd">Post-processing helpers ``build_uncertainty_bundle`` and ``build_quality_flags``</span>
 <span class="sd">aggregate per-seed results over a full temperature axis and are also shared here,</span>
 <span class="sd">eliminating identical copies that previously lived in each sweep script.</span>
-<span class="sd">"""</span>
+<span class="sd">&quot;&quot;&quot;</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">__future__</span><span class="w"> </span><span class="kn">import</span> <span class="n">annotations</span>
 
 <span class="kn">import</span><span class="w"> </span><span class="nn">logging</span>
@@ -116,10 +117,182 @@
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">utils.equilibration</span><span class="w"> </span><span class="kn">import</span> <span class="n">convergence_equilibrate_with_status</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">utils.statistics</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
+    <span class="n">UNCERTAINTY_METHOD_BOOTSTRAP</span><span class="p">,</span>
+    <span class="n">_z_multiplier</span><span class="p">,</span>
+    <span class="n">blocking_error</span><span class="p">,</span>
+    <span class="n">estimate_tau_int_or_nan</span><span class="p">,</span>
     <span class="n">summarize_derived_observable</span><span class="p">,</span>
     <span class="n">summarize_primary_observable</span><span class="p">,</span>
     <span class="n">summarize_seed_ensemble</span><span class="p">,</span>
 <span class="p">)</span>
+
+
+<div class="viewcode-block" id="validate_sweep_uncertainty_args">
+<a class="viewcode-back" href="../../api/vibespin.utils.html#utils.sweep_helpers.validate_sweep_uncertainty_args">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">validate_sweep_uncertainty_args</span><span class="p">(</span>
+    <span class="o">*</span><span class="p">,</span>
+    <span class="n">confidence_level</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
+    <span class="n">max_undefined_fraction</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
+    <span class="n">min_effective_samples</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
+    <span class="n">max_tau_relative_width</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
+    <span class="n">derived_uncertainty_method</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+    <span class="n">derived_bootstrap_resamples</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+    <span class="n">n_seeds</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Validate the shared uncertainty-related CLI arguments of sweep scripts.</span>
+
+<span class="sd">    Centralized here so that the Ising, XY, and Clock temperature sweeps</span>
+<span class="sd">    reject invalid inputs identically instead of failing deep inside worker</span>
+<span class="sd">    statistics after simulations have already started.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    confidence_level : float</span>
+<span class="sd">        Two-sided confidence level; must satisfy 0 &lt; c &lt; 1.</span>
+<span class="sd">    max_undefined_fraction : float</span>
+<span class="sd">        Strict-mode threshold; must satisfy 0 &lt;= f &lt;= 1.</span>
+<span class="sd">    min_effective_samples : float</span>
+<span class="sd">        Quality-flag threshold; must be &gt;= 0.</span>
+<span class="sd">    max_tau_relative_width : float</span>
+<span class="sd">        Quality-flag threshold; must be &gt;= 0.</span>
+<span class="sd">    derived_uncertainty_method : str</span>
+<span class="sd">        Method name for derived observables; bootstrap requires resamples.</span>
+<span class="sd">    derived_bootstrap_resamples : int</span>
+<span class="sd">        Bootstrap resample count; must be &gt; 0 when the method is bootstrap.</span>
+<span class="sd">    n_seeds : int</span>
+<span class="sd">        Target converged seed replicas; must be &gt;= 1.</span>
+
+<span class="sd">    Raises</span>
+<span class="sd">    ------</span>
+<span class="sd">    ValueError</span>
+<span class="sd">        If any argument is outside its documented range.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="p">(</span><span class="mf">0.0</span> <span class="o">&lt;</span> <span class="nb">float</span><span class="p">(</span><span class="n">confidence_level</span><span class="p">)</span> <span class="o">&lt;</span> <span class="mf">1.0</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+            <span class="sa">f</span><span class="s1">&#39;confidence-level must satisfy 0 &lt; c &lt; 1, got </span><span class="si">{</span><span class="n">confidence_level</span><span class="si">}</span><span class="s1">&#39;</span>
+        <span class="p">)</span>
+    <span class="k">if</span> <span class="n">max_undefined_fraction</span> <span class="o">&lt;</span> <span class="mf">0.0</span> <span class="ow">or</span> <span class="n">max_undefined_fraction</span> <span class="o">&gt;</span> <span class="mf">1.0</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+            <span class="sa">f</span><span class="s1">&#39;max-undefined-fraction must satisfy 0 &lt;= f &lt;= 1, got </span><span class="si">{</span><span class="n">max_undefined_fraction</span><span class="si">}</span><span class="s1">&#39;</span>
+        <span class="p">)</span>
+    <span class="k">if</span> <span class="n">min_effective_samples</span> <span class="o">&lt;</span> <span class="mf">0.0</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+            <span class="sa">f</span><span class="s1">&#39;min-effective-samples must be &gt;= 0, got </span><span class="si">{</span><span class="n">min_effective_samples</span><span class="si">}</span><span class="s1">&#39;</span>
+        <span class="p">)</span>
+    <span class="k">if</span> <span class="n">max_tau_relative_width</span> <span class="o">&lt;</span> <span class="mf">0.0</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+            <span class="sa">f</span><span class="s1">&#39;max-tau-relative-width must be &gt;= 0, got </span><span class="si">{</span><span class="n">max_tau_relative_width</span><span class="si">}</span><span class="s1">&#39;</span>
+        <span class="p">)</span>
+    <span class="k">if</span> <span class="p">(</span>
+        <span class="n">derived_uncertainty_method</span> <span class="o">==</span> <span class="n">UNCERTAINTY_METHOD_BOOTSTRAP</span>
+        <span class="ow">and</span> <span class="n">derived_bootstrap_resamples</span> <span class="o">&lt;=</span> <span class="mi">0</span>
+    <span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+            <span class="s1">&#39;derived-bootstrap-resamples must be &gt; 0 when &#39;</span>
+            <span class="s1">&#39;derived-uncertainty-method=bootstrap&#39;</span>
+        <span class="p">)</span>
+    <span class="k">if</span> <span class="n">n_seeds</span> <span class="o">&lt;</span> <span class="mi">1</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;n-seeds must be &gt;= 1, got </span><span class="si">{</span><span class="n">n_seeds</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span></div>
+
+
+
+<span class="c1">#: Spacing between the base seeds of two replicas at the same grid point and</span>
+<span class="c1">#: stream. Callers derive short sub-streams by small addition, such as the</span>
+<span class="c1">#: ``seed + 1`` and ``seed + 2`` runs of the efficiency worker, so a replica</span>
+<span class="c1">#: needs room around its base rather than the next integer.</span>
+<span class="n">SEED_REPLICA_STRIDE</span> <span class="o">=</span> <span class="mi">1_000</span>
+
+<span class="c1">#: Replicas a single stream can hold. The sweeps allow ten attempts per</span>
+<span class="c1">#: requested replica, so this covers ``--n-seeds 100``.</span>
+<span class="n">SEED_REPLICAS_PER_STREAM</span> <span class="o">=</span> <span class="mi">1_000</span>
+
+<span class="c1">#: Independent algorithm streams a grid point can hold, such as the separate</span>
+<span class="c1">#: Metropolis and Wolff streams that ``measure_z`` runs at the same point.</span>
+<span class="n">SEED_STREAMS_PER_POINT</span> <span class="o">=</span> <span class="mi">4</span>
+
+<span class="c1">#: Size of the seed block one stream owns within a grid point.</span>
+<span class="n">SEED_STREAM_STRIDE</span> <span class="o">=</span> <span class="n">SEED_REPLICA_STRIDE</span> <span class="o">*</span> <span class="n">SEED_REPLICAS_PER_STREAM</span>
+
+<span class="c1">#: Size of the seed block one grid point owns.</span>
+<span class="n">SEED_POINT_STRIDE</span> <span class="o">=</span> <span class="n">SEED_STREAM_STRIDE</span> <span class="o">*</span> <span class="n">SEED_STREAMS_PER_POINT</span>
+
+<span class="c1">#: Largest seed the numba and numpy generators accept without truncation.</span>
+<span class="n">_MAX_SEED</span> <span class="o">=</span> <span class="mi">2</span><span class="o">**</span><span class="mi">32</span> <span class="o">-</span> <span class="mi">1</span>
+
+
+<div class="viewcode-block" id="derive_point_seed">
+<a class="viewcode-back" href="../../api/vibespin.utils.html#utils.sweep_helpers.derive_point_seed">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">derive_point_seed</span><span class="p">(</span>
+    <span class="o">*</span><span class="p">,</span>
+    <span class="n">temperature_index</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+    <span class="n">seed_index</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+    <span class="n">stream_index</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Derive a deterministic RNG seed for one sweep grid point.</span>
+
+<span class="sd">    The three indices address three nested blocks: a grid point owns</span>
+<span class="sd">    ``SEED_POINT_STRIDE`` seeds, a stream within it owns</span>
+<span class="sd">    ``SEED_STREAM_STRIDE``, and a replica within that owns</span>
+<span class="sd">    ``SEED_REPLICA_STRIDE``, leaving room for the sub-streams callers derive</span>
+<span class="sd">    by small addition. Because each index scales its own block rather than</span>
+<span class="sd">    being added into a shared range, two different index triples cannot</span>
+<span class="sd">    produce the same seed, and an index that would leave its block is</span>
+<span class="sd">    rejected rather than silently reusing a neighbour&#39;s seeds.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    temperature_index : int</span>
+<span class="sd">        Index of the outer sweep axis (temperature or lattice-size grid).</span>
+<span class="sd">    seed_index : int</span>
+<span class="sd">        Replica index within the seed ensemble for this grid point.</span>
+<span class="sd">    stream_index : int</span>
+<span class="sd">        Index of the independent seed stream at this grid point, used where</span>
+<span class="sd">        one point runs more than one algorithm; ``measure_z`` gives its Wolff</span>
+<span class="sd">        runs a different stream from its Metropolis runs (default 0).</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    int</span>
+<span class="sd">        The seed addressed by the three indices.</span>
+
+<span class="sd">    Raises</span>
+<span class="sd">    ------</span>
+<span class="sd">    ValueError</span>
+<span class="sd">        If any index is negative or outside the capacity of its block, or if</span>
+<span class="sd">        the resulting seed exceeds the 32-bit range the generators accept.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">temperature_index</span> <span class="o">&lt;</span> <span class="mi">0</span> <span class="ow">or</span> <span class="n">seed_index</span> <span class="o">&lt;</span> <span class="mi">0</span> <span class="ow">or</span> <span class="n">stream_index</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+            <span class="s1">&#39;derive_point_seed requires non-negative indices, got &#39;</span>
+            <span class="sa">f</span><span class="s1">&#39;temperature_index=</span><span class="si">{</span><span class="n">temperature_index</span><span class="si">}</span><span class="s1">, seed_index=</span><span class="si">{</span><span class="n">seed_index</span><span class="si">}</span><span class="s1">, &#39;</span>
+            <span class="sa">f</span><span class="s1">&#39;stream_index=</span><span class="si">{</span><span class="n">stream_index</span><span class="si">}</span><span class="s1">.&#39;</span>
+        <span class="p">)</span>
+    <span class="k">if</span> <span class="n">seed_index</span> <span class="o">&gt;=</span> <span class="n">SEED_REPLICAS_PER_STREAM</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+            <span class="sa">f</span><span class="s1">&#39;seed_index=</span><span class="si">{</span><span class="n">seed_index</span><span class="si">}</span><span class="s1"> exceeds the </span><span class="si">{</span><span class="n">SEED_REPLICAS_PER_STREAM</span><span class="si">}</span><span class="s1"> replicas a &#39;</span>
+            <span class="s1">&#39;stream can hold; a larger ensemble would collide with the next stream.&#39;</span>
+        <span class="p">)</span>
+    <span class="k">if</span> <span class="n">stream_index</span> <span class="o">&gt;=</span> <span class="n">SEED_STREAMS_PER_POINT</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+            <span class="sa">f</span><span class="s1">&#39;stream_index=</span><span class="si">{</span><span class="n">stream_index</span><span class="si">}</span><span class="s1"> exceeds the </span><span class="si">{</span><span class="n">SEED_STREAMS_PER_POINT</span><span class="si">}</span><span class="s1"> streams a &#39;</span>
+            <span class="s1">&#39;grid point can hold; another stream would collide with the next grid point.&#39;</span>
+        <span class="p">)</span>
+
+    <span class="n">seed</span> <span class="o">=</span> <span class="p">(</span>
+        <span class="n">temperature_index</span> <span class="o">*</span> <span class="n">SEED_POINT_STRIDE</span>
+        <span class="o">+</span> <span class="n">stream_index</span> <span class="o">*</span> <span class="n">SEED_STREAM_STRIDE</span>
+        <span class="o">+</span> <span class="n">seed_index</span> <span class="o">*</span> <span class="n">SEED_REPLICA_STRIDE</span>
+    <span class="p">)</span>
+    <span class="k">if</span> <span class="n">seed</span> <span class="o">&gt;</span> <span class="n">_MAX_SEED</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+            <span class="sa">f</span><span class="s1">&#39;Derived seed </span><span class="si">{</span><span class="n">seed</span><span class="si">}</span><span class="s1"> for grid point </span><span class="si">{</span><span class="n">temperature_index</span><span class="si">}</span><span class="s1"> exceeds the 32-bit &#39;</span>
+            <span class="sa">f</span><span class="s1">&#39;generator range; a sweep can hold at most </span><span class="si">{</span><span class="n">_MAX_SEED</span><span class="w"> </span><span class="o">//</span><span class="w"> </span><span class="n">SEED_POINT_STRIDE</span><span class="si">}</span><span class="s1"> &#39;</span>
+            <span class="s1">&#39;grid points.&#39;</span>
+        <span class="p">)</span>
+    <span class="k">return</span> <span class="n">seed</span></div>
+
+
 
 <span class="c1"># ---------------------------------------------------------------------------</span>
 <span class="c1"># Input type</span>
@@ -128,7 +301,7 @@
 <div class="viewcode-block" id="ThermoPoint">
 <a class="viewcode-back" href="../../api/vibespin.utils.html#utils.sweep_helpers.ThermoPoint">[docs]</a>
 <span class="k">class</span><span class="w"> </span><span class="nc">ThermoPoint</span><span class="p">(</span><span class="n">NamedTuple</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">"""Typed worker payload for one (temperature, seed) point in a sweep.</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Typed worker payload for one (temperature, seed) point in a sweep.</span>
 
 <span class="sd">    Parameters</span>
 <span class="sd">    ----------</span>
@@ -152,7 +325,7 @@
 <span class="sd">        If True, switch to the ordered-start simulation when its magnetisation</span>
 <span class="sd">        substantially exceeds the random-start value.  Appropriate for Ising below T_c.</span>
 <span class="sd">    temperature_index : int</span>
-<span class="sd">        Index of this temperature in the sweep's temperature array.</span>
+<span class="sd">        Index of this temperature in the sweep&#39;s temperature array.</span>
 <span class="sd">    seed_index : int</span>
 <span class="sd">        Replica index within the multi-seed ensemble for this temperature.</span>
 <span class="sd">    seed : int</span>
@@ -163,15 +336,15 @@
 <span class="sd">    model_kwargs : dict[str, Any]</span>
 <span class="sd">        Extra keyword arguments forwarded to the model constructor beyond</span>
 <span class="sd">        ``size``, ``temp``, ``init_state``, and ``seed``.  Empty dict for</span>
-<span class="sd">        Ising and XY; carries ``{'q': q, 'A': aniso}`` for Clock.</span>
+<span class="sd">        Ising and XY; carries ``{&#39;q&#39;: q, &#39;A&#39;: aniso}`` for Clock.</span>
 <span class="sd">    confidence : float</span>
 <span class="sd">        Two-sided confidence level for uncertainty intervals (0 &lt; c &lt; 1).</span>
 <span class="sd">    derived_method : str</span>
 <span class="sd">        Uncertainty method for susceptibility and specific heat</span>
-<span class="sd">        (``'blocking'`` or ``'bootstrap'``).</span>
+<span class="sd">        (``&#39;blocking&#39;`` or ``&#39;bootstrap&#39;``).</span>
 <span class="sd">    bootstrap_resamples : int</span>
-<span class="sd">        Bootstrap resamples used when ``derived_method='bootstrap'``.</span>
-<span class="sd">    """</span>
+<span class="sd">        Bootstrap resamples used when ``derived_method=&#39;bootstrap&#39;``.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
 
     <span class="n">temperature</span><span class="p">:</span> <span class="nb">float</span>
     <span class="n">size</span><span class="p">:</span> <span class="nb">int</span>
@@ -200,12 +373,12 @@
 <div class="viewcode-block" id="RawThermoData">
 <a class="viewcode-back" href="../../api/vibespin.utils.html#utils.sweep_helpers.RawThermoData">[docs]</a>
 <span class="k">class</span><span class="w"> </span><span class="nc">RawThermoData</span><span class="p">(</span><span class="n">NamedTuple</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">"""Raw simulation output from one (temperature, seed) equilibration + measurement.</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Raw simulation output from one (temperature, seed) equilibration + measurement.</span>
 
 <span class="sd">    Parameters</span>
 <span class="sd">    ----------</span>
 <span class="sd">    temperature_index : int</span>
-<span class="sd">        Index of this temperature in the sweep's temperature array.</span>
+<span class="sd">        Index of this temperature in the sweep&#39;s temperature array.</span>
 <span class="sd">    seed_index : int</span>
 <span class="sd">        Replica index within the multi-seed ensemble for this temperature.</span>
 <span class="sd">    equilibrated_flag : float</span>
@@ -222,7 +395,7 @@
 <span class="sd">    engs_arr : np.ndarray or None</span>
 <span class="sd">        Energy per site time series of length ``meas_steps``.</span>
 <span class="sd">        ``None`` when equilibration did not converge.</span>
-<span class="sd">    """</span>
+<span class="sd">    &quot;&quot;&quot;</span>
 
     <span class="n">temperature_index</span><span class="p">:</span> <span class="nb">int</span>
     <span class="n">seed_index</span><span class="p">:</span> <span class="nb">int</span>
@@ -242,7 +415,7 @@
 <div class="viewcode-block" id="simulate_at_temperature">
 <a class="viewcode-back" href="../../api/vibespin.utils.html#utils.sweep_helpers.simulate_at_temperature">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">simulate_at_temperature</span><span class="p">(</span><span class="n">point</span><span class="p">:</span> <span class="n">ThermoPoint</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">RawThermoData</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">"""Run equilibration and measurement for one (temperature, seed) point.</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Run equilibration and measurement for one (temperature, seed) point.</span>
 
 <span class="sd">    Creates a random-start and an ordered-start simulation with the same seed,</span>
 <span class="sd">    runs two-start convergence equilibration, then records ``meas_steps`` sweeps</span>
@@ -259,22 +432,22 @@
 <span class="sd">    RawThermoData</span>
 <span class="sd">        Raw time series; ``mags_arr`` and ``engs_arr`` are ``None`` when</span>
 <span class="sd">        equilibration did not converge.</span>
-<span class="sd">    """</span>
+<span class="sd">    &quot;&quot;&quot;</span>
     <span class="n">T</span> <span class="o">=</span> <span class="n">point</span><span class="o">.</span><span class="n">temperature</span>
     <span class="n">L</span> <span class="o">=</span> <span class="n">point</span><span class="o">.</span><span class="n">size</span>
 
     <span class="n">sim_r</span> <span class="o">=</span> <span class="n">point</span><span class="o">.</span><span class="n">model_cls</span><span class="p">(</span>
-        <span class="n">size</span><span class="o">=</span><span class="n">L</span><span class="p">,</span> <span class="n">temp</span><span class="o">=</span><span class="n">T</span><span class="p">,</span> <span class="n">init_state</span><span class="o">=</span><span class="s1">'random'</span><span class="p">,</span> <span class="n">seed</span><span class="o">=</span><span class="n">point</span><span class="o">.</span><span class="n">seed</span><span class="p">,</span>
+        <span class="n">size</span><span class="o">=</span><span class="n">L</span><span class="p">,</span> <span class="n">temp</span><span class="o">=</span><span class="n">T</span><span class="p">,</span> <span class="n">init_state</span><span class="o">=</span><span class="s1">&#39;random&#39;</span><span class="p">,</span> <span class="n">seed</span><span class="o">=</span><span class="n">point</span><span class="o">.</span><span class="n">seed</span><span class="p">,</span>
         <span class="o">**</span><span class="n">point</span><span class="o">.</span><span class="n">model_kwargs</span><span class="p">,</span>
     <span class="p">)</span>
     <span class="n">sim_o</span> <span class="o">=</span> <span class="n">point</span><span class="o">.</span><span class="n">model_cls</span><span class="p">(</span>
-        <span class="n">size</span><span class="o">=</span><span class="n">L</span><span class="p">,</span> <span class="n">temp</span><span class="o">=</span><span class="n">T</span><span class="p">,</span> <span class="n">init_state</span><span class="o">=</span><span class="s1">'ordered'</span><span class="p">,</span> <span class="n">seed</span><span class="o">=</span><span class="n">point</span><span class="o">.</span><span class="n">seed</span><span class="p">,</span>
+        <span class="n">size</span><span class="o">=</span><span class="n">L</span><span class="p">,</span> <span class="n">temp</span><span class="o">=</span><span class="n">T</span><span class="p">,</span> <span class="n">init_state</span><span class="o">=</span><span class="s1">&#39;ordered&#39;</span><span class="p">,</span> <span class="n">seed</span><span class="o">=</span><span class="n">point</span><span class="o">.</span><span class="n">seed</span><span class="p">,</span>
         <span class="o">**</span><span class="n">point</span><span class="o">.</span><span class="n">model_kwargs</span><span class="p">,</span>
     <span class="p">)</span>
 
     <span class="n">total_steps</span><span class="p">,</span> <span class="n">converged</span> <span class="o">=</span> <span class="n">convergence_equilibrate_with_status</span><span class="p">(</span>
-        <span class="n">sim_r</span><span class="p">,</span>
-        <span class="n">sim_o</span><span class="p">,</span>
+        <span class="n">sim_random</span><span class="o">=</span><span class="n">sim_r</span><span class="p">,</span>
+        <span class="n">sim_ordered</span><span class="o">=</span><span class="n">sim_o</span><span class="p">,</span>
         <span class="n">chunk_size</span><span class="o">=</span><span class="n">point</span><span class="o">.</span><span class="n">eq_probe_steps</span><span class="p">,</span>
         <span class="n">max_steps</span><span class="o">=</span><span class="n">point</span><span class="o">.</span><span class="n">eq_max_steps</span><span class="p">,</span>
         <span class="n">qs_sigma_threshold</span><span class="o">=</span><span class="n">point</span><span class="o">.</span><span class="n">eq_qs_sigma_threshold</span><span class="p">,</span>
@@ -298,8 +471,8 @@
     <span class="c1"># switch to it when its magnetisation is substantially higher.</span>
     <span class="n">active_sim</span> <span class="o">=</span> <span class="n">sim_r</span>
     <span class="k">if</span> <span class="n">point</span><span class="o">.</span><span class="n">prefer_ordered_start</span><span class="p">:</span>
-        <span class="n">m_r</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">sim_r</span><span class="o">.</span><span class="n">_get_magnetization</span><span class="p">()))</span>
-        <span class="n">m_o</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">sim_o</span><span class="o">.</span><span class="n">_get_magnetization</span><span class="p">()))</span>
+        <span class="n">m_r</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">sim_r</span><span class="o">.</span><span class="n">get_magnetization</span><span class="p">()))</span>
+        <span class="n">m_o</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">sim_o</span><span class="o">.</span><span class="n">get_magnetization</span><span class="p">()))</span>
         <span class="k">if</span> <span class="n">m_o</span> <span class="o">&gt;</span> <span class="n">m_r</span> <span class="o">+</span> <span class="mf">0.2</span><span class="p">:</span>
             <span class="n">active_sim</span> <span class="o">=</span> <span class="n">sim_o</span>
 
@@ -328,7 +501,7 @@
     <span class="n">raw</span><span class="p">:</span> <span class="n">RawThermoData</span><span class="p">,</span>
     <span class="n">point</span><span class="p">:</span> <span class="n">ThermoPoint</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">float</span><span class="p">]:</span>
-<span class="w">    </span><span class="sd">"""Compute blocked/summarized thermodynamic observables from raw time series.</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Compute blocked/summarized thermodynamic observables from raw time series.</span>
 
 <span class="sd">    Takes the raw output of ``simulate_at_temperature`` and applies</span>
 <span class="sd">    autocorrelation-aware blocking (primary observables) and variance-based</span>
@@ -350,12 +523,12 @@
 <span class="sd">        ``equilibration_steps``, and — when equilibrated — ``avg_m_*``,</span>
 <span class="sd">        ``avg_e_*``, ``susc_*``, ``spec_h_*`` with suffixes ``_value``,</span>
 <span class="sd">        ``_err``, ``_tau_int``, ``_n_eff``.</span>
-<span class="sd">    """</span>
+<span class="sd">    &quot;&quot;&quot;</span>
     <span class="n">base</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">float</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span>
-        <span class="s1">'temperature_index'</span><span class="p">:</span> <span class="nb">float</span><span class="p">(</span><span class="n">raw</span><span class="o">.</span><span class="n">temperature_index</span><span class="p">),</span>
-        <span class="s1">'seed_index'</span><span class="p">:</span> <span class="nb">float</span><span class="p">(</span><span class="n">raw</span><span class="o">.</span><span class="n">seed_index</span><span class="p">),</span>
-        <span class="s1">'equilibrated_flag'</span><span class="p">:</span> <span class="n">raw</span><span class="o">.</span><span class="n">equilibrated_flag</span><span class="p">,</span>
-        <span class="s1">'equilibration_steps'</span><span class="p">:</span> <span class="n">raw</span><span class="o">.</span><span class="n">equilibration_steps</span><span class="p">,</span>
+        <span class="s1">&#39;temperature_index&#39;</span><span class="p">:</span> <span class="nb">float</span><span class="p">(</span><span class="n">raw</span><span class="o">.</span><span class="n">temperature_index</span><span class="p">),</span>
+        <span class="s1">&#39;seed_index&#39;</span><span class="p">:</span> <span class="nb">float</span><span class="p">(</span><span class="n">raw</span><span class="o">.</span><span class="n">seed_index</span><span class="p">),</span>
+        <span class="s1">&#39;equilibrated_flag&#39;</span><span class="p">:</span> <span class="n">raw</span><span class="o">.</span><span class="n">equilibrated_flag</span><span class="p">,</span>
+        <span class="s1">&#39;equilibration_steps&#39;</span><span class="p">:</span> <span class="n">raw</span><span class="o">.</span><span class="n">equilibration_steps</span><span class="p">,</span>
     <span class="p">}</span>
 
     <span class="k">if</span> <span class="n">raw</span><span class="o">.</span><span class="n">equilibrated_flag</span> <span class="o">==</span> <span class="mf">0.0</span> <span class="ow">or</span> <span class="n">raw</span><span class="o">.</span><span class="n">mags_arr</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> <span class="n">raw</span><span class="o">.</span><span class="n">engs_arr</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
@@ -366,51 +539,66 @@
     <span class="n">mags_arr</span> <span class="o">=</span> <span class="n">raw</span><span class="o">.</span><span class="n">mags_arr</span>
     <span class="n">engs_arr</span> <span class="o">=</span> <span class="n">raw</span><span class="o">.</span><span class="n">engs_arr</span>
 
+    <span class="c1"># Blocking and autocorrelation are shared between the primary summary and</span>
+    <span class="c1"># the derived observable of the same series, so compute each exactly once.</span>
+    <span class="n">mag_blocking</span> <span class="o">=</span> <span class="n">blocking_error</span><span class="p">(</span><span class="n">time_series</span><span class="o">=</span><span class="n">mags_arr</span><span class="p">)</span>
+    <span class="n">mag_tau</span> <span class="o">=</span> <span class="n">estimate_tau_int_or_nan</span><span class="p">(</span><span class="n">time_series</span><span class="o">=</span><span class="n">mags_arr</span><span class="p">)</span>
+    <span class="n">eng_blocking</span> <span class="o">=</span> <span class="n">blocking_error</span><span class="p">(</span><span class="n">time_series</span><span class="o">=</span><span class="n">engs_arr</span><span class="p">)</span>
+    <span class="n">eng_tau</span> <span class="o">=</span> <span class="n">estimate_tau_int_or_nan</span><span class="p">(</span><span class="n">time_series</span><span class="o">=</span><span class="n">engs_arr</span><span class="p">)</span>
+
     <span class="n">mag</span> <span class="o">=</span> <span class="n">summarize_primary_observable</span><span class="p">(</span>
         <span class="n">time_series</span><span class="o">=</span><span class="n">mags_arr</span><span class="p">,</span>
         <span class="n">confidence</span><span class="o">=</span><span class="n">point</span><span class="o">.</span><span class="n">confidence</span><span class="p">,</span>
+        <span class="n">blocking</span><span class="o">=</span><span class="n">mag_blocking</span><span class="p">,</span>
+        <span class="n">tau_int</span><span class="o">=</span><span class="n">mag_tau</span><span class="p">,</span>
     <span class="p">)</span>
     <span class="n">eng</span> <span class="o">=</span> <span class="n">summarize_primary_observable</span><span class="p">(</span>
         <span class="n">time_series</span><span class="o">=</span><span class="n">engs_arr</span><span class="p">,</span>
         <span class="n">confidence</span><span class="o">=</span><span class="n">point</span><span class="o">.</span><span class="n">confidence</span><span class="p">,</span>
+        <span class="n">blocking</span><span class="o">=</span><span class="n">eng_blocking</span><span class="p">,</span>
+        <span class="n">tau_int</span><span class="o">=</span><span class="n">eng_tau</span><span class="p">,</span>
     <span class="p">)</span>
     <span class="n">chi</span> <span class="o">=</span> <span class="n">summarize_derived_observable</span><span class="p">(</span>
         <span class="n">magnetization_series</span><span class="o">=</span><span class="n">mags_arr</span><span class="p">,</span>
         <span class="n">temperature</span><span class="o">=</span><span class="n">T</span><span class="p">,</span>
         <span class="n">L</span><span class="o">=</span><span class="n">L</span><span class="p">,</span>
-        <span class="n">observable</span><span class="o">=</span><span class="s1">'chi'</span><span class="p">,</span>
+        <span class="n">observable</span><span class="o">=</span><span class="s1">&#39;chi&#39;</span><span class="p">,</span>
         <span class="n">method</span><span class="o">=</span><span class="n">point</span><span class="o">.</span><span class="n">derived_method</span><span class="p">,</span>
         <span class="n">confidence</span><span class="o">=</span><span class="n">point</span><span class="o">.</span><span class="n">confidence</span><span class="p">,</span>
         <span class="n">bootstrap_resamples</span><span class="o">=</span><span class="n">point</span><span class="o">.</span><span class="n">bootstrap_resamples</span><span class="p">,</span>
+        <span class="n">blocking</span><span class="o">=</span><span class="n">mag_blocking</span><span class="p">,</span>
+        <span class="n">tau_int</span><span class="o">=</span><span class="n">mag_tau</span><span class="p">,</span>
     <span class="p">)</span>
     <span class="n">cv</span> <span class="o">=</span> <span class="n">summarize_derived_observable</span><span class="p">(</span>
         <span class="n">energy_series</span><span class="o">=</span><span class="n">engs_arr</span><span class="p">,</span>
         <span class="n">temperature</span><span class="o">=</span><span class="n">T</span><span class="p">,</span>
         <span class="n">L</span><span class="o">=</span><span class="n">L</span><span class="p">,</span>
-        <span class="n">observable</span><span class="o">=</span><span class="s1">'cv'</span><span class="p">,</span>
+        <span class="n">observable</span><span class="o">=</span><span class="s1">&#39;cv&#39;</span><span class="p">,</span>
         <span class="n">method</span><span class="o">=</span><span class="n">point</span><span class="o">.</span><span class="n">derived_method</span><span class="p">,</span>
         <span class="n">confidence</span><span class="o">=</span><span class="n">point</span><span class="o">.</span><span class="n">confidence</span><span class="p">,</span>
         <span class="n">bootstrap_resamples</span><span class="o">=</span><span class="n">point</span><span class="o">.</span><span class="n">bootstrap_resamples</span><span class="p">,</span>
+        <span class="n">blocking</span><span class="o">=</span><span class="n">eng_blocking</span><span class="p">,</span>
+        <span class="n">tau_int</span><span class="o">=</span><span class="n">eng_tau</span><span class="p">,</span>
     <span class="p">)</span>
 
     <span class="k">return</span> <span class="p">{</span>
         <span class="o">**</span><span class="n">base</span><span class="p">,</span>
-        <span class="s1">'avg_m_value'</span><span class="p">:</span> <span class="nb">float</span><span class="p">(</span><span class="n">mag</span><span class="p">[</span><span class="s1">'value'</span><span class="p">]),</span>
-        <span class="s1">'avg_m_err'</span><span class="p">:</span> <span class="nb">float</span><span class="p">(</span><span class="n">mag</span><span class="p">[</span><span class="s1">'err'</span><span class="p">]),</span>
-        <span class="s1">'avg_m_tau_int'</span><span class="p">:</span> <span class="nb">float</span><span class="p">(</span><span class="n">mag</span><span class="p">[</span><span class="s1">'tau_int'</span><span class="p">]),</span>
-        <span class="s1">'avg_m_n_eff'</span><span class="p">:</span> <span class="nb">float</span><span class="p">(</span><span class="n">mag</span><span class="p">[</span><span class="s1">'n_eff'</span><span class="p">]),</span>
-        <span class="s1">'avg_e_value'</span><span class="p">:</span> <span class="nb">float</span><span class="p">(</span><span class="n">eng</span><span class="p">[</span><span class="s1">'value'</span><span class="p">]),</span>
-        <span class="s1">'avg_e_err'</span><span class="p">:</span> <span class="nb">float</span><span class="p">(</span><span class="n">eng</span><span class="p">[</span><span class="s1">'err'</span><span class="p">]),</span>
-        <span class="s1">'avg_e_tau_int'</span><span class="p">:</span> <span class="nb">float</span><span class="p">(</span><span class="n">eng</span><span class="p">[</span><span class="s1">'tau_int'</span><span class="p">]),</span>
-        <span class="s1">'avg_e_n_eff'</span><span class="p">:</span> <span class="nb">float</span><span class="p">(</span><span class="n">eng</span><span class="p">[</span><span class="s1">'n_eff'</span><span class="p">]),</span>
-        <span class="s1">'susc_value'</span><span class="p">:</span> <span class="nb">float</span><span class="p">(</span><span class="n">chi</span><span class="p">[</span><span class="s1">'value'</span><span class="p">]),</span>
-        <span class="s1">'susc_err'</span><span class="p">:</span> <span class="nb">float</span><span class="p">(</span><span class="n">chi</span><span class="p">[</span><span class="s1">'err'</span><span class="p">]),</span>
-        <span class="s1">'susc_tau_int'</span><span class="p">:</span> <span class="nb">float</span><span class="p">(</span><span class="n">chi</span><span class="p">[</span><span class="s1">'tau_int'</span><span class="p">]),</span>
-        <span class="s1">'susc_n_eff'</span><span class="p">:</span> <span class="nb">float</span><span class="p">(</span><span class="n">chi</span><span class="p">[</span><span class="s1">'n_eff'</span><span class="p">]),</span>
-        <span class="s1">'spec_h_value'</span><span class="p">:</span> <span class="nb">float</span><span class="p">(</span><span class="n">cv</span><span class="p">[</span><span class="s1">'value'</span><span class="p">]),</span>
-        <span class="s1">'spec_h_err'</span><span class="p">:</span> <span class="nb">float</span><span class="p">(</span><span class="n">cv</span><span class="p">[</span><span class="s1">'err'</span><span class="p">]),</span>
-        <span class="s1">'spec_h_tau_int'</span><span class="p">:</span> <span class="nb">float</span><span class="p">(</span><span class="n">cv</span><span class="p">[</span><span class="s1">'tau_int'</span><span class="p">]),</span>
-        <span class="s1">'spec_h_n_eff'</span><span class="p">:</span> <span class="nb">float</span><span class="p">(</span><span class="n">cv</span><span class="p">[</span><span class="s1">'n_eff'</span><span class="p">]),</span>
+        <span class="s1">&#39;avg_m_value&#39;</span><span class="p">:</span> <span class="nb">float</span><span class="p">(</span><span class="n">mag</span><span class="p">[</span><span class="s1">&#39;value&#39;</span><span class="p">]),</span>
+        <span class="s1">&#39;avg_m_err&#39;</span><span class="p">:</span> <span class="nb">float</span><span class="p">(</span><span class="n">mag</span><span class="p">[</span><span class="s1">&#39;err&#39;</span><span class="p">]),</span>
+        <span class="s1">&#39;avg_m_tau_int&#39;</span><span class="p">:</span> <span class="nb">float</span><span class="p">(</span><span class="n">mag</span><span class="p">[</span><span class="s1">&#39;tau_int&#39;</span><span class="p">]),</span>
+        <span class="s1">&#39;avg_m_n_eff&#39;</span><span class="p">:</span> <span class="nb">float</span><span class="p">(</span><span class="n">mag</span><span class="p">[</span><span class="s1">&#39;n_eff&#39;</span><span class="p">]),</span>
+        <span class="s1">&#39;avg_e_value&#39;</span><span class="p">:</span> <span class="nb">float</span><span class="p">(</span><span class="n">eng</span><span class="p">[</span><span class="s1">&#39;value&#39;</span><span class="p">]),</span>
+        <span class="s1">&#39;avg_e_err&#39;</span><span class="p">:</span> <span class="nb">float</span><span class="p">(</span><span class="n">eng</span><span class="p">[</span><span class="s1">&#39;err&#39;</span><span class="p">]),</span>
+        <span class="s1">&#39;avg_e_tau_int&#39;</span><span class="p">:</span> <span class="nb">float</span><span class="p">(</span><span class="n">eng</span><span class="p">[</span><span class="s1">&#39;tau_int&#39;</span><span class="p">]),</span>
+        <span class="s1">&#39;avg_e_n_eff&#39;</span><span class="p">:</span> <span class="nb">float</span><span class="p">(</span><span class="n">eng</span><span class="p">[</span><span class="s1">&#39;n_eff&#39;</span><span class="p">]),</span>
+        <span class="s1">&#39;susc_value&#39;</span><span class="p">:</span> <span class="nb">float</span><span class="p">(</span><span class="n">chi</span><span class="p">[</span><span class="s1">&#39;value&#39;</span><span class="p">]),</span>
+        <span class="s1">&#39;susc_err&#39;</span><span class="p">:</span> <span class="nb">float</span><span class="p">(</span><span class="n">chi</span><span class="p">[</span><span class="s1">&#39;err&#39;</span><span class="p">]),</span>
+        <span class="s1">&#39;susc_tau_int&#39;</span><span class="p">:</span> <span class="nb">float</span><span class="p">(</span><span class="n">chi</span><span class="p">[</span><span class="s1">&#39;tau_int&#39;</span><span class="p">]),</span>
+        <span class="s1">&#39;susc_n_eff&#39;</span><span class="p">:</span> <span class="nb">float</span><span class="p">(</span><span class="n">chi</span><span class="p">[</span><span class="s1">&#39;n_eff&#39;</span><span class="p">]),</span>
+        <span class="s1">&#39;spec_h_value&#39;</span><span class="p">:</span> <span class="nb">float</span><span class="p">(</span><span class="n">cv</span><span class="p">[</span><span class="s1">&#39;value&#39;</span><span class="p">]),</span>
+        <span class="s1">&#39;spec_h_err&#39;</span><span class="p">:</span> <span class="nb">float</span><span class="p">(</span><span class="n">cv</span><span class="p">[</span><span class="s1">&#39;err&#39;</span><span class="p">]),</span>
+        <span class="s1">&#39;spec_h_tau_int&#39;</span><span class="p">:</span> <span class="nb">float</span><span class="p">(</span><span class="n">cv</span><span class="p">[</span><span class="s1">&#39;tau_int&#39;</span><span class="p">]),</span>
+        <span class="s1">&#39;spec_h_n_eff&#39;</span><span class="p">:</span> <span class="nb">float</span><span class="p">(</span><span class="n">cv</span><span class="p">[</span><span class="s1">&#39;n_eff&#39;</span><span class="p">]),</span>
     <span class="p">}</span></div>
 
 
@@ -422,7 +610,7 @@
 <div class="viewcode-block" id="simulate_thermo_point">
 <a class="viewcode-back" href="../../api/vibespin.utils.html#utils.sweep_helpers.simulate_thermo_point">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">simulate_thermo_point</span><span class="p">(</span><span class="n">point</span><span class="p">:</span> <span class="n">ThermoPoint</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">float</span><span class="p">]:</span>
-<span class="w">    </span><span class="sd">"""Run a full (equilibration + measurement + summarization) point.</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Run a full (equilibration + measurement + summarization) point.</span>
 
 <span class="sd">    Thin wrapper over ``simulate_at_temperature`` followed by</span>
 <span class="sd">    ``compute_thermo_observables``.  This is the function passed as</span>
@@ -438,7 +626,7 @@
 <span class="sd">    dict[str, float]</span>
 <span class="sd">        Standard per-point result dictionary; see ``compute_thermo_observables``</span>
 <span class="sd">        for the full key set.</span>
-<span class="sd">    """</span>
+<span class="sd">    &quot;&quot;&quot;</span>
     <span class="k">return</span> <span class="n">compute_thermo_observables</span><span class="p">(</span><span class="n">simulate_at_temperature</span><span class="p">(</span><span class="n">point</span><span class="p">),</span> <span class="n">point</span><span class="p">)</span></div>
 
 
@@ -457,7 +645,7 @@
     <span class="n">n_eff_by_seed</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
     <span class="n">confidence</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">]:</span>
-<span class="w">    </span><span class="sd">"""Aggregate per-seed results for one observable across a temperature axis.</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Aggregate per-seed results for one observable across a temperature axis.</span>
 
 <span class="sd">    For multi-seed sweeps, applies hierarchical seed-ensemble aggregation via</span>
 <span class="sd">    ``summarize_seed_ensemble``.  Falls back to direct single-seed blocking</span>
@@ -479,11 +667,11 @@
 <span class="sd">    Returns</span>
 <span class="sd">    -------</span>
 <span class="sd">    dict[str, np.ndarray]</span>
-<span class="sd">        Keys: ``'value'``, ``'err'``, ``'ci_low'``, ``'ci_high'``,</span>
-<span class="sd">        ``'tau_int'``, ``'n_eff'``, ``'samples'``.</span>
-<span class="sd">        All arrays have length ``n_temps`` except ``'samples'`` which has</span>
+<span class="sd">        Keys: ``&#39;value&#39;``, ``&#39;err&#39;``, ``&#39;ci_low&#39;``, ``&#39;ci_high&#39;``,</span>
+<span class="sd">        ``&#39;tau_int&#39;``, ``&#39;n_eff&#39;``, ``&#39;samples&#39;``.</span>
+<span class="sd">        All arrays have length ``n_temps`` except ``&#39;samples&#39;`` which has</span>
 <span class="sd">        shape ``(n_temps, n_seeds)``.</span>
-<span class="sd">    """</span>
+<span class="sd">    &quot;&quot;&quot;</span>
     <span class="n">n_seeds</span> <span class="o">=</span> <span class="n">values_by_seed</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
     <span class="k">if</span> <span class="n">n_seeds</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
         <span class="n">res_values</span> <span class="o">=</span> <span class="p">[]</span>
@@ -505,16 +693,16 @@
                 <span class="n">within_seed_errors</span><span class="o">=</span><span class="n">errors_by_seed</span><span class="p">[</span><span class="n">t</span><span class="p">,</span> <span class="n">mask</span><span class="p">],</span>
                 <span class="n">confidence</span><span class="o">=</span><span class="n">confidence</span><span class="p">,</span>
             <span class="p">)</span>
-            <span class="n">res_values</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">summary</span><span class="p">[</span><span class="s1">'value'</span><span class="p">])</span>
-            <span class="n">res_errors</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">summary</span><span class="p">[</span><span class="s1">'err'</span><span class="p">])</span>
-            <span class="n">res_low</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">summary</span><span class="p">[</span><span class="s1">'ci_low'</span><span class="p">])</span>
-            <span class="n">res_high</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">summary</span><span class="p">[</span><span class="s1">'ci_high'</span><span class="p">])</span>
+            <span class="n">res_values</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">summary</span><span class="p">[</span><span class="s1">&#39;value&#39;</span><span class="p">])</span>
+            <span class="n">res_errors</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">summary</span><span class="p">[</span><span class="s1">&#39;err&#39;</span><span class="p">])</span>
+            <span class="n">res_low</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">summary</span><span class="p">[</span><span class="s1">&#39;ci_low&#39;</span><span class="p">])</span>
+            <span class="n">res_high</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">summary</span><span class="p">[</span><span class="s1">&#39;ci_high&#39;</span><span class="p">])</span>
 
         <span class="n">res</span> <span class="o">=</span> <span class="p">{</span>
-            <span class="s1">'value'</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">res_values</span><span class="p">),</span>
-            <span class="s1">'err'</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">res_errors</span><span class="p">),</span>
-            <span class="s1">'ci_low'</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">res_low</span><span class="p">),</span>
-            <span class="s1">'ci_high'</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">res_high</span><span class="p">),</span>
+            <span class="s1">&#39;value&#39;</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">res_values</span><span class="p">),</span>
+            <span class="s1">&#39;err&#39;</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">res_errors</span><span class="p">),</span>
+            <span class="s1">&#39;ci_low&#39;</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">res_low</span><span class="p">),</span>
+            <span class="s1">&#39;ci_high&#39;</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">res_high</span><span class="p">),</span>
         <span class="p">}</span>
 
         <span class="c1"># Ensemble-averaged diagnostics; guard against all-NaN temperature rows.</span>
@@ -523,36 +711,39 @@
         <span class="n">n_eff</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">full</span><span class="p">(</span><span class="n">nan_mask</span><span class="o">.</span><span class="n">shape</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">nan</span><span class="p">)</span>
 
         <span class="k">if</span> <span class="ow">not</span> <span class="n">np</span><span class="o">.</span><span class="n">all</span><span class="p">(</span><span class="n">nan_mask</span><span class="p">):</span>
-            <span class="k">with</span> <span class="n">np</span><span class="o">.</span><span class="n">errstate</span><span class="p">(</span><span class="nb">all</span><span class="o">=</span><span class="s1">'ignore'</span><span class="p">):</span>
+            <span class="k">with</span> <span class="n">np</span><span class="o">.</span><span class="n">errstate</span><span class="p">(</span><span class="nb">all</span><span class="o">=</span><span class="s1">&#39;ignore&#39;</span><span class="p">):</span>
                 <span class="n">tau_int</span><span class="p">[</span><span class="o">~</span><span class="n">nan_mask</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">nanmean</span><span class="p">(</span><span class="n">tau_by_seed</span><span class="p">[</span><span class="o">~</span><span class="n">nan_mask</span><span class="p">],</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
                 <span class="n">n_eff</span><span class="p">[</span><span class="o">~</span><span class="n">nan_mask</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">nanmean</span><span class="p">(</span><span class="n">n_eff_by_seed</span><span class="p">[</span><span class="o">~</span><span class="n">nan_mask</span><span class="p">],</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
 
         <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">any</span><span class="p">(</span><span class="n">nan_mask</span><span class="p">):</span>
-            <span class="n">logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="s1">'vibespin'</span><span class="p">)</span>
+            <span class="n">logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="s1">&#39;vibespin&#39;</span><span class="p">)</span>
             <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span>
-                <span class="s1">'Autocorrelation diagnostics are undefined for </span><span class="si">%d</span><span class="s1"> temperature '</span>
-                <span class="s1">'points (all seeds returned NaN). This is expected in the deep '</span>
-                <span class="s1">'ordered/frozen phase.'</span><span class="p">,</span>
-                <span class="nb">int</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">nan_mask</span><span class="p">)),</span>
+                <span class="sa">f</span><span class="s1">&#39;Autocorrelation diagnostics are undefined for &#39;</span>
+                <span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="nb">int</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">nan_mask</span><span class="p">))</span><span class="si">}</span><span class="s1"> temperature points (all seeds &#39;</span>
+                <span class="sa">f</span><span class="s1">&#39;returned NaN). This is expected in the deep ordered/frozen &#39;</span>
+                <span class="sa">f</span><span class="s1">&#39;phase.&#39;</span>
             <span class="p">)</span>
     <span class="k">else</span><span class="p">:</span>
+        <span class="c1"># Apply the same Gaussian z-multiplier as the multi-seed path so that</span>
+        <span class="c1"># &#39;ci_low&#39;/&#39;ci_high&#39; honor the requested confidence level here too.</span>
+        <span class="n">z</span> <span class="o">=</span> <span class="n">_z_multiplier</span><span class="p">(</span><span class="n">confidence</span><span class="o">=</span><span class="n">confidence</span><span class="p">)</span>
         <span class="n">res</span> <span class="o">=</span> <span class="p">{</span>
-            <span class="s1">'value'</span><span class="p">:</span> <span class="n">values_by_seed</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">],</span>
-            <span class="s1">'err'</span><span class="p">:</span> <span class="n">errors_by_seed</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">],</span>
-            <span class="s1">'ci_low'</span><span class="p">:</span> <span class="n">values_by_seed</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">]</span> <span class="o">-</span> <span class="n">errors_by_seed</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">],</span>
-            <span class="s1">'ci_high'</span><span class="p">:</span> <span class="n">values_by_seed</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">]</span> <span class="o">+</span> <span class="n">errors_by_seed</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">],</span>
+            <span class="s1">&#39;value&#39;</span><span class="p">:</span> <span class="n">values_by_seed</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">],</span>
+            <span class="s1">&#39;err&#39;</span><span class="p">:</span> <span class="n">errors_by_seed</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">],</span>
+            <span class="s1">&#39;ci_low&#39;</span><span class="p">:</span> <span class="n">values_by_seed</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">]</span> <span class="o">-</span> <span class="n">z</span> <span class="o">*</span> <span class="n">errors_by_seed</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">],</span>
+            <span class="s1">&#39;ci_high&#39;</span><span class="p">:</span> <span class="n">values_by_seed</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">]</span> <span class="o">+</span> <span class="n">z</span> <span class="o">*</span> <span class="n">errors_by_seed</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">],</span>
         <span class="p">}</span>
         <span class="n">tau_int</span> <span class="o">=</span> <span class="n">tau_by_seed</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">]</span>
         <span class="n">n_eff</span> <span class="o">=</span> <span class="n">n_eff_by_seed</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">]</span>
 
     <span class="k">return</span> <span class="p">{</span>
-        <span class="s1">'value'</span><span class="p">:</span> <span class="n">res</span><span class="p">[</span><span class="s1">'value'</span><span class="p">],</span>
-        <span class="s1">'err'</span><span class="p">:</span> <span class="n">res</span><span class="p">[</span><span class="s1">'err'</span><span class="p">],</span>
-        <span class="s1">'ci_low'</span><span class="p">:</span> <span class="n">res</span><span class="p">[</span><span class="s1">'ci_low'</span><span class="p">],</span>
-        <span class="s1">'ci_high'</span><span class="p">:</span> <span class="n">res</span><span class="p">[</span><span class="s1">'ci_high'</span><span class="p">],</span>
-        <span class="s1">'tau_int'</span><span class="p">:</span> <span class="n">tau_int</span><span class="p">,</span>
-        <span class="s1">'n_eff'</span><span class="p">:</span> <span class="n">n_eff</span><span class="p">,</span>
-        <span class="s1">'samples'</span><span class="p">:</span> <span class="n">values_by_seed</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">),</span>
+        <span class="s1">&#39;value&#39;</span><span class="p">:</span> <span class="n">res</span><span class="p">[</span><span class="s1">&#39;value&#39;</span><span class="p">],</span>
+        <span class="s1">&#39;err&#39;</span><span class="p">:</span> <span class="n">res</span><span class="p">[</span><span class="s1">&#39;err&#39;</span><span class="p">],</span>
+        <span class="s1">&#39;ci_low&#39;</span><span class="p">:</span> <span class="n">res</span><span class="p">[</span><span class="s1">&#39;ci_low&#39;</span><span class="p">],</span>
+        <span class="s1">&#39;ci_high&#39;</span><span class="p">:</span> <span class="n">res</span><span class="p">[</span><span class="s1">&#39;ci_high&#39;</span><span class="p">],</span>
+        <span class="s1">&#39;tau_int&#39;</span><span class="p">:</span> <span class="n">tau_int</span><span class="p">,</span>
+        <span class="s1">&#39;n_eff&#39;</span><span class="p">:</span> <span class="n">n_eff</span><span class="p">,</span>
+        <span class="s1">&#39;samples&#39;</span><span class="p">:</span> <span class="n">values_by_seed</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">),</span>
     <span class="p">}</span></div>
 
 
@@ -568,7 +759,7 @@
     <span class="n">min_effective_samples</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
     <span class="n">max_tau_relative_width</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">]:</span>
-<span class="w">    </span><span class="sd">"""Build per-temperature diagnostic flags for uncertainty quality.</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Build per-temperature diagnostic flags for uncertainty quality.</span>
 
 <span class="sd">    Parameters</span>
 <span class="sd">    ----------</span>
@@ -589,10 +780,10 @@
 <span class="sd">    Returns</span>
 <span class="sd">    -------</span>
 <span class="sd">    dict[str, np.ndarray]</span>
-<span class="sd">        Keys: ``'undefined_autocorr_flag'``, ``'low_effective_sample_flag'``,</span>
-<span class="sd">        ``'tau_interval_unstable_flag'``.  All uint8 arrays of length</span>
+<span class="sd">        Keys: ``&#39;undefined_autocorr_flag&#39;``, ``&#39;low_effective_sample_flag&#39;``,</span>
+<span class="sd">        ``&#39;tau_interval_unstable_flag&#39;``.  All uint8 arrays of length</span>
 <span class="sd">        ``n_temps``.</span>
-<span class="sd">    """</span>
+<span class="sd">    &quot;&quot;&quot;</span>
     <span class="n">undefined_autocorr</span> <span class="o">=</span> <span class="o">~</span><span class="n">np</span><span class="o">.</span><span class="n">isfinite</span><span class="p">(</span><span class="n">tau_int</span><span class="p">)</span>
     <span class="n">low_effective_sample</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">isfinite</span><span class="p">(</span><span class="n">n_eff</span><span class="p">)</span> <span class="o">&amp;</span> <span class="p">(</span><span class="n">n_eff</span> <span class="o">&lt;</span> <span class="n">min_effective_samples</span><span class="p">)</span>
 
@@ -602,9 +793,9 @@
     <span class="n">tau_interval_unstable</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">isfinite</span><span class="p">(</span><span class="n">rel_width</span><span class="p">)</span> <span class="o">&amp;</span> <span class="p">(</span><span class="n">rel_width</span> <span class="o">&gt;</span> <span class="n">max_tau_relative_width</span><span class="p">)</span>
 
     <span class="k">return</span> <span class="p">{</span>
-        <span class="s1">'undefined_autocorr_flag'</span><span class="p">:</span> <span class="n">undefined_autocorr</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">uint8</span><span class="p">),</span>
-        <span class="s1">'low_effective_sample_flag'</span><span class="p">:</span> <span class="n">low_effective_sample</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">uint8</span><span class="p">),</span>
-        <span class="s1">'tau_interval_unstable_flag'</span><span class="p">:</span> <span class="n">tau_interval_unstable</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">uint8</span><span class="p">),</span>
+        <span class="s1">&#39;undefined_autocorr_flag&#39;</span><span class="p">:</span> <span class="n">undefined_autocorr</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">uint8</span><span class="p">),</span>
+        <span class="s1">&#39;low_effective_sample_flag&#39;</span><span class="p">:</span> <span class="n">low_effective_sample</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">uint8</span><span class="p">),</span>
+        <span class="s1">&#39;tau_interval_unstable_flag&#39;</span><span class="p">:</span> <span class="n">tau_interval_unstable</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">uint8</span><span class="p">),</span>
     <span class="p">}</span></div>
 
 </pre></div>

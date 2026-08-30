@@ -16,6 +16,7 @@
       <script src="../../../_static/doctools.js?v=fd6eb6e6"></script>
       <script src="../../../_static/sphinx_highlight.js?v=6ffebe34"></script>
       <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+      <script src="https://cdn.jsdelivr.net/npm/@jupyter-widgets/html-manager@^1.0.1/dist/embed-amd.js"></script>
     <script src="../../../_static/js/theme.js"></script>
     <link rel="index" title="Index" href="../../../genindex.html" />
     <link rel="search" title="Search" href="../../../search.html" /> 
@@ -46,8 +47,8 @@
 <li class="toctree-l1"><a class="reference internal" href="../../../physics.html">Physics and Algorithm Guide: VibeSpin</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../code.html">Developer and Architecture Guide</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../scripts.html">Scripts Catalog: VibeSpin</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../agents.html">Agent Instruction Guide: VibeSpin</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../bibliography.html">Project Bibliography: VibeSpin</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../AGENTS.html">Agent Instruction Guide: VibeSpin</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../BIBLIOGRAPHY.html">Project Bibliography: VibeSpin</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../changelog.html">Changelog</a></li>
 </ul>
 <p class="caption" role="heading"><span class="caption-text">Research &amp; Analysis:</span></p>
@@ -92,7 +93,7 @@
            <div itemprop="articleBody">
              
   <h1>Source code for scripts.clock.correlation_comparison</h1><div class="highlight"><pre>
-<span></span><span class="sd">"""</span>
+<span></span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">Comparison of spin-spin correlation functions G(r) for the q-state Clock model.</span>
 <span class="sd">Analyzes correlation behavior in ordered, quasi-ordered, and disordered phases.</span>
 
@@ -100,110 +101,53 @@
 <span class="sd">and T2 ≈ 0.92 (José et al. 1977), yielding three distinct correlation regimes:</span>
 <span class="sd">long-range order below T1, algebraic (quasi-long-range) order between T1 and T2,</span>
 <span class="sd">and exponential decay above T2.</span>
-<span class="sd">"""</span>
+<span class="sd">&quot;&quot;&quot;</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">__future__</span><span class="w"> </span><span class="kn">import</span> <span class="n">annotations</span>
 
 <span class="kn">import</span><span class="w"> </span><span class="nn">argparse</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">logging</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Any</span>
 
 <span class="kn">import</span><span class="w"> </span><span class="nn">matplotlib.pyplot</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">plt</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">models.clock_model</span><span class="w"> </span><span class="kn">import</span> <span class="n">ClockSimulation</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">utils.equilibration</span><span class="w"> </span><span class="kn">import</span> <span class="n">convergence_equilibrate_with_status</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">utils.observables</span><span class="w"> </span><span class="kn">import</span> <span class="n">get_averaged_correlation</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">utils.observables</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
+    <span class="n">CorrelationPoint</span><span class="p">,</span>
+    <span class="n">fit_correlation_exponent</span><span class="p">,</span>
+    <span class="n">fit_correlation_length</span><span class="p">,</span>
+    <span class="n">measure_correlation_point</span><span class="p">,</span>
+<span class="p">)</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">utils.plotting</span><span class="w"> </span><span class="kn">import</span> <span class="n">ensure_results_dir</span><span class="p">,</span> <span class="n">save_plot</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">utils.system</span><span class="w"> </span><span class="kn">import</span> <span class="n">parse_args_compat</span><span class="p">,</span> <span class="n">setup_logging</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">utils.system</span><span class="w"> </span><span class="kn">import</span> <span class="n">parallel_sweep</span><span class="p">,</span> <span class="n">parse_args_compat</span><span class="p">,</span> <span class="n">setup_logging</span>
 
 <span class="c1"># Approximate KT transition temperatures for q=6 (José et al. 1977).</span>
 <span class="n">T1_CLOCK6</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.68</span>
 <span class="n">T2_CLOCK6</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.92</span>
 
 
-<div class="viewcode-block" id="simulate_correlation">
-<a class="viewcode-back" href="../../../api/vibespin.scripts.clock.html#scripts.clock.correlation_comparison.simulate_correlation">[docs]</a>
-<span class="k">def</span><span class="w"> </span><span class="nf">simulate_correlation</span><span class="p">(</span>
-    <span class="o">*</span><span class="p">,</span>
-    <span class="n">T</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
-    <span class="n">L</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
-    <span class="n">q</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
-    <span class="n">steps</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
-    <span class="n">eq_probe</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
-    <span class="n">eq_max</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
-    <span class="n">sample_interval</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
-    <span class="n">seed</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
-    <span class="n">logger</span><span class="p">:</span> <span class="n">logging</span><span class="o">.</span><span class="n">Logger</span><span class="p">,</span>
-<span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">]:</span>
-<span class="w">    </span><span class="sd">"""Equilibrate and measure the averaged correlation function at temperature T.</span>
-
-<span class="sd">    Uses two-start convergence equilibration to avoid initialization bias.</span>
-
-<span class="sd">    Parameters</span>
-<span class="sd">    ----------</span>
-<span class="sd">    T : float</span>
-<span class="sd">        Temperature for the measurement.</span>
-<span class="sd">    L : int</span>
-<span class="sd">        Linear lattice size.</span>
-<span class="sd">    q : int</span>
-<span class="sd">        Number of clock states.</span>
-<span class="sd">    steps : int</span>
-<span class="sd">        Measurement steps after equilibration.</span>
-<span class="sd">    eq_probe : int</span>
-<span class="sd">        Chunk size for convergence equilibration probes.</span>
-<span class="sd">    eq_max : int</span>
-<span class="sd">        Maximum equilibration steps.</span>
-<span class="sd">    sample_interval : int</span>
-<span class="sd">        Spacing between correlation samples during measurement.</span>
-<span class="sd">    seed : int</span>
-<span class="sd">        Random seed for reproducibility.</span>
-<span class="sd">    logger : logging.Logger</span>
-<span class="sd">        Logger instance.</span>
-
-<span class="sd">    Returns</span>
-<span class="sd">    -------</span>
-<span class="sd">    tuple[np.ndarray, np.ndarray]</span>
-<span class="sd">        Radial distances r and averaged correlations G(r).</span>
-<span class="sd">    """</span>
-    <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s1">'Equilibrating at T=</span><span class="si">{</span><span class="n">T</span><span class="si">:</span><span class="s1">.3f</span><span class="si">}</span><span class="s1"> (q=</span><span class="si">{</span><span class="n">q</span><span class="si">}</span><span class="s1">, L=</span><span class="si">{</span><span class="n">L</span><span class="si">}</span><span class="s1">, seed=</span><span class="si">{</span><span class="n">seed</span><span class="si">}</span><span class="s1">)...'</span><span class="p">)</span>
-    <span class="n">sim_r</span> <span class="o">=</span> <span class="n">ClockSimulation</span><span class="p">(</span>
-        <span class="n">size</span><span class="o">=</span><span class="n">L</span><span class="p">,</span> <span class="n">temp</span><span class="o">=</span><span class="n">T</span><span class="p">,</span> <span class="n">q</span><span class="o">=</span><span class="n">q</span><span class="p">,</span> <span class="n">update</span><span class="o">=</span><span class="s1">'checkerboard'</span><span class="p">,</span> <span class="n">init_state</span><span class="o">=</span><span class="s1">'random'</span><span class="p">,</span> <span class="n">seed</span><span class="o">=</span><span class="n">seed</span><span class="p">,</span>
-    <span class="p">)</span>
-    <span class="n">sim_o</span> <span class="o">=</span> <span class="n">ClockSimulation</span><span class="p">(</span>
-        <span class="n">size</span><span class="o">=</span><span class="n">L</span><span class="p">,</span> <span class="n">temp</span><span class="o">=</span><span class="n">T</span><span class="p">,</span> <span class="n">q</span><span class="o">=</span><span class="n">q</span><span class="p">,</span> <span class="n">update</span><span class="o">=</span><span class="s1">'checkerboard'</span><span class="p">,</span> <span class="n">init_state</span><span class="o">=</span><span class="s1">'ordered'</span><span class="p">,</span> <span class="n">seed</span><span class="o">=</span><span class="n">seed</span><span class="p">,</span>
-    <span class="p">)</span>
-    <span class="n">_</span><span class="p">,</span> <span class="n">converged</span> <span class="o">=</span> <span class="n">convergence_equilibrate_with_status</span><span class="p">(</span>
-        <span class="n">sim_r</span><span class="p">,</span> <span class="n">sim_o</span><span class="p">,</span> <span class="n">chunk_size</span><span class="o">=</span><span class="n">eq_probe</span><span class="p">,</span> <span class="n">max_steps</span><span class="o">=</span><span class="n">eq_max</span><span class="p">,</span>
-    <span class="p">)</span>
-    <span class="c1"># Fall back to ordered-start simulation when random-start is stuck.</span>
-    <span class="n">sim_meas</span> <span class="o">=</span> <span class="n">sim_r</span> <span class="k">if</span> <span class="n">converged</span> <span class="k">else</span> <span class="n">sim_o</span>
-    <span class="k">if</span> <span class="ow">not</span> <span class="n">converged</span><span class="p">:</span>
-        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s1">'T=</span><span class="si">{</span><span class="n">T</span><span class="si">:</span><span class="s1">.3f</span><span class="si">}</span><span class="s1">: convergence not reached, falling back to ordered start'</span><span class="p">)</span>
-    <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s1">'Measuring correlations at T=</span><span class="si">{</span><span class="n">T</span><span class="si">:</span><span class="s1">.3f</span><span class="si">}</span><span class="s1">...'</span><span class="p">)</span>
-    <span class="k">return</span> <span class="n">get_averaged_correlation</span><span class="p">(</span>
-        <span class="n">sim</span><span class="o">=</span><span class="n">sim_meas</span><span class="p">,</span> <span class="n">total_steps</span><span class="o">=</span><span class="n">steps</span><span class="p">,</span> <span class="n">sample_interval</span><span class="o">=</span><span class="n">sample_interval</span><span class="p">,</span>
-    <span class="p">)</span></div>
-
-
-
 <div class="viewcode-block" id="main">
 <a class="viewcode-back" href="../../../api/vibespin.scripts.clock.html#scripts.clock.correlation_comparison.main">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">main</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">"""Run the clock model correlation comparison analysis."""</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Run the clock model correlation comparison analysis.&quot;&quot;&quot;</span>
     <span class="n">parser</span> <span class="o">=</span> <span class="n">argparse</span><span class="o">.</span><span class="n">ArgumentParser</span><span class="p">(</span>
-        <span class="n">description</span><span class="o">=</span><span class="s1">'q-state Clock Model Correlation Comparison'</span><span class="p">,</span>
+        <span class="n">description</span><span class="o">=</span><span class="s1">&#39;q-state Clock Model Correlation Comparison&#39;</span><span class="p">,</span>
     <span class="p">)</span>
-    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">'--size'</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">int</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="mi">128</span><span class="p">,</span> <span class="n">help</span><span class="o">=</span><span class="s1">'Linear lattice size L'</span><span class="p">)</span>
-    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">'--q'</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">int</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="mi">6</span><span class="p">,</span> <span class="n">help</span><span class="o">=</span><span class="s1">'Number of clock states'</span><span class="p">)</span>
-    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">'--steps'</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">int</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="mi">4000</span><span class="p">,</span> <span class="n">help</span><span class="o">=</span><span class="s1">'Measurement steps'</span><span class="p">)</span>
-    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">'--eq-probe'</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">int</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="mi">200</span><span class="p">,</span> <span class="n">help</span><span class="o">=</span><span class="s1">'Convergence probe chunk size'</span><span class="p">)</span>
-    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">'--eq-max'</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">int</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="mi">50000</span><span class="p">,</span> <span class="n">help</span><span class="o">=</span><span class="s1">'Max equilibration steps'</span><span class="p">)</span>
-    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">'--interval'</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">int</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="mi">20</span><span class="p">,</span> <span class="n">help</span><span class="o">=</span><span class="s1">'Sample interval'</span><span class="p">)</span>
-    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">'--seed'</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">int</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="mi">520</span><span class="p">,</span> <span class="n">help</span><span class="o">=</span><span class="s1">'Base random seed'</span><span class="p">)</span>
-    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">'--output-dir'</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">str</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="s1">'results/clock'</span><span class="p">,</span> <span class="n">help</span><span class="o">=</span><span class="s1">'Output directory'</span><span class="p">)</span>
-    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">'--log-file'</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">str</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">help</span><span class="o">=</span><span class="s1">'Optional log file path'</span><span class="p">)</span>
-    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">'--verbose'</span><span class="p">,</span> <span class="n">action</span><span class="o">=</span><span class="s1">'store_true'</span><span class="p">,</span> <span class="n">help</span><span class="o">=</span><span class="s1">'Enable verbose logging'</span><span class="p">)</span>
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;--size&#39;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">int</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="mi">128</span><span class="p">,</span> <span class="n">help</span><span class="o">=</span><span class="s1">&#39;Linear lattice size L&#39;</span><span class="p">)</span>
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;--q&#39;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">int</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="mi">6</span><span class="p">,</span> <span class="n">help</span><span class="o">=</span><span class="s1">&#39;Number of clock states&#39;</span><span class="p">)</span>
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;--steps&#39;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">int</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="mi">4000</span><span class="p">,</span> <span class="n">help</span><span class="o">=</span><span class="s1">&#39;Measurement steps&#39;</span><span class="p">)</span>
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;--eq-probe&#39;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">int</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="mi">200</span><span class="p">,</span> <span class="n">help</span><span class="o">=</span><span class="s1">&#39;Convergence probe chunk size&#39;</span><span class="p">)</span>
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;--eq-max&#39;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">int</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="mi">50000</span><span class="p">,</span> <span class="n">help</span><span class="o">=</span><span class="s1">&#39;Max equilibration steps&#39;</span><span class="p">)</span>
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;--interval&#39;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">int</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="mi">20</span><span class="p">,</span> <span class="n">help</span><span class="o">=</span><span class="s1">&#39;Sample interval&#39;</span><span class="p">)</span>
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span>
+        <span class="s1">&#39;--seed&#39;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">int</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="mi">520</span><span class="p">,</span>
+        <span class="n">help</span><span class="o">=</span><span class="s1">&#39;Random seed shared by all three temperature points&#39;</span><span class="p">,</span>
+    <span class="p">)</span>
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;--output-dir&#39;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">str</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="s1">&#39;results/clock&#39;</span><span class="p">,</span> <span class="n">help</span><span class="o">=</span><span class="s1">&#39;Output directory&#39;</span><span class="p">)</span>
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;--log-file&#39;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">str</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">help</span><span class="o">=</span><span class="s1">&#39;Optional log file path&#39;</span><span class="p">)</span>
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;--verbose&#39;</span><span class="p">,</span> <span class="n">action</span><span class="o">=</span><span class="s1">&#39;store_true&#39;</span><span class="p">,</span> <span class="n">help</span><span class="o">=</span><span class="s1">&#39;Enable verbose logging&#39;</span><span class="p">)</span>
 
-    <span class="n">args</span> <span class="o">=</span> <span class="n">parse_args_compat</span><span class="p">(</span><span class="n">parser</span><span class="p">)</span>
+    <span class="n">args</span> <span class="o">=</span> <span class="n">parse_args_compat</span><span class="p">(</span><span class="n">parser</span><span class="o">=</span><span class="n">parser</span><span class="p">)</span>
 
     <span class="n">log_level</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">DEBUG</span> <span class="k">if</span> <span class="n">args</span><span class="o">.</span><span class="n">verbose</span> <span class="k">else</span> <span class="n">logging</span><span class="o">.</span><span class="n">INFO</span>
     <span class="n">logger</span> <span class="o">=</span> <span class="n">setup_logging</span><span class="p">(</span><span class="n">level</span><span class="o">=</span><span class="n">log_level</span><span class="p">,</span> <span class="n">log_file</span><span class="o">=</span><span class="n">args</span><span class="o">.</span><span class="n">log_file</span><span class="p">)</span>
@@ -214,59 +158,86 @@
     <span class="n">T_DISORDERED</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">1.2</span>  <span class="c1"># T &gt; T2  (exponential decay)</span>
 
     <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
-        <span class="sa">f</span><span class="s1">'Starting clock correlation comparison '</span>
-        <span class="sa">f</span><span class="s1">'(q=</span><span class="si">{</span><span class="n">args</span><span class="o">.</span><span class="n">q</span><span class="si">}</span><span class="s1">, L=</span><span class="si">{</span><span class="n">args</span><span class="o">.</span><span class="n">size</span><span class="si">}</span><span class="s1">, steps=</span><span class="si">{</span><span class="n">args</span><span class="o">.</span><span class="n">steps</span><span class="si">}</span><span class="s1">)'</span>
+        <span class="sa">f</span><span class="s1">&#39;Starting clock correlation comparison &#39;</span>
+        <span class="sa">f</span><span class="s1">&#39;(q=</span><span class="si">{</span><span class="n">args</span><span class="o">.</span><span class="n">q</span><span class="si">}</span><span class="s1">, L=</span><span class="si">{</span><span class="n">args</span><span class="o">.</span><span class="n">size</span><span class="si">}</span><span class="s1">, steps=</span><span class="si">{</span><span class="n">args</span><span class="o">.</span><span class="n">steps</span><span class="si">}</span><span class="s1">)&#39;</span>
     <span class="p">)</span>
     <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
-        <span class="sa">f</span><span class="s1">'Temperatures: ordered=</span><span class="si">{</span><span class="n">T_ORDERED</span><span class="si">}</span><span class="s1">, quasi=</span><span class="si">{</span><span class="n">T_QUASI</span><span class="si">}</span><span class="s1">, disordered=</span><span class="si">{</span><span class="n">T_DISORDERED</span><span class="si">}</span><span class="s1">'</span>
+        <span class="sa">f</span><span class="s1">&#39;Temperatures: ordered=</span><span class="si">{</span><span class="n">T_ORDERED</span><span class="si">}</span><span class="s1">, quasi=</span><span class="si">{</span><span class="n">T_QUASI</span><span class="si">}</span><span class="s1">, disordered=</span><span class="si">{</span><span class="n">T_DISORDERED</span><span class="si">}</span><span class="s1">&#39;</span>
     <span class="p">)</span>
 
-    <span class="n">common</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span>
-        <span class="n">L</span><span class="o">=</span><span class="n">args</span><span class="o">.</span><span class="n">size</span><span class="p">,</span> <span class="n">q</span><span class="o">=</span><span class="n">args</span><span class="o">.</span><span class="n">q</span><span class="p">,</span> <span class="n">steps</span><span class="o">=</span><span class="n">args</span><span class="o">.</span><span class="n">steps</span><span class="p">,</span>
-        <span class="n">eq_probe</span><span class="o">=</span><span class="n">args</span><span class="o">.</span><span class="n">eq_probe</span><span class="p">,</span> <span class="n">eq_max</span><span class="o">=</span><span class="n">args</span><span class="o">.</span><span class="n">eq_max</span><span class="p">,</span>
-        <span class="n">sample_interval</span><span class="o">=</span><span class="n">args</span><span class="o">.</span><span class="n">interval</span><span class="p">,</span> <span class="n">seed</span><span class="o">=</span><span class="n">args</span><span class="o">.</span><span class="n">seed</span><span class="p">,</span> <span class="n">logger</span><span class="o">=</span><span class="n">logger</span><span class="p">,</span>
+    <span class="n">common</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span>
+        <span class="n">model_cls</span><span class="o">=</span><span class="n">ClockSimulation</span><span class="p">,</span> <span class="n">model_kwargs</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;q&#39;</span><span class="p">:</span> <span class="n">args</span><span class="o">.</span><span class="n">q</span><span class="p">},</span> <span class="n">size</span><span class="o">=</span><span class="n">args</span><span class="o">.</span><span class="n">size</span><span class="p">,</span>
+        <span class="n">seed</span><span class="o">=</span><span class="n">args</span><span class="o">.</span><span class="n">seed</span><span class="p">,</span> <span class="n">eq_probe</span><span class="o">=</span><span class="n">args</span><span class="o">.</span><span class="n">eq_probe</span><span class="p">,</span> <span class="n">eq_max</span><span class="o">=</span><span class="n">args</span><span class="o">.</span><span class="n">eq_max</span><span class="p">,</span>
+        <span class="n">meas_steps</span><span class="o">=</span><span class="n">args</span><span class="o">.</span><span class="n">steps</span><span class="p">,</span> <span class="n">interval</span><span class="o">=</span><span class="n">args</span><span class="o">.</span><span class="n">interval</span><span class="p">,</span>
     <span class="p">)</span>
-
-    <span class="n">r_ordered</span><span class="p">,</span> <span class="n">G_ordered</span> <span class="o">=</span> <span class="n">simulate_correlation</span><span class="p">(</span><span class="n">T</span><span class="o">=</span><span class="n">T_ORDERED</span><span class="p">,</span> <span class="o">**</span><span class="n">common</span><span class="p">)</span>
-    <span class="n">r_quasi</span><span class="p">,</span> <span class="n">G_quasi</span> <span class="o">=</span> <span class="n">simulate_correlation</span><span class="p">(</span><span class="n">T</span><span class="o">=</span><span class="n">T_QUASI</span><span class="p">,</span> <span class="o">**</span><span class="n">common</span><span class="p">)</span>
-    <span class="n">r_disordered</span><span class="p">,</span> <span class="n">G_disordered</span> <span class="o">=</span> <span class="n">simulate_correlation</span><span class="p">(</span><span class="n">T</span><span class="o">=</span><span class="n">T_DISORDERED</span><span class="p">,</span> <span class="o">**</span><span class="n">common</span><span class="p">)</span>
+    <span class="n">points</span> <span class="o">=</span> <span class="p">[</span>
+        <span class="n">CorrelationPoint</span><span class="p">(</span><span class="n">label</span><span class="o">=</span><span class="n">label</span><span class="p">,</span> <span class="n">temperature</span><span class="o">=</span><span class="n">T</span><span class="p">,</span> <span class="o">**</span><span class="n">common</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">label</span><span class="p">,</span> <span class="n">T</span> <span class="ow">in</span> <span class="p">(</span>
+            <span class="p">(</span><span class="s1">&#39;ordered&#39;</span><span class="p">,</span> <span class="n">T_ORDERED</span><span class="p">),</span> <span class="p">(</span><span class="s1">&#39;quasi&#39;</span><span class="p">,</span> <span class="n">T_QUASI</span><span class="p">),</span> <span class="p">(</span><span class="s1">&#39;disordered&#39;</span><span class="p">,</span> <span class="n">T_DISORDERED</span><span class="p">),</span>
+        <span class="p">)</span>
+    <span class="p">]</span>
+    <span class="n">results</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="n">label</span><span class="p">:</span> <span class="p">(</span><span class="n">r</span><span class="p">,</span> <span class="n">G</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">label</span><span class="p">,</span> <span class="n">r</span><span class="p">,</span> <span class="n">G</span> <span class="ow">in</span> <span class="n">parallel_sweep</span><span class="p">(</span>
+            <span class="n">worker_func</span><span class="o">=</span><span class="n">measure_correlation_point</span><span class="p">,</span> <span class="n">params</span><span class="o">=</span><span class="n">points</span><span class="p">,</span>
+        <span class="p">)</span>
+    <span class="p">}</span>
+    <span class="n">r_ordered</span><span class="p">,</span> <span class="n">G_ordered</span> <span class="o">=</span> <span class="n">results</span><span class="p">[</span><span class="s1">&#39;ordered&#39;</span><span class="p">]</span>
+    <span class="n">r_quasi</span><span class="p">,</span> <span class="n">G_quasi</span> <span class="o">=</span> <span class="n">results</span><span class="p">[</span><span class="s1">&#39;quasi&#39;</span><span class="p">]</span>
+    <span class="n">r_disordered</span><span class="p">,</span> <span class="n">G_disordered</span> <span class="o">=</span> <span class="n">results</span><span class="p">[</span><span class="s1">&#39;disordered&#39;</span><span class="p">]</span>
 
     <span class="c1"># Verify r arrays are identical (all from same lattice size).</span>
-    <span class="k">assert</span> <span class="n">np</span><span class="o">.</span><span class="n">array_equal</span><span class="p">(</span><span class="n">r_ordered</span><span class="p">,</span> <span class="n">r_quasi</span><span class="p">)</span> <span class="ow">and</span> <span class="n">np</span><span class="o">.</span><span class="n">array_equal</span><span class="p">(</span><span class="n">r_quasi</span><span class="p">,</span> <span class="n">r_disordered</span><span class="p">)</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">array_equal</span><span class="p">(</span><span class="n">r_ordered</span><span class="p">,</span> <span class="n">r_quasi</span><span class="p">)</span> <span class="ow">and</span> <span class="n">np</span><span class="o">.</span><span class="n">array_equal</span><span class="p">(</span><span class="n">r_quasi</span><span class="p">,</span> <span class="n">r_disordered</span><span class="p">)):</span>
+        <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span>
+            <span class="s1">&#39;Radial distance arrays differ between temperature points; &#39;</span>
+            <span class="s1">&#39;all three measurements must share the same lattice size.&#39;</span>
+        <span class="p">)</span>
     <span class="n">r</span> <span class="o">=</span> <span class="n">r_ordered</span>
+
+    <span class="c1"># Between T1 and T2 the discrete anisotropy is irrelevant at long distances</span>
+    <span class="c1"># and the model behaves like XY, so the same spin-wave exponent applies;</span>
+    <span class="c1"># above T2 correlations decay exponentially with a finite length.</span>
+    <span class="n">eta_quasi</span> <span class="o">=</span> <span class="n">fit_correlation_exponent</span><span class="p">(</span><span class="n">r</span><span class="o">=</span><span class="n">r</span><span class="p">,</span> <span class="n">G</span><span class="o">=</span><span class="n">G_quasi</span><span class="p">)</span>
+    <span class="n">xi_disordered</span> <span class="o">=</span> <span class="n">fit_correlation_length</span><span class="p">(</span><span class="n">r</span><span class="o">=</span><span class="n">r</span><span class="p">,</span> <span class="n">G</span><span class="o">=</span><span class="n">G_disordered</span><span class="p">)</span>
+    <span class="n">eta_spin_wave</span> <span class="o">=</span> <span class="n">T_QUASI</span> <span class="o">/</span> <span class="p">(</span><span class="mf">2.0</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="p">)</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
+        <span class="sa">f</span><span class="s1">&#39;T=</span><span class="si">{</span><span class="n">T_QUASI</span><span class="si">}</span><span class="s1">: fitted eta = </span><span class="si">{</span><span class="n">eta_quasi</span><span class="si">:</span><span class="s1">.4f</span><span class="si">}</span><span class="s1"> &#39;</span>
+        <span class="sa">f</span><span class="s1">&#39;(spin-wave prediction </span><span class="si">{</span><span class="n">eta_spin_wave</span><span class="si">:</span><span class="s1">.4f</span><span class="si">}</span><span class="s1">)&#39;</span>
+    <span class="p">)</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;T=</span><span class="si">{</span><span class="n">T_DISORDERED</span><span class="si">}</span><span class="s1">: fitted correlation length xi = </span><span class="si">{</span><span class="n">xi_disordered</span><span class="si">:</span><span class="s1">.4f</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
 
     <span class="c1"># --- Plotting ---</span>
     <span class="n">fig</span><span class="p">,</span> <span class="p">(</span><span class="n">ax1</span><span class="p">,</span> <span class="n">ax2</span><span class="p">)</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">14</span><span class="p">,</span> <span class="mi">6</span><span class="p">))</span>
 
-    <span class="n">ax1</span><span class="o">.</span><span class="n">loglog</span><span class="p">(</span><span class="n">r</span><span class="p">[</span><span class="mi">1</span><span class="p">:],</span> <span class="n">G_ordered</span><span class="p">[</span><span class="mi">1</span><span class="p">:],</span> <span class="s1">'o-'</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="sa">f</span><span class="s1">'T=</span><span class="si">{</span><span class="n">T_ORDERED</span><span class="si">}</span><span class="s1"> (ordered, T &lt; T₁)'</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.7</span><span class="p">)</span>
-    <span class="n">ax1</span><span class="o">.</span><span class="n">loglog</span><span class="p">(</span><span class="n">r</span><span class="p">[</span><span class="mi">1</span><span class="p">:],</span> <span class="n">G_quasi</span><span class="p">[</span><span class="mi">1</span><span class="p">:],</span> <span class="s1">'s-'</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="sa">f</span><span class="s1">'T=</span><span class="si">{</span><span class="n">T_QUASI</span><span class="si">}</span><span class="s1"> (quasi-ordered)'</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.7</span><span class="p">)</span>
+    <span class="n">ax1</span><span class="o">.</span><span class="n">loglog</span><span class="p">(</span><span class="n">r</span><span class="p">[</span><span class="mi">1</span><span class="p">:],</span> <span class="n">G_ordered</span><span class="p">[</span><span class="mi">1</span><span class="p">:],</span> <span class="s1">&#39;o-&#39;</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="sa">f</span><span class="s1">&#39;T=</span><span class="si">{</span><span class="n">T_ORDERED</span><span class="si">}</span><span class="s1"> (ordered, T &lt; T₁)&#39;</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.7</span><span class="p">)</span>
+    <span class="n">ax1</span><span class="o">.</span><span class="n">loglog</span><span class="p">(</span><span class="n">r</span><span class="p">[</span><span class="mi">1</span><span class="p">:],</span> <span class="n">G_quasi</span><span class="p">[</span><span class="mi">1</span><span class="p">:],</span> <span class="s1">&#39;s-&#39;</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="sa">f</span><span class="s1">&#39;T=</span><span class="si">{</span><span class="n">T_QUASI</span><span class="si">}</span><span class="s1"> (quasi-ordered)&#39;</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.7</span><span class="p">)</span>
     <span class="n">ax1</span><span class="o">.</span><span class="n">loglog</span><span class="p">(</span>
-        <span class="n">r</span><span class="p">[</span><span class="mi">1</span><span class="p">:],</span> <span class="n">G_disordered</span><span class="p">[</span><span class="mi">1</span><span class="p">:],</span> <span class="s1">'x-'</span><span class="p">,</span>
-        <span class="n">label</span><span class="o">=</span><span class="sa">f</span><span class="s1">'T=</span><span class="si">{</span><span class="n">T_DISORDERED</span><span class="si">}</span><span class="s1"> (disordered, T &gt; T</span><span class="se">\u2082</span><span class="s1">)'</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.7</span><span class="p">,</span>
+        <span class="n">r</span><span class="p">[</span><span class="mi">1</span><span class="p">:],</span> <span class="n">G_disordered</span><span class="p">[</span><span class="mi">1</span><span class="p">:],</span> <span class="s1">&#39;x-&#39;</span><span class="p">,</span>
+        <span class="n">label</span><span class="o">=</span><span class="sa">f</span><span class="s1">&#39;T=</span><span class="si">{</span><span class="n">T_DISORDERED</span><span class="si">}</span><span class="s1"> (disordered, T &gt; T</span><span class="se">\u2082</span><span class="s1">)&#39;</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.7</span><span class="p">,</span>
     <span class="p">)</span>
-    <span class="n">ax1</span><span class="o">.</span><span class="n">set_title</span><span class="p">(</span><span class="s1">'Log-Log Plot'</span><span class="p">)</span>
-    <span class="n">ax1</span><span class="o">.</span><span class="n">set_xlabel</span><span class="p">(</span><span class="s1">'Distance r'</span><span class="p">)</span>
-    <span class="n">ax1</span><span class="o">.</span><span class="n">set_ylabel</span><span class="p">(</span><span class="s1">'Correlation G(r)'</span><span class="p">)</span>
+    <span class="n">ax1</span><span class="o">.</span><span class="n">set_title</span><span class="p">(</span><span class="s1">&#39;Log-Log Plot&#39;</span><span class="p">)</span>
+    <span class="n">ax1</span><span class="o">.</span><span class="n">set_xlabel</span><span class="p">(</span><span class="s1">&#39;Distance r&#39;</span><span class="p">)</span>
+    <span class="n">ax1</span><span class="o">.</span><span class="n">set_ylabel</span><span class="p">(</span><span class="s1">&#39;Correlation G(r)&#39;</span><span class="p">)</span>
     <span class="n">ax1</span><span class="o">.</span><span class="n">legend</span><span class="p">()</span>
-    <span class="n">ax1</span><span class="o">.</span><span class="n">grid</span><span class="p">(</span><span class="kc">True</span><span class="p">,</span> <span class="n">which</span><span class="o">=</span><span class="s1">'both'</span><span class="p">,</span> <span class="n">ls</span><span class="o">=</span><span class="s1">'-'</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.5</span><span class="p">)</span>
+    <span class="n">ax1</span><span class="o">.</span><span class="n">grid</span><span class="p">(</span><span class="kc">True</span><span class="p">,</span> <span class="n">which</span><span class="o">=</span><span class="s1">&#39;both&#39;</span><span class="p">,</span> <span class="n">ls</span><span class="o">=</span><span class="s1">&#39;-&#39;</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.5</span><span class="p">)</span>
 
-    <span class="n">ax2</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">r</span><span class="p">,</span> <span class="n">G_ordered</span><span class="p">,</span> <span class="s1">'o-'</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="sa">f</span><span class="s1">'T=</span><span class="si">{</span><span class="n">T_ORDERED</span><span class="si">}</span><span class="s1"> (ordered)'</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.7</span><span class="p">)</span>
-    <span class="n">ax2</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">r</span><span class="p">,</span> <span class="n">G_quasi</span><span class="p">,</span> <span class="s1">'s-'</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="sa">f</span><span class="s1">'T=</span><span class="si">{</span><span class="n">T_QUASI</span><span class="si">}</span><span class="s1"> (quasi-ordered)'</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.7</span><span class="p">)</span>
-    <span class="n">ax2</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">r</span><span class="p">,</span> <span class="n">G_disordered</span><span class="p">,</span> <span class="s1">'x-'</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="sa">f</span><span class="s1">'T=</span><span class="si">{</span><span class="n">T_DISORDERED</span><span class="si">}</span><span class="s1"> (disordered)'</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.7</span><span class="p">)</span>
-    <span class="n">ax2</span><span class="o">.</span><span class="n">set_yscale</span><span class="p">(</span><span class="s1">'log'</span><span class="p">)</span>
-    <span class="n">ax2</span><span class="o">.</span><span class="n">set_title</span><span class="p">(</span><span class="s1">'Semi-Log Plot'</span><span class="p">)</span>
-    <span class="n">ax2</span><span class="o">.</span><span class="n">set_xlabel</span><span class="p">(</span><span class="s1">'Distance r'</span><span class="p">)</span>
-    <span class="n">ax2</span><span class="o">.</span><span class="n">set_ylabel</span><span class="p">(</span><span class="s1">'Correlation G(r)'</span><span class="p">)</span>
+    <span class="n">ax2</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">r</span><span class="p">,</span> <span class="n">G_ordered</span><span class="p">,</span> <span class="s1">&#39;o-&#39;</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="sa">f</span><span class="s1">&#39;T=</span><span class="si">{</span><span class="n">T_ORDERED</span><span class="si">}</span><span class="s1"> (ordered)&#39;</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.7</span><span class="p">)</span>
+    <span class="n">ax2</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">r</span><span class="p">,</span> <span class="n">G_quasi</span><span class="p">,</span> <span class="s1">&#39;s-&#39;</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="sa">f</span><span class="s1">&#39;T=</span><span class="si">{</span><span class="n">T_QUASI</span><span class="si">}</span><span class="s1"> (quasi-ordered)&#39;</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.7</span><span class="p">)</span>
+    <span class="n">ax2</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">r</span><span class="p">,</span> <span class="n">G_disordered</span><span class="p">,</span> <span class="s1">&#39;x-&#39;</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="sa">f</span><span class="s1">&#39;T=</span><span class="si">{</span><span class="n">T_DISORDERED</span><span class="si">}</span><span class="s1"> (disordered)&#39;</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.7</span><span class="p">)</span>
+    <span class="n">ax2</span><span class="o">.</span><span class="n">set_yscale</span><span class="p">(</span><span class="s1">&#39;log&#39;</span><span class="p">)</span>
+    <span class="n">ax2</span><span class="o">.</span><span class="n">set_title</span><span class="p">(</span><span class="s1">&#39;Semi-Log Plot&#39;</span><span class="p">)</span>
+    <span class="n">ax2</span><span class="o">.</span><span class="n">set_xlabel</span><span class="p">(</span><span class="s1">&#39;Distance r&#39;</span><span class="p">)</span>
+    <span class="n">ax2</span><span class="o">.</span><span class="n">set_ylabel</span><span class="p">(</span><span class="s1">&#39;Correlation G(r)&#39;</span><span class="p">)</span>
     <span class="n">ax2</span><span class="o">.</span><span class="n">legend</span><span class="p">()</span>
-    <span class="n">ax2</span><span class="o">.</span><span class="n">grid</span><span class="p">(</span><span class="kc">True</span><span class="p">,</span> <span class="n">which</span><span class="o">=</span><span class="s1">'both'</span><span class="p">,</span> <span class="n">ls</span><span class="o">=</span><span class="s1">'-'</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.5</span><span class="p">)</span>
+    <span class="n">ax2</span><span class="o">.</span><span class="n">grid</span><span class="p">(</span><span class="kc">True</span><span class="p">,</span> <span class="n">which</span><span class="o">=</span><span class="s1">&#39;both&#39;</span><span class="p">,</span> <span class="n">ls</span><span class="o">=</span><span class="s1">&#39;-&#39;</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.5</span><span class="p">)</span>
 
-    <span class="n">fig</span><span class="o">.</span><span class="n">suptitle</span><span class="p">(</span><span class="sa">f</span><span class="s1">'</span><span class="si">{</span><span class="n">args</span><span class="o">.</span><span class="n">q</span><span class="si">}</span><span class="s1">-state Clock Model: Correlation Comparison (L=</span><span class="si">{</span><span class="n">args</span><span class="o">.</span><span class="n">size</span><span class="si">}</span><span class="s1">)'</span><span class="p">)</span>
+    <span class="n">fig</span><span class="o">.</span><span class="n">suptitle</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">args</span><span class="o">.</span><span class="n">q</span><span class="si">}</span><span class="s1">-state Clock Model: Correlation Comparison (L=</span><span class="si">{</span><span class="n">args</span><span class="o">.</span><span class="n">size</span><span class="si">}</span><span class="s1">)&#39;</span><span class="p">)</span>
 
     <span class="n">output_dir</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">ensure_results_dir</span><span class="p">(</span><span class="n">directory</span><span class="o">=</span><span class="n">args</span><span class="o">.</span><span class="n">output_dir</span><span class="p">)</span>
-    <span class="n">save_plot</span><span class="p">(</span><span class="n">filename</span><span class="o">=</span><span class="s1">'correlation_comparison.png'</span><span class="p">,</span> <span class="n">directory</span><span class="o">=</span><span class="n">output_dir</span><span class="p">)</span>
+    <span class="n">save_plot</span><span class="p">(</span><span class="n">filename</span><span class="o">=</span><span class="s1">&#39;correlation_comparison.png&#39;</span><span class="p">,</span> <span class="n">directory</span><span class="o">=</span><span class="n">output_dir</span><span class="p">)</span>
 
     <span class="c1"># Save data for notebook consumption.</span>
-    <span class="n">npz_path</span> <span class="o">=</span> <span class="sa">f</span><span class="s1">'</span><span class="si">{</span><span class="n">output_dir</span><span class="si">}</span><span class="s1">/correlation_comparison.npz'</span>
+    <span class="n">npz_path</span> <span class="o">=</span> <span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">output_dir</span><span class="si">}</span><span class="s1">/correlation_comparison.npz&#39;</span>
     <span class="n">np</span><span class="o">.</span><span class="n">savez_compressed</span><span class="p">(</span>
         <span class="n">npz_path</span><span class="p">,</span>
         <span class="n">r</span><span class="o">=</span><span class="n">r</span><span class="p">,</span>
@@ -285,12 +256,15 @@
         <span class="n">eq_max</span><span class="o">=</span><span class="n">args</span><span class="o">.</span><span class="n">eq_max</span><span class="p">,</span>
         <span class="n">sample_interval</span><span class="o">=</span><span class="n">args</span><span class="o">.</span><span class="n">interval</span><span class="p">,</span>
         <span class="n">seed</span><span class="o">=</span><span class="n">args</span><span class="o">.</span><span class="n">seed</span><span class="p">,</span>
+        <span class="n">eta_quasi</span><span class="o">=</span><span class="n">eta_quasi</span><span class="p">,</span>
+        <span class="n">eta_quasi_spin_wave</span><span class="o">=</span><span class="n">eta_spin_wave</span><span class="p">,</span>
+        <span class="n">xi_disordered</span><span class="o">=</span><span class="n">xi_disordered</span><span class="p">,</span>
     <span class="p">)</span>
-    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s1">'Data saved to </span><span class="si">{</span><span class="n">npz_path</span><span class="si">}</span><span class="s1">'</span><span class="p">)</span></div>
+    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Data saved to </span><span class="si">{</span><span class="n">npz_path</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span></div>
 
 
 
-<span class="k">if</span> <span class="vm">__name__</span> <span class="o">==</span> <span class="s1">'__main__'</span><span class="p">:</span>
+<span class="k">if</span> <span class="vm">__name__</span> <span class="o">==</span> <span class="s1">&#39;__main__&#39;</span><span class="p">:</span>
     <span class="n">main</span><span class="p">()</span>
 </pre></div>
 

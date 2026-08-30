@@ -1,0 +1,647 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>utils.efficiency_runner &mdash; VibeSpin 0.1.0 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=9edc463e" />
+
+  
+      <script src="../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../_static/documentation_options.js?v=01f34227"></script>
+      <script src="../../_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="../../_static/sphinx_highlight.js?v=6ffebe34"></script>
+      <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+      <script src="https://cdn.jsdelivr.net/npm/@jupyter-widgets/html-manager@^1.0.1/dist/embed-amd.js"></script>
+    <script src="../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../index.html" class="icon icon-home">
+            VibeSpin
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">User Guides:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../introduction.html">VibeSpin</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../physics.html">Physics and Algorithm Guide: VibeSpin</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../code.html">Developer and Architecture Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../scripts.html">Scripts Catalog: VibeSpin</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../AGENTS.html">Agent Instruction Guide: VibeSpin</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../BIBLIOGRAPHY.html">Project Bibliography: VibeSpin</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../changelog.html">Changelog</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Research &amp; Analysis:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../benchmarks.html">Performance Benchmarking for VibeSpin</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../wolff_efficiency.html">Wolff vs. Metropolis: Algorithmic Efficiency in the Critical Regime</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../dynamic_critical_exponents.html">Dynamical Critical Exponents in the 2D Ising Model</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../ising_relaxation_and_autocorrelation_analysis.html">Ising Model: Relaxation to Equilibrium</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../ising_temperature_sweep.html">Ising Model: Temperature Sweep and Critical Behavior</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../xy_temperature_sweep.html">XY Model: Temperature Sweep and BKT Crossover</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../clock_temperature_sweep.html">Clock Model: Temperature Sweep and Discrete Symmetry Breaking</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../bkt_transition.html">BKT Transition: Vortices, Helicity, and Correlations</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../correlation_and_coarsening.html">Correlation Functions and Coarsening Dynamics</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">API Reference:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../api/modules.html">vibespin</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">VibeSpin</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">utils.efficiency_runner</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for utils.efficiency_runner</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">Shared machinery for the Wolff-versus-Metropolis efficiency comparison.</span>
+
+<span class="sd">The comparison asks the same question of every model here: at a given</span>
+<span class="sd">temperature, how many statistically independent configurations per second of</span>
+<span class="sd">wall-clock time does a local update deliver, and how many does the cluster</span>
+<span class="sd">update deliver?  Nothing in that measurement is model-specific except the</span>
+<span class="sd">simulation class and where the interesting temperature window lies, so the</span>
+<span class="sd">worker, the figure, and the argument surface live here and each model script</span>
+<span class="sd">supplies only its own physics.</span>
+
+<span class="sd">Comparing raw autocorrelation times across the two algorithms would be</span>
+<span class="sd">meaningless, because one Wolff step touches a cluster and one Metropolis sweep</span>
+<span class="sd">touches the whole lattice.  The work-normalised time multiplies the Wolff</span>
+<span class="sd">autocorrelation time by the mean cluster fraction, putting both on a</span>
+<span class="sd">lattice-sweep footing; the independent-samples-per-second figure sidesteps the</span>
+<span class="sd">question entirely by measuring against the clock.</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">__future__</span><span class="w"> </span><span class="kn">import</span> <span class="n">annotations</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">argparse</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">logging</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">os</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">time</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">NamedTuple</span><span class="p">,</span> <span class="n">cast</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">matplotlib.pyplot</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">plt</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">utils.equilibration</span><span class="w"> </span><span class="kn">import</span> <span class="n">convergence_equilibrate</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">utils.exceptions</span><span class="w"> </span><span class="kn">import</span> <span class="n">ZeroVarianceAutocorrelationError</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">utils.observables</span><span class="w"> </span><span class="kn">import</span> <span class="n">calculate_thermodynamics</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">utils.statistics</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
+    <span class="n">DEFAULT_CONFIDENCE_LEVEL</span><span class="p">,</span>
+    <span class="n">UNCERTAINTY_METHOD_REPLICATE</span><span class="p">,</span>
+    <span class="n">calculate_autocorr</span><span class="p">,</span>
+    <span class="n">summarize_replicate_samples</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">utils.sweep_helpers</span><span class="w"> </span><span class="kn">import</span> <span class="n">derive_point_seed</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">utils.system</span><span class="w"> </span><span class="kn">import</span> <span class="n">parallel_sweep</span><span class="p">,</span> <span class="n">setup_logging</span>
+
+<span class="c1">#: Quantities the worker reports per (temperature, seed) point.</span>
+<span class="n">_MEASURED_KEYS</span> <span class="o">=</span> <span class="p">(</span>
+    <span class="s1">&#39;tau_metro&#39;</span><span class="p">,</span> <span class="s1">&#39;tau_wolff&#39;</span><span class="p">,</span> <span class="s1">&#39;iss_metro&#39;</span><span class="p">,</span> <span class="s1">&#39;iss_wolff&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;mean_cluster_frac&#39;</span><span class="p">,</span> <span class="s1">&#39;chi_metro&#39;</span><span class="p">,</span> <span class="s1">&#39;chi_wolff&#39;</span><span class="p">,</span>
+<span class="p">)</span>
+
+<span class="c1">#: Cluster sizes are measured in a separate short pass so that the timing runs</span>
+<span class="c1">#: stay free of the per-step bookkeeping the cluster record would add.</span>
+<span class="n">_CLUSTER_PASS_STEPS</span> <span class="o">=</span> <span class="mi">300</span>
+
+
+<div class="viewcode-block" id="EfficiencyPoint">
+<a class="viewcode-back" href="../../api/vibespin.utils.html#utils.efficiency_runner.EfficiencyPoint">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">EfficiencyPoint</span><span class="p">(</span><span class="n">NamedTuple</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Typed worker payload for one (temperature, seed) efficiency measurement.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    temp_idx : int</span>
+<span class="sd">        Index of this temperature in the sweep grid.</span>
+<span class="sd">    seed_idx : int</span>
+<span class="sd">        Replica index within the seed ensemble for this temperature.</span>
+<span class="sd">    temperature : float</span>
+<span class="sd">        Simulation temperature T.</span>
+<span class="sd">    size : int</span>
+<span class="sd">        Linear lattice dimension L.</span>
+<span class="sd">    eq_probe_steps : int</span>
+<span class="sd">        Chunk size for the two-start convergence check.</span>
+<span class="sd">    eq_max_steps : int</span>
+<span class="sd">        Hard cap on equilibration steps.</span>
+<span class="sd">    meas_steps : int</span>
+<span class="sd">        Timed measurement steps per algorithm.</span>
+<span class="sd">    model_cls : type</span>
+<span class="sd">        Simulation class to instantiate.  It must be importable under its</span>
+<span class="sd">        qualified name so that it survives the multiprocessing pickle.</span>
+<span class="sd">    model_kwargs : dict[str, typing.Any]</span>
+<span class="sd">        Extra constructor arguments beyond size, temperature, update, start,</span>
+<span class="sd">        and seed.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">temp_idx</span><span class="p">:</span> <span class="nb">int</span>
+    <span class="n">seed_idx</span><span class="p">:</span> <span class="nb">int</span>
+    <span class="n">temperature</span><span class="p">:</span> <span class="nb">float</span>
+    <span class="n">size</span><span class="p">:</span> <span class="nb">int</span>
+    <span class="n">eq_probe_steps</span><span class="p">:</span> <span class="nb">int</span>
+    <span class="n">eq_max_steps</span><span class="p">:</span> <span class="nb">int</span>
+    <span class="n">meas_steps</span><span class="p">:</span> <span class="nb">int</span>
+    <span class="n">model_cls</span><span class="p">:</span> <span class="nb">type</span>
+    <span class="n">model_kwargs</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]</span></div>
+
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_equilibrated_pair</span><span class="p">(</span><span class="o">*</span><span class="p">,</span> <span class="n">point</span><span class="p">:</span> <span class="n">EfficiencyPoint</span><span class="p">,</span> <span class="n">update</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">seed</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Any</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Build a two-start pair, equilibrate it, and return the random-start run.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    point : EfficiencyPoint</span>
+<span class="sd">        Payload describing the measurement.</span>
+<span class="sd">    update : str</span>
+<span class="sd">        Update scheme for both simulations.</span>
+<span class="sd">    seed : int</span>
+<span class="sd">        Seed shared by both starts of this pair.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    typing.Any</span>
+<span class="sd">        The equilibrated random-start simulation, ready to be measured.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">common</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span>
+        <span class="n">size</span><span class="o">=</span><span class="n">point</span><span class="o">.</span><span class="n">size</span><span class="p">,</span> <span class="n">temp</span><span class="o">=</span><span class="n">point</span><span class="o">.</span><span class="n">temperature</span><span class="p">,</span> <span class="n">update</span><span class="o">=</span><span class="n">update</span><span class="p">,</span> <span class="o">**</span><span class="n">point</span><span class="o">.</span><span class="n">model_kwargs</span>
+    <span class="p">)</span>
+    <span class="n">sim_random</span> <span class="o">=</span> <span class="n">point</span><span class="o">.</span><span class="n">model_cls</span><span class="p">(</span><span class="n">init_state</span><span class="o">=</span><span class="s1">&#39;random&#39;</span><span class="p">,</span> <span class="n">seed</span><span class="o">=</span><span class="n">seed</span><span class="p">,</span> <span class="o">**</span><span class="n">common</span><span class="p">)</span>
+    <span class="n">sim_ordered</span> <span class="o">=</span> <span class="n">point</span><span class="o">.</span><span class="n">model_cls</span><span class="p">(</span><span class="n">init_state</span><span class="o">=</span><span class="s1">&#39;ordered&#39;</span><span class="p">,</span> <span class="n">seed</span><span class="o">=</span><span class="n">seed</span><span class="p">,</span> <span class="o">**</span><span class="n">common</span><span class="p">)</span>
+    <span class="n">convergence_equilibrate</span><span class="p">(</span>
+        <span class="n">sim_random</span><span class="o">=</span><span class="n">sim_random</span><span class="p">,</span>
+        <span class="n">sim_ordered</span><span class="o">=</span><span class="n">sim_ordered</span><span class="p">,</span>
+        <span class="n">chunk_size</span><span class="o">=</span><span class="n">point</span><span class="o">.</span><span class="n">eq_probe_steps</span><span class="p">,</span>
+        <span class="n">max_steps</span><span class="o">=</span><span class="n">point</span><span class="o">.</span><span class="n">eq_max_steps</span><span class="p">,</span>
+    <span class="p">)</span>
+    <span class="k">return</span> <span class="n">sim_random</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_timed_measurement</span><span class="p">(</span>
+    <span class="o">*</span><span class="p">,</span> <span class="n">sim</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="n">meas_steps</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">temperature</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">size</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">float</span><span class="p">,</span> <span class="nb">float</span><span class="p">,</span> <span class="nb">float</span><span class="p">]:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Run a timed measurement pass and reduce it to the efficiency quantities.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    sim : typing.Any</span>
+<span class="sd">        Equilibrated simulation to measure.</span>
+<span class="sd">    meas_steps : int</span>
+<span class="sd">        Number of steps to run and time.</span>
+<span class="sd">    temperature : float</span>
+<span class="sd">        Temperature, needed for the susceptibility.</span>
+<span class="sd">    size : int</span>
+<span class="sd">        Linear lattice dimension, needed for the susceptibility.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    tuple[float, float, float]</span>
+<span class="sd">        Integrated autocorrelation time, independent samples per second, and</span>
+<span class="sd">        magnetic susceptibility.  The first two are NaN where the</span>
+<span class="sd">        magnetisation series has no usable variance.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">started</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">perf_counter</span><span class="p">()</span>
+    <span class="n">mags</span><span class="p">,</span> <span class="n">engs</span> <span class="o">=</span> <span class="n">sim</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="n">n_steps</span><span class="o">=</span><span class="n">meas_steps</span><span class="p">)</span>
+    <span class="n">elapsed</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">perf_counter</span><span class="p">()</span> <span class="o">-</span> <span class="n">started</span>
+
+    <span class="n">mags_arr</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">mags</span><span class="p">)</span>
+    <span class="n">engs_arr</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">engs</span><span class="p">)</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">_</span><span class="p">,</span> <span class="n">tau_int</span> <span class="o">=</span> <span class="n">calculate_autocorr</span><span class="p">(</span><span class="n">time_series</span><span class="o">=</span><span class="n">mags_arr</span><span class="p">)</span>
+    <span class="k">except</span> <span class="n">ZeroVarianceAutocorrelationError</span><span class="p">:</span>
+        <span class="n">tau_int</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="s1">&#39;nan&#39;</span><span class="p">)</span>
+
+    <span class="n">_</span><span class="p">,</span> <span class="n">_</span><span class="p">,</span> <span class="n">chi</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">calculate_thermodynamics</span><span class="p">(</span>
+        <span class="n">mags</span><span class="o">=</span><span class="n">mags_arr</span><span class="p">,</span> <span class="n">engs</span><span class="o">=</span><span class="n">engs_arr</span><span class="p">,</span> <span class="n">T</span><span class="o">=</span><span class="n">temperature</span><span class="p">,</span> <span class="n">L</span><span class="o">=</span><span class="n">size</span><span class="p">,</span>
+    <span class="p">)</span>
+    <span class="n">iss</span> <span class="o">=</span> <span class="p">(</span>
+        <span class="p">(</span><span class="n">meas_steps</span> <span class="o">/</span> <span class="n">elapsed</span><span class="p">)</span> <span class="o">/</span> <span class="n">tau_int</span>
+        <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">isfinite</span><span class="p">(</span><span class="n">tau_int</span><span class="p">)</span> <span class="ow">and</span> <span class="n">tau_int</span> <span class="o">&gt;</span> <span class="mi">0</span>
+        <span class="k">else</span> <span class="nb">float</span><span class="p">(</span><span class="s1">&#39;nan&#39;</span><span class="p">)</span>
+    <span class="p">)</span>
+    <span class="k">return</span> <span class="n">tau_int</span><span class="p">,</span> <span class="n">iss</span><span class="p">,</span> <span class="n">chi</span>
+
+
+<div class="viewcode-block" id="measure_efficiency_point">
+<a class="viewcode-back" href="../../api/vibespin.utils.html#utils.efficiency_runner.measure_efficiency_point">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">measure_efficiency_point</span><span class="p">(</span><span class="n">point</span><span class="p">:</span> <span class="n">EfficiencyPoint</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">float</span><span class="p">]:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Measure local-update and cluster-update efficiency at one grid point.</span>
+
+<span class="sd">    Both algorithms start from their own independently equilibrated state, so</span>
+<span class="sd">    that neither inherits the other&#39;s correlations, and each is timed over the</span>
+<span class="sd">    same number of its own steps.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    point : EfficiencyPoint</span>
+<span class="sd">        Payload describing the measurement.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    dict[str, float]</span>
+<span class="sd">        Grid indices, temperature, and the seven measured quantities.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">seed</span> <span class="o">=</span> <span class="n">derive_point_seed</span><span class="p">(</span>
+        <span class="n">temperature_index</span><span class="o">=</span><span class="n">point</span><span class="o">.</span><span class="n">temp_idx</span><span class="p">,</span> <span class="n">seed_index</span><span class="o">=</span><span class="n">point</span><span class="o">.</span><span class="n">seed_idx</span><span class="p">,</span>
+    <span class="p">)</span>
+
+    <span class="n">sim_metro</span> <span class="o">=</span> <span class="n">_equilibrated_pair</span><span class="p">(</span><span class="n">point</span><span class="o">=</span><span class="n">point</span><span class="p">,</span> <span class="n">update</span><span class="o">=</span><span class="s1">&#39;checkerboard&#39;</span><span class="p">,</span> <span class="n">seed</span><span class="o">=</span><span class="n">seed</span><span class="p">)</span>
+    <span class="n">tau_metro</span><span class="p">,</span> <span class="n">iss_metro</span><span class="p">,</span> <span class="n">chi_metro</span> <span class="o">=</span> <span class="n">_timed_measurement</span><span class="p">(</span>
+        <span class="n">sim</span><span class="o">=</span><span class="n">sim_metro</span><span class="p">,</span> <span class="n">meas_steps</span><span class="o">=</span><span class="n">point</span><span class="o">.</span><span class="n">meas_steps</span><span class="p">,</span>
+        <span class="n">temperature</span><span class="o">=</span><span class="n">point</span><span class="o">.</span><span class="n">temperature</span><span class="p">,</span> <span class="n">size</span><span class="o">=</span><span class="n">point</span><span class="o">.</span><span class="n">size</span><span class="p">,</span>
+    <span class="p">)</span>
+
+    <span class="n">sim_wolff</span> <span class="o">=</span> <span class="n">_equilibrated_pair</span><span class="p">(</span><span class="n">point</span><span class="o">=</span><span class="n">point</span><span class="p">,</span> <span class="n">update</span><span class="o">=</span><span class="s1">&#39;wolff&#39;</span><span class="p">,</span> <span class="n">seed</span><span class="o">=</span><span class="n">seed</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span>
+    <span class="n">tau_wolff</span><span class="p">,</span> <span class="n">iss_wolff</span><span class="p">,</span> <span class="n">chi_wolff</span> <span class="o">=</span> <span class="n">_timed_measurement</span><span class="p">(</span>
+        <span class="n">sim</span><span class="o">=</span><span class="n">sim_wolff</span><span class="p">,</span> <span class="n">meas_steps</span><span class="o">=</span><span class="n">point</span><span class="o">.</span><span class="n">meas_steps</span><span class="p">,</span>
+        <span class="n">temperature</span><span class="o">=</span><span class="n">point</span><span class="o">.</span><span class="n">temperature</span><span class="p">,</span> <span class="n">size</span><span class="o">=</span><span class="n">point</span><span class="o">.</span><span class="n">size</span><span class="p">,</span>
+    <span class="p">)</span>
+
+    <span class="n">sim_cluster</span> <span class="o">=</span> <span class="n">_equilibrated_pair</span><span class="p">(</span><span class="n">point</span><span class="o">=</span><span class="n">point</span><span class="p">,</span> <span class="n">update</span><span class="o">=</span><span class="s1">&#39;wolff&#39;</span><span class="p">,</span> <span class="n">seed</span><span class="o">=</span><span class="n">seed</span> <span class="o">+</span> <span class="mi">2</span><span class="p">)</span>
+    <span class="n">_</span><span class="p">,</span> <span class="n">_</span><span class="p">,</span> <span class="n">cluster_sizes</span> <span class="o">=</span> <span class="n">sim_cluster</span><span class="o">.</span><span class="n">run_with_cluster_sizes</span><span class="p">(</span>
+        <span class="n">n_steps</span><span class="o">=</span><span class="nb">min</span><span class="p">(</span><span class="n">point</span><span class="o">.</span><span class="n">meas_steps</span><span class="p">,</span> <span class="n">_CLUSTER_PASS_STEPS</span><span class="p">),</span>
+    <span class="p">)</span>
+    <span class="n">mean_cluster_frac</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">cluster_sizes</span><span class="p">))</span> <span class="o">/</span> <span class="nb">float</span><span class="p">(</span><span class="n">point</span><span class="o">.</span><span class="n">size</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="p">{</span>
+        <span class="s1">&#39;temp_idx&#39;</span><span class="p">:</span> <span class="nb">float</span><span class="p">(</span><span class="n">point</span><span class="o">.</span><span class="n">temp_idx</span><span class="p">),</span>
+        <span class="s1">&#39;seed_idx&#39;</span><span class="p">:</span> <span class="nb">float</span><span class="p">(</span><span class="n">point</span><span class="o">.</span><span class="n">seed_idx</span><span class="p">),</span>
+        <span class="s1">&#39;T&#39;</span><span class="p">:</span> <span class="nb">float</span><span class="p">(</span><span class="n">point</span><span class="o">.</span><span class="n">temperature</span><span class="p">),</span>
+        <span class="s1">&#39;tau_metro&#39;</span><span class="p">:</span> <span class="n">tau_metro</span><span class="p">,</span>
+        <span class="s1">&#39;tau_wolff&#39;</span><span class="p">:</span> <span class="n">tau_wolff</span><span class="p">,</span>
+        <span class="s1">&#39;iss_metro&#39;</span><span class="p">:</span> <span class="n">iss_metro</span><span class="p">,</span>
+        <span class="s1">&#39;iss_wolff&#39;</span><span class="p">:</span> <span class="n">iss_wolff</span><span class="p">,</span>
+        <span class="s1">&#39;mean_cluster_frac&#39;</span><span class="p">:</span> <span class="n">mean_cluster_frac</span><span class="p">,</span>
+        <span class="s1">&#39;chi_metro&#39;</span><span class="p">:</span> <span class="n">chi_metro</span><span class="p">,</span>
+        <span class="s1">&#39;chi_wolff&#39;</span><span class="p">:</span> <span class="n">chi_wolff</span><span class="p">,</span>
+    <span class="p">}</span></div>
+
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_summarize</span><span class="p">(</span><span class="o">*</span><span class="p">,</span> <span class="n">samples</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">]:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Reduce a (temperature, seed) sample grid to a median and a 16-84 band.&quot;&quot;&quot;</span>
+    <span class="n">summary</span> <span class="o">=</span> <span class="n">summarize_replicate_samples</span><span class="p">(</span><span class="n">samples</span><span class="o">=</span><span class="n">samples</span><span class="p">)</span>
+    <span class="k">return</span> <span class="p">{</span>
+        <span class="s1">&#39;value&#39;</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">summary</span><span class="p">[</span><span class="s1">&#39;value&#39;</span><span class="p">]),</span>
+        <span class="s1">&#39;p16&#39;</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">summary</span><span class="p">[</span><span class="s1">&#39;ci_low&#39;</span><span class="p">]),</span>
+        <span class="s1">&#39;p84&#39;</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">summary</span><span class="p">[</span><span class="s1">&#39;ci_high&#39;</span><span class="p">]),</span>
+    <span class="p">}</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_band</span><span class="p">(</span>
+    <span class="o">*</span><span class="p">,</span> <span class="n">ax</span><span class="p">:</span> <span class="n">plt</span><span class="o">.</span><span class="n">Axes</span><span class="p">,</span> <span class="n">temperatures</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">summary</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">],</span>
+    <span class="n">color</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">marker</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">label</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span><span class="p">,</span> <span class="n">log</span><span class="p">:</span> <span class="nb">bool</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Draw one median curve with its percentile band on the given axes.&quot;&quot;&quot;</span>
+    <span class="n">plot</span> <span class="o">=</span> <span class="n">ax</span><span class="o">.</span><span class="n">semilogy</span> <span class="k">if</span> <span class="n">log</span> <span class="k">else</span> <span class="n">ax</span><span class="o">.</span><span class="n">plot</span>
+    <span class="n">plot</span><span class="p">(</span><span class="n">temperatures</span><span class="p">,</span> <span class="n">summary</span><span class="p">[</span><span class="s1">&#39;value&#39;</span><span class="p">],</span> <span class="n">marker</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="n">color</span><span class="p">,</span> <span class="n">ms</span><span class="o">=</span><span class="mi">4</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="n">label</span><span class="p">)</span>
+    <span class="n">ax</span><span class="o">.</span><span class="n">fill_between</span><span class="p">(</span>
+        <span class="n">temperatures</span><span class="p">,</span> <span class="n">summary</span><span class="p">[</span><span class="s1">&#39;p16&#39;</span><span class="p">],</span> <span class="n">summary</span><span class="p">[</span><span class="s1">&#39;p84&#39;</span><span class="p">],</span> <span class="n">color</span><span class="o">=</span><span class="n">color</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.15</span><span class="p">,</span>
+    <span class="p">)</span>
+
+
+<div class="viewcode-block" id="plot_efficiency">
+<a class="viewcode-back" href="../../api/vibespin.utils.html#utils.efficiency_runner.plot_efficiency">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">plot_efficiency</span><span class="p">(</span>
+    <span class="o">*</span><span class="p">,</span>
+    <span class="n">temperatures</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
+    <span class="n">summaries</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">]],</span>
+    <span class="n">title</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+    <span class="n">directory</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+    <span class="n">transitions</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">float</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Produce and save the four-panel efficiency comparison figure.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    temperatures : numpy.ndarray</span>
+<span class="sd">        Sorted temperature grid.</span>
+<span class="sd">    summaries : dict[str, dict[str, numpy.ndarray]]</span>
+<span class="sd">        Median and band for each plotted quantity, keyed by</span>
+<span class="sd">        ``tau_metro_norm``, ``tau_wolff_norm``, ``iss_metro``, ``iss_wolff``,</span>
+<span class="sd">        ``mean_cluster_frac``, ``chi_metro``, and ``chi_wolff``.</span>
+<span class="sd">    title : str</span>
+<span class="sd">        Figure suptitle.</span>
+<span class="sd">    directory : str</span>
+<span class="sd">        Output directory for the saved PNG.</span>
+<span class="sd">    transitions : dict[str, float] or None</span>
+<span class="sd">        Vertical reference lines to draw in every panel, keyed by legend</span>
+<span class="sd">        label, or None to omit them.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    None</span>
+<span class="sd">        The figure is written to ``wolff_efficiency.png`` in ``directory``.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">metro</span><span class="p">,</span> <span class="n">wolff</span> <span class="o">=</span> <span class="s1">&#39;#4878CF&#39;</span><span class="p">,</span> <span class="s1">&#39;#D65F5F&#39;</span>
+    <span class="n">fig</span><span class="p">,</span> <span class="n">axes</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">11</span><span class="p">,</span> <span class="mi">8</span><span class="p">))</span>
+    <span class="n">fig</span><span class="o">.</span><span class="n">suptitle</span><span class="p">(</span><span class="n">title</span><span class="p">,</span> <span class="n">fontsize</span><span class="o">=</span><span class="mi">13</span><span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">mark_transition</span><span class="p">(</span><span class="n">ax</span><span class="p">:</span> <span class="n">plt</span><span class="o">.</span><span class="n">Axes</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">for</span> <span class="n">offset</span><span class="p">,</span> <span class="p">(</span><span class="n">label</span><span class="p">,</span> <span class="n">temperature</span><span class="p">)</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="nb">sorted</span><span class="p">((</span><span class="n">transitions</span> <span class="ow">or</span> <span class="p">{})</span><span class="o">.</span><span class="n">items</span><span class="p">())):</span>
+            <span class="n">ax</span><span class="o">.</span><span class="n">axvline</span><span class="p">(</span>
+                <span class="n">temperature</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s1">&#39;0.4&#39;</span><span class="p">,</span> <span class="n">ls</span><span class="o">=</span><span class="s1">&#39;--&#39;</span> <span class="k">if</span> <span class="n">offset</span> <span class="o">==</span> <span class="mi">0</span> <span class="k">else</span> <span class="s1">&#39;:&#39;</span><span class="p">,</span> <span class="n">lw</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="n">label</span><span class="p">,</span>
+            <span class="p">)</span>
+
+    <span class="n">ax</span> <span class="o">=</span> <span class="n">axes</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">]</span>
+    <span class="n">_band</span><span class="p">(</span><span class="n">ax</span><span class="o">=</span><span class="n">ax</span><span class="p">,</span> <span class="n">temperatures</span><span class="o">=</span><span class="n">temperatures</span><span class="p">,</span> <span class="n">summary</span><span class="o">=</span><span class="n">summaries</span><span class="p">[</span><span class="s1">&#39;tau_metro_norm&#39;</span><span class="p">],</span>
+          <span class="n">color</span><span class="o">=</span><span class="n">metro</span><span class="p">,</span> <span class="n">marker</span><span class="o">=</span><span class="s1">&#39;-o&#39;</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s1">&#39;Metropolis&#39;</span><span class="p">,</span> <span class="n">log</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="n">_band</span><span class="p">(</span><span class="n">ax</span><span class="o">=</span><span class="n">ax</span><span class="p">,</span> <span class="n">temperatures</span><span class="o">=</span><span class="n">temperatures</span><span class="p">,</span> <span class="n">summary</span><span class="o">=</span><span class="n">summaries</span><span class="p">[</span><span class="s1">&#39;tau_wolff_norm&#39;</span><span class="p">],</span>
+          <span class="n">color</span><span class="o">=</span><span class="n">wolff</span><span class="p">,</span> <span class="n">marker</span><span class="o">=</span><span class="s1">&#39;-s&#39;</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s1">&#39;Wolff (normalised)&#39;</span><span class="p">,</span> <span class="n">log</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="n">mark_transition</span><span class="p">(</span><span class="n">ax</span><span class="p">)</span>
+    <span class="n">ax</span><span class="o">.</span><span class="n">set_xlabel</span><span class="p">(</span><span class="s1">&#39;Temperature $T$&#39;</span><span class="p">)</span>
+    <span class="n">ax</span><span class="o">.</span><span class="n">set_ylabel</span><span class="p">(</span><span class="sa">r</span><span class="s1">&#39;$\tau^{\mathrm</span><span class="si">{norm}</span><span class="s1">}_{\mathrm</span><span class="si">{int}</span><span class="s1">}$ ($L^2$-sweep equiv.)&#39;</span><span class="p">)</span>
+    <span class="n">ax</span><span class="o">.</span><span class="n">set_title</span><span class="p">(</span><span class="s1">&#39;Integrated autocorrelation time</span><span class="se">\n</span><span class="s1">(work-normalised; median with 16–84% band)&#39;</span><span class="p">)</span>
+    <span class="n">ax</span><span class="o">.</span><span class="n">legend</span><span class="p">(</span><span class="n">fontsize</span><span class="o">=</span><span class="mi">8</span><span class="p">)</span>
+
+    <span class="n">ax</span> <span class="o">=</span> <span class="n">axes</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">]</span>
+    <span class="n">_band</span><span class="p">(</span><span class="n">ax</span><span class="o">=</span><span class="n">ax</span><span class="p">,</span> <span class="n">temperatures</span><span class="o">=</span><span class="n">temperatures</span><span class="p">,</span> <span class="n">summary</span><span class="o">=</span><span class="n">summaries</span><span class="p">[</span><span class="s1">&#39;iss_metro&#39;</span><span class="p">],</span>
+          <span class="n">color</span><span class="o">=</span><span class="n">metro</span><span class="p">,</span> <span class="n">marker</span><span class="o">=</span><span class="s1">&#39;-o&#39;</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s1">&#39;Metropolis&#39;</span><span class="p">,</span> <span class="n">log</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="n">_band</span><span class="p">(</span><span class="n">ax</span><span class="o">=</span><span class="n">ax</span><span class="p">,</span> <span class="n">temperatures</span><span class="o">=</span><span class="n">temperatures</span><span class="p">,</span> <span class="n">summary</span><span class="o">=</span><span class="n">summaries</span><span class="p">[</span><span class="s1">&#39;iss_wolff&#39;</span><span class="p">],</span>
+          <span class="n">color</span><span class="o">=</span><span class="n">wolff</span><span class="p">,</span> <span class="n">marker</span><span class="o">=</span><span class="s1">&#39;-s&#39;</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s1">&#39;Wolff&#39;</span><span class="p">,</span> <span class="n">log</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="n">mark_transition</span><span class="p">(</span><span class="n">ax</span><span class="p">)</span>
+    <span class="n">ax</span><span class="o">.</span><span class="n">set_xlabel</span><span class="p">(</span><span class="s1">&#39;Temperature $T$&#39;</span><span class="p">)</span>
+    <span class="n">ax</span><span class="o">.</span><span class="n">set_ylabel</span><span class="p">(</span><span class="s1">&#39;Independent samples / s&#39;</span><span class="p">)</span>
+    <span class="n">ax</span><span class="o">.</span><span class="n">set_title</span><span class="p">(</span><span class="s1">&#39;Sampling efficiency ISS</span><span class="se">\n</span><span class="s1">(median with 16–84% band)&#39;</span><span class="p">)</span>
+    <span class="n">ax</span><span class="o">.</span><span class="n">legend</span><span class="p">(</span><span class="n">fontsize</span><span class="o">=</span><span class="mi">8</span><span class="p">)</span>
+
+    <span class="n">ax</span> <span class="o">=</span> <span class="n">axes</span><span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">]</span>
+    <span class="n">_band</span><span class="p">(</span><span class="n">ax</span><span class="o">=</span><span class="n">ax</span><span class="p">,</span> <span class="n">temperatures</span><span class="o">=</span><span class="n">temperatures</span><span class="p">,</span> <span class="n">summary</span><span class="o">=</span><span class="n">summaries</span><span class="p">[</span><span class="s1">&#39;mean_cluster_frac&#39;</span><span class="p">],</span>
+          <span class="n">color</span><span class="o">=</span><span class="n">wolff</span><span class="p">,</span> <span class="n">marker</span><span class="o">=</span><span class="s1">&#39;-^&#39;</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">log</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+    <span class="n">mark_transition</span><span class="p">(</span><span class="n">ax</span><span class="p">)</span>
+    <span class="n">ax</span><span class="o">.</span><span class="n">set_xlabel</span><span class="p">(</span><span class="s1">&#39;Temperature $T$&#39;</span><span class="p">)</span>
+    <span class="n">ax</span><span class="o">.</span><span class="n">set_ylabel</span><span class="p">(</span><span class="sa">r</span><span class="s1">&#39;$\langle C \rangle \,/\, N^2$&#39;</span><span class="p">)</span>
+    <span class="n">ax</span><span class="o">.</span><span class="n">set_title</span><span class="p">(</span>
+        <span class="s1">&#39;Mean cluster size fraction (Wolff)</span><span class="se">\n</span><span class="s1">&#39;</span>
+        <span class="sa">r</span><span class="s1">&#39;= normalisation factor $\langle C\rangle/L^2$&#39;</span><span class="p">,</span>
+    <span class="p">)</span>
+    <span class="n">ax</span><span class="o">.</span><span class="n">legend</span><span class="p">(</span><span class="n">fontsize</span><span class="o">=</span><span class="mi">8</span><span class="p">)</span>
+
+    <span class="n">ax</span> <span class="o">=</span> <span class="n">axes</span><span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">]</span>
+    <span class="n">_band</span><span class="p">(</span><span class="n">ax</span><span class="o">=</span><span class="n">ax</span><span class="p">,</span> <span class="n">temperatures</span><span class="o">=</span><span class="n">temperatures</span><span class="p">,</span> <span class="n">summary</span><span class="o">=</span><span class="n">summaries</span><span class="p">[</span><span class="s1">&#39;chi_metro&#39;</span><span class="p">],</span>
+          <span class="n">color</span><span class="o">=</span><span class="n">metro</span><span class="p">,</span> <span class="n">marker</span><span class="o">=</span><span class="s1">&#39;-o&#39;</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s1">&#39;Metropolis&#39;</span><span class="p">,</span> <span class="n">log</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+    <span class="n">_band</span><span class="p">(</span><span class="n">ax</span><span class="o">=</span><span class="n">ax</span><span class="p">,</span> <span class="n">temperatures</span><span class="o">=</span><span class="n">temperatures</span><span class="p">,</span> <span class="n">summary</span><span class="o">=</span><span class="n">summaries</span><span class="p">[</span><span class="s1">&#39;chi_wolff&#39;</span><span class="p">],</span>
+          <span class="n">color</span><span class="o">=</span><span class="n">wolff</span><span class="p">,</span> <span class="n">marker</span><span class="o">=</span><span class="s1">&#39;-s&#39;</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s1">&#39;Wolff&#39;</span><span class="p">,</span> <span class="n">log</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+    <span class="n">mark_transition</span><span class="p">(</span><span class="n">ax</span><span class="p">)</span>
+    <span class="n">ax</span><span class="o">.</span><span class="n">set_xlabel</span><span class="p">(</span><span class="s1">&#39;Temperature $T$&#39;</span><span class="p">)</span>
+    <span class="n">ax</span><span class="o">.</span><span class="n">set_ylabel</span><span class="p">(</span><span class="sa">r</span><span class="s1">&#39;$\chi$&#39;</span><span class="p">)</span>
+    <span class="n">ax</span><span class="o">.</span><span class="n">set_title</span><span class="p">(</span><span class="s1">&#39;Susceptibility (agreement validates correctness)&#39;</span><span class="p">)</span>
+    <span class="n">ax</span><span class="o">.</span><span class="n">legend</span><span class="p">(</span><span class="n">fontsize</span><span class="o">=</span><span class="mi">8</span><span class="p">)</span>
+
+    <span class="n">fig</span><span class="o">.</span><span class="n">tight_layout</span><span class="p">()</span>
+    <span class="n">os</span><span class="o">.</span><span class="n">makedirs</span><span class="p">(</span><span class="n">directory</span><span class="p">,</span> <span class="n">exist_ok</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="n">fig</span><span class="o">.</span><span class="n">savefig</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">directory</span><span class="p">,</span> <span class="s1">&#39;wolff_efficiency.png&#39;</span><span class="p">),</span> <span class="n">dpi</span><span class="o">=</span><span class="mi">150</span><span class="p">,</span> <span class="n">bbox_inches</span><span class="o">=</span><span class="s1">&#39;tight&#39;</span><span class="p">)</span>
+    <span class="n">plt</span><span class="o">.</span><span class="n">close</span><span class="p">(</span><span class="n">fig</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="add_wolff_efficiency_arguments">
+<a class="viewcode-back" href="../../api/vibespin.utils.html#utils.efficiency_runner.add_wolff_efficiency_arguments">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">add_wolff_efficiency_arguments</span><span class="p">(</span>
+    <span class="o">*</span><span class="p">,</span>
+    <span class="n">parser</span><span class="p">:</span> <span class="n">argparse</span><span class="o">.</span><span class="n">ArgumentParser</span><span class="p">,</span>
+    <span class="n">size</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+    <span class="n">t_min</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
+    <span class="n">t_max</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
+    <span class="n">output_dir</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Add the argument surface shared by the per-model efficiency scripts.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    parser : argparse.ArgumentParser</span>
+<span class="sd">        Parser to extend.</span>
+<span class="sd">    size : int</span>
+<span class="sd">        Default linear lattice size L.</span>
+<span class="sd">    t_min : float</span>
+<span class="sd">        Default lower end of the temperature window.</span>
+<span class="sd">    t_max : float</span>
+<span class="sd">        Default upper end of the temperature window.</span>
+<span class="sd">    output_dir : str</span>
+<span class="sd">        Default directory for the NPZ file and the figure.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    None</span>
+<span class="sd">        The parser is modified in place.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;--size&#39;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">int</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="n">size</span><span class="p">,</span> <span class="n">help</span><span class="o">=</span><span class="s1">&#39;Lattice size L&#39;</span><span class="p">)</span>
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span>
+        <span class="s1">&#39;--eq-probe-steps&#39;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">int</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="mi">500</span><span class="p">,</span>
+        <span class="n">help</span><span class="o">=</span><span class="s1">&#39;Chunk size for convergence check during equilibration&#39;</span><span class="p">,</span>
+    <span class="p">)</span>
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span>
+        <span class="s1">&#39;--eq-max-steps&#39;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">int</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="mi">200_000</span><span class="p">,</span>
+        <span class="n">help</span><span class="o">=</span><span class="s1">&#39;Hard cap on equilibration steps&#39;</span><span class="p">,</span>
+    <span class="p">)</span>
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span>
+        <span class="s1">&#39;--meas-steps&#39;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">int</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="mi">2000</span><span class="p">,</span>
+        <span class="n">help</span><span class="o">=</span><span class="s1">&#39;Measurement steps per algorithm per temperature point&#39;</span><span class="p">,</span>
+    <span class="p">)</span>
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;--t-min&#39;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">float</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="n">t_min</span><span class="p">,</span> <span class="n">help</span><span class="o">=</span><span class="s1">&#39;Minimum temperature&#39;</span><span class="p">)</span>
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;--t-max&#39;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">float</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="n">t_max</span><span class="p">,</span> <span class="n">help</span><span class="o">=</span><span class="s1">&#39;Maximum temperature&#39;</span><span class="p">)</span>
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;--t-points&#39;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">int</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="mi">20</span><span class="p">,</span> <span class="n">help</span><span class="o">=</span><span class="s1">&#39;Temperature grid points&#39;</span><span class="p">)</span>
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span>
+        <span class="s1">&#39;--n-seeds&#39;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">int</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span>
+        <span class="n">help</span><span class="o">=</span><span class="s1">&#39;Independent seed replicas per temperature point&#39;</span><span class="p">,</span>
+    <span class="p">)</span>
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;--output-dir&#39;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">str</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="n">output_dir</span><span class="p">,</span> <span class="n">help</span><span class="o">=</span><span class="s1">&#39;Output directory&#39;</span><span class="p">)</span>
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;--log-file&#39;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">str</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">help</span><span class="o">=</span><span class="s1">&#39;Optional log file path&#39;</span><span class="p">)</span>
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;--verbose&#39;</span><span class="p">,</span> <span class="n">action</span><span class="o">=</span><span class="s1">&#39;store_true&#39;</span><span class="p">,</span> <span class="n">help</span><span class="o">=</span><span class="s1">&#39;Enable verbose logging&#39;</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="run_wolff_efficiency">
+<a class="viewcode-back" href="../../api/vibespin.utils.html#utils.efficiency_runner.run_wolff_efficiency">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">run_wolff_efficiency</span><span class="p">(</span>
+    <span class="o">*</span><span class="p">,</span>
+    <span class="n">args</span><span class="p">:</span> <span class="n">argparse</span><span class="o">.</span><span class="n">Namespace</span><span class="p">,</span>
+    <span class="n">model_cls</span><span class="p">:</span> <span class="nb">type</span><span class="p">,</span>
+    <span class="n">model_kwargs</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">],</span>
+    <span class="n">model_label</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+    <span class="n">transitions</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">float</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Run the efficiency comparison and write its NPZ file and figure.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    args : argparse.Namespace</span>
+<span class="sd">        Arguments parsed from a parser extended by</span>
+<span class="sd">        ``add_wolff_efficiency_arguments``.</span>
+<span class="sd">    model_cls : type</span>
+<span class="sd">        Simulation class to compare the two update schemes on.</span>
+<span class="sd">    model_kwargs : dict[str, typing.Any]</span>
+<span class="sd">        Extra constructor arguments beyond size, temperature, update, start,</span>
+<span class="sd">        and seed.</span>
+<span class="sd">    model_label : str</span>
+<span class="sd">        Model name for the figure title and the NPZ metadata.</span>
+<span class="sd">    transitions : dict[str, float] or None</span>
+<span class="sd">        Temperatures to mark in every panel, keyed by legend label, or None to</span>
+<span class="sd">        omit the markers.  The first by label is drawn dashed, the rest dotted.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    None</span>
+<span class="sd">        Results are written to ``args.output_dir``.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">logger</span> <span class="o">=</span> <span class="n">setup_logging</span><span class="p">(</span>
+        <span class="n">level</span><span class="o">=</span><span class="n">logging</span><span class="o">.</span><span class="n">DEBUG</span> <span class="k">if</span> <span class="n">args</span><span class="o">.</span><span class="n">verbose</span> <span class="k">else</span> <span class="n">logging</span><span class="o">.</span><span class="n">INFO</span><span class="p">,</span>
+        <span class="n">log_file</span><span class="o">=</span><span class="n">args</span><span class="o">.</span><span class="n">log_file</span><span class="p">,</span>
+    <span class="p">)</span>
+
+    <span class="n">size</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">args</span><span class="o">.</span><span class="n">size</span><span class="p">)</span>
+    <span class="n">n_seeds</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">args</span><span class="o">.</span><span class="n">n_seeds</span><span class="p">)</span>
+    <span class="n">temperatures</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="n">args</span><span class="o">.</span><span class="n">t_min</span><span class="p">,</span> <span class="n">args</span><span class="o">.</span><span class="n">t_max</span><span class="p">,</span> <span class="n">args</span><span class="o">.</span><span class="n">t_points</span><span class="p">)</span>
+
+    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
+        <span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">model_label</span><span class="si">}</span><span class="s1"> Wolff efficiency: L=</span><span class="si">{</span><span class="n">size</span><span class="si">}</span><span class="s1">, &#39;</span>
+        <span class="sa">f</span><span class="s1">&#39;T in [</span><span class="si">{</span><span class="n">args</span><span class="o">.</span><span class="n">t_min</span><span class="si">:</span><span class="s1">.2f</span><span class="si">}</span><span class="s1">, </span><span class="si">{</span><span class="n">args</span><span class="o">.</span><span class="n">t_max</span><span class="si">:</span><span class="s1">.2f</span><span class="si">}</span><span class="s1">], </span><span class="si">{</span><span class="n">args</span><span class="o">.</span><span class="n">t_points</span><span class="si">}</span><span class="s1"> points, &#39;</span>
+        <span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">n_seeds</span><span class="si">}</span><span class="s1"> seed replicas, </span><span class="si">{</span><span class="n">args</span><span class="o">.</span><span class="n">meas_steps</span><span class="si">}</span><span class="s1"> meas steps.&#39;</span>
+    <span class="p">)</span>
+
+    <span class="n">points</span> <span class="o">=</span> <span class="p">[</span>
+        <span class="n">EfficiencyPoint</span><span class="p">(</span>
+            <span class="n">temp_idx</span><span class="o">=</span><span class="n">temp_idx</span><span class="p">,</span>
+            <span class="n">seed_idx</span><span class="o">=</span><span class="n">seed_idx</span><span class="p">,</span>
+            <span class="n">temperature</span><span class="o">=</span><span class="nb">float</span><span class="p">(</span><span class="n">temperature</span><span class="p">),</span>
+            <span class="n">size</span><span class="o">=</span><span class="n">size</span><span class="p">,</span>
+            <span class="n">eq_probe_steps</span><span class="o">=</span><span class="nb">int</span><span class="p">(</span><span class="n">args</span><span class="o">.</span><span class="n">eq_probe_steps</span><span class="p">),</span>
+            <span class="n">eq_max_steps</span><span class="o">=</span><span class="nb">int</span><span class="p">(</span><span class="n">args</span><span class="o">.</span><span class="n">eq_max_steps</span><span class="p">),</span>
+            <span class="n">meas_steps</span><span class="o">=</span><span class="nb">int</span><span class="p">(</span><span class="n">args</span><span class="o">.</span><span class="n">meas_steps</span><span class="p">),</span>
+            <span class="n">model_cls</span><span class="o">=</span><span class="n">model_cls</span><span class="p">,</span>
+            <span class="n">model_kwargs</span><span class="o">=</span><span class="n">model_kwargs</span><span class="p">,</span>
+        <span class="p">)</span>
+        <span class="k">for</span> <span class="n">temp_idx</span><span class="p">,</span> <span class="n">temperature</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">temperatures</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">seed_idx</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n_seeds</span><span class="p">)</span>
+    <span class="p">]</span>
+    <span class="n">raw</span> <span class="o">=</span> <span class="n">parallel_sweep</span><span class="p">(</span><span class="n">worker_func</span><span class="o">=</span><span class="n">measure_efficiency_point</span><span class="p">,</span> <span class="n">params</span><span class="o">=</span><span class="n">points</span><span class="p">)</span>
+
+    <span class="n">samples</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="n">key</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">full</span><span class="p">((</span><span class="nb">len</span><span class="p">(</span><span class="n">temperatures</span><span class="p">),</span> <span class="n">n_seeds</span><span class="p">),</span> <span class="n">np</span><span class="o">.</span><span class="n">nan</span><span class="p">)</span> <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">_MEASURED_KEYS</span>
+    <span class="p">}</span>
+    <span class="k">for</span> <span class="n">record</span> <span class="ow">in</span> <span class="n">raw</span><span class="p">:</span>
+        <span class="n">i</span><span class="p">,</span> <span class="n">s</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">record</span><span class="p">[</span><span class="s1">&#39;temp_idx&#39;</span><span class="p">]),</span> <span class="nb">int</span><span class="p">(</span><span class="n">record</span><span class="p">[</span><span class="s1">&#39;seed_idx&#39;</span><span class="p">])</span>
+        <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">_MEASURED_KEYS</span><span class="p">:</span>
+            <span class="n">samples</span><span class="p">[</span><span class="n">key</span><span class="p">][</span><span class="n">i</span><span class="p">,</span> <span class="n">s</span><span class="p">]</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">record</span><span class="p">[</span><span class="n">key</span><span class="p">])</span>
+
+    <span class="c1"># One Wolff step touches a cluster while one Metropolis sweep touches the</span>
+    <span class="c1"># whole lattice, so the Wolff autocorrelation time is scaled by the mean</span>
+    <span class="c1"># cluster fraction to put both algorithms on a lattice-sweep footing.</span>
+    <span class="n">samples</span><span class="p">[</span><span class="s1">&#39;tau_metro_norm&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">samples</span><span class="p">[</span><span class="s1">&#39;tau_metro&#39;</span><span class="p">]</span>
+    <span class="n">samples</span><span class="p">[</span><span class="s1">&#39;tau_wolff_norm&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">samples</span><span class="p">[</span><span class="s1">&#39;tau_wolff&#39;</span><span class="p">]</span> <span class="o">*</span> <span class="n">samples</span><span class="p">[</span><span class="s1">&#39;mean_cluster_frac&#39;</span><span class="p">]</span>
+
+    <span class="n">summaries</span> <span class="o">=</span> <span class="p">{</span><span class="n">key</span><span class="p">:</span> <span class="n">_summarize</span><span class="p">(</span><span class="n">samples</span><span class="o">=</span><span class="n">array</span><span class="p">)</span> <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">array</span> <span class="ow">in</span> <span class="n">samples</span><span class="o">.</span><span class="n">items</span><span class="p">()}</span>
+
+    <span class="n">marked</span> <span class="o">=</span> <span class="n">transitions</span> <span class="ow">or</span> <span class="p">{}</span>
+    <span class="n">os</span><span class="o">.</span><span class="n">makedirs</span><span class="p">(</span><span class="n">args</span><span class="o">.</span><span class="n">output_dir</span><span class="p">,</span> <span class="n">exist_ok</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="n">npz_path</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">args</span><span class="o">.</span><span class="n">output_dir</span><span class="p">,</span> <span class="s1">&#39;wolff_efficiency.npz&#39;</span><span class="p">)</span>
+    <span class="n">np</span><span class="o">.</span><span class="n">savez</span><span class="p">(</span>
+        <span class="n">npz_path</span><span class="p">,</span>
+        <span class="n">temperatures</span><span class="o">=</span><span class="n">temperatures</span><span class="p">,</span>
+        <span class="n">n_seeds</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">int64</span><span class="p">(</span><span class="n">n_seeds</span><span class="p">),</span>
+        <span class="n">uncertainty_method</span><span class="o">=</span><span class="n">UNCERTAINTY_METHOD_REPLICATE</span><span class="p">,</span>
+        <span class="n">confidence_level</span><span class="o">=</span><span class="n">DEFAULT_CONFIDENCE_LEVEL</span><span class="p">,</span>
+        <span class="n">nan_or_undefined_count</span><span class="o">=</span><span class="nb">int</span><span class="p">(</span><span class="nb">sum</span><span class="p">(</span>
+            <span class="nb">int</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">isnan</span><span class="p">(</span><span class="n">samples</span><span class="p">[</span><span class="n">key</span><span class="p">])</span><span class="o">.</span><span class="n">sum</span><span class="p">())</span> <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">_MEASURED_KEYS</span>
+        <span class="p">)),</span>
+        <span class="n">model</span><span class="o">=</span><span class="n">model_label</span><span class="p">,</span>
+        <span class="n">transition_labels</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="nb">sorted</span><span class="p">(</span><span class="n">marked</span><span class="p">)),</span>
+        <span class="n">transition_temperatures</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">marked</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">marked</span><span class="p">)],</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">float</span><span class="p">),</span>
+        <span class="n">meas_steps</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">int64</span><span class="p">(</span><span class="n">args</span><span class="o">.</span><span class="n">meas_steps</span><span class="p">),</span>
+        <span class="n">L</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">int64</span><span class="p">(</span><span class="n">size</span><span class="p">),</span>
+        <span class="n">size</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">int64</span><span class="p">(</span><span class="n">size</span><span class="p">),</span>
+        <span class="o">**</span><span class="n">cast</span><span class="p">(</span><span class="n">Any</span><span class="p">,</span> <span class="p">{</span><span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">key</span><span class="si">}</span><span class="s1">_samples&#39;</span><span class="p">:</span> <span class="n">samples</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">_MEASURED_KEYS</span><span class="p">}),</span>
+        <span class="o">**</span><span class="n">cast</span><span class="p">(</span><span class="n">Any</span><span class="p">,</span> <span class="p">{</span><span class="n">key</span><span class="p">:</span> <span class="n">summaries</span><span class="p">[</span><span class="n">key</span><span class="p">][</span><span class="s1">&#39;value&#39;</span><span class="p">]</span> <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">_MEASURED_KEYS</span><span class="p">}),</span>
+        <span class="o">**</span><span class="n">cast</span><span class="p">(</span><span class="n">Any</span><span class="p">,</span> <span class="p">{</span><span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">key</span><span class="si">}</span><span class="s1">_p16&#39;</span><span class="p">:</span> <span class="n">summaries</span><span class="p">[</span><span class="n">key</span><span class="p">][</span><span class="s1">&#39;p16&#39;</span><span class="p">]</span> <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">_MEASURED_KEYS</span><span class="p">}),</span>
+        <span class="o">**</span><span class="n">cast</span><span class="p">(</span><span class="n">Any</span><span class="p">,</span> <span class="p">{</span><span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">key</span><span class="si">}</span><span class="s1">_p84&#39;</span><span class="p">:</span> <span class="n">summaries</span><span class="p">[</span><span class="n">key</span><span class="p">][</span><span class="s1">&#39;p84&#39;</span><span class="p">]</span> <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">_MEASURED_KEYS</span><span class="p">}),</span>
+    <span class="p">)</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Data saved to </span><span class="si">{</span><span class="n">npz_path</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
+
+    <span class="n">plot_efficiency</span><span class="p">(</span>
+        <span class="n">temperatures</span><span class="o">=</span><span class="n">temperatures</span><span class="p">,</span>
+        <span class="n">summaries</span><span class="o">=</span><span class="n">summaries</span><span class="p">,</span>
+        <span class="n">title</span><span class="o">=</span><span class="p">(</span>
+            <span class="sa">f</span><span class="s1">&#39;Wolff vs. Metropolis Efficiency — </span><span class="si">{</span><span class="n">model_label</span><span class="si">}</span><span class="s1">  &#39;</span>
+            <span class="sa">f</span><span class="s1">&#39;(L = </span><span class="si">{</span><span class="n">size</span><span class="si">}</span><span class="s1">, seeds = </span><span class="si">{</span><span class="n">n_seeds</span><span class="si">}</span><span class="s1">)&#39;</span>
+        <span class="p">),</span>
+        <span class="n">directory</span><span class="o">=</span><span class="n">args</span><span class="o">.</span><span class="n">output_dir</span><span class="p">,</span>
+        <span class="n">transitions</span><span class="o">=</span><span class="n">transitions</span><span class="p">,</span>
+    <span class="p">)</span></div>
+
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2026, Thomas Lottermoser.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

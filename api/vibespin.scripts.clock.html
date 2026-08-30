@@ -17,11 +17,12 @@
       <script src="../_static/doctools.js?v=fd6eb6e6"></script>
       <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
       <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+      <script src="https://cdn.jsdelivr.net/npm/@jupyter-widgets/html-manager@^1.0.1/dist/embed-amd.js"></script>
     <script src="../_static/js/theme.js"></script>
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
     <link rel="next" title="vibespin.scripts.ising package" href="vibespin.scripts.ising.html" />
-    <link rel="prev" title="vibespin.scripts package" href="vibespin.scripts.html" /> 
+    <link rel="prev" title="vibespin.scripts.benchmarks package" href="vibespin.scripts.benchmarks.html" /> 
 </head>
 
 <body class="wy-body-for-nav"> 
@@ -49,8 +50,8 @@
 <li class="toctree-l1"><a class="reference internal" href="../physics.html">Physics and Algorithm Guide: VibeSpin</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../code.html">Developer and Architecture Guide</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../scripts.html">Scripts Catalog: VibeSpin</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../agents.html">Agent Instruction Guide: VibeSpin</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../bibliography.html">Project Bibliography: VibeSpin</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../AGENTS.html">Agent Instruction Guide: VibeSpin</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../BIBLIOGRAPHY.html">Project Bibliography: VibeSpin</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../changelog.html">Changelog</a></li>
 </ul>
 <p class="caption" role="heading"><span class="caption-text">Research &amp; Analysis:</span></p>
@@ -119,12 +120,40 @@
 <dl class="py function">
 <dt class="sig sig-object py" id="scripts.clock.compare_discrete_vs_continuous.main">
 <span class="sig-prename descclassname"><span class="pre">scripts.clock.compare_discrete_vs_continuous.</span></span><span class="sig-name descname"><span class="pre">main</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="../_modules/scripts/clock/compare_discrete_vs_continuous.html#main"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#scripts.clock.compare_discrete_vs_continuous.main" title="Link to this definition"></a></dt>
-<dd></dd></dl>
+<dd><p>Run the continuous-vs-discrete clock comparison and save the figure.</p>
+</dd></dl>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="scripts.clock.compare_discrete_vs_continuous.sweep_model">
-<span class="sig-prename descclassname"><span class="pre">scripts.clock.compare_discrete_vs_continuous.</span></span><span class="sig-name descname"><span class="pre">sweep_model</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">model_cls</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">type</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">temperatures</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">L</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">q</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">eq_probe_steps</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">eq_max_steps</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">meas_steps</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">extra_kwargs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">list</span><span class="p"><span class="pre">[</span></span><span class="pre">float</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">list</span><span class="p"><span class="pre">[</span></span><span class="pre">float</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">list</span><span class="p"><span class="pre">[</span></span><span class="pre">float</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">list</span><span class="p"><span class="pre">[</span></span><span class="pre">float</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="../_modules/scripts/clock/compare_discrete_vs_continuous.html#sweep_model"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#scripts.clock.compare_discrete_vs_continuous.sweep_model" title="Link to this definition"></a></dt>
-<dd></dd></dl>
+<span class="sig-prename descclassname"><span class="pre">scripts.clock.compare_discrete_vs_continuous.</span></span><span class="sig-name descname"><span class="pre">sweep_model</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">model_cls</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">type</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">temperatures</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">L</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">q</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">eq_probe_steps</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">eq_max_steps</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">meas_steps</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">base_seed</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">extra_kwargs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">list</span><span class="p"><span class="pre">[</span></span><span class="pre">float</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">list</span><span class="p"><span class="pre">[</span></span><span class="pre">float</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">list</span><span class="p"><span class="pre">[</span></span><span class="pre">float</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">list</span><span class="p"><span class="pre">[</span></span><span class="pre">float</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="../_modules/scripts/clock/compare_discrete_vs_continuous.html#sweep_model"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#scripts.clock.compare_discrete_vs_continuous.sweep_model" title="Link to this definition"></a></dt>
+<dd><p>Sweep one clock-model variant over a temperature grid.</p>
+<p>For each temperature, runs two-start convergence equilibration and then
+measures thermodynamic observables on the random-start simulation.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>model_cls</strong> (<em>type</em>) – Simulation class (<code class="docutils literal notranslate"><span class="pre">ClockSimulation</span></code> or
+<code class="docutils literal notranslate"><span class="pre">DiscreteClockSimulation</span></code>).</p></li>
+<li><p><strong>temperatures</strong> (<em>np.ndarray</em>) – Temperature grid to sweep.</p></li>
+<li><p><strong>L</strong> (<em>int</em>) – Linear lattice size.</p></li>
+<li><p><strong>q</strong> (<em>int</em>) – Number of clock states.</p></li>
+<li><p><strong>eq_probe_steps</strong> (<em>int</em>) – Chunk size for convergence-equilibration probes.</p></li>
+<li><p><strong>eq_max_steps</strong> (<em>int</em>) – Hard cap on equilibration steps per point.</p></li>
+<li><p><strong>meas_steps</strong> (<em>int</em>) – Measurement steps per point.</p></li>
+<li><p><strong>base_seed</strong> (<em>int</em>) – Base RNG seed; each temperature point uses
+<code class="docutils literal notranslate"><span class="pre">base_seed</span> <span class="pre">+</span> <span class="pre">point_index</span></code> so points are reproducible yet
+distinct.</p></li>
+<li><p><strong>extra_kwargs</strong> (<em>dict</em>) – Extra constructor arguments (e.g. <code class="docutils literal notranslate"><span class="pre">{'A':</span> <span class="pre">aniso}</span></code>).</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Lists of per-temperature (avg_m, avg_e, susceptibility, specific heat).</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>tuple[list[float], list[float], list[float], list[float]]</p>
+</dd>
+</dl>
+</dd></dl>
 
 </section>
 <section id="module-scripts.clock.correlation_comparison">
@@ -139,34 +168,6 @@ and exponential decay above T2.</p>
 <dt class="sig sig-object py" id="scripts.clock.correlation_comparison.main">
 <span class="sig-prename descclassname"><span class="pre">scripts.clock.correlation_comparison.</span></span><span class="sig-name descname"><span class="pre">main</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="../_modules/scripts/clock/correlation_comparison.html#main"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#scripts.clock.correlation_comparison.main" title="Link to this definition"></a></dt>
 <dd><p>Run the clock model correlation comparison analysis.</p>
-</dd></dl>
-
-<dl class="py function">
-<dt class="sig sig-object py" id="scripts.clock.correlation_comparison.simulate_correlation">
-<span class="sig-prename descclassname"><span class="pre">scripts.clock.correlation_comparison.</span></span><span class="sig-name descname"><span class="pre">simulate_correlation</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">T</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">L</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">q</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">steps</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">eq_probe</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">eq_max</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sample_interval</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">seed</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">logger</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Logger</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">ndarray</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">ndarray</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="../_modules/scripts/clock/correlation_comparison.html#simulate_correlation"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#scripts.clock.correlation_comparison.simulate_correlation" title="Link to this definition"></a></dt>
-<dd><p>Equilibrate and measure the averaged correlation function at temperature T.</p>
-<p>Uses two-start convergence equilibration to avoid initialization bias.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>T</strong> (<em>float</em>) – Temperature for the measurement.</p></li>
-<li><p><strong>L</strong> (<em>int</em>) – Linear lattice size.</p></li>
-<li><p><strong>q</strong> (<em>int</em>) – Number of clock states.</p></li>
-<li><p><strong>steps</strong> (<em>int</em>) – Measurement steps after equilibration.</p></li>
-<li><p><strong>eq_probe</strong> (<em>int</em>) – Chunk size for convergence equilibration probes.</p></li>
-<li><p><strong>eq_max</strong> (<em>int</em>) – Maximum equilibration steps.</p></li>
-<li><p><strong>sample_interval</strong> (<em>int</em>) – Spacing between correlation samples during measurement.</p></li>
-<li><p><strong>seed</strong> (<em>int</em>) – Random seed for reproducibility.</p></li>
-<li><p><strong>logger</strong> (<em>logging.Logger</em>) – Logger instance.</p></li>
-</ul>
-</dd>
-<dt class="field-even">Returns<span class="colon">:</span></dt>
-<dd class="field-even"><p>Radial distances r and averaged correlations G(r).</p>
-</dd>
-<dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p>tuple[np.ndarray, np.ndarray]</p>
-</dd>
-</dl>
 </dd></dl>
 
 </section>
@@ -198,11 +199,34 @@ growth and vortex density decay over time.</p>
 <section id="module-scripts.clock.temperature_sweep">
 <span id="scripts-clock-temperature-sweep-module"></span><h2>scripts.clock.temperature_sweep module<a class="headerlink" href="#module-scripts.clock.temperature_sweep" title="Link to this heading"></a></h2>
 <p>Standardized temperature sweep for the 2D Clock model.
-Calculates and plots magnetization, energy, susceptibility, and specific heat.</p>
+Calculates magnetization, energy, susceptibility, and specific heat, and
+produces a thermodynamics figure plus a companion diagnostics figure.</p>
 <dl class="py function">
 <dt class="sig sig-object py" id="scripts.clock.temperature_sweep.main">
 <span class="sig-prename descclassname"><span class="pre">scripts.clock.temperature_sweep.</span></span><span class="sig-name descname"><span class="pre">main</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="../_modules/scripts/clock/temperature_sweep.html#main"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#scripts.clock.temperature_sweep.main" title="Link to this definition"></a></dt>
-<dd><p>Execute the temperature sweep and generate standardized 4-panel plots.</p>
+<dd><p>Execute the temperature sweep and generate the thermodynamics and
+companion diagnostics figures.</p>
+</dd></dl>
+
+</section>
+<section id="module-scripts.clock.wolff_efficiency">
+<span id="scripts-clock-wolff-efficiency-module"></span><h2>scripts.clock.wolff_efficiency module<a class="headerlink" href="#module-scripts.clock.wolff_efficiency" title="Link to this heading"></a></h2>
+<p>Wolff cluster algorithm efficiency demonstration for the 2D clock model.</p>
+<p>The clock counterpart of the Ising and XY comparisons.  The temperature window
+brackets both crossovers of the q=6 model, the lower one out of the ordered
+phase and the upper one out of the quasi-ordered phase into the disordered
+one.</p>
+<p>The comparison runs at zero anisotropy, because the Wolff-Evertz bond
+construction sees only the exchange term: with a non-zero crystal field the
+cluster update no longer satisfies detailed balance for the full Hamiltonian,
+so an efficiency comparison against a local update that does would be
+comparing two different models rather than two algorithms.</p>
+<p>Results are saved to <code class="docutils literal notranslate"><span class="pre">results/clock/wolff_efficiency.npz</span></code> for notebook re-use
+and <code class="docutils literal notranslate"><span class="pre">results/clock/wolff_efficiency.png</span></code> as a four-panel figure.</p>
+<dl class="py function">
+<dt class="sig sig-object py" id="scripts.clock.wolff_efficiency.main">
+<span class="sig-prename descclassname"><span class="pre">scripts.clock.wolff_efficiency.</span></span><span class="sig-name descname"><span class="pre">main</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="../_modules/scripts/clock/wolff_efficiency.html#main"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#scripts.clock.wolff_efficiency.main" title="Link to this definition"></a></dt>
+<dd><p>Execute the clock efficiency comparison and save the figure and data.</p>
 </dd></dl>
 
 </section>
@@ -215,7 +239,7 @@ Calculates and plots magnetization, energy, susceptibility, and specific heat.</
            </div>
           </div>
           <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
-        <a href="vibespin.scripts.html" class="btn btn-neutral float-left" title="vibespin.scripts package" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="vibespin.scripts.benchmarks.html" class="btn btn-neutral float-left" title="vibespin.scripts.benchmarks package" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
         <a href="vibespin.scripts.ising.html" class="btn btn-neutral float-right" title="vibespin.scripts.ising package" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
     </div>
 

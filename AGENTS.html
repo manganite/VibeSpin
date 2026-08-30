@@ -17,12 +17,13 @@
       <script src="_static/doctools.js?v=fd6eb6e6"></script>
       <script src="_static/sphinx_highlight.js?v=6ffebe34"></script>
       <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+      <script src="https://cdn.jsdelivr.net/npm/@jupyter-widgets/html-manager@^1.0.1/dist/embed-amd.js"></script>
       <script>window.MathJax = {"tex": {"inlineMath": [["$", "$"], ["\\(", "\\)"]], "processEscapes": true}, "options": {"ignoreHtmlClass": "tex2jax_ignore|mathjax_ignore|document", "processHtmlClass": "tex2jax_process|mathjax_process|math|output_area"}}</script>
       <script defer="defer" src="https://cdn.jsdelivr.net/npm/mathjax@4/tex-mml-chtml.js"></script>
     <script src="_static/js/theme.js"></script>
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
-    <link rel="next" title="Project Bibliography: VibeSpin" href="bibliography.html" />
+    <link rel="next" title="Project Bibliography: VibeSpin" href="BIBLIOGRAPHY.html" />
     <link rel="prev" title="Scripts Catalog: VibeSpin" href="scripts.html" /> 
 </head>
 
@@ -93,7 +94,7 @@
 </li>
 </ul>
 </li>
-<li class="toctree-l1"><a class="reference internal" href="bibliography.html">Project Bibliography: VibeSpin</a></li>
+<li class="toctree-l1"><a class="reference internal" href="BIBLIOGRAPHY.html">Project Bibliography: VibeSpin</a></li>
 <li class="toctree-l1"><a class="reference internal" href="changelog.html">Changelog</a></li>
 </ul>
 <p class="caption" role="heading"><span class="caption-text">Research &amp; Analysis:</span></p>
@@ -129,7 +130,7 @@
       <li><a href="index.html" class="icon icon-home" aria-label="Home"></a></li>
       <li class="breadcrumb-item active">Agent Instruction Guide: VibeSpin</li>
       <li class="wy-breadcrumbs-aside">
-            <a href="_sources/agents.md.txt" rel="nofollow"> View page source</a>
+            <a href="_sources/AGENTS.md.txt" rel="nofollow"> View page source</a>
       </li>
   </ul>
   <hr/>
@@ -356,7 +357,7 @@ mypy<span class="w"> </span>--explicit-package-bases<span class="w"> </span>mode
 <ul>
 <li><p><strong>Algorithm</strong> (<code class="docutils literal notranslate"><span class="pre">algorithm/test_algorithm_integrity.py</span></code>): Microscopic validation of Monte Carlo kernels (detailed balance, ergodicity).</p></li>
 <li><p><strong>Model</strong> (<code class="docutils literal notranslate"><span class="pre">model/test_models.py</span></code>, <code class="docutils literal notranslate"><span class="pre">model/test_model_extremes.py</span></code>, <code class="docutils literal notranslate"><span class="pre">model/test_model_cli.py</span></code>, <code class="docutils literal notranslate"><span class="pre">model/test_model_control_paths.py</span></code>, <code class="docutils literal notranslate"><span class="pre">model/test_simulation_base.py</span></code>): API contracts, CLI behavior, edge cases, control flow, and base simulation infrastructure across all simulation classes.</p></li>
-<li><p><strong>Utility</strong> (<code class="docutils literal notranslate"><span class="pre">utility/test_analysis.py</span></code>, <code class="docutils literal notranslate"><span class="pre">utility/test_system.py</span></code>): Physics observables, system helpers, and CLI utilities.</p></li>
+<li><p><strong>Utility</strong> (<code class="docutils literal notranslate"><span class="pre">utility/test_statistics.py</span></code>, <code class="docutils literal notranslate"><span class="pre">utility/test_observables.py</span></code>, <code class="docutils literal notranslate"><span class="pre">utility/test_equilibration.py</span></code>, <code class="docutils literal notranslate"><span class="pre">utility/test_system.py</span></code>): Statistical estimators, physics observables, equilibration logic, and system helpers.</p></li>
 <li><p><strong>Style</strong> (<code class="docutils literal notranslate"><span class="pre">style/test_docstring_style.py</span></code>): Code quality and documentation standards.</p></li>
 <li><p><strong>Integration</strong> (<code class="docutils literal notranslate"><span class="pre">integration/test_script_infrastructure.py</span></code>, <code class="docutils literal notranslate"><span class="pre">integration/test_reproducibility.py</span></code>): Reusable infrastructure patterns for analysis scripts (deterministic seeding, reproducibility, NPZ schemas, typed payloads, aggregation logic). New scripts add test classes here rather than creating separate test files.</p></li>
 </ul>
@@ -374,7 +375,7 @@ mypy<span class="w"> </span>--explicit-package-bases<span class="w"> </span>mode
 <ol class="arabic simple">
 <li><p>Add the <code class="docutils literal notranslate"><span class="pre">&#64;njit</span></code> kernel to <code class="docutils literal notranslate"><span class="pre">models/simulation_base.py</span></code> or the specific model.</p></li>
 <li><p>Add a <code class="docutils literal notranslate"><span class="pre">_get_&lt;name&gt;</span></code> method to the Simulation class.</p></li>
-<li><p>Add a test case in <code class="docutils literal notranslate"><span class="pre">tests/utility/test_analysis.py</span></code> or <code class="docutils literal notranslate"><span class="pre">tests/utility/test_system.py</span></code> as appropriate.</p></li>
+<li><p>Add a test case in <code class="docutils literal notranslate"><span class="pre">tests/utility/test_observables.py</span></code> or <code class="docutils literal notranslate"><span class="pre">tests/utility/test_statistics.py</span></code> as appropriate.</p></li>
 <li><p>Verify the physical limits (e.g., ground state) in <code class="docutils literal notranslate"><span class="pre">tests/model/test_model_extremes.py</span></code>.</p></li>
 </ol>
 </section>
@@ -454,7 +455,7 @@ mypy<span class="w"> </span>--explicit-package-bases<span class="w"> </span>mode
           </div>
           <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
         <a href="scripts.html" class="btn btn-neutral float-left" title="Scripts Catalog: VibeSpin" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
-        <a href="bibliography.html" class="btn btn-neutral float-right" title="Project Bibliography: VibeSpin" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+        <a href="BIBLIOGRAPHY.html" class="btn btn-neutral float-right" title="Project Bibliography: VibeSpin" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
     </div>
 
   <hr/>

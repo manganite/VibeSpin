@@ -17,6 +17,7 @@
       <script src="../_static/doctools.js?v=fd6eb6e6"></script>
       <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
       <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+      <script src="https://cdn.jsdelivr.net/npm/@jupyter-widgets/html-manager@^1.0.1/dist/embed-amd.js"></script>
     <script src="../_static/js/theme.js"></script>
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
@@ -49,8 +50,8 @@
 <li class="toctree-l1"><a class="reference internal" href="../physics.html">Physics and Algorithm Guide: VibeSpin</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../code.html">Developer and Architecture Guide</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../scripts.html">Scripts Catalog: VibeSpin</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../agents.html">Agent Instruction Guide: VibeSpin</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../bibliography.html">Project Bibliography: VibeSpin</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../AGENTS.html">Agent Instruction Guide: VibeSpin</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../BIBLIOGRAPHY.html">Project Bibliography: VibeSpin</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../changelog.html">Changelog</a></li>
 </ul>
 <p class="caption" role="heading"><span class="caption-text">Research &amp; Analysis:</span></p>
@@ -119,12 +120,12 @@
 <code class="docutils literal notranslate"><span class="pre">DiscreteClockSimulation</span></code> (integer state indices with cosine lookup tables) are
 collocated here for convenience.  When either class grows beyond roughly 400 lines
 of unique logic, split them into <code class="docutils literal notranslate"><span class="pre">clock_model_continuous.py</span></code> and
-<code class="docutils literal notranslate"><span class="pre">clock_model_discrete.py</span></code> and keep this file as a re-export shim, following the
-existing <code class="docutils literal notranslate"><span class="pre">utils/system_helpers.py</span></code> pattern.</p>
+<code class="docutils literal notranslate"><span class="pre">clock_model_discrete.py</span></code> and keep this file as a re-export shim for backward
+compatibility.</p>
 <dl class="py class">
 <dt class="sig sig-object py" id="models.clock_model.ClockSimulation">
 <span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">models.clock_model.</span></span><span class="sig-name descname"><span class="pre">ClockSimulation</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">size</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">temp</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">J</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">1.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">A</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">1.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">q</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">6</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">update</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'checkerboard'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">init_state</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'random'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">parallel</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">seed</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/models/clock_model.html#ClockSimulation"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#models.clock_model.ClockSimulation" title="Link to this definition"></a></dt>
-<dd><p>Bases: <a class="reference internal" href="#models.simulation_base.MonteCarloSimulation" title="models.simulation_base.MonteCarloSimulation"><code class="xref py py-class docutils literal notranslate"><span class="pre">MonteCarloSimulation</span></code></a></p>
+<dd><p>Bases: <a class="reference internal" href="#models.simulation_base.VectorSpinObservablesMixin" title="models.simulation_base.VectorSpinObservablesMixin"><code class="xref py py-class docutils literal notranslate"><span class="pre">VectorSpinObservablesMixin</span></code></a>, <a class="reference internal" href="#models.simulation_base.MonteCarloSimulation" title="models.simulation_base.MonteCarloSimulation"><code class="xref py py-class docutils literal notranslate"><span class="pre">MonteCarloSimulation</span></code></a></p>
 <p>Simulation of the 2D q-state clock model on a square lattice.</p>
 <dl class="py method">
 <dt class="sig sig-object py" id="models.clock_model.ClockSimulation.step">
@@ -137,7 +138,7 @@ existing <code class="docutils literal notranslate"><span class="pre">utils/syst
 <dl class="py class">
 <dt class="sig sig-object py" id="models.clock_model.DiscreteClockSimulation">
 <span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">models.clock_model.</span></span><span class="sig-name descname"><span class="pre">DiscreteClockSimulation</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">size</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">temp</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">J</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">1.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">q</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">6</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">update</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'checkerboard'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">init_state</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'random'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">parallel</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">seed</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/models/clock_model.html#DiscreteClockSimulation"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#models.clock_model.DiscreteClockSimulation" title="Link to this definition"></a></dt>
-<dd><p>Bases: <a class="reference internal" href="#models.simulation_base.MonteCarloSimulation" title="models.simulation_base.MonteCarloSimulation"><code class="xref py py-class docutils literal notranslate"><span class="pre">MonteCarloSimulation</span></code></a></p>
+<dd><p>Bases: <a class="reference internal" href="#models.simulation_base.VectorSpinObservablesMixin" title="models.simulation_base.VectorSpinObservablesMixin"><code class="xref py py-class docutils literal notranslate"><span class="pre">VectorSpinObservablesMixin</span></code></a>, <a class="reference internal" href="#models.simulation_base.MonteCarloSimulation" title="models.simulation_base.MonteCarloSimulation"><code class="xref py py-class docutils literal notranslate"><span class="pre">MonteCarloSimulation</span></code></a></p>
 <p>Simulation of the 2D q-state clock model with discrete integer spins.</p>
 <p>Each spin takes one of q evenly spaced orientations theta_k = 2*pi*k/q.
 The Hamiltonian is E = -J * sum_&lt;i,j&gt; cos(theta_i - theta_j).</p>
@@ -159,18 +160,18 @@ and enforces the discrete symmetry exactly.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>spins</strong> (<em>(</em><em>N</em><em>, </em><em>N</em><em>, </em><em>2</em><em>) </em><em>array</em><em> of </em><em>unit vectors.</em>)</p></li>
-<li><p><strong>J</strong> (<em>Coupling constant.</em>)</p></li>
-<li><p><strong>A</strong> (<em>Anisotropy strength.</em>)</p></li>
-<li><p><strong>q</strong> (<em>Number</em><em> of </em><em>clock states.</em>)</p></li>
-<li><p><strong>idx_next</strong> (<em>Pre-calculated next-neighbor indices.</em>)</p></li>
+<li><p><strong>spins</strong> (<em>np.ndarray</em>) – (N, N, 2) array of unit vectors.</p></li>
+<li><p><strong>J</strong> (<em>float</em>) – Coupling constant.</p></li>
+<li><p><strong>A</strong> (<em>float</em>) – Anisotropy strength.</p></li>
+<li><p><strong>q</strong> (<em>int</em>) – Number of clock states.</p></li>
+<li><p><strong>idx_next</strong> (<em>np.ndarray</em>) – Pre-calculated next-neighbor indices.</p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
-<dd class="field-even"><p><strong>energy</strong></p>
+<dd class="field-even"><p><strong>energy</strong> – Total energy per site.</p>
 </dd>
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p>Total energy per site.</p>
+<dd class="field-odd"><p>float</p>
 </dd>
 </dl>
 </dd></dl>
@@ -183,17 +184,20 @@ Uses a checkerboard update pattern for better Numba optimization.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>spins</strong> (<em>(</em><em>N</em><em>, </em><em>N</em><em>, </em><em>2</em><em>) </em><em>array</em><em> of </em><em>unit vectors.</em>)</p></li>
-<li><p><strong>beta</strong> (<em>Inverse temperature 1/kT.</em>)</p></li>
-<li><p><strong>J</strong> (<em>Coupling constant.</em>)</p></li>
-<li><p><strong>A</strong> (<em>Anisotropy strength.</em>)</p></li>
-<li><p><strong>q</strong> (<em>Number</em><em> of </em><em>clock states.</em>)</p></li>
-<li><p><strong>idx_next</strong> (<em>Pre-calculated next-neighbor indices.</em>)</p></li>
-<li><p><strong>idx_prev</strong> (<em>Pre-calculated previous-neighbor indices.</em>)</p></li>
+<li><p><strong>spins</strong> (<em>np.ndarray</em>) – (N, N, 2) array of unit vectors.</p></li>
+<li><p><strong>beta</strong> (<em>float</em>) – Inverse temperature 1/kT.</p></li>
+<li><p><strong>J</strong> (<em>float</em>) – Coupling constant.</p></li>
+<li><p><strong>A</strong> (<em>float</em>) – Anisotropy strength.</p></li>
+<li><p><strong>q</strong> (<em>int</em>) – Number of clock states.</p></li>
+<li><p><strong>idx_next</strong> (<em>np.ndarray</em>) – Pre-calculated next-neighbor indices.</p></li>
+<li><p><strong>idx_prev</strong> (<em>np.ndarray</em>) – Pre-calculated previous-neighbor indices.</p></li>
 </ul>
 </dd>
-<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
 <dd class="field-even"><p>Updated spins array.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>np.ndarray</p>
 </dd>
 </dl>
 </dd></dl>
@@ -205,17 +209,20 @@ Uses a checkerboard update pattern for better Numba optimization.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>spins</strong> (<em>(</em><em>N</em><em>, </em><em>N</em><em>, </em><em>2</em><em>) </em><em>array</em><em> of </em><em>unit vectors.</em>)</p></li>
-<li><p><strong>beta</strong> (<em>Inverse temperature 1/kT.</em>)</p></li>
-<li><p><strong>J</strong> (<em>Coupling constant.</em>)</p></li>
-<li><p><strong>A</strong> (<em>Anisotropy strength.</em>)</p></li>
-<li><p><strong>q</strong> (<em>Number</em><em> of </em><em>clock states.</em>)</p></li>
-<li><p><strong>idx_next</strong> (<em>Pre-calculated next-neighbor indices.</em>)</p></li>
-<li><p><strong>idx_prev</strong> (<em>Pre-calculated previous-neighbor indices.</em>)</p></li>
+<li><p><strong>spins</strong> (<em>np.ndarray</em>) – (N, N, 2) array of unit vectors.</p></li>
+<li><p><strong>beta</strong> (<em>float</em>) – Inverse temperature 1/kT.</p></li>
+<li><p><strong>J</strong> (<em>float</em>) – Coupling constant.</p></li>
+<li><p><strong>A</strong> (<em>float</em>) – Anisotropy strength.</p></li>
+<li><p><strong>q</strong> (<em>int</em>) – Number of clock states.</p></li>
+<li><p><strong>idx_next</strong> (<em>np.ndarray</em>) – Pre-calculated next-neighbor indices.</p></li>
+<li><p><strong>idx_prev</strong> (<em>np.ndarray</em>) – Pre-calculated previous-neighbor indices.</p></li>
 </ul>
 </dd>
-<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
 <dd class="field-even"><p>Updated spins array.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>np.ndarray</p>
 </dd>
 </dl>
 </dd></dl>
@@ -227,50 +234,20 @@ Uses a checkerboard update pattern for better Numba optimization.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>spins</strong> (<em>(</em><em>N</em><em>, </em><em>N</em><em>, </em><em>2</em><em>) </em><em>array</em><em> of </em><em>unit vectors.</em>)</p></li>
-<li><p><strong>beta</strong> (<em>Inverse temperature 1/kT.</em>)</p></li>
-<li><p><strong>J</strong> (<em>Coupling constant.</em>)</p></li>
-<li><p><strong>A</strong> (<em>Anisotropy strength.</em>)</p></li>
-<li><p><strong>q</strong> (<em>Number</em><em> of </em><em>clock states.</em>)</p></li>
-<li><p><strong>idx_next</strong> (<em>Pre-calculated next-neighbor indices.</em>)</p></li>
-<li><p><strong>idx_prev</strong> (<em>Pre-calculated previous-neighbor indices.</em>)</p></li>
+<li><p><strong>spins</strong> (<em>np.ndarray</em>) – (N, N, 2) array of unit vectors.</p></li>
+<li><p><strong>beta</strong> (<em>float</em>) – Inverse temperature 1/kT.</p></li>
+<li><p><strong>J</strong> (<em>float</em>) – Coupling constant.</p></li>
+<li><p><strong>A</strong> (<em>float</em>) – Anisotropy strength.</p></li>
+<li><p><strong>q</strong> (<em>int</em>) – Number of clock states.</p></li>
+<li><p><strong>idx_next</strong> (<em>np.ndarray</em>) – Pre-calculated next-neighbor indices.</p></li>
+<li><p><strong>idx_prev</strong> (<em>np.ndarray</em>) – Pre-calculated previous-neighbor indices.</p></li>
 </ul>
 </dd>
-<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
 <dd class="field-even"><p>Updated spins array.</p>
 </dd>
-</dl>
-</dd></dl>
-
-<dl class="py function">
-<dt class="sig sig-object py" id="models.clock_model.clock_wolff_step_numba">
-<span class="sig-prename descclassname"><span class="pre">models.clock_model.</span></span><span class="sig-name descname"><span class="pre">clock_wolff_step_numba</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">spins</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">beta</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">J</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">idx_next</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">idx_prev</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">ndarray</span></span></span><a class="reference internal" href="../_modules/models/clock_model.html#clock_wolff_step_numba"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#models.clock_model.clock_wolff_step_numba" title="Link to this definition"></a></dt>
-<dd><p>Perform one Wolff cluster flip on the continuous Clock Model lattice.</p>
-<p>Implements the Wolff-Evertz reflection scheme for O(2) spins using only
-the Heisenberg exchange coupling J.  A random mirror-plane axis r̂ is
-sampled from S^1, and bonds are activated with probability
-<code class="docutils literal notranslate"><span class="pre">P_add</span> <span class="pre">=</span> <span class="pre">1</span> <span class="pre">-</span> <span class="pre">exp(-2</span> <span class="pre">beta</span> <span class="pre">J</span> <span class="pre">sigma_i</span> <span class="pre">sigma_j)</span></code> where
-<code class="docutils literal notranslate"><span class="pre">sigma_i</span> <span class="pre">=</span> <span class="pre">s_i</span> <span class="pre">·</span> <span class="pre">r̂</span></code>.  Cluster spins are reflected:
-<code class="docutils literal notranslate"><span class="pre">s</span> <span class="pre">-&gt;</span> <span class="pre">s</span> <span class="pre">-</span> <span class="pre">2</span> <span class="pre">(s</span> <span class="pre">·</span> <span class="pre">r̂)</span> <span class="pre">r̂</span></code>.</p>
-<p><strong>Limitation</strong>: the crystal-field anisotropy term <code class="docutils literal notranslate"><span class="pre">A</span> <span class="pre">cos(q</span> <span class="pre">phi)</span></code> breaks
-the O(2) reflection symmetry required by the Fortuin-Kasteleyn bond
-construction.  This kernel therefore satisfies detailed balance only for
-the exchange part of the Hamiltonian; use it at parameters where the
-anisotropy is weak relative to J, or set A=0 for pure XY-like studies.</p>
-<p>One call constitutes one cluster sweep.  <code class="docutils literal notranslate"><span class="pre">parallel=True</span></code> is silently
-ignored.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>spins</strong> (<em>(</em><em>N</em><em>, </em><em>N</em><em>, </em><em>2</em><em>) </em><em>array</em><em> of </em><em>unit vectors.</em>)</p></li>
-<li><p><strong>beta</strong> (<em>Inverse temperature 1/kT.</em>)</p></li>
-<li><p><strong>J</strong> (<em>Coupling constant.</em>)</p></li>
-<li><p><strong>idx_next</strong> (<em>Pre-calculated next-neighbor indices</em><em> (</em><em>PBC</em><em>)</em><em>.</em>)</p></li>
-<li><p><strong>idx_prev</strong> (<em>Pre-calculated previous-neighbor indices</em><em> (</em><em>PBC</em><em>)</em><em>.</em>)</p></li>
-</ul>
-</dd>
-<dt class="field-even">Return type<span class="colon">:</span></dt>
-<dd class="field-even"><p>Updated spins array.</p>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>np.ndarray</p>
 </dd>
 </dl>
 </dd></dl>
@@ -283,15 +260,18 @@ ignored.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>spins</strong> (<em>(</em><em>N</em><em>, </em><em>N</em><em>) </em><em>array</em><em> of </em><em>integer spin states in {0</em><em>, </em><em>...</em><em>, </em><em>q-1}.</em>)</p></li>
-<li><p><strong>J</strong> (<em>Coupling constant.</em>)</p></li>
-<li><p><strong>q</strong> (<em>Number</em><em> of </em><em>clock states.</em>)</p></li>
-<li><p><strong>cos_table</strong> (<em>Pre-computed cos</em><em>(</em><em>2*pi*d/q</em><em>) </em><em>for d in {0</em><em>, </em><em>...</em><em>, </em><em>q-1}.</em>)</p></li>
-<li><p><strong>idx_next</strong> (<em>Pre-calculated next-neighbor indices.</em>)</p></li>
+<li><p><strong>spins</strong> (<em>np.ndarray</em>) – (N, N) array of integer spin states in {0, …, q-1}.</p></li>
+<li><p><strong>J</strong> (<em>float</em>) – Coupling constant.</p></li>
+<li><p><strong>q</strong> (<em>int</em>) – Number of clock states.</p></li>
+<li><p><strong>cos_table</strong> (<em>np.ndarray</em>) – Pre-computed cos(2*pi*d/q) for d in {0, …, q-1}.</p></li>
+<li><p><strong>idx_next</strong> (<em>np.ndarray</em>) – Pre-calculated next-neighbor indices.</p></li>
 </ul>
 </dd>
-<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
 <dd class="field-even"><p>Energy per site.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>float</p>
 </dd>
 </dl>
 </dd></dl>
@@ -303,17 +283,20 @@ ignored.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>spins</strong> (<em>(</em><em>N</em><em>, </em><em>N</em><em>) </em><em>array</em><em> of </em><em>integer spin states in {0</em><em>, </em><em>...</em><em>, </em><em>q-1}.</em>)</p></li>
-<li><p><strong>beta</strong> (<em>Inverse temperature 1/kT.</em>)</p></li>
-<li><p><strong>J</strong> (<em>Coupling constant.</em>)</p></li>
-<li><p><strong>q</strong> (<em>Number</em><em> of </em><em>clock states.</em>)</p></li>
-<li><p><strong>cos_table</strong> (<em>Pre-computed cos</em><em>(</em><em>2*pi*d/q</em><em>) </em><em>for d in {0</em><em>, </em><em>...</em><em>, </em><em>q-1}.</em>)</p></li>
-<li><p><strong>idx_next</strong> (<em>Pre-calculated next-neighbor indices.</em>)</p></li>
-<li><p><strong>idx_prev</strong> (<em>Pre-calculated previous-neighbor indices.</em>)</p></li>
+<li><p><strong>spins</strong> (<em>np.ndarray</em>) – (N, N) array of integer spin states in {0, …, q-1}.</p></li>
+<li><p><strong>beta</strong> (<em>float</em>) – Inverse temperature 1/kT.</p></li>
+<li><p><strong>J</strong> (<em>float</em>) – Coupling constant.</p></li>
+<li><p><strong>q</strong> (<em>int</em>) – Number of clock states.</p></li>
+<li><p><strong>cos_table</strong> (<em>np.ndarray</em>) – Pre-computed cos(2*pi*d/q) for d in {0, …, q-1}.</p></li>
+<li><p><strong>idx_next</strong> (<em>np.ndarray</em>) – Pre-calculated next-neighbor indices.</p></li>
+<li><p><strong>idx_prev</strong> (<em>np.ndarray</em>) – Pre-calculated previous-neighbor indices.</p></li>
 </ul>
 </dd>
-<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
 <dd class="field-even"><p>Updated spins array.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>np.ndarray</p>
 </dd>
 </dl>
 </dd></dl>
@@ -325,17 +308,20 @@ ignored.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>spins</strong> (<em>(</em><em>N</em><em>, </em><em>N</em><em>) </em><em>array</em><em> of </em><em>integer spin states in {0</em><em>, </em><em>...</em><em>, </em><em>q-1}.</em>)</p></li>
-<li><p><strong>beta</strong> (<em>Inverse temperature 1/kT.</em>)</p></li>
-<li><p><strong>J</strong> (<em>Coupling constant.</em>)</p></li>
-<li><p><strong>q</strong> (<em>Number</em><em> of </em><em>clock states.</em>)</p></li>
-<li><p><strong>cos_table</strong> (<em>Pre-computed cos</em><em>(</em><em>2*pi*d/q</em><em>) </em><em>for d in {0</em><em>, </em><em>...</em><em>, </em><em>q-1}.</em>)</p></li>
-<li><p><strong>idx_next</strong> (<em>Pre-calculated next-neighbor indices.</em>)</p></li>
-<li><p><strong>idx_prev</strong> (<em>Pre-calculated previous-neighbor indices.</em>)</p></li>
+<li><p><strong>spins</strong> (<em>np.ndarray</em>) – (N, N) array of integer spin states in {0, …, q-1}.</p></li>
+<li><p><strong>beta</strong> (<em>float</em>) – Inverse temperature 1/kT.</p></li>
+<li><p><strong>J</strong> (<em>float</em>) – Coupling constant.</p></li>
+<li><p><strong>q</strong> (<em>int</em>) – Number of clock states.</p></li>
+<li><p><strong>cos_table</strong> (<em>np.ndarray</em>) – Pre-computed cos(2*pi*d/q) for d in {0, …, q-1}.</p></li>
+<li><p><strong>idx_next</strong> (<em>np.ndarray</em>) – Pre-calculated next-neighbor indices.</p></li>
+<li><p><strong>idx_prev</strong> (<em>np.ndarray</em>) – Pre-calculated previous-neighbor indices.</p></li>
 </ul>
 </dd>
-<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
 <dd class="field-even"><p>Updated spins array.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>np.ndarray</p>
 </dd>
 </dl>
 </dd></dl>
@@ -349,17 +335,20 @@ stochastic dynamics suitable for kinetics studies.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>spins</strong> (<em>(</em><em>N</em><em>, </em><em>N</em><em>) </em><em>array</em><em> of </em><em>integer spin states in {0</em><em>, </em><em>...</em><em>, </em><em>q-1}.</em>)</p></li>
-<li><p><strong>beta</strong> (<em>Inverse temperature 1/kT.</em>)</p></li>
-<li><p><strong>J</strong> (<em>Coupling constant.</em>)</p></li>
-<li><p><strong>q</strong> (<em>Number</em><em> of </em><em>clock states.</em>)</p></li>
-<li><p><strong>cos_table</strong> (<em>Pre-computed cos</em><em>(</em><em>2*pi*d/q</em><em>) </em><em>for d in {0</em><em>, </em><em>...</em><em>, </em><em>q-1}.</em>)</p></li>
-<li><p><strong>idx_next</strong> (<em>Pre-calculated next-neighbor indices.</em>)</p></li>
-<li><p><strong>idx_prev</strong> (<em>Pre-calculated previous-neighbor indices.</em>)</p></li>
+<li><p><strong>spins</strong> (<em>np.ndarray</em>) – (N, N) array of integer spin states in {0, …, q-1}.</p></li>
+<li><p><strong>beta</strong> (<em>float</em>) – Inverse temperature 1/kT.</p></li>
+<li><p><strong>J</strong> (<em>float</em>) – Coupling constant.</p></li>
+<li><p><strong>q</strong> (<em>int</em>) – Number of clock states.</p></li>
+<li><p><strong>cos_table</strong> (<em>np.ndarray</em>) – Pre-computed cos(2*pi*d/q) for d in {0, …, q-1}.</p></li>
+<li><p><strong>idx_next</strong> (<em>np.ndarray</em>) – Pre-calculated next-neighbor indices.</p></li>
+<li><p><strong>idx_prev</strong> (<em>np.ndarray</em>) – Pre-calculated previous-neighbor indices.</p></li>
 </ul>
 </dd>
-<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
 <dd class="field-even"><p>Updated spins array.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>np.ndarray</p>
 </dd>
 </dl>
 </dd></dl>
@@ -380,29 +369,6 @@ stochastic dynamics suitable for kinetics studies.</p>
 <dd><p>Bases: <a class="reference internal" href="#models.simulation_base.MonteCarloSimulation" title="models.simulation_base.MonteCarloSimulation"><code class="xref py py-class docutils literal notranslate"><span class="pre">MonteCarloSimulation</span></code></a></p>
 <p>Simulation of the 2D Ising model on a square lattice.</p>
 <dl class="py method">
-<dt class="sig sig-object py" id="models.ising_model.IsingSimulation.run_with_cluster_sizes">
-<span class="sig-name descname"><span class="pre">run_with_cluster_sizes</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_steps</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">ndarray</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">ndarray</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">ndarray</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="../_modules/models/ising_model.html#IsingSimulation.run_with_cluster_sizes"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#models.ising_model.IsingSimulation.run_with_cluster_sizes" title="Link to this definition"></a></dt>
-<dd><p>Run the simulation and additionally record the Wolff cluster size at every step.</p>
-<p>For non-Wolff update schemes the cluster-size array is filled with zeros because
-local Metropolis flips exactly one spin at a time (cluster size = 1 by convention
-would also be valid, but zero makes it easy to detect misuse).</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>n_steps</strong> – Number of MC steps to perform and record.</p>
-</dd>
-<dt class="field-even">Returns<span class="colon">:</span></dt>
-<dd class="field-even"><p><ul class="simple">
-<li><p><em>magnetization</em> – Array of <cite>|M|</cite> per spin at each step.</p></li>
-<li><p><em>energies</em> – Array of energy per spin at each step.</p></li>
-<li><p><em>cluster_sizes</em> – Array of cluster sizes (number of spins flipped) at each step.
-Always zero for non-Wolff algorithms.</p></li>
-</ul>
-</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py method">
 <dt class="sig sig-object py" id="models.ising_model.IsingSimulation.step">
 <span class="sig-name descname"><span class="pre">step</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="../_modules/models/ising_model.html#IsingSimulation.step"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#models.ising_model.IsingSimulation.step" title="Link to this definition"></a></dt>
 <dd><p>Perform one Monte Carlo sweep using the configured update scheme.</p>
@@ -417,16 +383,16 @@ Always zero for non-Wolff algorithms.</p></li>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>spins</strong> (<em>(</em><em>N</em><em>, </em><em>N</em><em>) </em><em>array</em><em> of </em><em>spins.</em>)</p></li>
-<li><p><strong>J</strong> (<em>Coupling constant.</em>)</p></li>
-<li><p><strong>idx_next</strong> (<em>Pre-calculated next-neighbor indices.</em>)</p></li>
+<li><p><strong>spins</strong> (<em>np.ndarray</em>) – (N, N) array of spins.</p></li>
+<li><p><strong>J</strong> (<em>float</em>) – Coupling constant.</p></li>
+<li><p><strong>idx_next</strong> (<em>np.ndarray</em>) – Pre-calculated next-neighbor indices.</p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
-<dd class="field-even"><p><strong>energy</strong></p>
+<dd class="field-even"><p><strong>energy</strong> – Total energy per site.</p>
 </dd>
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p>Total energy per site.</p>
+<dd class="field-odd"><p>float</p>
 </dd>
 </dl>
 </dd></dl>
@@ -439,15 +405,18 @@ Uses a checkerboard update pattern for better Numba optimization.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>spins</strong> (<em>(</em><em>N</em><em>, </em><em>N</em><em>) </em><em>array</em><em> of </em><em>spins</em><em> (</em><em>+1</em><em> or </em><em>-1</em><em>)</em><em>.</em>)</p></li>
-<li><p><strong>beta</strong> (<em>Inverse temperature 1/kT.</em>)</p></li>
-<li><p><strong>J</strong> (<em>Coupling constant.</em>)</p></li>
-<li><p><strong>idx_next</strong> (<em>Pre-calculated next-neighbor indices.</em>)</p></li>
-<li><p><strong>idx_prev</strong> (<em>Pre-calculated previous-neighbor indices.</em>)</p></li>
+<li><p><strong>spins</strong> (<em>np.ndarray</em>) – (N, N) array of spins (+1 or -1).</p></li>
+<li><p><strong>beta</strong> (<em>float</em>) – Inverse temperature 1/kT.</p></li>
+<li><p><strong>J</strong> (<em>float</em>) – Coupling constant.</p></li>
+<li><p><strong>idx_next</strong> (<em>np.ndarray</em>) – Pre-calculated next-neighbor indices.</p></li>
+<li><p><strong>idx_prev</strong> (<em>np.ndarray</em>) – Pre-calculated previous-neighbor indices.</p></li>
 </ul>
 </dd>
-<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
 <dd class="field-even"><p>Updated spins array.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>np.ndarray</p>
 </dd>
 </dl>
 </dd></dl>
@@ -459,15 +428,18 @@ Uses a checkerboard update pattern for better Numba optimization.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>spins</strong> (<em>(</em><em>N</em><em>, </em><em>N</em><em>) </em><em>array</em><em> of </em><em>spins</em><em> (</em><em>+1</em><em> or </em><em>-1</em><em>)</em><em>.</em>)</p></li>
-<li><p><strong>beta</strong> (<em>Inverse temperature 1/kT.</em>)</p></li>
-<li><p><strong>J</strong> (<em>Coupling constant.</em>)</p></li>
-<li><p><strong>idx_next</strong> (<em>Pre-calculated next-neighbor indices.</em>)</p></li>
-<li><p><strong>idx_prev</strong> (<em>Pre-calculated previous-neighbor indices.</em>)</p></li>
+<li><p><strong>spins</strong> (<em>np.ndarray</em>) – (N, N) array of spins (+1 or -1).</p></li>
+<li><p><strong>beta</strong> (<em>float</em>) – Inverse temperature 1/kT.</p></li>
+<li><p><strong>J</strong> (<em>float</em>) – Coupling constant.</p></li>
+<li><p><strong>idx_next</strong> (<em>np.ndarray</em>) – Pre-calculated next-neighbor indices.</p></li>
+<li><p><strong>idx_prev</strong> (<em>np.ndarray</em>) – Pre-calculated previous-neighbor indices.</p></li>
 </ul>
 </dd>
-<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
 <dd class="field-even"><p>Updated spins array.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>np.ndarray</p>
 </dd>
 </dl>
 </dd></dl>
@@ -486,15 +458,18 @@ are pre-calculated outside the inner loop to avoid repeated calls to
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>spins</strong> (<em>(</em><em>N</em><em>, </em><em>N</em><em>) </em><em>array</em><em> of </em><em>spins</em><em> (</em><em>+1</em><em> or </em><em>-1</em><em>)</em><em>.</em>)</p></li>
-<li><p><strong>beta</strong> (<em>Inverse temperature 1/kT.</em>)</p></li>
-<li><p><strong>J</strong> (<em>Coupling constant.</em>)</p></li>
-<li><p><strong>idx_next</strong> (<em>Pre-calculated next-neighbor indices.</em>)</p></li>
-<li><p><strong>idx_prev</strong> (<em>Pre-calculated previous-neighbor indices.</em>)</p></li>
+<li><p><strong>spins</strong> (<em>np.ndarray</em>) – (N, N) array of spins (+1 or -1).</p></li>
+<li><p><strong>beta</strong> (<em>float</em>) – Inverse temperature 1/kT.</p></li>
+<li><p><strong>J</strong> (<em>float</em>) – Coupling constant.</p></li>
+<li><p><strong>idx_next</strong> (<em>np.ndarray</em>) – Pre-calculated next-neighbor indices.</p></li>
+<li><p><strong>idx_prev</strong> (<em>np.ndarray</em>) – Pre-calculated previous-neighbor indices.</p></li>
 </ul>
 </dd>
-<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
 <dd class="field-even"><p>Updated spins array.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>np.ndarray</p>
 </dd>
 </dl>
 </dd></dl>
@@ -515,20 +490,20 @@ inherently sequential.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>spins</strong> (<em>(</em><em>N</em><em>, </em><em>N</em><em>) </em><em>array</em><em> of </em><em>spins</em><em> (</em><em>+1</em><em> or </em><em>-1</em><em>)</em><em>.</em>)</p></li>
-<li><p><strong>beta</strong> (<em>Inverse temperature 1/kT.</em>)</p></li>
-<li><p><strong>J</strong> (<em>Coupling constant.</em>)</p></li>
-<li><p><strong>idx_next</strong> (<em>Pre-calculated next-neighbor indices</em><em> (</em><em>PBC</em><em>)</em><em>.</em>)</p></li>
-<li><p><strong>idx_prev</strong> (<em>Pre-calculated previous-neighbor indices</em><em> (</em><em>PBC</em><em>)</em><em>.</em>)</p></li>
-<li><p><strong>in_cluster</strong> (<em>Pre-allocated</em><em> (</em><em>N</em><em>, </em><em>N</em><em>) </em><em>boolean array for cluster membership mask.</em>)</p></li>
-<li><p><strong>stack</strong> (<em>Pre-allocated</em><em> (</em><em>N*N</em><em>) </em><em>int64 array for DFS stack.</em>)</p></li>
-<li><p><strong>cluster_spins</strong> (<em>Pre-allocated</em><em> (</em><em>N*N</em><em>) </em><em>int64 array to track cluster elements.</em>)</p></li>
+<li><p><strong>spins</strong> (<em>np.ndarray</em>) – (N, N) array of spins (+1 or -1).</p></li>
+<li><p><strong>beta</strong> (<em>float</em>) – Inverse temperature 1/kT.</p></li>
+<li><p><strong>J</strong> (<em>float</em>) – Coupling constant.</p></li>
+<li><p><strong>idx_next</strong> (<em>np.ndarray</em>) – Pre-calculated next-neighbor indices (PBC).</p></li>
+<li><p><strong>idx_prev</strong> (<em>np.ndarray</em>) – Pre-calculated previous-neighbor indices (PBC).</p></li>
+<li><p><strong>in_cluster</strong> (<em>np.ndarray</em>) – Pre-allocated (N, N) boolean array for cluster membership mask.</p></li>
+<li><p><strong>stack</strong> (<em>np.ndarray</em>) – Pre-allocated (N*N) int64 array for DFS stack.</p></li>
+<li><p><strong>cluster_spins</strong> (<em>np.ndarray</em>) – Pre-allocated (N*N) int64 array to track cluster elements.</p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
 <dd class="field-even"><p><ul class="simple">
-<li><p><strong>spins</strong> (<em>Updated spins array.</em>)</p></li>
-<li><p><strong>cluster_size</strong> (<em>Number of spins flipped in this step.</em>)</p></li>
+<li><p><em>spins</em> – Updated spins array.</p></li>
+<li><p><em>cluster_size</em> – Number of spins flipped in this step.</p></li>
 </ul>
 </p>
 </dd>
@@ -552,12 +527,60 @@ inherently sequential.</p>
 <p>Abstract base class for 2D lattice Monte Carlo simulations.
 Provides infrastructure for equilibration, measurement runs, and statistical analysis.</p>
 <dl class="py method">
+<dt class="sig sig-object py" id="models.simulation_base.MonteCarloSimulation.calculate_correlation_function">
+<span class="sig-name descname"><span class="pre">calculate_correlation_function</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">ndarray</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">ndarray</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="../_modules/models/simulation_base.html#MonteCarloSimulation.calculate_correlation_function"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#models.simulation_base.MonteCarloSimulation.calculate_correlation_function" title="Link to this definition"></a></dt>
+<dd><p>Calculate the radially averaged spin-spin correlation function G(r).</p>
+<p>Public accessor for scripts and analysis helpers.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p><ul class="simple">
+<li><p><strong>r</strong> (<em>np.ndarray</em>) – Radial distances.</p></li>
+<li><p><strong>G_r</strong> (<em>np.ndarray</em>) – Radially averaged correlation values, normalized to G(0) = 1.</p></li>
+</ul>
+</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
 <dt class="sig sig-object py" id="models.simulation_base.MonteCarloSimulation.equilibrate">
 <span class="sig-name descname"><span class="pre">equilibrate</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_steps</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="../_modules/models/simulation_base.html#MonteCarloSimulation.equilibrate"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#models.simulation_base.MonteCarloSimulation.equilibrate" title="Link to this definition"></a></dt>
 <dd><p>Perform equilibration steps without recording measurements.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>n_steps</strong> (<em>Number</em><em> of </em><em>MC steps to perform.</em>)</p>
+<dd class="field-odd"><p><strong>n_steps</strong> (<em>int</em>) – Number of MC steps to perform.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="models.simulation_base.MonteCarloSimulation.get_energy">
+<span class="sig-name descname"><span class="pre">get_energy</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">float</span></span></span><a class="reference internal" href="../_modules/models/simulation_base.html#MonteCarloSimulation.get_energy"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#models.simulation_base.MonteCarloSimulation.get_energy" title="Link to this definition"></a></dt>
+<dd><p>Return the current energy per site.</p>
+<p>Public accessor for scripts and analysis helpers; delegates to the
+model-specific implementation.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Energy per site.</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>float</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="models.simulation_base.MonteCarloSimulation.get_magnetization">
+<span class="sig-name descname"><span class="pre">get_magnetization</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">float</span></span></span><a class="reference internal" href="../_modules/models/simulation_base.html#MonteCarloSimulation.get_magnetization"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#models.simulation_base.MonteCarloSimulation.get_magnetization" title="Link to this definition"></a></dt>
+<dd><p>Return the current absolute magnetization per site.</p>
+<p>Public accessor for scripts and analysis helpers; delegates to the
+model-specific implementation.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Absolute magnetization per site.</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>float</p>
 </dd>
 </dl>
 </dd></dl>
@@ -568,12 +591,36 @@ Provides infrastructure for equilibration, measurement runs, and statistical ana
 <dd><p>Run the simulation and record magnetization and energy at each step.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>n_steps</strong> (<em>Number</em><em> of </em><em>MC steps to perform and record.</em>)</p>
+<dd class="field-odd"><p><strong>n_steps</strong> (<em>int</em>) – Number of MC steps to perform and record.</p>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
 <dd class="field-even"><p><ul class="simple">
-<li><p><strong>magnetization</strong> (<em>Array of recorded magnetization values.</em>)</p></li>
-<li><p><strong>energies</strong> (<em>Array of recorded energy values.</em>)</p></li>
+<li><p><strong>magnetization</strong> (<em>np.ndarray</em>) – Array of recorded magnetization values.</p></li>
+<li><p><strong>energies</strong> (<em>np.ndarray</em>) – Array of recorded energy values.</p></li>
+</ul>
+</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="models.simulation_base.MonteCarloSimulation.run_with_cluster_sizes">
+<span class="sig-name descname"><span class="pre">run_with_cluster_sizes</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_steps</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">ndarray</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">ndarray</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">ndarray</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="../_modules/models/simulation_base.html#MonteCarloSimulation.run_with_cluster_sizes"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#models.simulation_base.MonteCarloSimulation.run_with_cluster_sizes" title="Link to this definition"></a></dt>
+<dd><p>Run the simulation and additionally record the cluster size at every step.</p>
+<p>For non-cluster update schemes the cluster-size array is filled with
+zeros, because a local Metropolis move flips exactly one spin.  A
+convention of one would be equally defensible; zero was chosen so that
+misuse of this method on a local update is easy to spot in the output.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>n_steps</strong> (<em>int</em>) – Number of MC steps to perform and record.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><ul class="simple">
+<li><p><strong>magnetization</strong> (<em>np.ndarray</em>) – Magnetization per spin at each step.</p></li>
+<li><p><strong>energies</strong> (<em>np.ndarray</em>) – Energy per spin at each step.</p></li>
+<li><p><strong>cluster_sizes</strong> (<em>np.ndarray</em>) – Number of spins the update touched at each step, zero for every
+non-cluster scheme.</p></li>
 </ul>
 </p>
 </dd>
@@ -588,6 +635,60 @@ Provides infrastructure for equilibration, measurement runs, and statistical ana
 
 </dd></dl>
 
+<dl class="py class">
+<dt class="sig sig-object py" id="models.simulation_base.VectorSpinObservablesMixin">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">models.simulation_base.</span></span><span class="sig-name descname"><span class="pre">VectorSpinObservablesMixin</span></span><a class="reference internal" href="../_modules/models/simulation_base.html#VectorSpinObservablesMixin"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#models.simulation_base.VectorSpinObservablesMixin" title="Link to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<p>Public topological-observable accessors for vector-spin models.</p>
+<p>Mixed into <code class="docutils literal notranslate"><span class="pre">XYSimulation</span></code>, <code class="docutils literal notranslate"><span class="pre">ClockSimulation</span></code>, and
+<code class="docutils literal notranslate"><span class="pre">DiscreteClockSimulation</span></code>, which each provide the private
+implementations. Keeping the public wrappers here gives scripts and
+analysis helpers a stable API without duplicating docstrings per model.</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="models.simulation_base.VectorSpinObservablesMixin.calculate_vorticity">
+<span class="sig-name descname"><span class="pre">calculate_vorticity</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">ndarray</span></span></span><a class="reference internal" href="../_modules/models/simulation_base.html#VectorSpinObservablesMixin.calculate_vorticity"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#models.simulation_base.VectorSpinObservablesMixin.calculate_vorticity" title="Link to this definition"></a></dt>
+<dd><p>Calculate the vorticity (winding number) of each plaquette.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>(N, N) array of winding numbers (+1, -1, or 0).</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>np.ndarray</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="models.simulation_base.VectorSpinObservablesMixin.get_helicity_data">
+<span class="sig-name descname"><span class="pre">get_helicity_data</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">float</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">float</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="../_modules/models/simulation_base.html#VectorSpinObservablesMixin.get_helicity_data"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#models.simulation_base.VectorSpinObservablesMixin.get_helicity_data" title="Link to this definition"></a></dt>
+<dd><p>Calculate the helicity-modulus raw sums along the x-direction.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p><ul class="simple">
+<li><p><strong>cos_sum</strong> (<em>float</em>) – Sum of cosine of nearest-neighbor angle differences.</p></li>
+<li><p><strong>sin_sum</strong> (<em>float</em>) – Sum of sine of nearest-neighbor angle differences.</p></li>
+</ul>
+</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="models.simulation_base.VectorSpinObservablesMixin.get_vortex_density">
+<span class="sig-name descname"><span class="pre">get_vortex_density</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">float</span></span></span><a class="reference internal" href="../_modules/models/simulation_base.html#VectorSpinObservablesMixin.get_vortex_density"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#models.simulation_base.VectorSpinObservablesMixin.get_vortex_density" title="Link to this definition"></a></dt>
+<dd><p>Calculate the vortex density n_v.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Fraction of plaquettes with non-zero winding, in [0, 1].</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>float</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
 <dl class="py function">
 <dt class="sig sig-object py" id="models.simulation_base.calculate_vortex_density_numba">
 <span class="sig-prename descclassname"><span class="pre">models.simulation_base.</span></span><span class="sig-name descname"><span class="pre">calculate_vortex_density_numba</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">spins</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">idx_next</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">float</span></span></span><a class="reference internal" href="../_modules/models/simulation_base.html#calculate_vortex_density_numba"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#models.simulation_base.calculate_vortex_density_numba" title="Link to this definition"></a></dt>
@@ -595,12 +696,15 @@ Provides infrastructure for equilibration, measurement runs, and statistical ana
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>spins</strong> (<em>(</em><em>N</em><em>, </em><em>N</em><em>, </em><em>2</em><em>) </em><em>array</em><em> of </em><em>unit vectors.</em>)</p></li>
-<li><p><strong>idx_next</strong> (<em>Pre-calculated next-neighbor indices.</em>)</p></li>
+<li><p><strong>spins</strong> (<em>np.ndarray</em>) – (N, N, 2) array of unit vectors.</p></li>
+<li><p><strong>idx_next</strong> (<em>np.ndarray</em>) – Pre-calculated next-neighbor indices.</p></li>
 </ul>
 </dd>
-<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
 <dd class="field-even"><p>Vortex density n_v in [0, 1].</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>float</p>
 </dd>
 </dl>
 </dd></dl>
@@ -613,15 +717,15 @@ Optimized by calculating angles first and then using a fast wrapping kernel.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>spins</strong> (<em>(</em><em>N</em><em>, </em><em>N</em><em>, </em><em>2</em><em>) </em><em>array</em><em> of </em><em>unit vectors.</em>)</p></li>
-<li><p><strong>idx_next</strong> (<em>Pre-calculated next-neighbor indices.</em>)</p></li>
+<li><p><strong>spins</strong> (<em>np.ndarray</em>) – (N, N, 2) array of unit vectors.</p></li>
+<li><p><strong>idx_next</strong> (<em>np.ndarray</em>) – Pre-calculated next-neighbor indices.</p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
-<dd class="field-even"><p><strong>vorticity</strong></p>
+<dd class="field-even"><p><strong>vorticity</strong> – (N, N) array containing winding numbers (+1, -1, or 0).</p>
 </dd>
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p>(N, N) array containing winding numbers (+1, -1, or 0).</p>
+<dd class="field-odd"><p>np.ndarray</p>
 </dd>
 </dl>
 </dd></dl>
@@ -633,14 +737,55 @@ Optimized by calculating angles first and then using a fast wrapping kernel.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>spins</strong> (<em>(</em><em>N</em><em>, </em><em>N</em><em>, </em><em>2</em><em>) </em><em>array</em><em> of </em><em>unit vectors.</em>)</p></li>
-<li><p><strong>idx_next</strong> (<em>Pre-calculated next-neighbor indices for PBCs.</em>)</p></li>
+<li><p><strong>spins</strong> (<em>np.ndarray</em>) – (N, N, 2) array of unit vectors.</p></li>
+<li><p><strong>idx_next</strong> (<em>np.ndarray</em>) – Pre-calculated next-neighbor indices for PBCs.</p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
 <dd class="field-even"><p><ul class="simple">
-<li><p><strong>cos_sum</strong> (<em>Sum of cosine of angle differences.</em>)</p></li>
-<li><p><strong>sin_sum</strong> (<em>Sum of sine of angle differences.</em>)</p></li>
+<li><p><strong>cos_sum</strong> (<em>float</em>) – Sum of cosine of angle differences.</p></li>
+<li><p><strong>sin_sum</strong> (<em>float</em>) – Sum of sine of angle differences.</p></li>
+</ul>
+</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="models.simulation_base.o2_wolff_step_numba">
+<span class="sig-prename descclassname"><span class="pre">models.simulation_base.</span></span><span class="sig-name descname"><span class="pre">o2_wolff_step_numba</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">spins</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">beta</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">J</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">idx_next</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">idx_prev</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">in_cluster</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">stack</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cluster_spins</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">tuple</span></span></span><a class="reference internal" href="../_modules/models/simulation_base.html#o2_wolff_step_numba"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#models.simulation_base.o2_wolff_step_numba" title="Link to this definition"></a></dt>
+<dd><p>Perform one Wolff-Evertz cluster reflection on a planar unit-vector field.</p>
+<p>A random mirror-plane axis is sampled uniformly from the unit circle, and
+each spin is projected onto it.  Bonds between neighbours whose projections
+share a sign are activated with probability
+<code class="docutils literal notranslate"><span class="pre">P_add</span> <span class="pre">=</span> <span class="pre">1</span> <span class="pre">-</span> <span class="pre">exp(-2</span> <span class="pre">beta</span> <span class="pre">J</span> <span class="pre">sigma_i</span> <span class="pre">sigma_j)</span></code>, and every spin in the
+resulting cluster is reflected through the plane perpendicular to the axis.
+The reflection preserves unit length exactly.</p>
+<p>The bond construction sees only the exchange term, so every O(2) model in
+this project shares this update unchanged.  Where the Hamiltonian adds a
+single-site term that breaks the reflection symmetry, such as the
+crystal-field anisotropy of the clock model, detailed balance then holds
+for the exchange part alone, and <code class="docutils literal notranslate"><span class="pre">ClockSimulation</span></code> warns when it is asked
+to combine this update with a non-zero anisotropy.</p>
+<p>One call constitutes one cluster sweep.  <code class="docutils literal notranslate"><span class="pre">parallel=True</span></code> is silently
+ignored.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>spins</strong> (<em>np.ndarray</em>) – (N, N, 2) array of unit vectors.</p></li>
+<li><p><strong>beta</strong> (<em>float</em>) – Inverse temperature 1/kT.</p></li>
+<li><p><strong>J</strong> (<em>float</em>) – Coupling constant.</p></li>
+<li><p><strong>idx_next</strong> (<em>np.ndarray</em>) – Pre-calculated next-neighbor indices (PBC).</p></li>
+<li><p><strong>idx_prev</strong> (<em>np.ndarray</em>) – Pre-calculated previous-neighbor indices (PBC).</p></li>
+<li><p><strong>in_cluster</strong> (<em>np.ndarray</em>) – Pre-allocated (N, N) boolean array for cluster membership mask.</p></li>
+<li><p><strong>stack</strong> (<em>np.ndarray</em>) – Pre-allocated (N*N) int64 array for DFS stack.</p></li>
+<li><p><strong>cluster_spins</strong> (<em>np.ndarray</em>) – Pre-allocated (N*N) int64 array to track cluster elements.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><ul class="simple">
+<li><p><em>spins</em> – Updated spins array.</p></li>
+<li><p><em>cluster_size</em> – Number of spins reflected in this step.</p></li>
 </ul>
 </p>
 </dd>
@@ -654,7 +799,7 @@ Optimized by calculating angles first and then using a fast wrapping kernel.</p>
 <dl class="py class">
 <dt class="sig sig-object py" id="models.xy_model.XYSimulation">
 <span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">models.xy_model.</span></span><span class="sig-name descname"><span class="pre">XYSimulation</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">size</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">temp</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">J</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">1.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">update</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'checkerboard'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">init_state</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'random'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">parallel</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">seed</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/models/xy_model.html#XYSimulation"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#models.xy_model.XYSimulation" title="Link to this definition"></a></dt>
-<dd><p>Bases: <a class="reference internal" href="#models.simulation_base.MonteCarloSimulation" title="models.simulation_base.MonteCarloSimulation"><code class="xref py py-class docutils literal notranslate"><span class="pre">MonteCarloSimulation</span></code></a></p>
+<dd><p>Bases: <a class="reference internal" href="#models.simulation_base.VectorSpinObservablesMixin" title="models.simulation_base.VectorSpinObservablesMixin"><code class="xref py py-class docutils literal notranslate"><span class="pre">VectorSpinObservablesMixin</span></code></a>, <a class="reference internal" href="#models.simulation_base.MonteCarloSimulation" title="models.simulation_base.MonteCarloSimulation"><code class="xref py py-class docutils literal notranslate"><span class="pre">MonteCarloSimulation</span></code></a></p>
 <p>Simulation of the 2D XY model on a square lattice.</p>
 <dl class="py method">
 <dt class="sig sig-object py" id="models.xy_model.XYSimulation.step">
@@ -677,16 +822,16 @@ Optimized by calculating angles first and then using a fast wrapping kernel.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>spins</strong> (<em>(</em><em>N</em><em>, </em><em>N</em><em>, </em><em>2</em><em>) </em><em>array</em><em> of </em><em>unit vectors.</em>)</p></li>
-<li><p><strong>J</strong> (<em>Coupling constant.</em>)</p></li>
-<li><p><strong>idx_next</strong> (<em>Pre-calculated next-neighbor indices.</em>)</p></li>
+<li><p><strong>spins</strong> (<em>np.ndarray</em>) – (N, N, 2) array of unit vectors.</p></li>
+<li><p><strong>J</strong> (<em>float</em>) – Coupling constant.</p></li>
+<li><p><strong>idx_next</strong> (<em>np.ndarray</em>) – Pre-calculated next-neighbor indices.</p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
-<dd class="field-even"><p><strong>energy</strong></p>
+<dd class="field-even"><p><strong>energy</strong> – Total energy per site.</p>
 </dd>
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p>Total energy per site.</p>
+<dd class="field-odd"><p>float</p>
 </dd>
 </dl>
 </dd></dl>
@@ -699,15 +844,18 @@ Uses a checkerboard update pattern for better Numba optimization.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>spins</strong> (<em>(</em><em>N</em><em>, </em><em>N</em><em>, </em><em>2</em><em>) </em><em>array</em><em> of </em><em>unit vectors.</em>)</p></li>
-<li><p><strong>beta</strong> (<em>Inverse temperature 1/kT.</em>)</p></li>
-<li><p><strong>J</strong> (<em>Coupling constant.</em>)</p></li>
-<li><p><strong>idx_next</strong> (<em>Pre-calculated next-neighbor indices.</em>)</p></li>
-<li><p><strong>idx_prev</strong> (<em>Pre-calculated previous-neighbor indices.</em>)</p></li>
+<li><p><strong>spins</strong> (<em>np.ndarray</em>) – (N, N, 2) array of unit vectors.</p></li>
+<li><p><strong>beta</strong> (<em>float</em>) – Inverse temperature 1/kT.</p></li>
+<li><p><strong>J</strong> (<em>float</em>) – Coupling constant.</p></li>
+<li><p><strong>idx_next</strong> (<em>np.ndarray</em>) – Pre-calculated next-neighbor indices.</p></li>
+<li><p><strong>idx_prev</strong> (<em>np.ndarray</em>) – Pre-calculated previous-neighbor indices.</p></li>
 </ul>
 </dd>
-<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
 <dd class="field-even"><p>Updated spins array.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>np.ndarray</p>
 </dd>
 </dl>
 </dd></dl>
@@ -719,15 +867,18 @@ Uses a checkerboard update pattern for better Numba optimization.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>spins</strong> (<em>(</em><em>N</em><em>, </em><em>N</em><em>, </em><em>2</em><em>) </em><em>array</em><em> of </em><em>unit vectors.</em>)</p></li>
-<li><p><strong>beta</strong> (<em>Inverse temperature 1/kT.</em>)</p></li>
-<li><p><strong>J</strong> (<em>Coupling constant.</em>)</p></li>
-<li><p><strong>idx_next</strong> (<em>Pre-calculated next-neighbor indices.</em>)</p></li>
-<li><p><strong>idx_prev</strong> (<em>Pre-calculated previous-neighbor indices.</em>)</p></li>
+<li><p><strong>spins</strong> (<em>np.ndarray</em>) – (N, N, 2) array of unit vectors.</p></li>
+<li><p><strong>beta</strong> (<em>float</em>) – Inverse temperature 1/kT.</p></li>
+<li><p><strong>J</strong> (<em>float</em>) – Coupling constant.</p></li>
+<li><p><strong>idx_next</strong> (<em>np.ndarray</em>) – Pre-calculated next-neighbor indices.</p></li>
+<li><p><strong>idx_prev</strong> (<em>np.ndarray</em>) – Pre-calculated previous-neighbor indices.</p></li>
 </ul>
 </dd>
-<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
 <dd class="field-even"><p>Updated spins array.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>np.ndarray</p>
 </dd>
 </dl>
 </dd></dl>
@@ -739,51 +890,18 @@ Uses a checkerboard update pattern for better Numba optimization.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>spins</strong> (<em>(</em><em>N</em><em>, </em><em>N</em><em>, </em><em>2</em><em>) </em><em>array</em><em> of </em><em>unit vectors.</em>)</p></li>
-<li><p><strong>beta</strong> (<em>Inverse temperature 1/kT.</em>)</p></li>
-<li><p><strong>J</strong> (<em>Coupling constant.</em>)</p></li>
-<li><p><strong>idx_next</strong> (<em>Pre-calculated next-neighbor indices.</em>)</p></li>
-<li><p><strong>idx_prev</strong> (<em>Pre-calculated previous-neighbor indices.</em>)</p></li>
-</ul>
-</dd>
-<dt class="field-even">Return type<span class="colon">:</span></dt>
-<dd class="field-even"><p>Updated spins array.</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py function">
-<dt class="sig sig-object py" id="models.xy_model.xy_wolff_step_numba">
-<span class="sig-prename descclassname"><span class="pre">models.xy_model.</span></span><span class="sig-name descname"><span class="pre">xy_wolff_step_numba</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">spins</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">beta</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">J</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">idx_next</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">idx_prev</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">in_cluster</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">stack</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cluster_spins</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">tuple</span></span></span><a class="reference internal" href="../_modules/models/xy_model.html#xy_wolff_step_numba"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#models.xy_model.xy_wolff_step_numba" title="Link to this definition"></a></dt>
-<dd><p>Perform one Wolff cluster flip on the XY lattice (Wolff-Evertz reflection).</p>
-<p>A random mirror-plane axis r̂ is sampled uniformly from S^1.  Each spin
-projects onto r̂ as sigma_i = s_i · r̂.  Bonds between neighbouring sites
-with aligned projections (sigma_i * sigma_j &gt; 0) are activated with
-probability <code class="docutils literal notranslate"><span class="pre">P_add</span> <span class="pre">=</span> <span class="pre">1</span> <span class="pre">-</span> <span class="pre">exp(-2</span> <span class="pre">beta</span> <span class="pre">J</span> <span class="pre">sigma_i</span> <span class="pre">sigma_j)</span></code>.  All cluster
-spins are then reflected through the plane perpendicular to r̂:
-<code class="docutils literal notranslate"><span class="pre">s</span> <span class="pre">-&gt;</span> <span class="pre">s</span> <span class="pre">-</span> <span class="pre">2</span> <span class="pre">(s</span> <span class="pre">·</span> <span class="pre">r̂)</span> <span class="pre">r̂</span></code>, which preserves unit length exactly and
-satisfies detailed balance for the pure exchange term.</p>
-<p>One call constitutes one cluster sweep.  <code class="docutils literal notranslate"><span class="pre">parallel=True</span></code> is silently
-ignored.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>spins</strong> (<em>(</em><em>N</em><em>, </em><em>N</em><em>, </em><em>2</em><em>) </em><em>array</em><em> of </em><em>unit vectors.</em>)</p></li>
-<li><p><strong>beta</strong> (<em>Inverse temperature 1/kT.</em>)</p></li>
-<li><p><strong>J</strong> (<em>Coupling constant.</em>)</p></li>
-<li><p><strong>idx_next</strong> (<em>Pre-calculated next-neighbor indices</em><em> (</em><em>PBC</em><em>)</em><em>.</em>)</p></li>
-<li><p><strong>idx_prev</strong> (<em>Pre-calculated previous-neighbor indices</em><em> (</em><em>PBC</em><em>)</em><em>.</em>)</p></li>
-<li><p><strong>in_cluster</strong> (<em>Pre-allocated</em><em> (</em><em>N</em><em>, </em><em>N</em><em>) </em><em>boolean array for cluster membership mask.</em>)</p></li>
-<li><p><strong>stack</strong> (<em>Pre-allocated</em><em> (</em><em>N*N</em><em>) </em><em>int64 array for DFS stack.</em>)</p></li>
-<li><p><strong>cluster_spins</strong> (<em>Pre-allocated</em><em> (</em><em>N*N</em><em>) </em><em>int64 array to track cluster elements.</em>)</p></li>
+<li><p><strong>spins</strong> (<em>np.ndarray</em>) – (N, N, 2) array of unit vectors.</p></li>
+<li><p><strong>beta</strong> (<em>float</em>) – Inverse temperature 1/kT.</p></li>
+<li><p><strong>J</strong> (<em>float</em>) – Coupling constant.</p></li>
+<li><p><strong>idx_next</strong> (<em>np.ndarray</em>) – Pre-calculated next-neighbor indices.</p></li>
+<li><p><strong>idx_prev</strong> (<em>np.ndarray</em>) – Pre-calculated previous-neighbor indices.</p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
-<dd class="field-even"><p><ul class="simple">
-<li><p><strong>spins</strong> (<em>Updated spins array.</em>)</p></li>
-<li><p><strong>cluster_size</strong> (<em>Number of spins flipped in this step.</em>)</p></li>
-</ul>
-</p>
+<dd class="field-even"><p>Updated spins array.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>np.ndarray</p>
 </dd>
 </dl>
 </dd></dl>
@@ -795,7 +913,7 @@ ignored.</p>
 <dl class="py class">
 <dt class="sig sig-object py">
 <span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">models.</span></span><span class="sig-name descname"><span class="pre">ClockSimulation</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">size</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">temp</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">J</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">1.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">A</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">1.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">q</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">6</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">update</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'checkerboard'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">init_state</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'random'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">parallel</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">seed</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/models/clock_model.html#ClockSimulation"><span class="viewcode-link"><span class="pre">[source]</span></span></a></dt>
-<dd><p>Bases: <a class="reference internal" href="#models.simulation_base.MonteCarloSimulation" title="models.simulation_base.MonteCarloSimulation"><code class="xref py py-class docutils literal notranslate"><span class="pre">MonteCarloSimulation</span></code></a></p>
+<dd><p>Bases: <a class="reference internal" href="#models.simulation_base.VectorSpinObservablesMixin" title="models.simulation_base.VectorSpinObservablesMixin"><code class="xref py py-class docutils literal notranslate"><span class="pre">VectorSpinObservablesMixin</span></code></a>, <a class="reference internal" href="#models.simulation_base.MonteCarloSimulation" title="models.simulation_base.MonteCarloSimulation"><code class="xref py py-class docutils literal notranslate"><span class="pre">MonteCarloSimulation</span></code></a></p>
 <p>Simulation of the 2D q-state clock model on a square lattice.</p>
 <dl class="py method">
 <dt class="sig sig-object py">
@@ -808,7 +926,7 @@ ignored.</p>
 <dl class="py class">
 <dt class="sig sig-object py">
 <span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">models.</span></span><span class="sig-name descname"><span class="pre">DiscreteClockSimulation</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">size</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">temp</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">J</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">1.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">q</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">6</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">update</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'checkerboard'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">init_state</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'random'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">parallel</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">seed</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/models/clock_model.html#DiscreteClockSimulation"><span class="viewcode-link"><span class="pre">[source]</span></span></a></dt>
-<dd><p>Bases: <a class="reference internal" href="#models.simulation_base.MonteCarloSimulation" title="models.simulation_base.MonteCarloSimulation"><code class="xref py py-class docutils literal notranslate"><span class="pre">MonteCarloSimulation</span></code></a></p>
+<dd><p>Bases: <a class="reference internal" href="#models.simulation_base.VectorSpinObservablesMixin" title="models.simulation_base.VectorSpinObservablesMixin"><code class="xref py py-class docutils literal notranslate"><span class="pre">VectorSpinObservablesMixin</span></code></a>, <a class="reference internal" href="#models.simulation_base.MonteCarloSimulation" title="models.simulation_base.MonteCarloSimulation"><code class="xref py py-class docutils literal notranslate"><span class="pre">MonteCarloSimulation</span></code></a></p>
 <p>Simulation of the 2D q-state clock model with discrete integer spins.</p>
 <p>Each spin takes one of q evenly spaced orientations theta_k = 2*pi*k/q.
 The Hamiltonian is E = -J * sum_&lt;i,j&gt; cos(theta_i - theta_j).</p>
@@ -830,29 +948,6 @@ and enforces the discrete symmetry exactly.</p>
 <p>Simulation of the 2D Ising model on a square lattice.</p>
 <dl class="py method">
 <dt class="sig sig-object py">
-<span class="sig-name descname"><span class="pre">run_with_cluster_sizes</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_steps</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">ndarray</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">ndarray</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">ndarray</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="../_modules/models/ising_model.html#IsingSimulation.run_with_cluster_sizes"><span class="viewcode-link"><span class="pre">[source]</span></span></a></dt>
-<dd><p>Run the simulation and additionally record the Wolff cluster size at every step.</p>
-<p>For non-Wolff update schemes the cluster-size array is filled with zeros because
-local Metropolis flips exactly one spin at a time (cluster size = 1 by convention
-would also be valid, but zero makes it easy to detect misuse).</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>n_steps</strong> – Number of MC steps to perform and record.</p>
-</dd>
-<dt class="field-even">Returns<span class="colon">:</span></dt>
-<dd class="field-even"><p><ul class="simple">
-<li><p><em>magnetization</em> – Array of <cite>|M|</cite> per spin at each step.</p></li>
-<li><p><em>energies</em> – Array of energy per spin at each step.</p></li>
-<li><p><em>cluster_sizes</em> – Array of cluster sizes (number of spins flipped) at each step.
-Always zero for non-Wolff algorithms.</p></li>
-</ul>
-</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py">
 <span class="sig-name descname"><span class="pre">step</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="../_modules/models/ising_model.html#IsingSimulation.step"><span class="viewcode-link"><span class="pre">[source]</span></span></a></dt>
 <dd><p>Perform one Monte Carlo sweep using the configured update scheme.</p>
 </dd></dl>
@@ -867,11 +962,59 @@ Always zero for non-Wolff algorithms.</p></li>
 Provides infrastructure for equilibration, measurement runs, and statistical analysis.</p>
 <dl class="py method">
 <dt class="sig sig-object py">
+<span class="sig-name descname"><span class="pre">calculate_correlation_function</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">ndarray</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">ndarray</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="../_modules/models/simulation_base.html#MonteCarloSimulation.calculate_correlation_function"><span class="viewcode-link"><span class="pre">[source]</span></span></a></dt>
+<dd><p>Calculate the radially averaged spin-spin correlation function G(r).</p>
+<p>Public accessor for scripts and analysis helpers.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p><ul class="simple">
+<li><p><strong>r</strong> (<em>np.ndarray</em>) – Radial distances.</p></li>
+<li><p><strong>G_r</strong> (<em>np.ndarray</em>) – Radially averaged correlation values, normalized to G(0) = 1.</p></li>
+</ul>
+</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py">
 <span class="sig-name descname"><span class="pre">equilibrate</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_steps</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="../_modules/models/simulation_base.html#MonteCarloSimulation.equilibrate"><span class="viewcode-link"><span class="pre">[source]</span></span></a></dt>
 <dd><p>Perform equilibration steps without recording measurements.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>n_steps</strong> (<em>Number</em><em> of </em><em>MC steps to perform.</em>)</p>
+<dd class="field-odd"><p><strong>n_steps</strong> (<em>int</em>) – Number of MC steps to perform.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py">
+<span class="sig-name descname"><span class="pre">get_energy</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">float</span></span></span><a class="reference internal" href="../_modules/models/simulation_base.html#MonteCarloSimulation.get_energy"><span class="viewcode-link"><span class="pre">[source]</span></span></a></dt>
+<dd><p>Return the current energy per site.</p>
+<p>Public accessor for scripts and analysis helpers; delegates to the
+model-specific implementation.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Energy per site.</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>float</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py">
+<span class="sig-name descname"><span class="pre">get_magnetization</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">float</span></span></span><a class="reference internal" href="../_modules/models/simulation_base.html#MonteCarloSimulation.get_magnetization"><span class="viewcode-link"><span class="pre">[source]</span></span></a></dt>
+<dd><p>Return the current absolute magnetization per site.</p>
+<p>Public accessor for scripts and analysis helpers; delegates to the
+model-specific implementation.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Absolute magnetization per site.</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>float</p>
 </dd>
 </dl>
 </dd></dl>
@@ -882,12 +1025,36 @@ Provides infrastructure for equilibration, measurement runs, and statistical ana
 <dd><p>Run the simulation and record magnetization and energy at each step.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>n_steps</strong> (<em>Number</em><em> of </em><em>MC steps to perform and record.</em>)</p>
+<dd class="field-odd"><p><strong>n_steps</strong> (<em>int</em>) – Number of MC steps to perform and record.</p>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
 <dd class="field-even"><p><ul class="simple">
-<li><p><strong>magnetization</strong> (<em>Array of recorded magnetization values.</em>)</p></li>
-<li><p><strong>energies</strong> (<em>Array of recorded energy values.</em>)</p></li>
+<li><p><strong>magnetization</strong> (<em>np.ndarray</em>) – Array of recorded magnetization values.</p></li>
+<li><p><strong>energies</strong> (<em>np.ndarray</em>) – Array of recorded energy values.</p></li>
+</ul>
+</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py">
+<span class="sig-name descname"><span class="pre">run_with_cluster_sizes</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_steps</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">ndarray</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">ndarray</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">ndarray</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="../_modules/models/simulation_base.html#MonteCarloSimulation.run_with_cluster_sizes"><span class="viewcode-link"><span class="pre">[source]</span></span></a></dt>
+<dd><p>Run the simulation and additionally record the cluster size at every step.</p>
+<p>For non-cluster update schemes the cluster-size array is filled with
+zeros, because a local Metropolis move flips exactly one spin.  A
+convention of one would be equally defensible; zero was chosen so that
+misuse of this method on a local update is easy to spot in the output.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>n_steps</strong> (<em>int</em>) – Number of MC steps to perform and record.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><ul class="simple">
+<li><p><strong>magnetization</strong> (<em>np.ndarray</em>) – Magnetization per spin at each step.</p></li>
+<li><p><strong>energies</strong> (<em>np.ndarray</em>) – Energy per spin at each step.</p></li>
+<li><p><strong>cluster_sizes</strong> (<em>np.ndarray</em>) – Number of spins the update touched at each step, zero for every
+non-cluster scheme.</p></li>
 </ul>
 </p>
 </dd>
@@ -905,7 +1072,7 @@ Provides infrastructure for equilibration, measurement runs, and statistical ana
 <dl class="py class">
 <dt class="sig sig-object py">
 <span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">models.</span></span><span class="sig-name descname"><span class="pre">XYSimulation</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">size</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">temp</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">J</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">1.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">update</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'checkerboard'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">init_state</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'random'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">parallel</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">seed</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/models/xy_model.html#XYSimulation"><span class="viewcode-link"><span class="pre">[source]</span></span></a></dt>
-<dd><p>Bases: <a class="reference internal" href="#models.simulation_base.MonteCarloSimulation" title="models.simulation_base.MonteCarloSimulation"><code class="xref py py-class docutils literal notranslate"><span class="pre">MonteCarloSimulation</span></code></a></p>
+<dd><p>Bases: <a class="reference internal" href="#models.simulation_base.VectorSpinObservablesMixin" title="models.simulation_base.VectorSpinObservablesMixin"><code class="xref py py-class docutils literal notranslate"><span class="pre">VectorSpinObservablesMixin</span></code></a>, <a class="reference internal" href="#models.simulation_base.MonteCarloSimulation" title="models.simulation_base.MonteCarloSimulation"><code class="xref py py-class docutils literal notranslate"><span class="pre">MonteCarloSimulation</span></code></a></p>
 <p>Simulation of the 2D XY model on a square lattice.</p>
 <dl class="py method">
 <dt class="sig sig-object py">

@@ -16,6 +16,7 @@
       <script src="../../../_static/doctools.js?v=fd6eb6e6"></script>
       <script src="../../../_static/sphinx_highlight.js?v=6ffebe34"></script>
       <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+      <script src="https://cdn.jsdelivr.net/npm/@jupyter-widgets/html-manager@^1.0.1/dist/embed-amd.js"></script>
     <script src="../../../_static/js/theme.js"></script>
     <link rel="index" title="Index" href="../../../genindex.html" />
     <link rel="search" title="Search" href="../../../search.html" /> 
@@ -46,8 +47,8 @@
 <li class="toctree-l1"><a class="reference internal" href="../../../physics.html">Physics and Algorithm Guide: VibeSpin</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../code.html">Developer and Architecture Guide</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../scripts.html">Scripts Catalog: VibeSpin</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../agents.html">Agent Instruction Guide: VibeSpin</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../bibliography.html">Project Bibliography: VibeSpin</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../AGENTS.html">Agent Instruction Guide: VibeSpin</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../BIBLIOGRAPHY.html">Project Bibliography: VibeSpin</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../changelog.html">Changelog</a></li>
 </ul>
 <p class="caption" role="heading"><span class="caption-text">Research &amp; Analysis:</span></p>
@@ -92,326 +93,83 @@
            <div itemprop="articleBody">
              
   <h1>Source code for scripts.clock.temperature_sweep</h1><div class="highlight"><pre>
-<span></span><span class="sd">"""</span>
+<span></span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">Standardized temperature sweep for the 2D Clock model.</span>
-<span class="sd">Calculates and plots magnetization, energy, susceptibility, and specific heat.</span>
-<span class="sd">"""</span>
+<span class="sd">Calculates magnetization, energy, susceptibility, and specific heat, and</span>
+<span class="sd">produces a thermodynamics figure plus a companion diagnostics figure.</span>
+<span class="sd">&quot;&quot;&quot;</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">__future__</span><span class="w"> </span><span class="kn">import</span> <span class="n">annotations</span>
 
 <span class="kn">import</span><span class="w"> </span><span class="nn">argparse</span>
-<span class="kn">import</span><span class="w"> </span><span class="nn">logging</span>
-<span class="kn">import</span><span class="w"> </span><span class="nn">os</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">cast</span>
-
-<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">models.clock_model</span><span class="w"> </span><span class="kn">import</span> <span class="n">ClockSimulation</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">utils.plotting</span><span class="w"> </span><span class="kn">import</span> <span class="n">plot_temperature_sweep</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">utils.statistics</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
-    <span class="n">DEFAULT_CONFIDENCE_LEVEL</span><span class="p">,</span>
-    <span class="n">UNCERTAINTY_METHOD_BLOCKING</span><span class="p">,</span>
-    <span class="n">UNCERTAINTY_METHOD_BOOTSTRAP</span><span class="p">,</span>
-    <span class="n">summarize_entropy_observable</span><span class="p">,</span>
-<span class="p">)</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">utils.sweep_helpers</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
-    <span class="n">ThermoPoint</span><span class="p">,</span>
-    <span class="n">build_quality_flags</span><span class="p">,</span>
-    <span class="n">build_uncertainty_bundle</span><span class="p">,</span>
-    <span class="n">simulate_thermo_point</span><span class="p">,</span>
-<span class="p">)</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">utils.system</span><span class="w"> </span><span class="kn">import</span> <span class="n">parallel_sweep</span><span class="p">,</span> <span class="n">parse_args_compat</span><span class="p">,</span> <span class="n">setup_logging</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">utils.sweep_runner</span><span class="w"> </span><span class="kn">import</span> <span class="n">add_temperature_sweep_arguments</span><span class="p">,</span> <span class="n">run_temperature_sweep</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">utils.system</span><span class="w"> </span><span class="kn">import</span> <span class="n">parse_args_compat</span>
 
-<span class="c1"># Default equilibration parameters forwarded to convergence_equilibrate_with_status</span>
-<span class="c1"># when not exposed as CLI arguments.</span>
-<span class="n">_EQ_QS_SIGMA_THRESHOLD_DEFAULT</span> <span class="o">=</span> <span class="mf">0.05</span>
-<span class="n">_EQ_QS_MIN_STEPS_DEFAULT</span> <span class="o">=</span> <span class="mi">1500</span>
+<span class="c1"># Approximate crossover temperatures of the q=6 clock model, matching the</span>
+<span class="c1"># phase boundaries used by scripts/clock/correlation_comparison.py.</span>
+<span class="n">_T1_CLOCK6_APPROX</span> <span class="o">=</span> <span class="mf">0.68</span>
+<span class="n">_T2_CLOCK6_APPROX</span> <span class="o">=</span> <span class="mf">0.92</span>
 
 
 <div class="viewcode-block" id="main">
 <a class="viewcode-back" href="../../../api/vibespin.scripts.clock.html#scripts.clock.temperature_sweep.main">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">main</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">"""</span>
-<span class="sd">    Execute the temperature sweep and generate standardized 4-panel plots.</span>
-<span class="sd">    """</span>
-    <span class="n">parser</span> <span class="o">=</span> <span class="n">argparse</span><span class="o">.</span><span class="n">ArgumentParser</span><span class="p">(</span><span class="n">description</span><span class="o">=</span><span class="s1">'2D Clock Model Temperature Sweep'</span><span class="p">)</span>
-    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">'--size'</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">int</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="mi">32</span><span class="p">,</span> <span class="n">help</span><span class="o">=</span><span class="s1">'Linear lattice size L'</span><span class="p">)</span>
-    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">'--q'</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">int</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="mi">6</span><span class="p">,</span> <span class="n">help</span><span class="o">=</span><span class="s1">'Number of clock states'</span><span class="p">)</span>
-    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">'--aniso'</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">float</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="mf">0.0</span><span class="p">,</span> <span class="n">help</span><span class="o">=</span><span class="s1">'Anisotropy parameter A'</span><span class="p">)</span>
-    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">'--discrete'</span><span class="p">,</span> <span class="n">action</span><span class="o">=</span><span class="s1">'store_true'</span><span class="p">,</span> <span class="n">help</span><span class="o">=</span><span class="s1">'Use discrete angle representation'</span><span class="p">)</span>
-    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span>
-        <span class="s1">'--eq-probe-steps'</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">int</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="mi">500</span><span class="p">,</span>
-        <span class="n">help</span><span class="o">=</span><span class="s1">'Chunk size for convergence check during equilibration'</span><span class="p">,</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Execute the temperature sweep and generate the thermodynamics and</span>
+<span class="sd">    companion diagnostics figures.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">parser</span> <span class="o">=</span> <span class="n">argparse</span><span class="o">.</span><span class="n">ArgumentParser</span><span class="p">(</span><span class="n">description</span><span class="o">=</span><span class="s1">&#39;2D Clock Model Temperature Sweep&#39;</span><span class="p">)</span>
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;--q&#39;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">int</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="mi">6</span><span class="p">,</span> <span class="n">help</span><span class="o">=</span><span class="s1">&#39;Number of clock states&#39;</span><span class="p">)</span>
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;--aniso&#39;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">float</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="mf">0.0</span><span class="p">,</span> <span class="n">help</span><span class="o">=</span><span class="s1">&#39;Anisotropy parameter A&#39;</span><span class="p">)</span>
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;--discrete&#39;</span><span class="p">,</span> <span class="n">action</span><span class="o">=</span><span class="s1">&#39;store_true&#39;</span><span class="p">,</span> <span class="n">help</span><span class="o">=</span><span class="s1">&#39;Use discrete angle representation&#39;</span><span class="p">)</span>
+    <span class="n">add_temperature_sweep_arguments</span><span class="p">(</span>
+        <span class="n">parser</span><span class="o">=</span><span class="n">parser</span><span class="p">,</span>
+        <span class="n">size</span><span class="o">=</span><span class="mi">48</span><span class="p">,</span>
+        <span class="n">t_min</span><span class="o">=</span><span class="mf">0.1</span><span class="p">,</span>
+        <span class="n">t_max</span><span class="o">=</span><span class="mf">2.0</span><span class="p">,</span>
+        <span class="n">t_points</span><span class="o">=</span><span class="mi">60</span><span class="p">,</span>
+        <span class="c1"># As for XY, the clock model needs a high cap for the convergence</span>
+        <span class="c1"># criterion rather than the cap to end equilibration.</span>
+        <span class="n">eq_max_steps</span><span class="o">=</span><span class="mi">200_000</span><span class="p">,</span>
+        <span class="n">meas_steps</span><span class="o">=</span><span class="mi">20_000</span><span class="p">,</span>
+        <span class="n">output_dir</span><span class="o">=</span><span class="s1">&#39;results/clock&#39;</span><span class="p">,</span>
+        <span class="n">transition_help</span><span class="o">=</span><span class="p">(</span>
+            <span class="s1">&#39;Transition overlay preset for plotting; auto (default) shows the &#39;</span>
+            <span class="s1">&#39;approximate q=6 crossover temperatures (only for q=6), none &#39;</span>
+            <span class="s1">&#39;disables the overlay&#39;</span>
+        <span class="p">),</span>
     <span class="p">)</span>
-    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span>
-        <span class="s1">'--eq-max-steps'</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">int</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="mi">200_000</span><span class="p">,</span>
-        <span class="n">help</span><span class="o">=</span><span class="s1">'Hard cap on total equilibration steps'</span><span class="p">,</span>
-    <span class="p">)</span>
-    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">'--meas-steps'</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">int</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="mi">5000</span><span class="p">,</span> <span class="n">help</span><span class="o">=</span><span class="s1">'Measurement steps'</span><span class="p">)</span>
-    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">'--t-min'</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">float</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="mf">0.1</span><span class="p">,</span> <span class="n">help</span><span class="o">=</span><span class="s1">'Minimum temperature'</span><span class="p">)</span>
-    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">'--t-max'</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">float</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="mf">2.0</span><span class="p">,</span> <span class="n">help</span><span class="o">=</span><span class="s1">'Maximum temperature'</span><span class="p">)</span>
-    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">'--t-points'</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">int</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="mi">40</span><span class="p">,</span> <span class="n">help</span><span class="o">=</span><span class="s1">'Number of temperature points'</span><span class="p">)</span>
-    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span>
-        <span class="s1">'--n-seeds'</span><span class="p">,</span>
-        <span class="nb">type</span><span class="o">=</span><span class="nb">int</span><span class="p">,</span>
-        <span class="n">default</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
-        <span class="n">help</span><span class="o">=</span><span class="s1">'Target number of fully converged seed replicas to retain'</span><span class="p">,</span>
-    <span class="p">)</span>
-    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span>
-        <span class="s1">'--max-seed-attempts'</span><span class="p">,</span>
-        <span class="nb">type</span><span class="o">=</span><span class="nb">int</span><span class="p">,</span>
-        <span class="n">default</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
-        <span class="n">help</span><span class="o">=</span><span class="s1">'Hard cap on total seed attempts, including replacements; defaults to 10*n-seeds'</span><span class="p">,</span>
-    <span class="p">)</span>
-    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span>
-        <span class="s1">'--derived-uncertainty-method'</span><span class="p">,</span>
-        <span class="nb">type</span><span class="o">=</span><span class="nb">str</span><span class="p">,</span>
-        <span class="n">default</span><span class="o">=</span><span class="n">UNCERTAINTY_METHOD_BLOCKING</span><span class="p">,</span>
-        <span class="n">choices</span><span class="o">=</span><span class="p">[</span><span class="n">UNCERTAINTY_METHOD_BLOCKING</span><span class="p">,</span> <span class="n">UNCERTAINTY_METHOD_BOOTSTRAP</span><span class="p">],</span>
-        <span class="n">help</span><span class="o">=</span><span class="s1">'Uncertainty method for susceptibility and specific heat'</span><span class="p">,</span>
-    <span class="p">)</span>
-    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span>
-        <span class="s1">'--derived-bootstrap-resamples'</span><span class="p">,</span>
-        <span class="nb">type</span><span class="o">=</span><span class="nb">int</span><span class="p">,</span>
-        <span class="n">default</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
-        <span class="n">help</span><span class="o">=</span><span class="s1">'Bootstrap resamples used when derived-uncertainty-method=bootstrap'</span><span class="p">,</span>
-    <span class="p">)</span>
-    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span>
-        <span class="s1">'--confidence-level'</span><span class="p">,</span>
-        <span class="nb">type</span><span class="o">=</span><span class="nb">float</span><span class="p">,</span>
-        <span class="n">default</span><span class="o">=</span><span class="n">DEFAULT_CONFIDENCE_LEVEL</span><span class="p">,</span>
-        <span class="n">help</span><span class="o">=</span><span class="s1">'Two-sided confidence level for uncertainty intervals (0 &lt; c &lt; 1)'</span><span class="p">,</span>
-    <span class="p">)</span>
-    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span>
-        <span class="s1">'--entropy-uncertainty-method'</span><span class="p">,</span>
-        <span class="nb">type</span><span class="o">=</span><span class="nb">str</span><span class="p">,</span>
-        <span class="n">default</span><span class="o">=</span><span class="n">UNCERTAINTY_METHOD_BOOTSTRAP</span><span class="p">,</span>
-        <span class="n">choices</span><span class="o">=</span><span class="p">[</span><span class="n">UNCERTAINTY_METHOD_BLOCKING</span><span class="p">,</span> <span class="n">UNCERTAINTY_METHOD_BOOTSTRAP</span><span class="p">],</span>
-        <span class="n">help</span><span class="o">=</span><span class="s1">'Uncertainty method for entropy curves'</span><span class="p">,</span>
-    <span class="p">)</span>
-    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span>
-        <span class="s1">'--entropy-bootstrap-resamples'</span><span class="p">,</span>
-        <span class="nb">type</span><span class="o">=</span><span class="nb">int</span><span class="p">,</span>
-        <span class="n">default</span><span class="o">=</span><span class="mi">400</span><span class="p">,</span>
-        <span class="n">help</span><span class="o">=</span><span class="s1">'Bootstrap resamples used when entropy-uncertainty-method=bootstrap'</span><span class="p">,</span>
-    <span class="p">)</span>
-    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span>
-        <span class="s1">'--strict-uncertainty'</span><span class="p">,</span>
-        <span class="n">action</span><span class="o">=</span><span class="s1">'store_true'</span><span class="p">,</span>
-        <span class="n">help</span><span class="o">=</span><span class="s1">'Fail if undefined autocorrelation points exceed the allowed fraction'</span><span class="p">,</span>
-    <span class="p">)</span>
-    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span>
-        <span class="s1">'--max-undefined-fraction'</span><span class="p">,</span>
-        <span class="nb">type</span><span class="o">=</span><span class="nb">float</span><span class="p">,</span>
-        <span class="n">default</span><span class="o">=</span><span class="mf">0.25</span><span class="p">,</span>
-        <span class="n">help</span><span class="o">=</span><span class="s1">'Maximum allowed fraction of undefined tau_int points in strict mode'</span><span class="p">,</span>
-    <span class="p">)</span>
-    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span>
-        <span class="s1">'--min-effective-samples'</span><span class="p">,</span>
-        <span class="nb">type</span><span class="o">=</span><span class="nb">float</span><span class="p">,</span>
-        <span class="n">default</span><span class="o">=</span><span class="mf">20.0</span><span class="p">,</span>
-        <span class="n">help</span><span class="o">=</span><span class="s1">'Threshold used to flag low effective sample size points'</span><span class="p">,</span>
-    <span class="p">)</span>
-    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span>
-        <span class="s1">'--max-tau-relative-width'</span><span class="p">,</span>
-        <span class="nb">type</span><span class="o">=</span><span class="nb">float</span><span class="p">,</span>
-        <span class="n">default</span><span class="o">=</span><span class="mf">1.0</span><span class="p">,</span>
-        <span class="n">help</span><span class="o">=</span><span class="s1">'Relative width threshold to flag unstable tau intervals'</span><span class="p">,</span>
-    <span class="p">)</span>
-    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">'--output-dir'</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">str</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="s1">'results/clock'</span><span class="p">,</span> <span class="n">help</span><span class="o">=</span><span class="s1">'Output directory'</span><span class="p">)</span>
-    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">'--log-file'</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">str</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">help</span><span class="o">=</span><span class="s1">'Optional log file path'</span><span class="p">)</span>
-    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">'--verbose'</span><span class="p">,</span> <span class="n">action</span><span class="o">=</span><span class="s1">'store_true'</span><span class="p">,</span> <span class="n">help</span><span class="o">=</span><span class="s1">'Enable verbose logging'</span><span class="p">)</span>
+    <span class="n">args</span> <span class="o">=</span> <span class="n">parse_args_compat</span><span class="p">(</span><span class="n">parser</span><span class="o">=</span><span class="n">parser</span><span class="p">)</span>
 
-    <span class="n">args</span> <span class="o">=</span> <span class="n">parse_args_compat</span><span class="p">(</span><span class="n">parser</span><span class="p">)</span>
+    <span class="n">variant</span> <span class="o">=</span> <span class="s1">&#39;discrete&#39;</span> <span class="k">if</span> <span class="n">args</span><span class="o">.</span><span class="n">discrete</span> <span class="k">else</span> <span class="sa">f</span><span class="s1">&#39;continuous (A=</span><span class="si">{</span><span class="n">args</span><span class="o">.</span><span class="n">aniso</span><span class="si">}</span><span class="s1">)&#39;</span>
 
-    <span class="n">log_level</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">DEBUG</span> <span class="k">if</span> <span class="n">args</span><span class="o">.</span><span class="n">verbose</span> <span class="k">else</span> <span class="n">logging</span><span class="o">.</span><span class="n">INFO</span>
-    <span class="n">logger</span> <span class="o">=</span> <span class="n">setup_logging</span><span class="p">(</span><span class="n">level</span><span class="o">=</span><span class="n">log_level</span><span class="p">,</span> <span class="n">log_file</span><span class="o">=</span><span class="n">args</span><span class="o">.</span><span class="n">log_file</span><span class="p">)</span>
-
-    <span class="n">L</span> <span class="o">=</span> <span class="n">args</span><span class="o">.</span><span class="n">size</span>
-    <span class="n">temperatures</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="n">args</span><span class="o">.</span><span class="n">t_min</span><span class="p">,</span> <span class="n">args</span><span class="o">.</span><span class="n">t_max</span><span class="p">,</span> <span class="n">args</span><span class="o">.</span><span class="n">t_points</span><span class="p">)</span>
-    <span class="n">t_points</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">temperatures</span><span class="p">)</span>
-
-    <span class="n">target_n_seeds</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">args</span><span class="o">.</span><span class="n">n_seeds</span><span class="p">)</span>
-    <span class="n">max_seed_attempts</span> <span class="o">=</span> <span class="n">args</span><span class="o">.</span><span class="n">max_seed_attempts</span>
-    <span class="k">if</span> <span class="n">max_seed_attempts</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-        <span class="n">max_seed_attempts</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="n">target_n_seeds</span><span class="p">,</span> <span class="mi">10</span> <span class="o">*</span> <span class="n">target_n_seeds</span><span class="p">)</span>
-    <span class="n">max_seed_attempts</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">max_seed_attempts</span><span class="p">)</span>
-
-    <span class="n">variant</span> <span class="o">=</span> <span class="s2">"discrete"</span> <span class="k">if</span> <span class="n">args</span><span class="o">.</span><span class="n">discrete</span> <span class="k">else</span> <span class="sa">f</span><span class="s2">"continuous (A=</span><span class="si">{</span><span class="n">args</span><span class="o">.</span><span class="n">aniso</span><span class="si">}</span><span class="s2">)"</span>
-    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
-        <span class="sa">f</span><span class="s1">'Starting </span><span class="si">{</span><span class="n">args</span><span class="o">.</span><span class="n">q</span><span class="si">}</span><span class="s1">-state Clock temperature sweep '</span>
-        <span class="sa">f</span><span class="s1">'(L=</span><span class="si">{</span><span class="n">L</span><span class="si">}</span><span class="s1">, </span><span class="si">{</span><span class="n">variant</span><span class="si">}</span><span class="s1">, n_seeds=</span><span class="si">{</span><span class="n">target_n_seeds</span><span class="si">}</span><span class="s1">)...'</span>
+    <span class="c1"># Crossover overlay: the approximate T1/T2 values are specific to q=6, so</span>
+    <span class="c1"># the overlay is skipped for other q even under &#39;auto&#39;/&#39;theory&#39;.</span>
+    <span class="n">transitions</span> <span class="o">=</span> <span class="p">(</span>
+        <span class="p">{</span><span class="s1">&#39;T1 (approx)&#39;</span><span class="p">:</span> <span class="n">_T1_CLOCK6_APPROX</span><span class="p">,</span> <span class="s1">&#39;T2 (approx)&#39;</span><span class="p">:</span> <span class="n">_T2_CLOCK6_APPROX</span><span class="p">}</span>
+        <span class="k">if</span> <span class="n">args</span><span class="o">.</span><span class="n">transition_preset</span> <span class="ow">in</span> <span class="p">(</span><span class="s1">&#39;auto&#39;</span><span class="p">,</span> <span class="s1">&#39;theory&#39;</span><span class="p">)</span> <span class="ow">and</span> <span class="n">args</span><span class="o">.</span><span class="n">q</span> <span class="o">==</span> <span class="mi">6</span>
+        <span class="k">else</span> <span class="kc">None</span>
     <span class="p">)</span>
 
-    <span class="n">results_grid</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">list</span><span class="p">[</span><span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">float</span><span class="p">]]]</span> <span class="o">=</span> <span class="p">[[]</span> <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">t_points</span><span class="p">)]</span>
-    <span class="n">attempts_per_temp</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">t_points</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">int</span><span class="p">)</span>
-
-    <span class="k">while</span> <span class="nb">any</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">results_grid</span><span class="p">[</span><span class="n">t</span><span class="p">])</span> <span class="o">&lt;</span> <span class="n">target_n_seeds</span> <span class="k">for</span> <span class="n">t</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">t_points</span><span class="p">)):</span>
-        <span class="n">points_to_calculate</span> <span class="o">=</span> <span class="p">[]</span>
-        <span class="k">for</span> <span class="n">t</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">t_points</span><span class="p">):</span>
-            <span class="n">needed</span> <span class="o">=</span> <span class="n">target_n_seeds</span> <span class="o">-</span> <span class="nb">len</span><span class="p">(</span><span class="n">results_grid</span><span class="p">[</span><span class="n">t</span><span class="p">])</span>
-            <span class="k">if</span> <span class="n">needed</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="ow">and</span> <span class="n">attempts_per_temp</span><span class="p">[</span><span class="n">t</span><span class="p">]</span> <span class="o">&lt;</span> <span class="n">max_seed_attempts</span><span class="p">:</span>
-                <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">needed</span><span class="p">):</span>
-                    <span class="n">seed_idx</span> <span class="o">=</span> <span class="n">attempts_per_temp</span><span class="p">[</span><span class="n">t</span><span class="p">]</span>
-                    <span class="n">seed</span> <span class="o">=</span> <span class="n">t</span> <span class="o">*</span> <span class="mi">100_000</span> <span class="o">+</span> <span class="n">seed_idx</span> <span class="o">*</span> <span class="mi">1_000</span>
-                    <span class="n">points_to_calculate</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">ThermoPoint</span><span class="p">(</span>
-                        <span class="n">temperature</span><span class="o">=</span><span class="nb">float</span><span class="p">(</span><span class="n">temperatures</span><span class="p">[</span><span class="n">t</span><span class="p">]),</span>
-                        <span class="n">size</span><span class="o">=</span><span class="n">L</span><span class="p">,</span>
-                        <span class="n">meas_steps</span><span class="o">=</span><span class="n">args</span><span class="o">.</span><span class="n">meas_steps</span><span class="p">,</span>
-                        <span class="n">seed</span><span class="o">=</span><span class="n">seed</span><span class="p">,</span>
-                        <span class="n">temperature_index</span><span class="o">=</span><span class="n">t</span><span class="p">,</span>
-                        <span class="n">seed_index</span><span class="o">=</span><span class="n">seed_idx</span><span class="p">,</span>
-                        <span class="n">eq_probe_steps</span><span class="o">=</span><span class="n">args</span><span class="o">.</span><span class="n">eq_probe_steps</span><span class="p">,</span>
-                        <span class="n">eq_max_steps</span><span class="o">=</span><span class="n">args</span><span class="o">.</span><span class="n">eq_max_steps</span><span class="p">,</span>
-                        <span class="n">eq_qs_sigma_threshold</span><span class="o">=</span><span class="mf">0.05</span><span class="p">,</span>
-                        <span class="n">eq_qs_min_steps</span><span class="o">=</span><span class="mi">1500</span><span class="p">,</span>
-                        <span class="n">qs_allow_stuck</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
-                        <span class="n">prefer_ordered_start</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
-                        <span class="n">model_cls</span><span class="o">=</span><span class="n">ClockSimulation</span><span class="p">,</span>
-                        <span class="n">model_kwargs</span><span class="o">=</span><span class="p">{</span><span class="s1">'q'</span><span class="p">:</span> <span class="n">args</span><span class="o">.</span><span class="n">q</span><span class="p">,</span> <span class="s1">'A'</span><span class="p">:</span> <span class="n">args</span><span class="o">.</span><span class="n">aniso</span><span class="p">},</span>
-                        <span class="n">confidence</span><span class="o">=</span><span class="nb">float</span><span class="p">(</span><span class="n">args</span><span class="o">.</span><span class="n">confidence_level</span><span class="p">),</span>
-                        <span class="n">derived_method</span><span class="o">=</span><span class="nb">str</span><span class="p">(</span><span class="n">args</span><span class="o">.</span><span class="n">derived_uncertainty_method</span><span class="p">),</span>
-                        <span class="n">bootstrap_resamples</span><span class="o">=</span><span class="nb">int</span><span class="p">(</span><span class="n">args</span><span class="o">.</span><span class="n">derived_bootstrap_resamples</span><span class="p">),</span>
-                    <span class="p">))</span>
-                    <span class="n">attempts_per_temp</span><span class="p">[</span><span class="n">t</span><span class="p">]</span> <span class="o">+=</span> <span class="mi">1</span>
-
-        <span class="k">if</span> <span class="ow">not</span> <span class="n">points_to_calculate</span><span class="p">:</span>
-            <span class="k">break</span>
-
-        <span class="n">batch_results</span> <span class="o">=</span> <span class="n">parallel_sweep</span><span class="p">(</span>
-            <span class="n">worker_func</span><span class="o">=</span><span class="n">simulate_thermo_point</span><span class="p">,</span>
-            <span class="n">params</span><span class="o">=</span><span class="n">points_to_calculate</span><span class="p">,</span>
-        <span class="p">)</span>
-
-        <span class="k">for</span> <span class="n">res</span> <span class="ow">in</span> <span class="n">batch_results</span><span class="p">:</span>
-            <span class="n">t_idx</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">res</span><span class="p">[</span><span class="s1">'temperature_index'</span><span class="p">])</span>
-            <span class="k">if</span> <span class="n">res</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">'equilibrated_flag'</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
-                <span class="n">results_grid</span><span class="p">[</span><span class="n">t_idx</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">res</span><span class="p">)</span>
-
-    <span class="n">valid_t_mask</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="nb">len</span><span class="p">(</span><span class="n">results_grid</span><span class="p">[</span><span class="n">t</span><span class="p">])</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="k">for</span> <span class="n">t</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">t_points</span><span class="p">)])</span>
-    <span class="n">valid_temperatures</span> <span class="o">=</span> <span class="n">temperatures</span><span class="p">[</span><span class="n">valid_t_mask</span><span class="p">]</span>
-    <span class="n">n_valid_t</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">valid_t_mask</span><span class="o">.</span><span class="n">sum</span><span class="p">())</span>
-
-    <span class="k">if</span> <span class="n">n_valid_t</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
-        <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s2">"Failed to collect any converged results."</span><span class="p">)</span>
-
-    <span class="n">max_seeds_retained</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">r</span><span class="p">)</span> <span class="k">for</span> <span class="n">r</span> <span class="ow">in</span> <span class="n">results_grid</span><span class="p">)</span>
-
-    <span class="k">def</span><span class="w"> </span><span class="nf">extract_grid</span><span class="p">(</span><span class="n">key</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
-        <span class="n">arr</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">full</span><span class="p">((</span><span class="n">n_valid_t</span><span class="p">,</span> <span class="n">max_seeds_retained</span><span class="p">),</span> <span class="n">np</span><span class="o">.</span><span class="n">nan</span><span class="p">)</span>
-        <span class="n">valid_idx</span> <span class="o">=</span> <span class="mi">0</span>
-        <span class="k">for</span> <span class="n">t</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">t_points</span><span class="p">):</span>
-            <span class="k">if</span> <span class="ow">not</span> <span class="n">valid_t_mask</span><span class="p">[</span><span class="n">t</span><span class="p">]:</span>
-                <span class="k">continue</span>
-            <span class="k">for</span> <span class="n">s</span><span class="p">,</span> <span class="n">res</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">results_grid</span><span class="p">[</span><span class="n">t</span><span class="p">]):</span>
-                <span class="n">arr</span><span class="p">[</span><span class="n">valid_idx</span><span class="p">,</span> <span class="n">s</span><span class="p">]</span> <span class="o">=</span> <span class="n">res</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">nan</span><span class="p">)</span>
-            <span class="n">valid_idx</span> <span class="o">+=</span> <span class="mi">1</span>
-        <span class="k">return</span> <span class="n">arr</span>
-
-    <span class="n">mag_bundle</span> <span class="o">=</span> <span class="n">build_uncertainty_bundle</span><span class="p">(</span>
-        <span class="n">values_by_seed</span><span class="o">=</span><span class="n">extract_grid</span><span class="p">(</span><span class="s1">'avg_m_value'</span><span class="p">),</span>
-        <span class="n">errors_by_seed</span><span class="o">=</span><span class="n">extract_grid</span><span class="p">(</span><span class="s1">'avg_m_err'</span><span class="p">),</span>
-        <span class="n">tau_by_seed</span><span class="o">=</span><span class="n">extract_grid</span><span class="p">(</span><span class="s1">'avg_m_tau_int'</span><span class="p">),</span>
-        <span class="n">n_eff_by_seed</span><span class="o">=</span><span class="n">extract_grid</span><span class="p">(</span><span class="s1">'avg_m_n_eff'</span><span class="p">),</span>
-        <span class="n">confidence</span><span class="o">=</span><span class="nb">float</span><span class="p">(</span><span class="n">args</span><span class="o">.</span><span class="n">confidence_level</span><span class="p">),</span>
-    <span class="p">)</span>
-    <span class="n">eng_bundle</span> <span class="o">=</span> <span class="n">build_uncertainty_bundle</span><span class="p">(</span>
-        <span class="n">values_by_seed</span><span class="o">=</span><span class="n">extract_grid</span><span class="p">(</span><span class="s1">'avg_e_value'</span><span class="p">),</span>
-        <span class="n">errors_by_seed</span><span class="o">=</span><span class="n">extract_grid</span><span class="p">(</span><span class="s1">'avg_e_err'</span><span class="p">),</span>
-        <span class="n">tau_by_seed</span><span class="o">=</span><span class="n">extract_grid</span><span class="p">(</span><span class="s1">'avg_e_tau_int'</span><span class="p">),</span>
-        <span class="n">n_eff_by_seed</span><span class="o">=</span><span class="n">extract_grid</span><span class="p">(</span><span class="s1">'avg_e_n_eff'</span><span class="p">),</span>
-        <span class="n">confidence</span><span class="o">=</span><span class="nb">float</span><span class="p">(</span><span class="n">args</span><span class="o">.</span><span class="n">confidence_level</span><span class="p">),</span>
-    <span class="p">)</span>
-    <span class="n">susc_bundle</span> <span class="o">=</span> <span class="n">build_uncertainty_bundle</span><span class="p">(</span>
-        <span class="n">values_by_seed</span><span class="o">=</span><span class="n">extract_grid</span><span class="p">(</span><span class="s1">'susc_value'</span><span class="p">),</span>
-        <span class="n">errors_by_seed</span><span class="o">=</span><span class="n">extract_grid</span><span class="p">(</span><span class="s1">'susc_err'</span><span class="p">),</span>
-        <span class="n">tau_by_seed</span><span class="o">=</span><span class="n">extract_grid</span><span class="p">(</span><span class="s1">'susc_tau_int'</span><span class="p">),</span>
-        <span class="n">n_eff_by_seed</span><span class="o">=</span><span class="n">extract_grid</span><span class="p">(</span><span class="s1">'susc_n_eff'</span><span class="p">),</span>
-        <span class="n">confidence</span><span class="o">=</span><span class="nb">float</span><span class="p">(</span><span class="n">args</span><span class="o">.</span><span class="n">confidence_level</span><span class="p">),</span>
-    <span class="p">)</span>
-    <span class="n">spec_h_bundle</span> <span class="o">=</span> <span class="n">build_uncertainty_bundle</span><span class="p">(</span>
-        <span class="n">values_by_seed</span><span class="o">=</span><span class="n">extract_grid</span><span class="p">(</span><span class="s1">'spec_h_value'</span><span class="p">),</span>
-        <span class="n">errors_by_seed</span><span class="o">=</span><span class="n">extract_grid</span><span class="p">(</span><span class="s1">'spec_h_err'</span><span class="p">),</span>
-        <span class="n">tau_by_seed</span><span class="o">=</span><span class="n">extract_grid</span><span class="p">(</span><span class="s1">'spec_h_tau_int'</span><span class="p">),</span>
-        <span class="n">n_eff_by_seed</span><span class="o">=</span><span class="n">extract_grid</span><span class="p">(</span><span class="s1">'spec_h_n_eff'</span><span class="p">),</span>
-        <span class="n">confidence</span><span class="o">=</span><span class="nb">float</span><span class="p">(</span><span class="n">args</span><span class="o">.</span><span class="n">confidence_level</span><span class="p">),</span>
-    <span class="p">)</span>
-
-    <span class="n">entropy_res</span> <span class="o">=</span> <span class="n">summarize_entropy_observable</span><span class="p">(</span>
-        <span class="n">temperatures</span><span class="o">=</span><span class="n">valid_temperatures</span><span class="p">,</span>
-        <span class="n">specific_heat_samples</span><span class="o">=</span><span class="n">spec_h_bundle</span><span class="p">[</span><span class="s1">'samples'</span><span class="p">],</span>
-        <span class="n">specific_heat_err</span><span class="o">=</span><span class="n">spec_h_bundle</span><span class="p">[</span><span class="s1">'err'</span><span class="p">],</span>
-        <span class="n">method</span><span class="o">=</span><span class="nb">str</span><span class="p">(</span><span class="n">args</span><span class="o">.</span><span class="n">entropy_uncertainty_method</span><span class="p">),</span>
-        <span class="n">confidence</span><span class="o">=</span><span class="nb">float</span><span class="p">(</span><span class="n">args</span><span class="o">.</span><span class="n">confidence_level</span><span class="p">),</span>
-        <span class="n">bootstrap_resamples</span><span class="o">=</span><span class="nb">int</span><span class="p">(</span><span class="n">args</span><span class="o">.</span><span class="n">entropy_bootstrap_resamples</span><span class="p">),</span>
-    <span class="p">)</span>
-
-    <span class="n">quality</span> <span class="o">=</span> <span class="n">build_quality_flags</span><span class="p">(</span>
-        <span class="n">tau_int</span><span class="o">=</span><span class="n">mag_bundle</span><span class="p">[</span><span class="s1">'tau_int'</span><span class="p">],</span>
-        <span class="n">ci_low</span><span class="o">=</span><span class="n">mag_bundle</span><span class="p">[</span><span class="s1">'ci_low'</span><span class="p">],</span>
-        <span class="n">ci_high</span><span class="o">=</span><span class="n">mag_bundle</span><span class="p">[</span><span class="s1">'ci_high'</span><span class="p">],</span>
-        <span class="n">n_eff</span><span class="o">=</span><span class="n">mag_bundle</span><span class="p">[</span><span class="s1">'n_eff'</span><span class="p">],</span>
-        <span class="n">min_effective_samples</span><span class="o">=</span><span class="nb">float</span><span class="p">(</span><span class="n">args</span><span class="o">.</span><span class="n">min_effective_samples</span><span class="p">),</span>
-        <span class="n">max_tau_relative_width</span><span class="o">=</span><span class="nb">float</span><span class="p">(</span><span class="n">args</span><span class="o">.</span><span class="n">max_tau_relative_width</span><span class="p">),</span>
-    <span class="p">)</span>
-
-    <span class="k">if</span> <span class="n">args</span><span class="o">.</span><span class="n">strict_uncertainty</span><span class="p">:</span>
-        <span class="n">undef_frac</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">quality</span><span class="p">[</span><span class="s1">'undefined_autocorr_flag'</span><span class="p">])</span>
-        <span class="k">if</span> <span class="n">undef_frac</span> <span class="o">&gt;</span> <span class="n">args</span><span class="o">.</span><span class="n">max_undefined_fraction</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="sa">f</span><span class="s1">'Strict uncertainty failed: </span><span class="si">{</span><span class="n">undef_frac</span><span class="si">:</span><span class="s1">.1%</span><span class="si">}</span><span class="s1"> undefined.'</span><span class="p">)</span>
-
-    <span class="n">os</span><span class="o">.</span><span class="n">makedirs</span><span class="p">(</span><span class="n">args</span><span class="o">.</span><span class="n">output_dir</span><span class="p">,</span> <span class="n">exist_ok</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
-    <span class="n">outpath</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">args</span><span class="o">.</span><span class="n">output_dir</span><span class="p">,</span> <span class="s1">'temperature_sweep_data.npz'</span><span class="p">)</span>
-    <span class="n">np</span><span class="o">.</span><span class="n">savez</span><span class="p">(</span>
-        <span class="n">outpath</span><span class="p">,</span>
-        <span class="n">temperatures</span><span class="o">=</span><span class="n">valid_temperatures</span><span class="p">,</span>
-        <span class="n">avg_m</span><span class="o">=</span><span class="n">mag_bundle</span><span class="p">[</span><span class="s1">'value'</span><span class="p">],</span>
-        <span class="n">avg_e</span><span class="o">=</span><span class="n">eng_bundle</span><span class="p">[</span><span class="s1">'value'</span><span class="p">],</span>
-        <span class="n">susc</span><span class="o">=</span><span class="n">susc_bundle</span><span class="p">[</span><span class="s1">'value'</span><span class="p">],</span>
-        <span class="n">spec_h</span><span class="o">=</span><span class="n">spec_h_bundle</span><span class="p">[</span><span class="s1">'value'</span><span class="p">],</span>
-        <span class="n">entropy</span><span class="o">=</span><span class="n">entropy_res</span><span class="p">[</span><span class="s1">'value'</span><span class="p">],</span>
-        <span class="n">tau_int</span><span class="o">=</span><span class="n">mag_bundle</span><span class="p">[</span><span class="s1">'tau_int'</span><span class="p">],</span>
-        <span class="o">**</span><span class="n">cast</span><span class="p">(</span><span class="n">Any</span><span class="p">,</span> <span class="p">{</span><span class="sa">f</span><span class="s1">'avg_m_</span><span class="si">{</span><span class="n">k</span><span class="si">}</span><span class="s1">'</span><span class="p">:</span> <span class="n">v</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">mag_bundle</span><span class="o">.</span><span class="n">items</span><span class="p">()}),</span>
-        <span class="o">**</span><span class="n">cast</span><span class="p">(</span><span class="n">Any</span><span class="p">,</span> <span class="p">{</span><span class="sa">f</span><span class="s1">'avg_e_</span><span class="si">{</span><span class="n">k</span><span class="si">}</span><span class="s1">'</span><span class="p">:</span> <span class="n">v</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">eng_bundle</span><span class="o">.</span><span class="n">items</span><span class="p">()}),</span>
-        <span class="o">**</span><span class="n">cast</span><span class="p">(</span><span class="n">Any</span><span class="p">,</span> <span class="p">{</span><span class="sa">f</span><span class="s1">'susc_</span><span class="si">{</span><span class="n">k</span><span class="si">}</span><span class="s1">'</span><span class="p">:</span> <span class="n">v</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">susc_bundle</span><span class="o">.</span><span class="n">items</span><span class="p">()}),</span>
-        <span class="o">**</span><span class="n">cast</span><span class="p">(</span><span class="n">Any</span><span class="p">,</span> <span class="p">{</span><span class="sa">f</span><span class="s1">'spec_h_</span><span class="si">{</span><span class="n">k</span><span class="si">}</span><span class="s1">'</span><span class="p">:</span> <span class="n">v</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">spec_h_bundle</span><span class="o">.</span><span class="n">items</span><span class="p">()}),</span>
-        <span class="o">**</span><span class="n">cast</span><span class="p">(</span><span class="n">Any</span><span class="p">,</span> <span class="p">{</span><span class="sa">f</span><span class="s1">'entropy_</span><span class="si">{</span><span class="n">k</span><span class="si">}</span><span class="s1">'</span><span class="p">:</span> <span class="n">v</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">entropy_res</span><span class="o">.</span><span class="n">items</span><span class="p">()}),</span>
-        <span class="o">**</span><span class="n">cast</span><span class="p">(</span><span class="n">Any</span><span class="p">,</span> <span class="n">quality</span><span class="p">),</span>
-        <span class="n">uncertainty_method</span><span class="o">=</span><span class="nb">str</span><span class="p">(</span><span class="n">args</span><span class="o">.</span><span class="n">derived_uncertainty_method</span><span class="p">),</span>
-        <span class="n">confidence_level</span><span class="o">=</span><span class="nb">float</span><span class="p">(</span><span class="n">args</span><span class="o">.</span><span class="n">confidence_level</span><span class="p">),</span>
-        <span class="n">requested_n_seeds</span><span class="o">=</span><span class="n">target_n_seeds</span><span class="p">,</span>
-        <span class="n">max_seed_attempts</span><span class="o">=</span><span class="n">max_seed_attempts</span><span class="p">,</span>
-        <span class="n">retained_n_seeds</span><span class="o">=</span><span class="n">max_seeds_retained</span><span class="p">,</span>
-        <span class="n">nan_or_undefined_count</span><span class="o">=</span><span class="nb">int</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">quality</span><span class="p">[</span><span class="s1">'undefined_autocorr_flag'</span><span class="p">])),</span>
-    <span class="p">)</span>
-
-    <span class="n">metadata</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">"L=</span><span class="si">{</span><span class="n">args</span><span class="o">.</span><span class="n">size</span><span class="si">}</span><span class="s2">, q=</span><span class="si">{</span><span class="n">args</span><span class="o">.</span><span class="n">q</span><span class="si">}</span><span class="s2">, </span><span class="si">{</span><span class="n">variant</span><span class="si">}</span><span class="s2">, target_n_seeds=</span><span class="si">{</span><span class="n">args</span><span class="o">.</span><span class="n">n_seeds</span><span class="si">}</span><span class="s2">"</span>
-
-    <span class="n">plot_temperature_sweep</span><span class="p">(</span>
-        <span class="n">temperatures</span><span class="o">=</span><span class="n">valid_temperatures</span><span class="p">,</span>
-        <span class="n">avg_m</span><span class="o">=</span><span class="n">cast</span><span class="p">(</span><span class="n">Any</span><span class="p">,</span> <span class="n">mag_bundle</span><span class="p">[</span><span class="s1">'value'</span><span class="p">]),</span>
-        <span class="n">avg_m_err</span><span class="o">=</span><span class="n">mag_bundle</span><span class="p">[</span><span class="s1">'err'</span><span class="p">],</span>
-        <span class="n">avg_e</span><span class="o">=</span><span class="n">cast</span><span class="p">(</span><span class="n">Any</span><span class="p">,</span> <span class="n">eng_bundle</span><span class="p">[</span><span class="s1">'value'</span><span class="p">]),</span>
-        <span class="n">avg_e_err</span><span class="o">=</span><span class="n">eng_bundle</span><span class="p">[</span><span class="s1">'err'</span><span class="p">],</span>
-        <span class="n">susc</span><span class="o">=</span><span class="n">cast</span><span class="p">(</span><span class="n">Any</span><span class="p">,</span> <span class="n">susc_bundle</span><span class="p">[</span><span class="s1">'value'</span><span class="p">]),</span>
-        <span class="n">susc_err</span><span class="o">=</span><span class="n">susc_bundle</span><span class="p">[</span><span class="s1">'err'</span><span class="p">],</span>
-        <span class="n">spec_h</span><span class="o">=</span><span class="n">cast</span><span class="p">(</span><span class="n">Any</span><span class="p">,</span> <span class="n">spec_h_bundle</span><span class="p">[</span><span class="s1">'value'</span><span class="p">]),</span>
-        <span class="n">spec_h_err</span><span class="o">=</span><span class="n">spec_h_bundle</span><span class="p">[</span><span class="s1">'err'</span><span class="p">],</span>
-        <span class="n">entropy</span><span class="o">=</span><span class="n">entropy_res</span><span class="p">[</span><span class="s1">'value'</span><span class="p">],</span>
-        <span class="n">entropy_err</span><span class="o">=</span><span class="n">entropy_res</span><span class="p">[</span><span class="s1">'err'</span><span class="p">],</span>
-        <span class="n">entropy_ci_low</span><span class="o">=</span><span class="n">entropy_res</span><span class="p">[</span><span class="s1">'ci_low'</span><span class="p">],</span>
-        <span class="n">entropy_ci_high</span><span class="o">=</span><span class="n">entropy_res</span><span class="p">[</span><span class="s1">'ci_high'</span><span class="p">],</span>
-        <span class="n">tau_int</span><span class="o">=</span><span class="n">mag_bundle</span><span class="p">[</span><span class="s1">'tau_int'</span><span class="p">],</span>
-        <span class="n">tau_unstable_flag</span><span class="o">=</span><span class="n">quality</span><span class="p">[</span><span class="s1">'tau_interval_unstable_flag'</span><span class="p">],</span>
-        <span class="n">low_effective_sample_flag</span><span class="o">=</span><span class="n">quality</span><span class="p">[</span><span class="s1">'low_effective_sample_flag'</span><span class="p">],</span>
-        <span class="n">title</span><span class="o">=</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">args</span><span class="o">.</span><span class="n">q</span><span class="si">}</span><span class="s2">-state Clock Temperature Sweep ($L=</span><span class="si">{</span><span class="n">args</span><span class="o">.</span><span class="n">size</span><span class="si">}</span><span class="s2">$)"</span><span class="p">,</span>
-        <span class="n">filename</span><span class="o">=</span><span class="s2">"temperature_sweep.png"</span><span class="p">,</span>
-        <span class="n">directory</span><span class="o">=</span><span class="n">args</span><span class="o">.</span><span class="n">output_dir</span><span class="p">,</span>
-        <span class="n">run_metadata_note</span><span class="o">=</span><span class="n">metadata</span><span class="p">,</span>
+    <span class="n">run_temperature_sweep</span><span class="p">(</span>
+        <span class="n">args</span><span class="o">=</span><span class="n">args</span><span class="p">,</span>
+        <span class="n">model_cls</span><span class="o">=</span><span class="n">ClockSimulation</span><span class="p">,</span>
+        <span class="n">model_kwargs</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;q&#39;</span><span class="p">:</span> <span class="n">args</span><span class="o">.</span><span class="n">q</span><span class="p">,</span> <span class="s1">&#39;A&#39;</span><span class="p">:</span> <span class="n">args</span><span class="o">.</span><span class="n">aniso</span><span class="p">},</span>
+        <span class="n">model_label</span><span class="o">=</span><span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">args</span><span class="o">.</span><span class="n">q</span><span class="si">}</span><span class="s1">-state Clock&#39;</span><span class="p">,</span>
+        <span class="n">plot_title</span><span class="o">=</span><span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">args</span><span class="o">.</span><span class="n">q</span><span class="si">}</span><span class="s1">-state Clock Temperature Sweep ($L=</span><span class="si">{</span><span class="n">args</span><span class="o">.</span><span class="n">size</span><span class="si">}</span><span class="s1">$)&#39;</span><span class="p">,</span>
+        <span class="n">metadata_note</span><span class="o">=</span><span class="p">(</span>
+            <span class="sa">f</span><span class="s1">&#39;L=</span><span class="si">{</span><span class="n">args</span><span class="o">.</span><span class="n">size</span><span class="si">}</span><span class="s1">, q=</span><span class="si">{</span><span class="n">args</span><span class="o">.</span><span class="n">q</span><span class="si">}</span><span class="s1">, </span><span class="si">{</span><span class="n">variant</span><span class="si">}</span><span class="s1">, target_n_seeds=</span><span class="si">{</span><span class="n">args</span><span class="o">.</span><span class="n">n_seeds</span><span class="si">}</span><span class="s1">&#39;</span>
+        <span class="p">),</span>
+        <span class="n">transition_temperatures</span><span class="o">=</span><span class="n">transitions</span><span class="p">,</span>
+        <span class="n">variant_note</span><span class="o">=</span><span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">variant</span><span class="si">}</span><span class="s1">, &#39;</span><span class="p">,</span>
+        <span class="c1"># As for XY, no ordered-start preference: the intermediate phase of the</span>
+        <span class="c1"># clock model is quasi-ordered rather than ordered.</span>
     <span class="p">)</span></div>
 
 
 
-<span class="k">if</span> <span class="vm">__name__</span> <span class="o">==</span> <span class="s1">'__main__'</span><span class="p">:</span>
+<span class="k">if</span> <span class="vm">__name__</span> <span class="o">==</span> <span class="s1">&#39;__main__&#39;</span><span class="p">:</span>
     <span class="n">main</span><span class="p">()</span>
 </pre></div>
 

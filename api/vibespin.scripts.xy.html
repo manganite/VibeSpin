@@ -17,6 +17,7 @@
       <script src="../_static/doctools.js?v=fd6eb6e6"></script>
       <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
       <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+      <script src="https://cdn.jsdelivr.net/npm/@jupyter-widgets/html-manager@^1.0.1/dist/embed-amd.js"></script>
     <script src="../_static/js/theme.js"></script>
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
@@ -49,8 +50,8 @@
 <li class="toctree-l1"><a class="reference internal" href="../physics.html">Physics and Algorithm Guide: VibeSpin</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../code.html">Developer and Architecture Guide</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../scripts.html">Scripts Catalog: VibeSpin</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../agents.html">Agent Instruction Guide: VibeSpin</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../bibliography.html">Project Bibliography: VibeSpin</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../AGENTS.html">Agent Instruction Guide: VibeSpin</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../BIBLIOGRAPHY.html">Project Bibliography: VibeSpin</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../changelog.html">Changelog</a></li>
 </ul>
 <p class="caption" role="heading"><span class="caption-text">Research &amp; Analysis:</span></p>
@@ -129,50 +130,26 @@ Measures the average vortex density as a function of temperature.</p>
 <dd><p>Worker function to simulate a single temperature and measure average vortex density.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>params</strong> (<em>Tuple</em><em> of </em><em>(</em><em>T</em><em>, </em><em>L</em><em>, </em><a class="reference internal" href="vibespin.utils.html#utils.sweep_helpers.ThermoPoint.eq_probe_steps" title="utils.sweep_helpers.ThermoPoint.eq_probe_steps"><em>eq_probe_steps</em></a><em>, </em><a class="reference internal" href="vibespin.utils.html#utils.sweep_helpers.ThermoPoint.eq_max_steps" title="utils.sweep_helpers.ThermoPoint.eq_max_steps"><em>eq_max_steps</em></a><em>, </em><a class="reference internal" href="vibespin.utils.html#utils.sweep_helpers.ThermoPoint.meas_steps" title="utils.sweep_helpers.ThermoPoint.meas_steps"><em>meas_steps</em></a><em>)</em><em>.</em>)</p>
+<dd class="field-odd"><p><strong>params</strong> (<em>tuple</em><em>[</em><em>float</em><em>, </em><em>int</em><em>, </em><em>int</em><em>, </em><em>int</em><em>, </em><em>int</em><em>]</em>) – Tuple of (T, L, eq_probe_steps, eq_max_steps, meas_steps).</p>
 </dd>
-<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
 <dd class="field-even"><p>Average vortex density n_v.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>float</p>
 </dd>
 </dl>
 </dd></dl>
 
 </section>
-<section id="module-scripts.xy.compare_correlations">
-<span id="scripts-xy-compare-correlations-module"></span><h2>scripts.xy.compare_correlations module<a class="headerlink" href="#module-scripts.xy.compare_correlations" title="Link to this heading"></a></h2>
+<section id="module-scripts.xy.correlation_comparison">
+<span id="scripts-xy-correlation-comparison-module"></span><h2>scripts.xy.correlation_comparison module<a class="headerlink" href="#module-scripts.xy.correlation_comparison" title="Link to this heading"></a></h2>
 <p>Comparison of spin-spin correlation functions G(r) for the XY model.
 Contrasts power-law decay (low T) with exponential decay (high T).</p>
 <dl class="py function">
-<dt class="sig sig-object py" id="scripts.xy.compare_correlations.main">
-<span class="sig-prename descclassname"><span class="pre">scripts.xy.compare_correlations.</span></span><span class="sig-name descname"><span class="pre">main</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="../_modules/scripts/xy/compare_correlations.html#main"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#scripts.xy.compare_correlations.main" title="Link to this definition"></a></dt>
+<dt class="sig sig-object py" id="scripts.xy.correlation_comparison.main">
+<span class="sig-prename descclassname"><span class="pre">scripts.xy.correlation_comparison.</span></span><span class="sig-name descname"><span class="pre">main</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="../_modules/scripts/xy/correlation_comparison.html#main"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#scripts.xy.correlation_comparison.main" title="Link to this definition"></a></dt>
 <dd><p>Run the correlation comparison analysis for the XY model.</p>
-</dd></dl>
-
-<dl class="py function">
-<dt class="sig sig-object py" id="scripts.xy.compare_correlations.simulate_correlation">
-<span class="sig-prename descclassname"><span class="pre">scripts.xy.compare_correlations.</span></span><span class="sig-name descname"><span class="pre">simulate_correlation</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">T</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">L</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">steps</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">eq_probe</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">eq_max</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sample_interval</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">seed</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">logger</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Logger</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">ndarray</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">ndarray</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="../_modules/scripts/xy/compare_correlations.html#simulate_correlation"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#scripts.xy.compare_correlations.simulate_correlation" title="Link to this definition"></a></dt>
-<dd><p>Equilibrate and measure the averaged correlation function at temperature T.</p>
-<p>Uses two-start convergence equilibration to avoid initialization bias.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>T</strong> (<em>float</em>) – Temperature for the measurement.</p></li>
-<li><p><strong>L</strong> (<em>int</em>) – Linear lattice size.</p></li>
-<li><p><strong>steps</strong> (<em>int</em>) – Measurement steps after equilibration.</p></li>
-<li><p><strong>eq_probe</strong> (<em>int</em>) – Chunk size for convergence equilibration probes.</p></li>
-<li><p><strong>eq_max</strong> (<em>int</em>) – Maximum equilibration steps.</p></li>
-<li><p><strong>sample_interval</strong> (<em>int</em>) – Spacing between correlation samples during measurement.</p></li>
-<li><p><strong>seed</strong> (<em>int</em>) – Random seed for reproducibility.</p></li>
-<li><p><strong>logger</strong> (<em>logging.Logger</em>) – Logger instance.</p></li>
-</ul>
-</dd>
-<dt class="field-even">Returns<span class="colon">:</span></dt>
-<dd class="field-even"><p>Radial distances r and averaged correlations G(r).</p>
-</dd>
-<dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p>tuple[np.ndarray, np.ndarray]</p>
-</dd>
-</dl>
 </dd></dl>
 
 </section>
@@ -192,13 +169,16 @@ Used to identify the universal jump at the BKT transition.</p>
 <dd><p>Run simulation for a single temperature and compute the helicity modulus.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>params</strong> (<em>Tuple</em><em> of </em><em>(</em><em>T</em><em>, </em><em>L</em><em>, </em><a class="reference internal" href="vibespin.utils.html#utils.sweep_helpers.ThermoPoint.eq_probe_steps" title="utils.sweep_helpers.ThermoPoint.eq_probe_steps"><em>eq_probe_steps</em></a><em>, </em><a class="reference internal" href="vibespin.utils.html#utils.sweep_helpers.ThermoPoint.eq_max_steps" title="utils.sweep_helpers.ThermoPoint.eq_max_steps"><em>eq_max_steps</em></a><em>, </em><a class="reference internal" href="vibespin.utils.html#utils.sweep_helpers.ThermoPoint.meas_steps" title="utils.sweep_helpers.ThermoPoint.meas_steps"><em>meas_steps</em></a><em>)</em><em>.</em>)</p>
+<dd class="field-odd"><p><strong>params</strong> (<em>tuple</em><em>[</em><em>float</em><em>, </em><em>int</em><em>, </em><em>int</em><em>, </em><em>int</em><em>, </em><em>int</em><em>]</em>) – Tuple of (T, L, eq_probe_steps, eq_max_steps, meas_steps).</p>
 </dd>
-<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
 <dd class="field-even"><p>Helicity modulus (Upsilon) for this temperature.</p>
 </dd>
-<dt class="field-odd">Raises<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>ValueError</strong> – If <code class="docutils literal notranslate"><span class="pre">T</span></code> is less than or equal to 0.:</p>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>float</p>
+</dd>
+<dt class="field-even">Raises<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>ValueError</strong> – If <code class="docutils literal notranslate"><span class="pre">T</span></code> is less than or equal to 0.</p>
 </dd>
 </dl>
 </dd></dl>
@@ -232,11 +212,36 @@ growth and vortex density decay over time.</p>
 <section id="module-scripts.xy.temperature_sweep">
 <span id="scripts-xy-temperature-sweep-module"></span><h2>scripts.xy.temperature_sweep module<a class="headerlink" href="#module-scripts.xy.temperature_sweep" title="Link to this heading"></a></h2>
 <p>Standardized temperature sweep for the 2D XY model.
-Calculates and plots magnetization, energy, susceptibility, and specific heat.</p>
+Calculates magnetization, energy, susceptibility, and specific heat, and
+produces a thermodynamics figure plus a companion diagnostics figure.</p>
 <dl class="py function">
 <dt class="sig sig-object py" id="scripts.xy.temperature_sweep.main">
 <span class="sig-prename descclassname"><span class="pre">scripts.xy.temperature_sweep.</span></span><span class="sig-name descname"><span class="pre">main</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="../_modules/scripts/xy/temperature_sweep.html#main"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#scripts.xy.temperature_sweep.main" title="Link to this definition"></a></dt>
-<dd><p>Execute the temperature sweep and generate standardized 4-panel plots.</p>
+<dd><p>Execute the temperature sweep and generate the thermodynamics and
+companion diagnostics figures.</p>
+</dd></dl>
+
+</section>
+<section id="module-scripts.xy.wolff_efficiency">
+<span id="scripts-xy-wolff-efficiency-module"></span><h2>scripts.xy.wolff_efficiency module<a class="headerlink" href="#module-scripts.xy.wolff_efficiency" title="Link to this heading"></a></h2>
+<p>Wolff cluster algorithm efficiency demonstration for the 2D XY model.</p>
+<p>The XY counterpart of the Ising comparison, using the Wolff-Evertz reflection
+rather than a Z2 cluster flip.  The temperature window brackets the BKT
+transition, where the correlation length diverges exponentially rather than as
+a power law, so critical slowing down of the local update sets in more gently
+than it does at a second-order critical point.</p>
+<p>Results are saved to <code class="docutils literal notranslate"><span class="pre">results/xy/wolff_efficiency.npz</span></code> for notebook re-use
+and <code class="docutils literal notranslate"><span class="pre">results/xy/wolff_efficiency.png</span></code> as a four-panel figure.</p>
+<dl class="py data">
+<dt class="sig sig-object py" id="scripts.xy.wolff_efficiency.TBKT_XY">
+<span class="sig-prename descclassname"><span class="pre">scripts.xy.wolff_efficiency.</span></span><span class="sig-name descname"><span class="pre">TBKT_XY</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">float</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">0.893</span></span><a class="headerlink" href="#scripts.xy.wolff_efficiency.TBKT_XY" title="Link to this definition"></a></dt>
+<dd><p>Accepted BKT transition temperature of the 2D XY model.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="scripts.xy.wolff_efficiency.main">
+<span class="sig-prename descclassname"><span class="pre">scripts.xy.wolff_efficiency.</span></span><span class="sig-name descname"><span class="pre">main</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="../_modules/scripts/xy/wolff_efficiency.html#main"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#scripts.xy.wolff_efficiency.main" title="Link to this definition"></a></dt>
+<dd><p>Execute the XY efficiency comparison and save the figure and data.</p>
 </dd></dl>
 
 </section>

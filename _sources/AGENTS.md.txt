@@ -168,7 +168,7 @@ The workspace root contains the following key files and directories.
 - `tests/`: High-coverage test suite organized into five conceptual layers, distributed across subfolders that mirror the architecture:
   - **Algorithm** (`algorithm/test_algorithm_integrity.py`): Microscopic validation of Monte Carlo kernels (detailed balance, ergodicity).
   - **Model** (`model/test_models.py`, `model/test_model_extremes.py`, `model/test_model_cli.py`, `model/test_model_control_paths.py`, `model/test_simulation_base.py`): API contracts, CLI behavior, edge cases, control flow, and base simulation infrastructure across all simulation classes.
-  - **Utility** (`utility/test_analysis.py`, `utility/test_system.py`): Physics observables, system helpers, and CLI utilities.
+  - **Utility** (`utility/test_statistics.py`, `utility/test_observables.py`, `utility/test_equilibration.py`, `utility/test_system.py`): Statistical estimators, physics observables, equilibration logic, and system helpers.
   - **Style** (`style/test_docstring_style.py`): Code quality and documentation standards.
   - **Integration** (`integration/test_script_infrastructure.py`, `integration/test_reproducibility.py`): Reusable infrastructure patterns for analysis scripts (deterministic seeding, reproducibility, NPZ schemas, typed payloads, aggregation logic). New scripts add test classes here rather than creating separate test files.
 - `scripts/`: Physics experiments and equilibrium/kinetics drivers. Subdirectories: `ising/`, `xy/`, `clock/`, `benchmarks/`.
@@ -181,7 +181,7 @@ The workspace root contains the following key files and directories.
 ### Task: Implement a New Physical Observable
 1. Add the `@njit` kernel to `models/simulation_base.py` or the specific model.
 2. Add a `_get_<name>` method to the Simulation class.
-3. Add a test case in `tests/utility/test_analysis.py` or `tests/utility/test_system.py` as appropriate.
+3. Add a test case in `tests/utility/test_observables.py` or `tests/utility/test_statistics.py` as appropriate.
 4. Verify the physical limits (e.g., ground state) in `tests/model/test_model_extremes.py`.
 
 ### Task: Add a New Analysis Script

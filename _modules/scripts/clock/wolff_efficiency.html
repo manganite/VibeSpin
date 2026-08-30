@@ -5,7 +5,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>scripts.xy.temperature_sweep &mdash; VibeSpin 0.1.0 documentation</title>
+  <title>scripts.clock.wolff_efficiency &mdash; VibeSpin 0.1.0 documentation</title>
       <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=b86133f3" />
       <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=9edc463e" />
 
@@ -83,7 +83,7 @@
   <ul class="wy-breadcrumbs">
       <li><a href="../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
           <li class="breadcrumb-item"><a href="../../index.html">Module code</a></li>
-      <li class="breadcrumb-item active">scripts.xy.temperature_sweep</li>
+      <li class="breadcrumb-item active">scripts.clock.wolff_efficiency</li>
       <li class="wy-breadcrumbs-aside">
       </li>
   </ul>
@@ -92,70 +92,64 @@
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
            <div itemprop="articleBody">
              
-  <h1>Source code for scripts.xy.temperature_sweep</h1><div class="highlight"><pre>
+  <h1>Source code for scripts.clock.wolff_efficiency</h1><div class="highlight"><pre>
 <span></span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">Standardized temperature sweep for the 2D XY model.</span>
-<span class="sd">Calculates magnetization, energy, susceptibility, and specific heat, and</span>
-<span class="sd">produces a thermodynamics figure plus a companion diagnostics figure.</span>
+<span class="sd">Wolff cluster algorithm efficiency demonstration for the 2D clock model.</span>
+
+<span class="sd">The clock counterpart of the Ising and XY comparisons.  The temperature window</span>
+<span class="sd">brackets both crossovers of the q=6 model, the lower one out of the ordered</span>
+<span class="sd">phase and the upper one out of the quasi-ordered phase into the disordered</span>
+<span class="sd">one.</span>
+
+<span class="sd">The comparison runs at zero anisotropy, because the Wolff-Evertz bond</span>
+<span class="sd">construction sees only the exchange term: with a non-zero crystal field the</span>
+<span class="sd">cluster update no longer satisfies detailed balance for the full Hamiltonian,</span>
+<span class="sd">so an efficiency comparison against a local update that does would be</span>
+<span class="sd">comparing two different models rather than two algorithms.</span>
+
+<span class="sd">Results are saved to ``results/clock/wolff_efficiency.npz`` for notebook re-use</span>
+<span class="sd">and ``results/clock/wolff_efficiency.png`` as a four-panel figure.</span>
 <span class="sd">&quot;&quot;&quot;</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">__future__</span><span class="w"> </span><span class="kn">import</span> <span class="n">annotations</span>
 
 <span class="kn">import</span><span class="w"> </span><span class="nn">argparse</span>
 
-<span class="kn">from</span><span class="w"> </span><span class="nn">models.xy_model</span><span class="w"> </span><span class="kn">import</span> <span class="n">XYSimulation</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">utils.sweep_runner</span><span class="w"> </span><span class="kn">import</span> <span class="n">add_temperature_sweep_arguments</span><span class="p">,</span> <span class="n">run_temperature_sweep</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">models.clock_model</span><span class="w"> </span><span class="kn">import</span> <span class="n">ClockSimulation</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">utils.efficiency_runner</span><span class="w"> </span><span class="kn">import</span> <span class="n">add_wolff_efficiency_arguments</span><span class="p">,</span> <span class="n">run_wolff_efficiency</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">utils.system</span><span class="w"> </span><span class="kn">import</span> <span class="n">parse_args_compat</span>
 
-<span class="n">_TBKT_XY_THEORY</span> <span class="o">=</span> <span class="mf">0.893</span>
+<span class="c1"># Approximate crossover temperatures of the q=6 clock model, matching the</span>
+<span class="c1"># phase boundaries used by scripts/clock/correlation_comparison.py.</span>
+<span class="n">_T1_CLOCK6_APPROX</span> <span class="o">=</span> <span class="mf">0.68</span>
+<span class="n">_T2_CLOCK6_APPROX</span> <span class="o">=</span> <span class="mf">0.92</span>
 
 
 <div class="viewcode-block" id="main">
-<a class="viewcode-back" href="../../../api/vibespin.scripts.xy.html#scripts.xy.temperature_sweep.main">[docs]</a>
+<a class="viewcode-back" href="../../../api/vibespin.scripts.clock.html#scripts.clock.wolff_efficiency.main">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">main</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    Execute the temperature sweep and generate the thermodynamics and</span>
-<span class="sd">    companion diagnostics figures.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
-    <span class="n">parser</span> <span class="o">=</span> <span class="n">argparse</span><span class="o">.</span><span class="n">ArgumentParser</span><span class="p">(</span><span class="n">description</span><span class="o">=</span><span class="s1">&#39;2D XY Model Temperature Sweep&#39;</span><span class="p">)</span>
-    <span class="n">add_temperature_sweep_arguments</span><span class="p">(</span>
-        <span class="n">parser</span><span class="o">=</span><span class="n">parser</span><span class="p">,</span>
-        <span class="n">size</span><span class="o">=</span><span class="mi">64</span><span class="p">,</span>
-        <span class="n">t_min</span><span class="o">=</span><span class="mf">0.1</span><span class="p">,</span>
-        <span class="n">t_max</span><span class="o">=</span><span class="mf">2.0</span><span class="p">,</span>
-        <span class="n">t_points</span><span class="o">=</span><span class="mi">60</span><span class="p">,</span>
-        <span class="c1"># The XY model relaxes far more slowly than Ising, so the cap has to be</span>
-        <span class="c1"># an order of magnitude higher for the convergence criterion to decide</span>
-        <span class="c1"># rather than the cap.</span>
-        <span class="n">eq_max_steps</span><span class="o">=</span><span class="mi">200_000</span><span class="p">,</span>
-        <span class="n">meas_steps</span><span class="o">=</span><span class="mi">20_000</span><span class="p">,</span>
-        <span class="n">output_dir</span><span class="o">=</span><span class="s1">&#39;results/xy&#39;</span><span class="p">,</span>
-        <span class="n">transition_help</span><span class="o">=</span><span class="p">(</span>
-            <span class="s1">&#39;Transition overlay preset for plotting; auto (default) shows the &#39;</span>
-            <span class="s1">&#39;known theoretical transition, none disables the overlay&#39;</span>
-        <span class="p">),</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Execute the clock efficiency comparison and save the figure and data.&quot;&quot;&quot;</span>
+    <span class="n">parser</span> <span class="o">=</span> <span class="n">argparse</span><span class="o">.</span><span class="n">ArgumentParser</span><span class="p">(</span>
+        <span class="n">description</span><span class="o">=</span><span class="s1">&#39;Wolff vs. Metropolis efficiency demo for the 2D clock model.&#39;</span><span class="p">,</span>
+    <span class="p">)</span>
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;--q&#39;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">int</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="mi">6</span><span class="p">,</span> <span class="n">help</span><span class="o">=</span><span class="s1">&#39;Number of clock states&#39;</span><span class="p">)</span>
+    <span class="n">add_wolff_efficiency_arguments</span><span class="p">(</span>
+        <span class="n">parser</span><span class="o">=</span><span class="n">parser</span><span class="p">,</span> <span class="n">size</span><span class="o">=</span><span class="mi">64</span><span class="p">,</span> <span class="n">t_min</span><span class="o">=</span><span class="mf">0.3</span><span class="p">,</span> <span class="n">t_max</span><span class="o">=</span><span class="mf">1.4</span><span class="p">,</span> <span class="n">output_dir</span><span class="o">=</span><span class="s1">&#39;results/clock&#39;</span><span class="p">,</span>
     <span class="p">)</span>
     <span class="n">args</span> <span class="o">=</span> <span class="n">parse_args_compat</span><span class="p">(</span><span class="n">parser</span><span class="o">=</span><span class="n">parser</span><span class="p">)</span>
 
-    <span class="c1"># Transition overlay: &#39;auto&#39; and &#39;theory&#39; enable it, &#39;none&#39; disables it.</span>
+    <span class="c1"># The approximate crossover temperatures are specific to q=6.</span>
     <span class="n">transitions</span> <span class="o">=</span> <span class="p">(</span>
-        <span class="p">{</span><span class="s1">&#39;Theory (BKT)&#39;</span><span class="p">:</span> <span class="n">_TBKT_XY_THEORY</span><span class="p">}</span>
-        <span class="k">if</span> <span class="n">args</span><span class="o">.</span><span class="n">transition_preset</span> <span class="ow">in</span> <span class="p">(</span><span class="s1">&#39;auto&#39;</span><span class="p">,</span> <span class="s1">&#39;theory&#39;</span><span class="p">)</span>
+        <span class="p">{</span><span class="s1">&#39;$T_1$ (approx)&#39;</span><span class="p">:</span> <span class="n">_T1_CLOCK6_APPROX</span><span class="p">,</span> <span class="s1">&#39;$T_2$ (approx)&#39;</span><span class="p">:</span> <span class="n">_T2_CLOCK6_APPROX</span><span class="p">}</span>
+        <span class="k">if</span> <span class="n">args</span><span class="o">.</span><span class="n">q</span> <span class="o">==</span> <span class="mi">6</span>
         <span class="k">else</span> <span class="kc">None</span>
     <span class="p">)</span>
 
-    <span class="n">run_temperature_sweep</span><span class="p">(</span>
+    <span class="n">run_wolff_efficiency</span><span class="p">(</span>
         <span class="n">args</span><span class="o">=</span><span class="n">args</span><span class="p">,</span>
-        <span class="n">model_cls</span><span class="o">=</span><span class="n">XYSimulation</span><span class="p">,</span>
-        <span class="n">model_kwargs</span><span class="o">=</span><span class="p">{},</span>
-        <span class="n">model_label</span><span class="o">=</span><span class="s1">&#39;XY&#39;</span><span class="p">,</span>
-        <span class="n">plot_title</span><span class="o">=</span><span class="sa">f</span><span class="s1">&#39;XY Model Temperature Sweep ($L=</span><span class="si">{</span><span class="n">args</span><span class="o">.</span><span class="n">size</span><span class="si">}</span><span class="s1">$)&#39;</span><span class="p">,</span>
-        <span class="n">metadata_note</span><span class="o">=</span><span class="p">(</span>
-            <span class="sa">f</span><span class="s1">&#39;L=</span><span class="si">{</span><span class="n">args</span><span class="o">.</span><span class="n">size</span><span class="si">}</span><span class="s1">, target_n_seeds=</span><span class="si">{</span><span class="n">args</span><span class="o">.</span><span class="n">n_seeds</span><span class="si">}</span><span class="s1">, meas_steps=</span><span class="si">{</span><span class="n">args</span><span class="o">.</span><span class="n">meas_steps</span><span class="si">}</span><span class="s1">&#39;</span>
-        <span class="p">),</span>
-        <span class="n">transition_temperatures</span><span class="o">=</span><span class="n">transitions</span><span class="p">,</span>
-        <span class="c1"># No ordered-start preference: below T_BKT the XY model has only</span>
-        <span class="c1"># quasi-long-range order, so an ordered start is not the state the</span>
-        <span class="c1"># sweep is trying to reach.</span>
+        <span class="n">model_cls</span><span class="o">=</span><span class="n">ClockSimulation</span><span class="p">,</span>
+        <span class="n">model_kwargs</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;q&#39;</span><span class="p">:</span> <span class="n">args</span><span class="o">.</span><span class="n">q</span><span class="p">,</span> <span class="s1">&#39;A&#39;</span><span class="p">:</span> <span class="mf">0.0</span><span class="p">},</span>
+        <span class="n">model_label</span><span class="o">=</span><span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">args</span><span class="o">.</span><span class="n">q</span><span class="si">}</span><span class="s1">-state Clock Model&#39;</span><span class="p">,</span>
+        <span class="n">transitions</span><span class="o">=</span><span class="n">transitions</span><span class="p">,</span>
     <span class="p">)</span></div>
 
 

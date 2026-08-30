@@ -44,6 +44,14 @@ scripts.clock.temperature\_sweep module
    :show-inheritance:
    :undoc-members:
 
+scripts.clock.wolff\_efficiency module
+--------------------------------------
+
+.. automodule:: scripts.clock.wolff_efficiency
+   :members:
+   :show-inheritance:
+   :undoc-members:
+
 Module contents
 ---------------
 

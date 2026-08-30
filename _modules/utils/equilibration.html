@@ -16,6 +16,7 @@
       <script src="../../_static/doctools.js?v=fd6eb6e6"></script>
       <script src="../../_static/sphinx_highlight.js?v=6ffebe34"></script>
       <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+      <script src="https://cdn.jsdelivr.net/npm/@jupyter-widgets/html-manager@^1.0.1/dist/embed-amd.js"></script>
     <script src="../../_static/js/theme.js"></script>
     <link rel="index" title="Index" href="../../genindex.html" />
     <link rel="search" title="Search" href="../../search.html" /> 
@@ -46,8 +47,8 @@
 <li class="toctree-l1"><a class="reference internal" href="../../physics.html">Physics and Algorithm Guide: VibeSpin</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../code.html">Developer and Architecture Guide</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../scripts.html">Scripts Catalog: VibeSpin</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../agents.html">Agent Instruction Guide: VibeSpin</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../bibliography.html">Project Bibliography: VibeSpin</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../AGENTS.html">Agent Instruction Guide: VibeSpin</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../BIBLIOGRAPHY.html">Project Bibliography: VibeSpin</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../changelog.html">Changelog</a></li>
 </ul>
 <p class="caption" role="heading"><span class="caption-text">Research &amp; Analysis:</span></p>
@@ -92,7 +93,7 @@
            <div itemprop="articleBody">
              
   <h1>Source code for utils.equilibration</h1><div class="highlight"><pre>
-<span></span><span class="sd">"""Equilibration algorithms for Monte Carlo simulations.</span>
+<span></span><span class="sd">&quot;&quot;&quot;Equilibration algorithms for Monte Carlo simulations.</span>
 
 <span class="sd">Provides adaptive and two-start convergence equilibration routines, together</span>
 <span class="sd">with the underlying relaxation-time estimation and quasi-steady-state detection</span>
@@ -100,7 +101,7 @@
 <span class="sd">``utils.system`` (equilibrate functions) and ``utils.analysis``</span>
 <span class="sd">(relaxation diagnostic helpers), which required a lazy cross-import to avoid</span>
 <span class="sd">circular dependencies.  Unifying them here eliminates that workaround.</span>
-<span class="sd">"""</span>
+<span class="sd">&quot;&quot;&quot;</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">__future__</span><span class="w"> </span><span class="kn">import</span> <span class="n">annotations</span>
 
 <span class="kn">import</span><span class="w"> </span><span class="nn">logging</span>
@@ -116,7 +117,7 @@
 
 
 <span class="k">class</span><span class="w"> </span><span class="nc">_Sim</span><span class="p">(</span><span class="n">Protocol</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">"""Structural type for any MonteCarloSimulation; avoids a models/ → utils/ import."""</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Structural type for any MonteCarloSimulation; avoids a models/ → utils/ import.&quot;&quot;&quot;</span>
 
     <span class="n">size</span><span class="p">:</span> <span class="nb">int</span>
 
@@ -131,7 +132,7 @@
 
 
 <span class="k">def</span><span class="w"> </span><span class="nf">_valid_prefix</span><span class="p">(</span><span class="n">x</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">"""Return the non-NaN prefix from a padded trajectory."""</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Return the non-NaN prefix from a padded trajectory.&quot;&quot;&quot;</span>
     <span class="n">valid</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">isfinite</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
     <span class="k">if</span> <span class="ow">not</span> <span class="n">np</span><span class="o">.</span><span class="n">any</span><span class="p">(</span><span class="n">valid</span><span class="p">):</span>
         <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">empty</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">float</span><span class="p">)</span>
@@ -141,7 +142,7 @@
 
 <span class="k">def</span><span class="w"> </span><span class="nf">_moving_average</span><span class="p">(</span><span class="n">x</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">window</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
     <span class="n">window</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="nb">min</span><span class="p">(</span><span class="n">window</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">x</span><span class="p">)))</span>
-    <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">convolve</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="n">window</span><span class="p">)</span> <span class="o">/</span> <span class="n">window</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="s1">'valid'</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">convolve</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="n">window</span><span class="p">)</span> <span class="o">/</span> <span class="n">window</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="s1">&#39;valid&#39;</span><span class="p">)</span>
 
 
 <span class="c1"># ---------------------------------------------------------------------------</span>
@@ -149,27 +150,67 @@
 <span class="c1"># ---------------------------------------------------------------------------</span>
 
 <span class="n">_QS_SIGMA_REF_L</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">32</span>
-<span class="sd">"""Reference lattice side-length for ``_detect_quasi_steady_stuck`` threshold scaling.</span>
+<span class="sd">&quot;&quot;&quot;Reference lattice side-length for ``_detect_quasi_steady_stuck`` threshold scaling.</span>
 
 <span class="sd">The ``qs_sigma_threshold`` parameter is calibrated at this L and scaled</span>
 <span class="sd">proportionally as ``threshold * _QS_SIGMA_REF_L / lattice_size`` for other sizes.</span>
-<span class="sd">"""</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="c1"># Shared defaults for the two-start criteria. The convergence loop forwards</span>
+<span class="c1"># user overrides via **kwargs to both the relaxation estimator and the stuck</span>
+<span class="c1"># detector; keeping the fallback values here (instead of repeating literals)</span>
+<span class="c1"># guarantees the two criteria cannot silently drift apart.</span>
+<span class="n">_TWO_START_DEFAULT_K</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">1.0</span>
+<span class="n">_TWO_START_DEFAULT_SMOOTH_WINDOW</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">60</span>
+<span class="n">_TWO_START_DEFAULT_SIGMA_FLOOR</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.02</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_prepare_smoothed_traces</span><span class="p">(</span>
+    <span class="o">*</span><span class="p">,</span>
+    <span class="n">trace_random</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
+    <span class="n">trace_ordered</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
+    <span class="n">smooth_window</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+    <span class="n">skip_validation</span><span class="p">:</span> <span class="nb">bool</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="nb">int</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Shared preprocessing for the two-start criteria.</span>
+
+<span class="sd">    Takes the absolute values (optionally after finite-prefix validation),</span>
+<span class="sd">    truncates both traces to a common length ``n``, and applies the</span>
+<span class="sd">    moving-average smoother. Returns ``(r_smoothed, o_smoothed, n)``, or</span>
+<span class="sd">    ``None`` when the traces are too short to analyze (fewer than 8 common</span>
+<span class="sd">    raw samples).</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">skip_validation</span><span class="p">:</span>
+        <span class="n">r</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">trace_random</span><span class="p">)</span>
+        <span class="n">o</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">trace_ordered</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">r</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">_valid_prefix</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">trace_random</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">float</span><span class="p">)))</span>
+        <span class="n">o</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">_valid_prefix</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">trace_ordered</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">float</span><span class="p">)))</span>
+
+    <span class="n">n</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">r</span><span class="p">),</span> <span class="nb">len</span><span class="p">(</span><span class="n">o</span><span class="p">))</span>
+    <span class="k">if</span> <span class="n">n</span> <span class="o">&lt;</span> <span class="mi">8</span><span class="p">:</span>
+        <span class="k">return</span> <span class="kc">None</span>
+
+    <span class="n">r_sm</span> <span class="o">=</span> <span class="n">_moving_average</span><span class="p">(</span><span class="n">r</span><span class="p">[:</span><span class="n">n</span><span class="p">],</span> <span class="n">smooth_window</span><span class="p">)</span>
+    <span class="n">o_sm</span> <span class="o">=</span> <span class="n">_moving_average</span><span class="p">(</span><span class="n">o</span><span class="p">[:</span><span class="n">n</span><span class="p">],</span> <span class="n">smooth_window</span><span class="p">)</span>
+    <span class="n">m</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">r_sm</span><span class="p">),</span> <span class="nb">len</span><span class="p">(</span><span class="n">o_sm</span><span class="p">))</span>
+    <span class="k">return</span> <span class="n">r_sm</span><span class="p">[:</span><span class="n">m</span><span class="p">],</span> <span class="n">o_sm</span><span class="p">[:</span><span class="n">m</span><span class="p">],</span> <span class="n">n</span>
 
 
 <div class="viewcode-block" id="estimate_relaxation_time_two_start">
 <a class="viewcode-back" href="../../api/vibespin.utils.html#utils.equilibration.estimate_relaxation_time_two_start">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">estimate_relaxation_time_two_start</span><span class="p">(</span>
+    <span class="o">*</span><span class="p">,</span>
     <span class="n">trace_random</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
     <span class="n">trace_ordered</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
-    <span class="o">*</span><span class="p">,</span>
-    <span class="n">k</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">1.0</span><span class="p">,</span>
-    <span class="n">smooth_window</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">60</span><span class="p">,</span>
+    <span class="n">k</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="n">_TWO_START_DEFAULT_K</span><span class="p">,</span>
+    <span class="n">smooth_window</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="n">_TWO_START_DEFAULT_SMOOTH_WINDOW</span><span class="p">,</span>
     <span class="n">dwell_window</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">60</span><span class="p">,</span>
     <span class="n">min_fraction_inside</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.85</span><span class="p">,</span>
-    <span class="n">sigma_floor</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.02</span><span class="p">,</span>
+    <span class="n">sigma_floor</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="n">_TWO_START_DEFAULT_SIGMA_FLOOR</span><span class="p">,</span>
     <span class="n">skip_validation</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">"""Estimate thermalization time from convergence of random- and ordered-start traces.</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Estimate thermalization time from convergence of random- and ordered-start traces.</span>
 
 <span class="sd">    Compares a trajectory started from a random spin configuration against one</span>
 <span class="sd">    started from a fully ordered configuration.  Returns the first step at which</span>
@@ -185,45 +226,46 @@
 
 <span class="sd">    Parameters</span>
 <span class="sd">    ----------</span>
-<span class="sd">        trace_random: 1-D magnetization trace from a random initial state.</span>
-<span class="sd">        trace_ordered: 1-D magnetization trace from an ordered initial state.</span>
-<span class="sd">        k: Half-width of each convergence band in units of the respective tail</span>
-<span class="sd">            standard deviation.  Larger values are more permissive.</span>
-<span class="sd">        smooth_window: Window length (steps) for the moving-average smoother.</span>
-<span class="sd">        dwell_window: Window length (steps) for the sustained-convergence test.</span>
-<span class="sd">        min_fraction_inside: Fraction of steps within ``dwell_window`` that must</span>
-<span class="sd">            satisfy the mutual cross-band condition to declare convergence.</span>
-<span class="sd">        sigma_floor: Minimum allowed standard deviation for each tail, preventing</span>
-<span class="sd">            band collapse when a trajectory is nearly flat.</span>
-<span class="sd">        skip_validation: If True, skip np.asarray and finite-prefix checks.</span>
+<span class="sd">    trace_random : np.ndarray</span>
+<span class="sd">        1-D magnetization trace from a random initial state.</span>
+<span class="sd">    trace_ordered : np.ndarray</span>
+<span class="sd">        1-D magnetization trace from an ordered initial state.</span>
+<span class="sd">    k : float</span>
+<span class="sd">        Half-width of each convergence band in units of the respective tail</span>
+<span class="sd">        standard deviation.  Larger values are more permissive.</span>
+<span class="sd">    smooth_window : int</span>
+<span class="sd">        Window length (steps) for the moving-average smoother.</span>
+<span class="sd">    dwell_window : int</span>
+<span class="sd">        Window length (steps) for the sustained-convergence test.</span>
+<span class="sd">    min_fraction_inside : float</span>
+<span class="sd">        Fraction of steps within ``dwell_window`` that must</span>
+<span class="sd">        satisfy the mutual cross-band condition to declare convergence.</span>
+<span class="sd">    sigma_floor : float</span>
+<span class="sd">        Minimum allowed standard deviation for each tail, preventing</span>
+<span class="sd">        band collapse when a trajectory is nearly flat.</span>
+<span class="sd">    skip_validation : bool</span>
+<span class="sd">        If True, skip np.asarray and finite-prefix checks.</span>
 
 <span class="sd">    Returns</span>
 <span class="sd">    -------</span>
+<span class="sd">    int</span>
 <span class="sd">        Estimated relaxation time as a 0-indexed position in the original input</span>
 <span class="sd">        traces (i.e. a sweep count minus one).  The first index at which both</span>
-<span class="sd">        smoothed traces have been mutually inside each other's band for</span>
+<span class="sd">        smoothed traces have been mutually inside each other&#39;s band for</span>
 <span class="sd">        ``dwell_window`` steps is mapped back to the corresponding raw-trace</span>
 <span class="sd">        position as ``hits[0] + smooth_window - 1``.  Returns ``n`` (full trace</span>
 <span class="sd">        length) if no convergence is detected, or ``0`` for very short traces.</span>
-<span class="sd">    """</span>
-    <span class="k">if</span> <span class="n">skip_validation</span><span class="p">:</span>
-        <span class="n">r</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">trace_random</span><span class="p">)</span>
-        <span class="n">o</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">trace_ordered</span><span class="p">)</span>
-    <span class="k">else</span><span class="p">:</span>
-        <span class="n">r</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">_valid_prefix</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">trace_random</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">float</span><span class="p">)))</span>
-        <span class="n">o</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">_valid_prefix</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">trace_ordered</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">float</span><span class="p">)))</span>
-
-    <span class="n">n</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">r</span><span class="p">),</span> <span class="nb">len</span><span class="p">(</span><span class="n">o</span><span class="p">))</span>
-    <span class="k">if</span> <span class="n">n</span> <span class="o">&lt;</span> <span class="mi">8</span><span class="p">:</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">prepared</span> <span class="o">=</span> <span class="n">_prepare_smoothed_traces</span><span class="p">(</span>
+        <span class="n">trace_random</span><span class="o">=</span><span class="n">trace_random</span><span class="p">,</span>
+        <span class="n">trace_ordered</span><span class="o">=</span><span class="n">trace_ordered</span><span class="p">,</span>
+        <span class="n">smooth_window</span><span class="o">=</span><span class="n">smooth_window</span><span class="p">,</span>
+        <span class="n">skip_validation</span><span class="o">=</span><span class="n">skip_validation</span><span class="p">,</span>
+    <span class="p">)</span>
+    <span class="k">if</span> <span class="n">prepared</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
         <span class="k">return</span> <span class="mi">0</span>
-    <span class="n">r</span> <span class="o">=</span> <span class="n">r</span><span class="p">[:</span><span class="n">n</span><span class="p">]</span>
-    <span class="n">o</span> <span class="o">=</span> <span class="n">o</span><span class="p">[:</span><span class="n">n</span><span class="p">]</span>
-
-    <span class="n">r_sm</span> <span class="o">=</span> <span class="n">_moving_average</span><span class="p">(</span><span class="n">r</span><span class="p">,</span> <span class="n">smooth_window</span><span class="p">)</span>
-    <span class="n">o_sm</span> <span class="o">=</span> <span class="n">_moving_average</span><span class="p">(</span><span class="n">o</span><span class="p">,</span> <span class="n">smooth_window</span><span class="p">)</span>
-    <span class="n">m</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">r_sm</span><span class="p">),</span> <span class="nb">len</span><span class="p">(</span><span class="n">o_sm</span><span class="p">))</span>
-    <span class="n">r_sm</span> <span class="o">=</span> <span class="n">r_sm</span><span class="p">[:</span><span class="n">m</span><span class="p">]</span>
-    <span class="n">o_sm</span> <span class="o">=</span> <span class="n">o_sm</span><span class="p">[:</span><span class="n">m</span><span class="p">]</span>
+    <span class="n">r_sm</span><span class="p">,</span> <span class="n">o_sm</span><span class="p">,</span> <span class="n">n</span> <span class="o">=</span> <span class="n">prepared</span>
+    <span class="n">m</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">r_sm</span><span class="p">)</span>
 
     <span class="c1"># Compute tail statistics independently for each trace</span>
     <span class="n">half</span> <span class="o">=</span> <span class="n">m</span> <span class="o">//</span> <span class="mi">2</span>
@@ -234,14 +276,14 @@
     <span class="n">sig_r</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="nb">float</span><span class="p">(</span><span class="n">tail_r</span><span class="o">.</span><span class="n">std</span><span class="p">()),</span> <span class="n">sigma_floor</span><span class="p">)</span>
     <span class="n">sig_o</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="nb">float</span><span class="p">(</span><span class="n">tail_o</span><span class="o">.</span><span class="n">std</span><span class="p">()),</span> <span class="n">sigma_floor</span><span class="p">)</span>
 
-    <span class="c1"># Mutual cross-band test: each trace must be inside the other trace's band</span>
-    <span class="n">in_o_band</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">r_sm</span> <span class="o">-</span> <span class="n">mu_o</span><span class="p">)</span> <span class="o">&lt;=</span> <span class="n">k</span> <span class="o">*</span> <span class="n">sig_o</span>  <span class="c1"># random inside ordered's band</span>
-    <span class="n">in_r_band</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">o_sm</span> <span class="o">-</span> <span class="n">mu_r</span><span class="p">)</span> <span class="o">&lt;=</span> <span class="n">k</span> <span class="o">*</span> <span class="n">sig_r</span>  <span class="c1"># ordered inside random's band</span>
+    <span class="c1"># Mutual cross-band test: each trace must be inside the other trace&#39;s band</span>
+    <span class="n">in_o_band</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">r_sm</span> <span class="o">-</span> <span class="n">mu_o</span><span class="p">)</span> <span class="o">&lt;=</span> <span class="n">k</span> <span class="o">*</span> <span class="n">sig_o</span>  <span class="c1"># random inside ordered&#39;s band</span>
+    <span class="n">in_r_band</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">o_sm</span> <span class="o">-</span> <span class="n">mu_r</span><span class="p">)</span> <span class="o">&lt;=</span> <span class="n">k</span> <span class="o">*</span> <span class="n">sig_r</span>  <span class="c1"># ordered inside random&#39;s band</span>
     <span class="n">both_inside</span> <span class="o">=</span> <span class="p">(</span><span class="n">in_o_band</span> <span class="o">&amp;</span> <span class="n">in_r_band</span><span class="p">)</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">float</span><span class="p">)</span>
 
     <span class="n">dwell_window</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="nb">min</span><span class="p">(</span><span class="n">dwell_window</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">both_inside</span><span class="p">)))</span>
     <span class="n">sustained_fraction</span> <span class="o">=</span> <span class="p">(</span>
-        <span class="n">np</span><span class="o">.</span><span class="n">convolve</span><span class="p">(</span><span class="n">both_inside</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="n">dwell_window</span><span class="p">),</span> <span class="n">mode</span><span class="o">=</span><span class="s1">'valid'</span><span class="p">)</span> <span class="o">/</span> <span class="n">dwell_window</span>
+        <span class="n">np</span><span class="o">.</span><span class="n">convolve</span><span class="p">(</span><span class="n">both_inside</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="n">dwell_window</span><span class="p">),</span> <span class="n">mode</span><span class="o">=</span><span class="s1">&#39;valid&#39;</span><span class="p">)</span> <span class="o">/</span> <span class="n">dwell_window</span>
     <span class="p">)</span>
 
     <span class="n">hits</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">sustained_fraction</span> <span class="o">&gt;=</span> <span class="n">min_fraction_inside</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
@@ -250,17 +292,17 @@
 
 
 <span class="k">def</span><span class="w"> </span><span class="nf">_detect_quasi_steady_stuck</span><span class="p">(</span>
+    <span class="o">*</span><span class="p">,</span>
     <span class="n">trace_random</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
     <span class="n">trace_ordered</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
-    <span class="o">*</span><span class="p">,</span>
-    <span class="n">k</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">1.0</span><span class="p">,</span>
-    <span class="n">smooth_window</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">60</span><span class="p">,</span>
+    <span class="n">k</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="n">_TWO_START_DEFAULT_K</span><span class="p">,</span>
+    <span class="n">smooth_window</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="n">_TWO_START_DEFAULT_SMOOTH_WINDOW</span><span class="p">,</span>
     <span class="n">qs_sigma_threshold</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.05</span><span class="p">,</span>
-    <span class="n">sigma_floor</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.02</span><span class="p">,</span>
+    <span class="n">sigma_floor</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="n">_TWO_START_DEFAULT_SIGMA_FLOOR</span><span class="p">,</span>
     <span class="n">lattice_size</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">skip_validation</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">"""Detect low-temperature stuck states in two-start equilibration.</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Detect low-temperature stuck states in two-start equilibration.</span>
 
 <span class="sd">    A stuck state is declared when the ordered-start trace has settled</span>
 <span class="sd">    (small tail variance, as expected for any equilibrated state) but the</span>
@@ -280,27 +322,19 @@
 <span class="sd">    constant safety margin between the threshold and the thermal ordered-trace</span>
 <span class="sd">    variance at any system size.  At ``lattice_size = _QS_SIGMA_REF_L`` the</span>
 <span class="sd">    effective threshold equals ``qs_sigma_threshold`` exactly.</span>
-<span class="sd">    """</span>
-    <span class="k">if</span> <span class="n">skip_validation</span><span class="p">:</span>
-        <span class="n">r</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">trace_random</span><span class="p">)</span>
-        <span class="n">o</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">trace_ordered</span><span class="p">)</span>
-    <span class="k">else</span><span class="p">:</span>
-        <span class="n">r</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">_valid_prefix</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">trace_random</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">float</span><span class="p">)))</span>
-        <span class="n">o</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">_valid_prefix</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">trace_ordered</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">float</span><span class="p">)))</span>
-
-    <span class="n">n</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">r</span><span class="p">),</span> <span class="nb">len</span><span class="p">(</span><span class="n">o</span><span class="p">))</span>
-    <span class="k">if</span> <span class="n">n</span> <span class="o">&lt;</span> <span class="mi">8</span><span class="p">:</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">prepared</span> <span class="o">=</span> <span class="n">_prepare_smoothed_traces</span><span class="p">(</span>
+        <span class="n">trace_random</span><span class="o">=</span><span class="n">trace_random</span><span class="p">,</span>
+        <span class="n">trace_ordered</span><span class="o">=</span><span class="n">trace_ordered</span><span class="p">,</span>
+        <span class="n">smooth_window</span><span class="o">=</span><span class="n">smooth_window</span><span class="p">,</span>
+        <span class="n">skip_validation</span><span class="o">=</span><span class="n">skip_validation</span><span class="p">,</span>
+    <span class="p">)</span>
+    <span class="k">if</span> <span class="n">prepared</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
         <span class="k">return</span> <span class="kc">False</span>
-    <span class="n">r</span> <span class="o">=</span> <span class="n">r</span><span class="p">[:</span><span class="n">n</span><span class="p">]</span>
-    <span class="n">o</span> <span class="o">=</span> <span class="n">o</span><span class="p">[:</span><span class="n">n</span><span class="p">]</span>
-
-    <span class="n">r_sm</span> <span class="o">=</span> <span class="n">_moving_average</span><span class="p">(</span><span class="n">r</span><span class="p">,</span> <span class="n">smooth_window</span><span class="p">)</span>
-    <span class="n">o_sm</span> <span class="o">=</span> <span class="n">_moving_average</span><span class="p">(</span><span class="n">o</span><span class="p">,</span> <span class="n">smooth_window</span><span class="p">)</span>
-    <span class="n">m</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">r_sm</span><span class="p">),</span> <span class="nb">len</span><span class="p">(</span><span class="n">o_sm</span><span class="p">))</span>
+    <span class="n">r_sm</span><span class="p">,</span> <span class="n">o_sm</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">prepared</span>
+    <span class="n">m</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">r_sm</span><span class="p">)</span>
     <span class="k">if</span> <span class="n">m</span> <span class="o">&lt;</span> <span class="mi">8</span><span class="p">:</span>
         <span class="k">return</span> <span class="kc">False</span>
-    <span class="n">r_sm</span> <span class="o">=</span> <span class="n">r_sm</span><span class="p">[:</span><span class="n">m</span><span class="p">]</span>
-    <span class="n">o_sm</span> <span class="o">=</span> <span class="n">o_sm</span><span class="p">[:</span><span class="n">m</span><span class="p">]</span>
 
     <span class="n">half</span> <span class="o">=</span> <span class="n">m</span> <span class="o">//</span> <span class="mi">2</span>
     <span class="n">tail_r</span> <span class="o">=</span> <span class="n">r_sm</span><span class="p">[</span><span class="n">half</span><span class="p">:]</span>
@@ -348,7 +382,7 @@
     <span class="n">factor</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">50.0</span><span class="p">,</span>
     <span class="n">max_steps</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">200_000</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">"""</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Equilibrate a simulation adaptively, extending the burn-in until the probe</span>
 <span class="sd">    window covers ``factor`` integrated autocorrelation times.</span>
 
@@ -363,35 +397,42 @@
 
 <span class="sd">    Parameters</span>
 <span class="sd">    ----------</span>
-<span class="sd">        sim: Any simulation object implementing ``equilibrate`` and ``run``.</span>
-<span class="sd">        min_steps: Mandatory burn-in passed to ``sim.equilibrate`` before probing.</span>
-<span class="sd">        probe_steps: MC steps per probe run (default 500).</span>
-<span class="sd">        factor: Required ratio ``probe_steps / tau_int`` (default 50.0).</span>
-<span class="sd">        max_steps: Hard cap on total steps to prevent unbounded runtime near</span>
-<span class="sd">            criticality (default 200 000).</span>
+<span class="sd">    sim : _Sim</span>
+<span class="sd">        Any simulation object implementing ``equilibrate`` and ``run``.</span>
+<span class="sd">    min_steps : int</span>
+<span class="sd">        Mandatory burn-in passed to ``sim.equilibrate`` before probing.</span>
+<span class="sd">    probe_steps : int</span>
+<span class="sd">        MC steps per probe run (default 500).</span>
+<span class="sd">    factor : float</span>
+<span class="sd">        Required ratio ``probe_steps / tau_int`` (default 50.0).</span>
+<span class="sd">    max_steps : int</span>
+<span class="sd">        Hard cap on total steps to prevent unbounded runtime near</span>
+<span class="sd">        criticality (default 200 000).</span>
 
 <span class="sd">    Returns</span>
 <span class="sd">    -------</span>
+<span class="sd">    int</span>
 <span class="sd">        Total number of MC steps run (burn-in + probes).</span>
 
 <span class="sd">    Raises</span>
 <span class="sd">    ------</span>
-<span class="sd">        ValueError: If the adaptive-equilibration parameters are invalid.</span>
-<span class="sd">    """</span>
+<span class="sd">    ValueError</span>
+<span class="sd">        If the adaptive-equilibration parameters are invalid.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
     <span class="kn">from</span><span class="w"> </span><span class="nn">utils.statistics</span><span class="w"> </span><span class="kn">import</span> <span class="n">calculate_autocorr</span>  <span class="c1"># lazy import; avoids pickle issues</span>
 
     <span class="k">if</span> <span class="n">min_steps</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">:</span>
-        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s1">'min_steps must be non-negative, got </span><span class="si">{</span><span class="n">min_steps</span><span class="si">}</span><span class="s1">'</span><span class="p">)</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;min_steps must be non-negative, got </span><span class="si">{</span><span class="n">min_steps</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
     <span class="k">if</span> <span class="n">probe_steps</span> <span class="o">&lt;</span> <span class="mi">3</span><span class="p">:</span>
-        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s1">'probe_steps must be &gt;= 3, got </span><span class="si">{</span><span class="n">probe_steps</span><span class="si">}</span><span class="s1">'</span><span class="p">)</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;probe_steps must be &gt;= 3, got </span><span class="si">{</span><span class="n">probe_steps</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
     <span class="k">if</span> <span class="n">factor</span> <span class="o">&lt;=</span> <span class="mf">0.0</span><span class="p">:</span>
-        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s1">'factor must be positive, got </span><span class="si">{</span><span class="n">factor</span><span class="si">}</span><span class="s1">'</span><span class="p">)</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;factor must be positive, got </span><span class="si">{</span><span class="n">factor</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
     <span class="k">if</span> <span class="n">max_steps</span> <span class="o">&lt;</span> <span class="n">min_steps</span><span class="p">:</span>
         <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
-            <span class="sa">f</span><span class="s1">'max_steps must be &gt;= min_steps, got max_steps=</span><span class="si">{</span><span class="n">max_steps</span><span class="si">}</span><span class="s1"> and min_steps=</span><span class="si">{</span><span class="n">min_steps</span><span class="si">}</span><span class="s1">'</span>
+            <span class="sa">f</span><span class="s1">&#39;max_steps must be &gt;= min_steps, got max_steps=</span><span class="si">{</span><span class="n">max_steps</span><span class="si">}</span><span class="s1"> and min_steps=</span><span class="si">{</span><span class="n">min_steps</span><span class="si">}</span><span class="s1">&#39;</span>
         <span class="p">)</span>
 
-    <span class="n">logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="s1">'vibespin'</span><span class="p">)</span>
+    <span class="n">logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="s1">&#39;vibespin&#39;</span><span class="p">)</span>
     <span class="n">sim</span><span class="o">.</span><span class="n">equilibrate</span><span class="p">(</span><span class="n">n_steps</span><span class="o">=</span><span class="n">min_steps</span><span class="p">)</span>
     <span class="n">total</span> <span class="o">=</span> <span class="n">min_steps</span>
 
@@ -407,9 +448,9 @@
             <span class="k">return</span> <span class="n">total</span>
 
     <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span>
-        <span class="sa">f</span><span class="s1">'adaptive_equilibrate: reached max_steps=</span><span class="si">{</span><span class="n">max_steps</span><span class="si">}</span><span class="s1"> without satisfying '</span>
-        <span class="sa">f</span><span class="s1">'criterion probe_steps(</span><span class="si">{</span><span class="n">probe_steps</span><span class="si">}</span><span class="s1">) &gt;= factor(</span><span class="si">{</span><span class="n">factor</span><span class="si">}</span><span class="s1">) * tau_int; '</span>
-        <span class="s1">'proceeding anyway.'</span>
+        <span class="sa">f</span><span class="s1">&#39;adaptive_equilibrate: reached max_steps=</span><span class="si">{</span><span class="n">max_steps</span><span class="si">}</span><span class="s1"> without satisfying &#39;</span>
+        <span class="sa">f</span><span class="s1">&#39;criterion probe_steps(</span><span class="si">{</span><span class="n">probe_steps</span><span class="si">}</span><span class="s1">) &gt;= factor(</span><span class="si">{</span><span class="n">factor</span><span class="si">}</span><span class="s1">) * tau_int; &#39;</span>
+        <span class="s1">&#39;proceeding anyway.&#39;</span>
     <span class="p">)</span>
     <span class="k">return</span> <span class="n">total</span></div>
 
@@ -423,46 +464,54 @@
 <div class="viewcode-block" id="convergence_equilibrate">
 <a class="viewcode-back" href="../../api/vibespin.utils.html#utils.equilibration.convergence_equilibrate">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">convergence_equilibrate</span><span class="p">(</span>
+    <span class="o">*</span><span class="p">,</span>
     <span class="n">sim_random</span><span class="p">:</span> <span class="n">_Sim</span><span class="p">,</span>
     <span class="n">sim_ordered</span><span class="p">:</span> <span class="n">_Sim</span><span class="p">,</span>
-    <span class="o">*</span><span class="p">,</span>
     <span class="n">chunk_size</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">500</span><span class="p">,</span>
     <span class="n">max_steps</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">200_000</span><span class="p">,</span>
     <span class="n">qs_sigma_threshold</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.05</span><span class="p">,</span>
     <span class="n">qs_min_steps</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">1500</span><span class="p">,</span>
     <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">"""</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Equilibrate two simulations (random- and ordered-start) until they converge.</span>
 
 <span class="sd">    Uses ``estimate_relaxation_time_two_start`` to detect convergence via the</span>
 <span class="sd">    mutual cross-band criterion: each smoothed trajectory must enter and sustain</span>
-<span class="sd">    a band defined by the other trajectory's tail statistics.  A sigma floor</span>
+<span class="sd">    a band defined by the other trajectory&#39;s tail statistics.  A sigma floor</span>
 <span class="sd">    prevents false positives when one trace is nearly flat.  This is more robust</span>
 <span class="sd">    than one-start adaptive methods for complex energy landscapes.</span>
 
 <span class="sd">    Parameters</span>
 <span class="sd">    ----------</span>
-<span class="sd">        sim_random: Simulation instance started from a random state.</span>
-<span class="sd">        sim_ordered: Simulation instance started from an ordered state.</span>
-<span class="sd">        chunk_size: Number of steps to run between convergence checks.</span>
-<span class="sd">        max_steps: Hard cap on total steps.</span>
-<span class="sd">        qs_sigma_threshold: Tail-std threshold used to detect a quasi-steady,</span>
-<span class="sd">            non-converged stuck state and exit early.</span>
-<span class="sd">        qs_min_steps: Minimum accumulated steps before stuck detection is allowed</span>
-<span class="sd">            to fire.  Ensures tail statistics are computed from enough data to be</span>
-<span class="sd">            reliable, preventing false positives when traces have not yet had time</span>
-<span class="sd">            to settle.</span>
-<span class="sd">        **kwargs: Passed to ``estimate_relaxation_time_two_start`` (k, smooth_window,</span>
-<span class="sd">            dwell_window, min_fraction_inside, sigma_floor, etc.).</span>
+<span class="sd">    sim_random : _Sim</span>
+<span class="sd">        Simulation instance started from a random state.</span>
+<span class="sd">    sim_ordered : _Sim</span>
+<span class="sd">        Simulation instance started from an ordered state.</span>
+<span class="sd">    chunk_size : int</span>
+<span class="sd">        Number of steps to run between convergence checks.</span>
+<span class="sd">    max_steps : int</span>
+<span class="sd">        Hard cap on total steps.</span>
+<span class="sd">    qs_sigma_threshold : float</span>
+<span class="sd">        Tail-std threshold used to detect a quasi-steady,</span>
+<span class="sd">        non-converged stuck state and exit early.</span>
+<span class="sd">    qs_min_steps : int</span>
+<span class="sd">        Minimum accumulated steps before stuck detection is allowed</span>
+<span class="sd">        to fire.  Ensures tail statistics are computed from enough data to be</span>
+<span class="sd">        reliable, preventing false positives when traces have not yet had time</span>
+<span class="sd">        to settle.</span>
+<span class="sd">    **kwargs : Any</span>
+<span class="sd">        Passed to ``estimate_relaxation_time_two_start`` (k, smooth_window,</span>
+<span class="sd">        dwell_window, min_fraction_inside, sigma_floor, etc.).</span>
 
 <span class="sd">    Returns</span>
 <span class="sd">    -------</span>
+<span class="sd">    int</span>
 <span class="sd">        Total number of MC steps run per simulation.</span>
-<span class="sd">    """</span>
+<span class="sd">    &quot;&quot;&quot;</span>
     <span class="n">total</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">convergence_equilibrate_with_status</span><span class="p">(</span>
-        <span class="n">sim_random</span><span class="p">,</span>
-        <span class="n">sim_ordered</span><span class="p">,</span>
+        <span class="n">sim_random</span><span class="o">=</span><span class="n">sim_random</span><span class="p">,</span>
+        <span class="n">sim_ordered</span><span class="o">=</span><span class="n">sim_ordered</span><span class="p">,</span>
         <span class="n">chunk_size</span><span class="o">=</span><span class="n">chunk_size</span><span class="p">,</span>
         <span class="n">max_steps</span><span class="o">=</span><span class="n">max_steps</span><span class="p">,</span>
         <span class="n">qs_sigma_threshold</span><span class="o">=</span><span class="n">qs_sigma_threshold</span><span class="p">,</span>
@@ -476,9 +525,9 @@
 <div class="viewcode-block" id="convergence_equilibrate_with_status">
 <a class="viewcode-back" href="../../api/vibespin.utils.html#utils.equilibration.convergence_equilibrate_with_status">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">convergence_equilibrate_with_status</span><span class="p">(</span>
+    <span class="o">*</span><span class="p">,</span>
     <span class="n">sim_random</span><span class="p">:</span> <span class="n">_Sim</span><span class="p">,</span>
     <span class="n">sim_ordered</span><span class="p">:</span> <span class="n">_Sim</span><span class="p">,</span>
-    <span class="o">*</span><span class="p">,</span>
     <span class="n">chunk_size</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">500</span><span class="p">,</span>
     <span class="n">max_steps</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">200_000</span><span class="p">,</span>
     <span class="n">qs_sigma_threshold</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.05</span><span class="p">,</span>
@@ -486,42 +535,58 @@
     <span class="n">qs_allow_stuck</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
     <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">bool</span><span class="p">]:</span>
-<span class="w">    </span><span class="sd">"""</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Equilibrate two simulations and report whether convergence was reached.</span>
 
 <span class="sd">    Uses ``estimate_relaxation_time_two_start`` to detect convergence via the</span>
 <span class="sd">    mutual cross-band criterion: each smoothed trajectory must enter and sustain</span>
-<span class="sd">    a band defined by the other trajectory's tail statistics.  A sigma floor</span>
+<span class="sd">    a band defined by the other trajectory&#39;s tail statistics.  A sigma floor</span>
 <span class="sd">    prevents false positives when one trace is nearly flat.  This variant returns</span>
 <span class="sd">    both the total number of MC steps executed and a boolean convergence flag.</span>
 
 <span class="sd">    Parameters</span>
 <span class="sd">    ----------</span>
-<span class="sd">        sim_random: Simulation instance started from a random state.</span>
-<span class="sd">        sim_ordered: Simulation instance started from an ordered state.</span>
-<span class="sd">        chunk_size: Number of steps to run between convergence checks.</span>
-<span class="sd">        max_steps: Hard cap on total steps.</span>
-<span class="sd">        qs_sigma_threshold: Tail-std threshold used to detect a quasi-steady,</span>
-<span class="sd">            non-converged stuck state and exit early.</span>
-<span class="sd">        qs_min_steps: Minimum accumulated steps before stuck detection is allowed</span>
-<span class="sd">            to fire.  Ensures tail statistics are computed from enough data to be</span>
-<span class="sd">            reliable, preventing false positives when traces have not yet had time</span>
-<span class="sd">            to settle.</span>
-<span class="sd">        qs_allow_stuck: If True, detecting a quasi-steady stuck state (where the</span>
-<span class="sd">            ordered trace is stable but the random trace is stranded) is treated</span>
-<span class="sd">            as a successful equilibration. Useful for Ising sweeps where</span>
-<span class="sd">            random-start domain-wall trapping is physically expected.</span>
-<span class="sd">        **kwargs: Passed to ``estimate_relaxation_time_two_start`` (k, smooth_window,</span>
-<span class="sd">            dwell_window, min_fraction_inside, sigma_floor, etc.).</span>
+<span class="sd">    sim_random : _Sim</span>
+<span class="sd">        Simulation instance started from a random state.</span>
+<span class="sd">    sim_ordered : _Sim</span>
+<span class="sd">        Simulation instance started from an ordered state.</span>
+<span class="sd">    chunk_size : int</span>
+<span class="sd">        Number of steps to run between convergence checks.</span>
+<span class="sd">    max_steps : int</span>
+<span class="sd">        Hard cap on total steps.</span>
+<span class="sd">    qs_sigma_threshold : float</span>
+<span class="sd">        Tail-std threshold used to detect a quasi-steady,</span>
+<span class="sd">        non-converged stuck state and exit early.</span>
+<span class="sd">    qs_min_steps : int</span>
+<span class="sd">        Minimum accumulated steps before stuck detection is allowed</span>
+<span class="sd">        to fire.  Ensures tail statistics are computed from enough data to be</span>
+<span class="sd">        reliable, preventing false positives when traces have not yet had time</span>
+<span class="sd">        to settle.</span>
+<span class="sd">    qs_allow_stuck : bool</span>
+<span class="sd">        If True, detecting a quasi-steady stuck state (where the</span>
+<span class="sd">        ordered trace is stable but the random trace is stranded) is treated</span>
+<span class="sd">        as a successful equilibration. Useful for Ising sweeps where</span>
+<span class="sd">        random-start domain-wall trapping is physically expected.</span>
+<span class="sd">    **kwargs : Any</span>
+<span class="sd">        Passed to ``estimate_relaxation_time_two_start`` (k, smooth_window,</span>
+<span class="sd">        dwell_window, min_fraction_inside, sigma_floor, etc.).</span>
 
 <span class="sd">    Returns</span>
 <span class="sd">    -------</span>
+<span class="sd">    tuple[int, bool]</span>
 <span class="sd">        Tuple ``(total_steps, converged)``.</span>
-<span class="sd">    """</span>
-    <span class="n">logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="s1">'vibespin'</span><span class="p">)</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="s1">&#39;vibespin&#39;</span><span class="p">)</span>
     <span class="n">mags_r</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">full</span><span class="p">(</span><span class="n">max_steps</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">nan</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">float</span><span class="p">)</span>
     <span class="n">mags_o</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">full</span><span class="p">(</span><span class="n">max_steps</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">nan</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">float</span><span class="p">)</span>
     <span class="n">total</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="c1"># Every convergence check re-analyzes the full accumulated trace, so</span>
+    <span class="c1"># checking after every chunk costs O(total^2 / chunk_size) over a long</span>
+    <span class="c1"># run. Once the trace is much longer than a chunk, space the checks</span>
+    <span class="c1"># geometrically (25% growth); the summed analysis cost then stays linear</span>
+    <span class="c1"># in max_steps. Convergence between two checks is caught at the next</span>
+    <span class="c1"># check, so equilibration can only end slightly later, never earlier.</span>
+    <span class="n">next_check_total</span> <span class="o">=</span> <span class="mi">100</span>
 
     <span class="k">while</span> <span class="n">total</span> <span class="o">&lt;</span> <span class="n">max_steps</span><span class="p">:</span>
         <span class="c1"># Run next chunk</span>
@@ -539,7 +604,8 @@
 
         <span class="c1"># Only check if we have enough data for a meaningful estimate</span>
         <span class="c1"># smooth_window defaults to 60, dwell_window to 60.</span>
-        <span class="k">if</span> <span class="n">total</span> <span class="o">&gt;=</span> <span class="mi">100</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">total</span> <span class="o">&gt;=</span> <span class="n">next_check_total</span><span class="p">:</span>
+            <span class="n">next_check_total</span> <span class="o">=</span> <span class="n">total</span> <span class="o">+</span> <span class="nb">max</span><span class="p">(</span><span class="n">chunk_size</span><span class="p">,</span> <span class="n">total</span> <span class="o">//</span> <span class="mi">4</span><span class="p">)</span>
             <span class="c1"># Pass slices (views) to avoid copying</span>
             <span class="n">trace_r</span> <span class="o">=</span> <span class="n">mags_r</span><span class="p">[:</span><span class="n">total</span><span class="p">]</span>
             <span class="n">trace_o</span> <span class="o">=</span> <span class="n">mags_o</span><span class="p">[:</span><span class="n">total</span><span class="p">]</span>
@@ -558,29 +624,29 @@
             <span class="k">if</span> <span class="n">total</span> <span class="o">&gt;=</span> <span class="n">qs_min_steps</span> <span class="ow">and</span> <span class="n">_detect_quasi_steady_stuck</span><span class="p">(</span>
                 <span class="n">trace_random</span><span class="o">=</span><span class="n">trace_r</span><span class="p">,</span>
                 <span class="n">trace_ordered</span><span class="o">=</span><span class="n">trace_o</span><span class="p">,</span>
-                <span class="n">k</span><span class="o">=</span><span class="nb">float</span><span class="p">(</span><span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">'k'</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">)),</span>
-                <span class="n">smooth_window</span><span class="o">=</span><span class="nb">int</span><span class="p">(</span><span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">'smooth_window'</span><span class="p">,</span> <span class="mi">60</span><span class="p">)),</span>
+                <span class="n">k</span><span class="o">=</span><span class="nb">float</span><span class="p">(</span><span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;k&#39;</span><span class="p">,</span> <span class="n">_TWO_START_DEFAULT_K</span><span class="p">)),</span>
+                <span class="n">smooth_window</span><span class="o">=</span><span class="nb">int</span><span class="p">(</span><span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;smooth_window&#39;</span><span class="p">,</span> <span class="n">_TWO_START_DEFAULT_SMOOTH_WINDOW</span><span class="p">)),</span>
                 <span class="n">qs_sigma_threshold</span><span class="o">=</span><span class="n">qs_sigma_threshold</span><span class="p">,</span>
-                <span class="n">sigma_floor</span><span class="o">=</span><span class="nb">float</span><span class="p">(</span><span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">'sigma_floor'</span><span class="p">,</span> <span class="mf">0.02</span><span class="p">)),</span>
-                <span class="n">lattice_size</span><span class="o">=</span><span class="nb">getattr</span><span class="p">(</span><span class="n">sim_random</span><span class="p">,</span> <span class="s1">'size'</span><span class="p">,</span> <span class="kc">None</span><span class="p">),</span>
+                <span class="n">sigma_floor</span><span class="o">=</span><span class="nb">float</span><span class="p">(</span><span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;sigma_floor&#39;</span><span class="p">,</span> <span class="n">_TWO_START_DEFAULT_SIGMA_FLOOR</span><span class="p">)),</span>
+                <span class="n">lattice_size</span><span class="o">=</span><span class="nb">getattr</span><span class="p">(</span><span class="n">sim_random</span><span class="p">,</span> <span class="s1">&#39;size&#39;</span><span class="p">,</span> <span class="kc">None</span><span class="p">),</span>
                 <span class="n">skip_validation</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
             <span class="p">):</span>
                 <span class="k">if</span> <span class="n">qs_allow_stuck</span><span class="p">:</span>
                     <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
-                        <span class="s1">'convergence_equilibrate: detected stable quasi-steady stuck state; '</span>
-                        <span class="s1">'stopping early and accepting ordered start.'</span>
+                        <span class="s1">&#39;convergence_equilibrate: detected stable quasi-steady stuck state; &#39;</span>
+                        <span class="s1">&#39;stopping early and accepting ordered start.&#39;</span>
                     <span class="p">)</span>
                     <span class="k">return</span> <span class="n">total</span><span class="p">,</span> <span class="kc">True</span>
 
                 <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span>
-                    <span class="s1">'convergence_equilibrate: detected quasi-steady stuck state '</span>
-                    <span class="sa">f</span><span class="s1">'before max_steps=</span><span class="si">{</span><span class="n">max_steps</span><span class="si">}</span><span class="s1">; stopping early without convergence.'</span>
+                    <span class="s1">&#39;convergence_equilibrate: detected quasi-steady stuck state &#39;</span>
+                    <span class="sa">f</span><span class="s1">&#39;before max_steps=</span><span class="si">{</span><span class="n">max_steps</span><span class="si">}</span><span class="s1">; stopping early without convergence.&#39;</span>
                 <span class="p">)</span>
                 <span class="k">return</span> <span class="n">total</span><span class="p">,</span> <span class="kc">False</span>
 
     <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span>
-        <span class="sa">f</span><span class="s1">'convergence_equilibrate: reached max_steps=</span><span class="si">{</span><span class="n">max_steps</span><span class="si">}</span><span class="s1"> without convergence; '</span>
-        <span class="s1">'proceeding anyway.'</span>
+        <span class="sa">f</span><span class="s1">&#39;convergence_equilibrate: reached max_steps=</span><span class="si">{</span><span class="n">max_steps</span><span class="si">}</span><span class="s1"> without convergence; &#39;</span>
+        <span class="s1">&#39;proceeding anyway.&#39;</span>
     <span class="p">)</span>
     <span class="k">return</span> <span class="n">total</span><span class="p">,</span> <span class="kc">False</span></div>
 

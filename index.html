@@ -17,6 +17,7 @@
       <script src="_static/doctools.js?v=fd6eb6e6"></script>
       <script src="_static/sphinx_highlight.js?v=6ffebe34"></script>
       <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+      <script src="https://cdn.jsdelivr.net/npm/@jupyter-widgets/html-manager@^1.0.1/dist/embed-amd.js"></script>
     <script src="_static/js/theme.js"></script>
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
@@ -48,8 +49,8 @@
 <li class="toctree-l1"><a class="reference internal" href="physics.html">Physics and Algorithm Guide: VibeSpin</a></li>
 <li class="toctree-l1"><a class="reference internal" href="code.html">Developer and Architecture Guide</a></li>
 <li class="toctree-l1"><a class="reference internal" href="scripts.html">Scripts Catalog: VibeSpin</a></li>
-<li class="toctree-l1"><a class="reference internal" href="agents.html">Agent Instruction Guide: VibeSpin</a></li>
-<li class="toctree-l1"><a class="reference internal" href="bibliography.html">Project Bibliography: VibeSpin</a></li>
+<li class="toctree-l1"><a class="reference internal" href="AGENTS.html">Agent Instruction Guide: VibeSpin</a></li>
+<li class="toctree-l1"><a class="reference internal" href="BIBLIOGRAPHY.html">Project Bibliography: VibeSpin</a></li>
 <li class="toctree-l1"><a class="reference internal" href="changelog.html">Changelog</a></li>
 </ul>
 <p class="caption" role="heading"><span class="caption-text">Research &amp; Analysis:</span></p>
@@ -105,7 +106,7 @@
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="introduction.html">VibeSpin</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="introduction.html#project-policies-scope-discipline">Project Policies &amp; Scope Discipline</a></li>
-<li class="toctree-l2"><a class="reference internal" href="introduction.html#bibliography">Bibliography</a></li>
+<li class="toctree-l2"><a class="reference internal" href="introduction.html#reference-policy">Reference Policy</a></li>
 <li class="toctree-l2"><a class="reference internal" href="introduction.html#scope-and-methods">Scope and Methods</a></li>
 <li class="toctree-l2"><a class="reference internal" href="introduction.html#installation">Installation</a></li>
 <li class="toctree-l2"><a class="reference internal" href="introduction.html#benchmarking-performance">Benchmarking &amp; Performance</a></li>
@@ -113,7 +114,7 @@
 <li class="toctree-l2"><a class="reference internal" href="introduction.html#development-guidance">Development Guidance</a></li>
 <li class="toctree-l2"><a class="reference internal" href="introduction.html#documentation">Documentation</a></li>
 <li class="toctree-l2"><a class="reference internal" href="introduction.html#project-context">Project Context</a></li>
-<li class="toctree-l2"><a class="reference internal" href="introduction.html#id1">Bibliography</a></li>
+<li class="toctree-l2"><a class="reference internal" href="introduction.html#bibliography">Bibliography</a></li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="physics.html">Physics and Algorithm Guide: VibeSpin</a><ul>
@@ -140,34 +141,35 @@
 <li class="toctree-l2"><a class="reference internal" href="scripts.html#xy-model-scripts-xy">2. XY Model (<code class="docutils literal notranslate"><span class="pre">scripts/xy/</span></code>)</a></li>
 <li class="toctree-l2"><a class="reference internal" href="scripts.html#clock-model-scripts-clock">3. Clock Model (<code class="docutils literal notranslate"><span class="pre">scripts/clock/</span></code>)</a></li>
 <li class="toctree-l2"><a class="reference internal" href="scripts.html#cross-model-benchmarking-scripts-benchmarks">4. Cross-Model Benchmarking (<code class="docutils literal notranslate"><span class="pre">scripts/benchmarks/</span></code>)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="scripts.html#regenerating-all-data-scripts-generate-all-py">5. Regenerating All Data (<code class="docutils literal notranslate"><span class="pre">scripts/generate_all.py</span></code>)</a></li>
 <li class="toctree-l2"><a class="reference internal" href="scripts.html#usage-guidelines">Usage Guidelines</a></li>
+<li class="toctree-l2"><a class="reference internal" href="scripts.html#production-defaults-and-notebook-fallbacks">Production Defaults and Notebook Fallbacks</a></li>
 <li class="toctree-l2"><a class="reference internal" href="scripts.html#data-pipeline">Data Pipeline</a></li>
 </ul>
 </li>
-<li class="toctree-l1"><a class="reference internal" href="agents.html">Agent Instruction Guide: VibeSpin</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="agents.html#context">Context</a></li>
-<li class="toctree-l2"><a class="reference internal" href="agents.html#agent-role">Agent Role</a></li>
-<li class="toctree-l2"><a class="reference internal" href="agents.html#explanatory-writing-style">Explanatory Writing Style</a></li>
-<li class="toctree-l2"><a class="reference internal" href="agents.html#mandatory-development-policies">Mandatory Development Policies</a></li>
-<li class="toctree-l2"><a class="reference internal" href="agents.html#directory-map-for-agents">Directory Map for Agents</a></li>
-<li class="toctree-l2"><a class="reference internal" href="agents.html#common-operational-workflows">Common Operational Workflows</a></li>
-<li class="toctree-l2"><a class="reference internal" href="agents.html#additional-engineering-guidance-additive">Additional Engineering Guidance (Additive)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="AGENTS.html">Agent Instruction Guide: VibeSpin</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="AGENTS.html#context">Context</a></li>
+<li class="toctree-l2"><a class="reference internal" href="AGENTS.html#agent-role">Agent Role</a></li>
+<li class="toctree-l2"><a class="reference internal" href="AGENTS.html#explanatory-writing-style">Explanatory Writing Style</a></li>
+<li class="toctree-l2"><a class="reference internal" href="AGENTS.html#mandatory-development-policies">Mandatory Development Policies</a></li>
+<li class="toctree-l2"><a class="reference internal" href="AGENTS.html#directory-map-for-agents">Directory Map for Agents</a></li>
+<li class="toctree-l2"><a class="reference internal" href="AGENTS.html#common-operational-workflows">Common Operational Workflows</a></li>
+<li class="toctree-l2"><a class="reference internal" href="AGENTS.html#additional-engineering-guidance-additive">Additional Engineering Guidance (Additive)</a></li>
 </ul>
 </li>
-<li class="toctree-l1"><a class="reference internal" href="bibliography.html">Project Bibliography: VibeSpin</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="bibliography.html#referencing-policy">Referencing Policy</a></li>
-<li class="toctree-l2"><a class="reference internal" href="bibliography.html#physical-models">1. Physical Models</a></li>
-<li class="toctree-l2"><a class="reference internal" href="bibliography.html#algorithms">2. Algorithms</a></li>
-<li class="toctree-l2"><a class="reference internal" href="bibliography.html#thermodynamic-and-topological-observables">3. Thermodynamic and Topological Observables</a></li>
-<li class="toctree-l2"><a class="reference internal" href="bibliography.html#monte-carlo-analysis-and-autocorrelation">4. Monte Carlo Analysis and Autocorrelation</a></li>
-<li class="toctree-l2"><a class="reference internal" href="bibliography.html#numerical-and-computational-methods">5. Numerical and Computational Methods</a></li>
-<li class="toctree-l2"><a class="reference internal" href="bibliography.html#additional-references">6. Additional References</a></li>
+<li class="toctree-l1"><a class="reference internal" href="BIBLIOGRAPHY.html">Project Bibliography: VibeSpin</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="BIBLIOGRAPHY.html#referencing-policy">Referencing Policy</a></li>
+<li class="toctree-l2"><a class="reference internal" href="BIBLIOGRAPHY.html#physical-models">1. Physical Models</a></li>
+<li class="toctree-l2"><a class="reference internal" href="BIBLIOGRAPHY.html#algorithms">2. Algorithms</a></li>
+<li class="toctree-l2"><a class="reference internal" href="BIBLIOGRAPHY.html#thermodynamic-and-topological-observables">3. Thermodynamic and Topological Observables</a></li>
+<li class="toctree-l2"><a class="reference internal" href="BIBLIOGRAPHY.html#monte-carlo-analysis-and-autocorrelation">4. Monte Carlo Analysis and Autocorrelation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="BIBLIOGRAPHY.html#numerical-and-computational-methods">5. Numerical and Computational Methods</a></li>
+<li class="toctree-l2"><a class="reference internal" href="BIBLIOGRAPHY.html#additional-references">6. Additional References</a></li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="changelog.html">Changelog</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="changelog.html#unreleased">Unreleased</a></li>
-<li class="toctree-l2"><a class="reference internal" href="changelog.html#id9">0.1.0 — 2026-03-25</a></li>
-<li class="toctree-l2"><a class="reference internal" href="changelog.html#id14">Unreleased</a></li>
+<li class="toctree-l2"><a class="reference internal" href="changelog.html#id1">0.1.0 — 2026-03-25</a></li>
 </ul>
 </li>
 </ul>

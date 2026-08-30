@@ -17,10 +17,11 @@
       <script src="../_static/doctools.js?v=fd6eb6e6"></script>
       <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
       <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+      <script src="https://cdn.jsdelivr.net/npm/@jupyter-widgets/html-manager@^1.0.1/dist/embed-amd.js"></script>
     <script src="../_static/js/theme.js"></script>
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
-    <link rel="next" title="vibespin.scripts.clock package" href="vibespin.scripts.clock.html" />
+    <link rel="next" title="vibespin.scripts.benchmarks package" href="vibespin.scripts.benchmarks.html" />
     <link rel="prev" title="vibespin.models package" href="vibespin.models.html" /> 
 </head>
 
@@ -49,8 +50,8 @@
 <li class="toctree-l1"><a class="reference internal" href="../physics.html">Physics and Algorithm Guide: VibeSpin</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../code.html">Developer and Architecture Guide</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../scripts.html">Scripts Catalog: VibeSpin</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../agents.html">Agent Instruction Guide: VibeSpin</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../bibliography.html">Project Bibliography: VibeSpin</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../AGENTS.html">Agent Instruction Guide: VibeSpin</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../BIBLIOGRAPHY.html">Project Bibliography: VibeSpin</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../changelog.html">Changelog</a></li>
 </ul>
 <p class="caption" role="heading"><span class="caption-text">Research &amp; Analysis:</span></p>
@@ -113,6 +114,17 @@
 <h2>Subpackages<a class="headerlink" href="#subpackages" title="Link to this heading"></a></h2>
 <div class="toctree-wrapper compound">
 <ul>
+<li class="toctree-l1"><a class="reference internal" href="vibespin.scripts.benchmarks.html">vibespin.scripts.benchmarks package</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="vibespin.scripts.benchmarks.html#submodules">Submodules</a></li>
+<li class="toctree-l2"><a class="reference internal" href="vibespin.scripts.benchmarks.html#module-scripts.benchmarks.throughput">scripts.benchmarks.throughput module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="vibespin.scripts.benchmarks.html#usage">Usage</a></li>
+<li class="toctree-l3"><a class="reference internal" href="vibespin.scripts.benchmarks.html#scripts.benchmarks.throughput.main"><code class="docutils literal notranslate"><span class="pre">main()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="vibespin.scripts.benchmarks.html#scripts.benchmarks.throughput.measure_performance"><code class="docutils literal notranslate"><span class="pre">measure_performance()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="vibespin.scripts.benchmarks.html#module-contents">Module contents</a></li>
+</ul>
+</li>
 <li class="toctree-l1"><a class="reference internal" href="vibespin.scripts.clock.html">vibespin.scripts.clock package</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="vibespin.scripts.clock.html#submodules">Submodules</a></li>
 <li class="toctree-l2"><a class="reference internal" href="vibespin.scripts.clock.html#module-scripts.clock.compare_discrete_vs_continuous">scripts.clock.compare_discrete_vs_continuous module</a><ul>
@@ -122,7 +134,6 @@
 </li>
 <li class="toctree-l2"><a class="reference internal" href="vibespin.scripts.clock.html#module-scripts.clock.correlation_comparison">scripts.clock.correlation_comparison module</a><ul>
 <li class="toctree-l3"><a class="reference internal" href="vibespin.scripts.clock.html#scripts.clock.correlation_comparison.main"><code class="docutils literal notranslate"><span class="pre">main()</span></code></a></li>
-<li class="toctree-l3"><a class="reference internal" href="vibespin.scripts.clock.html#scripts.clock.correlation_comparison.simulate_correlation"><code class="docutils literal notranslate"><span class="pre">simulate_correlation()</span></code></a></li>
 </ul>
 </li>
 <li class="toctree-l2"><a class="reference internal" href="vibespin.scripts.clock.html#module-scripts.clock.ordering_evolution">scripts.clock.ordering_evolution module</a><ul>
@@ -137,6 +148,10 @@
 <li class="toctree-l3"><a class="reference internal" href="vibespin.scripts.clock.html#scripts.clock.temperature_sweep.main"><code class="docutils literal notranslate"><span class="pre">main()</span></code></a></li>
 </ul>
 </li>
+<li class="toctree-l2"><a class="reference internal" href="vibespin.scripts.clock.html#module-scripts.clock.wolff_efficiency">scripts.clock.wolff_efficiency module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="vibespin.scripts.clock.html#scripts.clock.wolff_efficiency.main"><code class="docutils literal notranslate"><span class="pre">main()</span></code></a></li>
+</ul>
+</li>
 <li class="toctree-l2"><a class="reference internal" href="vibespin.scripts.clock.html#module-contents">Module contents</a></li>
 </ul>
 </li>
@@ -148,12 +163,11 @@
 </li>
 <li class="toctree-l2"><a class="reference internal" href="vibespin.scripts.ising.html#module-scripts.ising.correlation_comparison">scripts.ising.correlation_comparison module</a><ul>
 <li class="toctree-l3"><a class="reference internal" href="vibespin.scripts.ising.html#scripts.ising.correlation_comparison.main"><code class="docutils literal notranslate"><span class="pre">main()</span></code></a></li>
-<li class="toctree-l3"><a class="reference internal" href="vibespin.scripts.ising.html#scripts.ising.correlation_comparison.simulate_correlation"><code class="docutils literal notranslate"><span class="pre">simulate_correlation()</span></code></a></li>
 </ul>
 </li>
 <li class="toctree-l2"><a class="reference internal" href="vibespin.scripts.ising.html#module-scripts.ising.correlation_divergence">scripts.ising.correlation_divergence module</a><ul>
 <li class="toctree-l3"><a class="reference internal" href="vibespin.scripts.ising.html#scripts.ising.correlation_divergence.get_correlation_length"><code class="docutils literal notranslate"><span class="pre">get_correlation_length()</span></code></a></li>
-<li class="toctree-l3"><a class="reference internal" href="vibespin.scripts.ising.html#scripts.ising.correlation_divergence.run_divergence_analysis"><code class="docutils literal notranslate"><span class="pre">run_divergence_analysis()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="vibespin.scripts.ising.html#scripts.ising.correlation_divergence.main"><code class="docutils literal notranslate"><span class="pre">main()</span></code></a></li>
 </ul>
 </li>
 <li class="toctree-l2"><a class="reference internal" href="vibespin.scripts.ising.html#module-scripts.ising.diag_eq_traces">scripts.ising.diag_eq_traces module</a><ul>
@@ -195,9 +209,8 @@
 <li class="toctree-l3"><a class="reference internal" href="vibespin.scripts.xy.html#scripts.xy.bkt_transition.simulate_bkt_point"><code class="docutils literal notranslate"><span class="pre">simulate_bkt_point()</span></code></a></li>
 </ul>
 </li>
-<li class="toctree-l2"><a class="reference internal" href="vibespin.scripts.xy.html#module-scripts.xy.compare_correlations">scripts.xy.compare_correlations module</a><ul>
-<li class="toctree-l3"><a class="reference internal" href="vibespin.scripts.xy.html#scripts.xy.compare_correlations.main"><code class="docutils literal notranslate"><span class="pre">main()</span></code></a></li>
-<li class="toctree-l3"><a class="reference internal" href="vibespin.scripts.xy.html#scripts.xy.compare_correlations.simulate_correlation"><code class="docutils literal notranslate"><span class="pre">simulate_correlation()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="vibespin.scripts.xy.html#module-scripts.xy.correlation_comparison">scripts.xy.correlation_comparison module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="vibespin.scripts.xy.html#scripts.xy.correlation_comparison.main"><code class="docutils literal notranslate"><span class="pre">main()</span></code></a></li>
 </ul>
 </li>
 <li class="toctree-l2"><a class="reference internal" href="vibespin.scripts.xy.html#module-scripts.xy.helicity_modulus">scripts.xy.helicity_modulus module</a><ul>
@@ -217,11 +230,148 @@
 <li class="toctree-l3"><a class="reference internal" href="vibespin.scripts.xy.html#scripts.xy.temperature_sweep.main"><code class="docutils literal notranslate"><span class="pre">main()</span></code></a></li>
 </ul>
 </li>
+<li class="toctree-l2"><a class="reference internal" href="vibespin.scripts.xy.html#module-scripts.xy.wolff_efficiency">scripts.xy.wolff_efficiency module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="vibespin.scripts.xy.html#scripts.xy.wolff_efficiency.TBKT_XY"><code class="docutils literal notranslate"><span class="pre">TBKT_XY</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="vibespin.scripts.xy.html#scripts.xy.wolff_efficiency.main"><code class="docutils literal notranslate"><span class="pre">main()</span></code></a></li>
+</ul>
+</li>
 <li class="toctree-l2"><a class="reference internal" href="vibespin.scripts.xy.html#module-contents">Module contents</a></li>
 </ul>
 </li>
 </ul>
 </div>
+</section>
+<section id="submodules">
+<h2>Submodules<a class="headerlink" href="#submodules" title="Link to this heading"></a></h2>
+</section>
+<section id="module-scripts.generate_all">
+<span id="scripts-generate-all-module"></span><h2>scripts.generate_all module<a class="headerlink" href="#module-scripts.generate_all" title="Link to this heading"></a></h2>
+<p>Regenerate every cached dataset the notebooks read.</p>
+<p>Each notebook loads a NPZ file if it finds one and otherwise recomputes a
+reduced version of the same physics inline, so a fresh checkout renders but
+does so at fallback quality.  This script produces the full set in one
+command, in dependency-free order, reporting what it ran and how long each
+step took.</p>
+<p>Two profiles are available.  The default runs every script at its own
+production defaults, which is the data the published figures are built from
+and takes roughly an hour on four cores.  <code class="docutils literal notranslate"><span class="pre">--quick</span></code> runs the same scripts
+with sharply reduced lattices, temperature grids, and step counts; it is a
+smoke test of the pipeline in a couple of minutes and its output is not
+suitable for physics.</p>
+<dl class="py data">
+<dt class="sig sig-object py" id="scripts.generate_all.DATA_PRODUCTS">
+<span class="sig-prename descclassname"><span class="pre">scripts.generate_all.</span></span><span class="sig-name descname"><span class="pre">DATA_PRODUCTS</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">tuple</span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="#scripts.generate_all.DataProduct" title="scripts.generate_all.DataProduct"><span class="pre">DataProduct</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="p"><span class="pre">...</span></span><span class="p"><span class="pre">]</span></span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">(('ising/temperature_sweep',</span> <span class="pre">'scripts.ising.temperature_sweep',</span> <span class="pre">'ising/temperature_sweep_data.npz',</span> <span class="pre">('--size',</span> <span class="pre">'16',</span> <span class="pre">'--t-points',</span> <span class="pre">'6',</span> <span class="pre">'--n-seeds',</span> <span class="pre">'1',</span> <span class="pre">'--meas-steps',</span> <span class="pre">'400',</span> <span class="pre">'--eq-max-steps',</span> <span class="pre">'2000')),</span> <span class="pre">('ising/measure_z',</span> <span class="pre">'scripts.ising.measure_z',</span> <span class="pre">'ising/dynamic_exponent_z.npz',</span> <span class="pre">('--sizes',</span> <span class="pre">'8',</span> <span class="pre">'12',</span> <span class="pre">'--n-seeds',</span> <span class="pre">'1',</span> <span class="pre">'--meas-steps-metro',</span> <span class="pre">'400',</span> <span class="pre">'--meas-steps-wolff',</span> <span class="pre">'200',</span> <span class="pre">'--eq-max-steps',</span> <span class="pre">'2000')),</span> <span class="pre">('ising/wolff_efficiency',</span> <span class="pre">'scripts.ising.wolff_efficiency',</span> <span class="pre">'ising/wolff_efficiency.npz',</span> <span class="pre">('--size',</span> <span class="pre">'16',</span> <span class="pre">'--t-points',</span> <span class="pre">'5',</span> <span class="pre">'--n-seeds',</span> <span class="pre">'1',</span> <span class="pre">'--meas-steps',</span> <span class="pre">'400',</span> <span class="pre">'--eq-max-steps',</span> <span class="pre">'2000')),</span> <span class="pre">('ising/correlation_comparison',</span> <span class="pre">'scripts.ising.correlation_comparison',</span> <span class="pre">'ising/correlation_comparison.npz',</span> <span class="pre">('--size',</span> <span class="pre">'24',</span> <span class="pre">'--steps',</span> <span class="pre">'400',</span> <span class="pre">'--eq-max',</span> <span class="pre">'2000')),</span> <span class="pre">('ising/correlation_divergence',</span> <span class="pre">'scripts.ising.correlation_divergence',</span> <span class="pre">'ising/correlation_divergence.npz',</span> <span class="pre">('--size',</span> <span class="pre">'24',</span> <span class="pre">'--steps',</span> <span class="pre">'400',</span> <span class="pre">'--eq-steps',</span> <span class="pre">'200')),</span> <span class="pre">('ising/ordering_kinetics',</span> <span class="pre">'scripts.ising.ordering_kinetics',</span> <span class="pre">'ising/ordering_kinetics.npz',</span> <span class="pre">('--size',</span> <span class="pre">'32',</span> <span class="pre">'--max-steps',</span> <span class="pre">'200',</span> <span class="pre">'--samples',</span> <span class="pre">'12',</span> <span class="pre">'--n-seeds',</span> <span class="pre">'1')),</span> <span class="pre">('ising/coarsening_analysis',</span> <span class="pre">'scripts.ising.coarsening_analysis',</span> <span class="pre">'ising/coarsening_analysis.npz',</span> <span class="pre">('--size',</span> <span class="pre">'32',</span> <span class="pre">'--quench-steps',</span> <span class="pre">'200',</span> <span class="pre">'--quench-seeds',</span> <span class="pre">'1',</span> <span class="pre">'--bridge-steps',</span> <span class="pre">'200',</span> <span class="pre">'--bridge-seeds',</span> <span class="pre">'1',</span> <span class="pre">'--ens-steps',</span> <span class="pre">'200',</span> <span class="pre">'--ens-seeds',</span> <span class="pre">'2',</span> <span class="pre">'--xi-eq-max',</span> <span class="pre">'2000',</span> <span class="pre">'--xi-eq-steps',</span> <span class="pre">'200')),</span> <span class="pre">('xy/temperature_sweep',</span> <span class="pre">'scripts.xy.temperature_sweep',</span> <span class="pre">'xy/temperature_sweep_data.npz',</span> <span class="pre">('--size',</span> <span class="pre">'16',</span> <span class="pre">'--t-points',</span> <span class="pre">'6',</span> <span class="pre">'--n-seeds',</span> <span class="pre">'1',</span> <span class="pre">'--meas-steps',</span> <span class="pre">'400',</span> <span class="pre">'--eq-max-steps',</span> <span class="pre">'2000')),</span> <span class="pre">('xy/bkt_transition',</span> <span class="pre">'scripts.xy.bkt_transition',</span> <span class="pre">'xy/bkt_transition.npz',</span> <span class="pre">('--size',</span> <span class="pre">'16',</span> <span class="pre">'--t-points',</span> <span class="pre">'5',</span> <span class="pre">'--meas-steps',</span> <span class="pre">'400',</span> <span class="pre">'--eq-max-steps',</span> <span class="pre">'2000')),</span> <span class="pre">('xy/helicity_modulus',</span> <span class="pre">'scripts.xy.helicity_modulus',</span> <span class="pre">'xy/helicity_modulus.npz',</span> <span class="pre">('--size',</span> <span class="pre">'16',</span> <span class="pre">'--t-points',</span> <span class="pre">'5',</span> <span class="pre">'--meas-steps',</span> <span class="pre">'400',</span> <span class="pre">'--eq-max-steps',</span> <span class="pre">'2000')),</span> <span class="pre">('xy/wolff_efficiency',</span> <span class="pre">'scripts.xy.wolff_efficiency',</span> <span class="pre">'xy/wolff_efficiency.npz',</span> <span class="pre">('--size',</span> <span class="pre">'16',</span> <span class="pre">'--t-points',</span> <span class="pre">'5',</span> <span class="pre">'--n-seeds',</span> <span class="pre">'1',</span> <span class="pre">'--meas-steps',</span> <span class="pre">'400',</span> <span class="pre">'--eq-max-steps',</span> <span class="pre">'2000')),</span> <span class="pre">('xy/correlation_comparison',</span> <span class="pre">'scripts.xy.correlation_comparison',</span> <span class="pre">'xy/correlation_comparison.npz',</span> <span class="pre">('--size',</span> <span class="pre">'24',</span> <span class="pre">'--steps',</span> <span class="pre">'400',</span> <span class="pre">'--eq-max',</span> <span class="pre">'2000')),</span> <span class="pre">('xy/ordering_kinetics',</span> <span class="pre">'scripts.xy.ordering_kinetics',</span> <span class="pre">'xy/ordering_kinetics.npz',</span> <span class="pre">('--size',</span> <span class="pre">'32',</span> <span class="pre">'--max-steps',</span> <span class="pre">'200',</span> <span class="pre">'--samples',</span> <span class="pre">'12',</span> <span class="pre">'--n-seeds',</span> <span class="pre">'1')),</span> <span class="pre">('clock/temperature_sweep',</span> <span class="pre">'scripts.clock.temperature_sweep',</span> <span class="pre">'clock/temperature_sweep_data.npz',</span> <span class="pre">('--size',</span> <span class="pre">'16',</span> <span class="pre">'--t-points',</span> <span class="pre">'6',</span> <span class="pre">'--n-seeds',</span> <span class="pre">'1',</span> <span class="pre">'--meas-steps',</span> <span class="pre">'400',</span> <span class="pre">'--eq-max-steps',</span> <span class="pre">'2000')),</span> <span class="pre">('clock/wolff_efficiency',</span> <span class="pre">'scripts.clock.wolff_efficiency',</span> <span class="pre">'clock/wolff_efficiency.npz',</span> <span class="pre">('--size',</span> <span class="pre">'16',</span> <span class="pre">'--t-points',</span> <span class="pre">'5',</span> <span class="pre">'--n-seeds',</span> <span class="pre">'1',</span> <span class="pre">'--meas-steps',</span> <span class="pre">'400',</span> <span class="pre">'--eq-max-steps',</span> <span class="pre">'2000')),</span> <span class="pre">('clock/correlation_comparison',</span> <span class="pre">'scripts.clock.correlation_comparison',</span> <span class="pre">'clock/correlation_comparison.npz',</span> <span class="pre">('--size',</span> <span class="pre">'24',</span> <span class="pre">'--steps',</span> <span class="pre">'400',</span> <span class="pre">'--eq-max',</span> <span class="pre">'2000')),</span> <span class="pre">('clock/ordering_kinetics',</span> <span class="pre">'scripts.clock.ordering_kinetics',</span> <span class="pre">'clock/ordering_kinetics.npz',</span> <span class="pre">('--size',</span> <span class="pre">'32',</span> <span class="pre">'--max-steps',</span> <span class="pre">'200',</span> <span class="pre">'--samples',</span> <span class="pre">'12',</span> <span class="pre">'--n-seeds',</span> <span class="pre">'1')),</span> <span class="pre">('benchmarks/throughput',</span> <span class="pre">'scripts.benchmarks.throughput',</span> <span class="pre">'benchmarks/scaling_benchmark.npz',</span> <span class="pre">('--sizes',</span> <span class="pre">'16',</span> <span class="pre">'24',</span> <span class="pre">'--sweeps',</span> <span class="pre">'20')))</span></span><a class="headerlink" href="#scripts.generate_all.DATA_PRODUCTS" title="Link to this definition"></a></dt>
+<dd><p>Every dataset a notebook loads, in the order the pipeline table of
+SCRIPTS.md lists them.  Scripts that only draw a figure are not included
+because no notebook depends on their output.</p>
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="scripts.generate_all.DataProduct">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">scripts.generate_all.</span></span><span class="sig-name descname"><span class="pre">DataProduct</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">key</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">module</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">output</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">quick_args</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="p"><span class="pre">...</span></span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/scripts/generate_all.html#DataProduct"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#scripts.generate_all.DataProduct" title="Link to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">NamedTuple</span></code></p>
+<p>One script invocation and the file it is expected to produce.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>key</strong> (<em>str</em>) – Selector of the form <code class="docutils literal notranslate"><span class="pre">model/script</span></code>, matched by <code class="docutils literal notranslate"><span class="pre">--only</span></code> and
+<code class="docutils literal notranslate"><span class="pre">--skip</span></code> and printed by <code class="docutils literal notranslate"><span class="pre">--list</span></code>.</p></li>
+<li><p><strong>module</strong> (<em>str</em>) – Importable module path run with <code class="docutils literal notranslate"><span class="pre">python</span> <span class="pre">-m</span></code>.</p></li>
+<li><p><strong>output</strong> (<em>str</em>) – Path of the NPZ file relative to the output root, used by
+<code class="docutils literal notranslate"><span class="pre">--skip-existing</span></code> and by the completion report.</p></li>
+<li><p><strong>quick_args</strong> (<em>tuple</em><em>[</em><em>str</em><em>, </em><em>...</em><em>]</em>) – Arguments that replace the production defaults under <code class="docutils literal notranslate"><span class="pre">--quick</span></code>.</p></li>
+</ul>
+</dd>
+</dl>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="scripts.generate_all.DataProduct.key">
+<span class="sig-name descname"><span class="pre">key</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">str</span></span><a class="headerlink" href="#scripts.generate_all.DataProduct.key" title="Link to this definition"></a></dt>
+<dd><p>Alias for field number 0</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="scripts.generate_all.DataProduct.module">
+<span class="sig-name descname"><span class="pre">module</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">str</span></span><a class="headerlink" href="#scripts.generate_all.DataProduct.module" title="Link to this definition"></a></dt>
+<dd><p>Alias for field number 1</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="scripts.generate_all.DataProduct.output">
+<span class="sig-name descname"><span class="pre">output</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">str</span></span><a class="headerlink" href="#scripts.generate_all.DataProduct.output" title="Link to this definition"></a></dt>
+<dd><p>Alias for field number 2</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="scripts.generate_all.DataProduct.quick_args">
+<span class="sig-name descname"><span class="pre">quick_args</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="p"><span class="pre">...</span></span><span class="p"><span class="pre">]</span></span></span><a class="headerlink" href="#scripts.generate_all.DataProduct.quick_args" title="Link to this definition"></a></dt>
+<dd><p>Alias for field number 3</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="scripts.generate_all.main">
+<span class="sig-prename descclassname"><span class="pre">scripts.generate_all.</span></span><span class="sig-name descname"><span class="pre">main</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="../_modules/scripts/generate_all.html#main"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#scripts.generate_all.main" title="Link to this definition"></a></dt>
+<dd><p>Regenerate the cached notebook datasets and report the outcome.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Raises<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>SystemExit</strong> – With a non-zero status if any script failed, so that the command can
+    be used as a build step.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="scripts.generate_all.run_product">
+<span class="sig-prename descclassname"><span class="pre">scripts.generate_all.</span></span><span class="sig-name descname"><span class="pre">run_product</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">product</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#scripts.generate_all.DataProduct" title="scripts.generate_all.DataProduct"><span class="pre">DataProduct</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">output_root</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">quick</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dry_run</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">logger</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Logger</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">bool</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">float</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="../_modules/scripts/generate_all.html#run_product"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#scripts.generate_all.run_product" title="Link to this definition"></a></dt>
+<dd><p>Run one script and report whether it succeeded.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>product</strong> (<a class="reference internal" href="#scripts.generate_all.DataProduct" title="scripts.generate_all.DataProduct"><em>DataProduct</em></a>) – Entry to run.</p></li>
+<li><p><strong>output_root</strong> (<em>str</em>) – Directory the per-model output directories live under.</p></li>
+<li><p><strong>quick</strong> (<em>bool</em>) – If True, pass the entry’s reduced arguments instead of relying on the
+script’s production defaults.</p></li>
+<li><p><strong>dry_run</strong> (<em>bool</em>) – If True, log the command and return without running it.</p></li>
+<li><p><strong>logger</strong> (<em>logging.Logger</em>) – Logger for progress output.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Success flag and wall-clock seconds spent.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>tuple[bool, float]</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="scripts.generate_all.select_products">
+<span class="sig-prename descclassname"><span class="pre">scripts.generate_all.</span></span><span class="sig-name descname"><span class="pre">select_products</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">products</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">tuple</span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="#scripts.generate_all.DataProduct" title="scripts.generate_all.DataProduct"><span class="pre">DataProduct</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="p"><span class="pre">...</span></span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">only</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">list</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">skip</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">list</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">list</span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="#scripts.generate_all.DataProduct" title="scripts.generate_all.DataProduct"><span class="pre">DataProduct</span></a><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="../_modules/scripts/generate_all.html#select_products"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#scripts.generate_all.select_products" title="Link to this definition"></a></dt>
+<dd><p>Filter the product table by substring match on the selector key.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>products</strong> (<em>tuple</em><em>[</em><a class="reference internal" href="#scripts.generate_all.DataProduct" title="scripts.generate_all.DataProduct"><em>DataProduct</em></a><em>, </em><em>...</em><em>]</em>) – Full table to filter.</p></li>
+<li><p><strong>only</strong> (<em>list</em><em>[</em><em>str</em><em>] or </em><em>None</em>) – Keep a product if its key contains any of these substrings.  None or
+an empty list keeps everything.</p></li>
+<li><p><strong>skip</strong> (<em>list</em><em>[</em><em>str</em><em>] or </em><em>None</em>) – Drop a product if its key contains any of these substrings, applied
+after <code class="docutils literal notranslate"><span class="pre">only</span></code>.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Selected products in table order.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>list[<a class="reference internal" href="#scripts.generate_all.DataProduct" title="scripts.generate_all.DataProduct">DataProduct</a>]</p>
+</dd>
+<dt class="field-even">Raises<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>ValueError</strong> – If a pattern in <code class="docutils literal notranslate"><span class="pre">only</span></code> or <code class="docutils literal notranslate"><span class="pre">skip</span></code> matches no key at all, which is
+    almost always a typo rather than an intentionally empty selection.</p>
+</dd>
+</dl>
+</dd></dl>
+
 </section>
 <section id="module-contents">
 <h2>Module contents<a class="headerlink" href="#module-contents" title="Link to this heading"></a></h2>
@@ -233,7 +383,7 @@
           </div>
           <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
         <a href="vibespin.models.html" class="btn btn-neutral float-left" title="vibespin.models package" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
-        <a href="vibespin.scripts.clock.html" class="btn btn-neutral float-right" title="vibespin.scripts.clock package" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+        <a href="vibespin.scripts.benchmarks.html" class="btn btn-neutral float-right" title="vibespin.scripts.benchmarks package" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
     </div>
 
   <hr/>
