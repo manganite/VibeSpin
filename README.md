@@ -81,7 +81,15 @@ Key engineering features ensure high performance across all models. Checkerboard
 
 ## Typical Usage
 
-Launch an equilibrium temperature sweep for the XY model:
+Regenerate every dataset the notebooks read, so that they render published-quality figures
+instead of their inline fallbacks:
+
+```bash
+python -m scripts.generate_all             # production parameters, about an hour on four cores
+python -m scripts.generate_all --quick     # the same sixteen scripts in about a minute, as a smoke test
+```
+
+Run an individual experiment instead. Launch an equilibrium temperature sweep for the XY model:
 
 ```bash
 python scripts/xy/temperature_sweep.py --size 64 --t-min 0.2 --t-max 1.5 --t-points 20

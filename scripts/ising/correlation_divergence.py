@@ -59,7 +59,7 @@ def get_correlation_length(params: tuple[float, int, int, int, int]) -> tuple[fl
     return T, xi
 
 
-def run_divergence_analysis() -> None:
+def main() -> None:
     """Run parallel simulation to extract the critical exponent nu from xi(T) divergence."""
     parser = argparse.ArgumentParser(description='2D Ising Model Correlation Divergence Analysis')
     parser.add_argument('--size', type=int, default=128, help='Linear lattice size L')
@@ -166,4 +166,4 @@ def run_divergence_analysis() -> None:
 
 
 if __name__ == '__main__':
-    run_divergence_analysis()
+    main()

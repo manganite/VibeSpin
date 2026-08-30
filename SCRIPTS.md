@@ -35,6 +35,21 @@ VibeSpin provides a suite of entry-point scripts for conducting physics experime
 
 - **`throughput.py`**: Cross-model throughput and scaling benchmark. Measures sweeps/s, ns/site, and per-call analysis costs (thermodynamic, $G(r)$, vorticity, helicity) across all eight model variants and a range of lattice sizes. Saves a 6-panel summary figure to `results/benchmarks/scaling_benchmark.png` and all metrics to `results/benchmarks/scaling_benchmark.npz`. The NPZ file is loaded by `notebooks/Performance_Benchmarks.ipynb` to avoid re-running the benchmark on every notebook execution.
 
+## 5. Regenerating All Data (`scripts/generate_all.py`)
+
+- **`generate_all.py`**: Runs every script that a notebook reads data from, in one command,
+  and reports what it produced and how long each step took. Without arguments each script
+  runs at its own production defaults, which is the data the published figures are built
+  from and takes roughly an hour on four cores. `--quick` runs the same sixteen scripts at
+  sharply reduced lattices and step counts, which exercises the whole pipeline in about a
+  minute but produces output that is not physics. `--only` and `--skip` select by substring
+  of the `model/script` key, `--list` prints the table, `--dry-run` prints the commands,
+  `--skip-existing` leaves present files alone, and `--fail-fast` stops at the first failure
+  instead of reporting all of them at the end. A failing run exits non-zero, so the command
+  works as a build step. The set of datasets it covers is held to the pipeline table below
+  by `tests/integration/test_generate_all.py`, so a new data-producing script cannot be
+  added to one without the other.
+
 ## Usage Guidelines
 
 ### Update Schemes
@@ -62,6 +77,8 @@ in well under a minute and still resolves the transition; the notebooks print th
 size and step count they used, so a fallback figure is never mistaken for production data.
 
 ## Data Pipeline
+
+`python -m scripts.generate_all` regenerates every entry in this table at once; the sections above describe running an individual script.
 
 Scripts serve a dual role: they generate cached NPZ data files for notebooks and produce quick-check PNG figures for immediate visual verification. Notebooks are the curated presentation layer and load precomputed NPZ files to avoid re-running expensive simulations. When NPZ data is absent, notebooks provide lightweight fallback computations for demonstration purposes.
 
