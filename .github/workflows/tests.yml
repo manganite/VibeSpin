@@ -17,10 +17,11 @@ jobs:
       with:
         python-version: '3.12'
 
-    - name: Install dependencies
+    - name: Install locked dependencies
       run: |
         python -m pip install --upgrade pip
-        pip install -e ".[dev]"
+        pip install -r requirements.txt
+        pip install -e . --no-deps
 
     - name: Lint with Ruff
       run: ruff check .
@@ -41,10 +42,11 @@ jobs:
       with:
         python-version: '3.12'
 
-    - name: Install documentation dependencies
+    - name: Install locked documentation dependencies
       run: |
         python -m pip install --upgrade pip
-        pip install -e ".[docs]"
+        pip install -r requirements.txt
+        pip install -e . --no-deps
 
     - name: Regenerate API reference pages
       run: |
