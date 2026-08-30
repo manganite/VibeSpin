@@ -4,7 +4,7 @@ Physics-related utility functions for calculating thermodynamic observables and 
 from __future__ import annotations
 
 import logging
-from typing import Any, Protocol
+from typing import Any, NamedTuple, Protocol
 
 import numpy as np
 from scipy.integrate import cumulative_trapezoid
@@ -305,6 +305,210 @@ def simulate_equilibrium_correlation(
     return get_averaged_correlation(
         sim=sim_meas, total_steps=meas_steps, sample_interval=interval,
     )
+
+
+class CorrelationPoint(NamedTuple):
+    """
+    Typed worker payload for one temperature of a correlation comparison.
+
+    Parameters
+    ----------
+    label : str
+        Name of the phase this temperature represents, carried through so the
+        caller can match results back to the temperature that produced them
+        without relying on the order the pool returns them in.
+    temperature : float
+        Simulation temperature T.
+    model_cls : type
+        Simulation class to instantiate.  It must be importable under its
+        qualified name so that it survives the multiprocessing pickle.
+    model_kwargs : dict[str, typing.Any]
+        Extra constructor arguments beyond size, temperature, update, start,
+        and seed.
+    size : int
+        Linear lattice size L.
+    seed : int
+        Random seed used for both start states.
+    eq_probe : int
+        Chunk size for convergence equilibration probes.
+    eq_max : int
+        Maximum equilibration steps.
+    meas_steps : int
+        Measurement steps after equilibration.
+    interval : int
+        Spacing between correlation samples during measurement.
+    """
+
+    label: str
+    temperature: float
+    model_cls: type
+    model_kwargs: dict[str, Any]
+    size: int
+    seed: int
+    eq_probe: int
+    eq_max: int
+    meas_steps: int
+    interval: int
+
+
+def measure_correlation_point(
+    point: CorrelationPoint,
+) -> tuple[str, np.ndarray, np.ndarray]:
+    """
+    Worker: equilibrate and measure G(r) at one temperature.
+
+    This exists as a module-level function taking a single argument so that it
+    can be handed to ``parallel_sweep``, which pickles the worker and its
+    payload across processes.
+
+    Parameters
+    ----------
+    point : CorrelationPoint
+        Payload describing the measurement.
+
+    Returns
+    -------
+    tuple[str, numpy.ndarray, numpy.ndarray]
+        The point's label, the radial distances, and the averaged G(r).
+    """
+    logger = logging.getLogger('vibespin')
+    r, G = simulate_equilibrium_correlation(
+        model_cls=point.model_cls,
+        model_kwargs=point.model_kwargs,
+        size=point.size,
+        temp=point.temperature,
+        seed=point.seed,
+        eq_probe=point.eq_probe,
+        eq_max=point.eq_max,
+        meas_steps=point.meas_steps,
+        interval=point.interval,
+        logger=logger,
+    )
+    return point.label, r, G
+
+
+def _fit_window(
+    *, r: np.ndarray, G: np.ndarray, r_min: int, r_max: int | None,
+) -> tuple[np.ndarray, np.ndarray]:
+    """
+    Select the distances a decay fit may use.
+
+    The upper end defaults to L/4.  Beyond that the periodic images of a site
+    are closer than the nominal distance suggests, so G(r) flattens for a
+    reason that has nothing to do with the decay being fitted.  Values at or
+    below zero are dropped because both fits work in log space.
+
+    Parameters
+    ----------
+    r : numpy.ndarray
+        Radial distances, running out to L/2.
+    G : numpy.ndarray
+        Correlation values at those distances.
+    r_min : int
+        Smallest distance to fit, excluding the lattice-scale points where the
+        asymptotic form does not hold yet.
+    r_max : int or None
+        Largest distance to fit, or None for L/4.
+
+    Returns
+    -------
+    tuple[numpy.ndarray, numpy.ndarray]
+        The distances and correlation values inside the window.
+    """
+    if len(r) == 0:
+        return np.array([]), np.array([])
+    upper = float(r[-1]) / 2.0 if r_max is None else float(r_max)
+    mask = (r >= r_min) & (r <= upper) & (G > 1e-10) & np.isfinite(G)
+    return r[mask], G[mask]
+
+
+def fit_correlation_length(
+    *,
+    r: np.ndarray,
+    G: np.ndarray,
+    r_min: int = 2,
+    r_max: int | None = None,
+) -> float:
+    """
+    Fit the correlation length of an exponentially decaying G(r).
+
+    A straight line through log G against r has slope -1/xi, so this is the
+    right estimator only where exponential decay is the expected form, which
+    means above the transition.  Applying it inside a critical or quasi-ordered
+    phase returns a number, but that number describes nothing.
+
+    Parameters
+    ----------
+    r : numpy.ndarray
+        Radial distances.
+    G : numpy.ndarray
+        Correlation values.
+    r_min : int, optional
+        Smallest distance to fit.
+    r_max : int or None, optional
+        Largest distance to fit, or None for L/4.
+
+    Returns
+    -------
+    float
+        The correlation length xi, or NaN when fewer than two usable points
+        remain, the fit fails, or the fitted slope is not negative.
+    """
+    r_fit, G_fit = _fit_window(r=r, G=G, r_min=r_min, r_max=r_max)
+    if len(r_fit) < 2:
+        return float('nan')
+    try:
+        slope, _ = np.polyfit(r_fit, np.log(G_fit), 1)
+    except (np.linalg.LinAlgError, ValueError):
+        return float('nan')
+    if not np.isfinite(slope) or slope >= 0.0:
+        return float('nan')
+    return float(-1.0 / slope)
+
+
+def fit_correlation_exponent(
+    *,
+    r: np.ndarray,
+    G: np.ndarray,
+    r_min: int = 2,
+    r_max: int | None = None,
+) -> float:
+    """
+    Fit the anomalous dimension of an algebraically decaying G(r).
+
+    A straight line through log G against log r has slope -eta, so this is the
+    right estimator where power-law decay is expected: at the critical point of
+    the Ising model, where eta is exactly 1/4, and throughout the quasi-ordered
+    phase of the XY and clock models, where spin-wave theory predicts
+    eta = T / (2 pi J).
+
+    Parameters
+    ----------
+    r : numpy.ndarray
+        Radial distances.
+    G : numpy.ndarray
+        Correlation values.
+    r_min : int, optional
+        Smallest distance to fit.
+    r_max : int or None, optional
+        Largest distance to fit, or None for L/4.
+
+    Returns
+    -------
+    float
+        The exponent eta, or NaN when fewer than two usable points remain or
+        the fit fails.
+    """
+    r_fit, G_fit = _fit_window(r=r, G=G, r_min=r_min, r_max=r_max)
+    if len(r_fit) < 2:
+        return float('nan')
+    try:
+        slope, _ = np.polyfit(np.log(r_fit), np.log(G_fit), 1)
+    except (np.linalg.LinAlgError, ValueError):
+        return float('nan')
+    if not np.isfinite(slope):
+        return float('nan')
+    return float(-slope)
 
 
 def radial_average_sk(*, spins: np.ndarray) -> tuple[np.ndarray, np.ndarray]:

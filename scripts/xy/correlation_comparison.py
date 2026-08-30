@@ -11,9 +11,14 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 from models.xy_model import XYSimulation
-from utils.observables import simulate_equilibrium_correlation
+from utils.observables import (
+    CorrelationPoint,
+    fit_correlation_exponent,
+    fit_correlation_length,
+    measure_correlation_point,
+)
 from utils.plotting import ensure_results_dir, save_plot
-from utils.system import parse_args_compat, setup_logging
+from utils.system import parallel_sweep, parse_args_compat, setup_logging
 
 
 def main() -> None:
@@ -41,17 +46,35 @@ def main() -> None:
 
     logger.info(f'Starting XY correlation comparison (L={args.size})...')
 
-    results = {}
-    for label, T in [('low', T_LOW), ('high', T_HIGH)]:
-        r, G = simulate_equilibrium_correlation(
-            model_cls=XYSimulation, model_kwargs={}, size=args.size, temp=T,
-            seed=args.seed, eq_probe=args.eq_probe, eq_max=args.eq_max,
-            meas_steps=args.steps, interval=args.interval, logger=logger,
+    points = [
+        CorrelationPoint(
+            label=label, temperature=T, model_cls=XYSimulation, model_kwargs={},
+            size=args.size, seed=args.seed, eq_probe=args.eq_probe,
+            eq_max=args.eq_max, meas_steps=args.steps, interval=args.interval,
         )
-        results[label] = (r, G)
+        for label, T in (('low', T_LOW), ('high', T_HIGH))
+    ]
+    results = {
+        label: (r, G)
+        for label, r, G in parallel_sweep(
+            worker_func=measure_correlation_point, params=points,
+        )
+    }
 
     r_low, G_low = results['low']
     r_high, G_high = results['high']
+
+    # Below the transition the XY model is quasi-ordered, so the expected form
+    # is a power law whose exponent spin-wave theory fixes at eta = T/(2 pi J);
+    # above it correlations decay exponentially with a finite length.
+    eta_low = fit_correlation_exponent(r=r_low, G=G_low)
+    xi_high = fit_correlation_length(r=r_high, G=G_high)
+    eta_spin_wave = T_LOW / (2.0 * np.pi)
+    logger.info(
+        f'T={T_LOW}: fitted eta = {eta_low:.4f} '
+        f'(spin-wave prediction {eta_spin_wave:.4f})'
+    )
+    logger.info(f'T={T_HIGH}: fitted correlation length xi = {xi_high:.4f}')
 
     # Plotting
     fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(14, 6))
@@ -95,6 +118,9 @@ def main() -> None:
         eq_max=args.eq_max,
         sample_interval=args.interval,
         seed=args.seed,
+        eta_low=eta_low,
+        eta_low_spin_wave=eta_spin_wave,
+        xi_high=xi_high,
     )
     logger.info(f'Data saved to {npz_path}')
 

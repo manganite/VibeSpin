@@ -17,9 +17,14 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 from models.clock_model import ClockSimulation
-from utils.observables import simulate_equilibrium_correlation
+from utils.observables import (
+    CorrelationPoint,
+    fit_correlation_exponent,
+    fit_correlation_length,
+    measure_correlation_point,
+)
 from utils.plotting import ensure_results_dir, save_plot
-from utils.system import parse_args_compat, setup_logging
+from utils.system import parallel_sweep, parse_args_compat, setup_logging
 
 # Approximate KT transition temperatures for q=6 (José et al. 1977).
 T1_CLOCK6: float = 0.68
@@ -66,12 +71,23 @@ def main() -> None:
     common: dict[str, Any] = dict(
         model_cls=ClockSimulation, model_kwargs={'q': args.q}, size=args.size,
         seed=args.seed, eq_probe=args.eq_probe, eq_max=args.eq_max,
-        meas_steps=args.steps, interval=args.interval, logger=logger,
+        meas_steps=args.steps, interval=args.interval,
     )
-
-    r_ordered, G_ordered = simulate_equilibrium_correlation(temp=T_ORDERED, **common)
-    r_quasi, G_quasi = simulate_equilibrium_correlation(temp=T_QUASI, **common)
-    r_disordered, G_disordered = simulate_equilibrium_correlation(temp=T_DISORDERED, **common)
+    points = [
+        CorrelationPoint(label=label, temperature=T, **common)
+        for label, T in (
+            ('ordered', T_ORDERED), ('quasi', T_QUASI), ('disordered', T_DISORDERED),
+        )
+    ]
+    results = {
+        label: (r, G)
+        for label, r, G in parallel_sweep(
+            worker_func=measure_correlation_point, params=points,
+        )
+    }
+    r_ordered, G_ordered = results['ordered']
+    r_quasi, G_quasi = results['quasi']
+    r_disordered, G_disordered = results['disordered']
 
     # Verify r arrays are identical (all from same lattice size).
     if not (np.array_equal(r_ordered, r_quasi) and np.array_equal(r_quasi, r_disordered)):
@@ -80,6 +96,18 @@ def main() -> None:
             'all three measurements must share the same lattice size.'
         )
     r = r_ordered
+
+    # Between T1 and T2 the discrete anisotropy is irrelevant at long distances
+    # and the model behaves like XY, so the same spin-wave exponent applies;
+    # above T2 correlations decay exponentially with a finite length.
+    eta_quasi = fit_correlation_exponent(r=r, G=G_quasi)
+    xi_disordered = fit_correlation_length(r=r, G=G_disordered)
+    eta_spin_wave = T_QUASI / (2.0 * np.pi)
+    logger.info(
+        f'T={T_QUASI}: fitted eta = {eta_quasi:.4f} '
+        f'(spin-wave prediction {eta_spin_wave:.4f})'
+    )
+    logger.info(f'T={T_DISORDERED}: fitted correlation length xi = {xi_disordered:.4f}')
 
     # --- Plotting ---
     fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(14, 6))
@@ -131,6 +159,9 @@ def main() -> None:
         eq_max=args.eq_max,
         sample_interval=args.interval,
         seed=args.seed,
+        eta_quasi=eta_quasi,
+        eta_quasi_spin_wave=eta_spin_wave,
+        xi_disordered=xi_disordered,
     )
     logger.info(f'Data saved to {npz_path}')
 

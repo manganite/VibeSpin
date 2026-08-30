@@ -12,36 +12,14 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 from models.ising_model import IsingSimulation
-from utils.observables import simulate_equilibrium_correlation
+from utils.observables import (
+    CorrelationPoint,
+    fit_correlation_exponent,
+    fit_correlation_length,
+    measure_correlation_point,
+)
 from utils.plotting import ensure_results_dir, save_plot
 from utils.system import parallel_sweep, parse_args_compat, setup_logging
-
-
-def simulate_correlation(
-    params: tuple[float, int, int, int, int, int, int],
-) -> tuple[np.ndarray, np.ndarray]:
-    """Worker function: simulate and return the averaged correlation function at temperature T.
-
-    Uses two-start convergence equilibration to avoid initialization bias.
-
-    Parameters
-    ----------
-    params : tuple[float, int, int, int, int, int, int]
-        Tuple of (T, L, steps, eq_probe, eq_max, sample_interval, seed).
-
-    Returns
-    -------
-    tuple[np.ndarray, np.ndarray]
-        A tuple of (r, G_r) - radial distances and averaged correlations.
-    """
-    T, L, steps, eq_probe, eq_max, sample_interval, seed = params
-    logger = logging.getLogger('vibespin')
-    logger.debug(f'Collecting data for T={T}...')
-    return simulate_equilibrium_correlation(
-        model_cls=IsingSimulation, model_kwargs={}, size=L, temp=T, seed=seed,
-        eq_probe=eq_probe, eq_max=eq_max, meas_steps=steps, interval=sample_interval,
-        logger=logger,
-    )
 
 
 def main() -> None:
@@ -68,49 +46,43 @@ def main() -> None:
     T_CRIT: float = 2.269  # At Tc (Power law decay)
     T_PARA: float = 3.0  # Above Tc (Exponential decay)
 
-    # Fitting Parameters
-    FIT_START_R: int = 2
-    FIT_END_R: int = 15
-
     logger.info(f'Starting Ising correlation comparison (L={args.size})...')
-    temperatures = [T_FERRO, T_CRIT, T_PARA]
-    sweep_params = [
-        (T, args.size, args.steps, args.eq_probe, args.eq_max, args.interval, args.seed)
-        for T in temperatures
+    points = [
+        CorrelationPoint(
+            label=label, temperature=T, model_cls=IsingSimulation, model_kwargs={},
+            size=args.size, seed=args.seed, eq_probe=args.eq_probe,
+            eq_max=args.eq_max, meas_steps=args.steps, interval=args.interval,
+        )
+        for label, T in (('ferro', T_FERRO), ('crit', T_CRIT), ('para', T_PARA))
     ]
+    results = {
+        label: (r, G)
+        for label, r, G in parallel_sweep(
+            worker_func=measure_correlation_point, params=points,
+        )
+    }
+    r, G_ferro = results['ferro']
+    _, G_crit = results['crit']
+    _, G_para = results['para']
 
-    results = parallel_sweep(worker_func=simulate_correlation, params=sweep_params)
-    (r, G_ferro), (_, G_crit), (_, G_para) = results
+    # At T_c the Ising correlation function decays as a power law with the
+    # exactly known exponent eta = 1/4; above T_c it decays exponentially with
+    # a finite correlation length. Each temperature is fitted with the form it
+    # is expected to take, over distances up to L/4 so that periodic images do
+    # not flatten the tail.
+    eta_crit = fit_correlation_exponent(r=r, G=G_crit)
+    xi_para = fit_correlation_length(r=r, G=G_para)
+    logger.info(f'T={T_CRIT}: fitted eta = {eta_crit:.4f} (exact value 0.25)')
+    logger.info(f'T={T_PARA}: fitted correlation length xi = {xi_para:.4f}')
 
-    # --- Fit for correlation length xi in paramagnetic phase ---
-    r_fit: np.ndarray = r[FIT_START_R:FIT_END_R]
-    G_para_fit: np.ndarray = G_para[FIT_START_R:FIT_END_R]
-
-    xi_para: float | None = None
+    # Anchor the drawn guide to the first fitted point, so that the line sits
+    # on the data rather than on an extrapolated intercept.
+    _FIT_ANCHOR = 2
     fit_line: np.ndarray | None = None
-
-    # Ensure we only fit positive values to avoid log(0) errors
-    valid_indices: np.ndarray = G_para_fit > 1e-10
-    if np.count_nonzero(valid_indices) >= 2:
-        log_G_para_fit: np.ndarray = np.log(G_para_fit[valid_indices])
-        r_fit_valid: np.ndarray = r_fit[valid_indices]
-
-        try:
-            slope, intercept = np.polyfit(r_fit_valid, log_G_para_fit, 1)
-            if slope == 0.0:
-                logger.warning(
-                    f'Exponential fit failed for T={T_PARA}: fitted slope is zero; '
-                    'cannot compute correlation length.'
-                )
-            else:
-                xi_para = -1.0 / slope
-                logger.info(
-                    f'Fitted correlation length for T={T_PARA} '
-                    f'(paramagnetic): xi = {xi_para:.4f}'
-                )
-                fit_line = np.exp(intercept + slope * r)
-        except np.linalg.LinAlgError as exc:
-            logger.warning(f'Exponential fit failed for T={T_PARA}: {exc}')
+    if np.isfinite(xi_para):
+        fit_line = G_para[_FIT_ANCHOR] * np.exp(-(r - r[_FIT_ANCHOR]) / xi_para)
+    else:
+        logger.warning(f'Exponential fit failed for T={T_PARA}; no correlation length reported.')
 
     # Plotting
     fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(14, 6))
@@ -129,7 +101,7 @@ def main() -> None:
     ax2.plot(r, G_ferro, 's-', label=f'T={T_FERRO} (T < Tc)', alpha=0.7)
     ax2.plot(r, G_crit, 'o-', label=f'T={T_CRIT} (T ~ Tc)', alpha=0.7)
     ax2.plot(r, G_para, 'x-', label=f'T={T_PARA} (T > Tc)', alpha=0.7)
-    if xi_para is not None and fit_line is not None:
+    if fit_line is not None:
         ax2.plot(r, fit_line, 'r--', linewidth=2, label=f'Fit ($\\xi={xi_para:.2f}$)')
     ax2.set_yscale('log')
     ax2.set_title('Semi-Log Plot')
@@ -158,8 +130,8 @@ def main() -> None:
         sample_interval=args.interval,
         seed=args.seed,
     )
-    if xi_para is not None:
-        save_kwargs['xi_para'] = xi_para
+    save_kwargs['xi_para'] = xi_para
+    save_kwargs['eta_crit'] = eta_crit
     np.savez_compressed(npz_path, **save_kwargs)
     logger.info(f'Data saved to {npz_path}')
 

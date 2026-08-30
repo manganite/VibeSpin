@@ -9,7 +9,7 @@ VibeSpin provides a suite of entry-point scripts for conducting physics experime
 - **`ordering_kinetics.py`**: Quenches the system to $T < T_c$ and tracks the growth of domain size $R(t)$ over time. Supports `--seeds N` and `--base-seed` for multi-seed ensemble averaging with IQR-based error bars. Saves per-seed arrays and median trajectory to `results/ising/ordering_kinetics.npz`.
 - **`ordering_evolution.py`**: Generates visual snapshots of the lattice configuration, structure factor, and correlation functions during a quench.
 - **`correlation_divergence.py`**: Extracts the critical exponent $\nu$ by fitting the correlation length divergence near $T_c$.
-- **`correlation_comparison.py`**: Compares the functional form of $G(r)$ in the ferromagnetic, critical, and paramagnetic phases. Uses two-start convergence equilibration (`--eq-probe`, `--eq-max`) with a `--seed` flag for reproducible runs, matching the XY and Clock correlation scripts. Saves `results/ising/correlation_comparison.npz`.
+- **`correlation_comparison.py`**: Compares the functional form of $G(r)$ in the ferromagnetic, critical, and paramagnetic phases. Uses two-start convergence equilibration (`--eq-probe`, `--eq-max`) with a `--seed` flag for reproducible runs, matching the XY and Clock correlation scripts. Each temperature is fitted with the form it is expected to take: the anomalous dimension $\eta$ at $T_c$, where the exact value is $1/4$, and the correlation length $\xi$ above it. Saves `results/ising/correlation_comparison.npz` including `eta_crit` and `xi_para`.
 - **`coarsening_analysis.py`**: Precomputes supplementary coarsening analyses for the `Correlation_and_Coarsening.ipynb` notebook: quench-depth sensitivity (3 temperatures, multi-seed), equilibrium-to-coarsening crossover ($\xi_{\mathrm{eq}}$ measurement plus coarsening traces), and a stochastic ensemble (8 seeds) visualizing run-to-run variability. Saves all data to `results/ising/coarsening_analysis.npz`.
 - **`wolff_efficiency.py`**: Compares the Metropolis checkerboard and Wolff cluster algorithms across the critical regime. Reports integrated autocorrelation time $\tau_{\mathrm{int}}$, independent samples per second (ISS), mean cluster size fraction $\langle C \rangle/N^2$, and susceptibility $\chi(T)$ for both algorithms. Saves results to `results/ising/wolff_efficiency.npz` for re-use by `notebooks/Wolff_Efficiency.ipynb` and a 4-panel summary figure to `results/ising/wolff_efficiency.png`.
 - **`measure_z.py`**: Specifically measures the dynamical critical exponent $z$ at the critical temperature $T_c$. Sweeps lattice sizes $L$ to extract the scaling law $\tau_{\mathrm{int}} \propto L^z$ for both Metropolis and Wolff algorithms. Runs `--n-seeds` independent replicas per (algorithm, $L$) point and saves per-seed sample arrays alongside median and 16–84% percentile summaries to `results/ising/dynamic_exponent_z.npz` for use in `notebooks/Dynamic_Critical_Exponents.ipynb`. The NPZ also includes standardized uncertainty keys (`tau_metro_value`, `tau_metro_err`, `tau_metro_ci_low`, `tau_metro_ci_high`, and Wolff equivalents).
@@ -22,7 +22,7 @@ VibeSpin provides a suite of entry-point scripts for conducting physics experime
 - **`bkt_transition.py`**: Specifically focuses on the BKT transition by measuring average vortex density vs. temperature.
 - **`helicity_modulus.py`**: Calculates the superfluid stiffness to identify the universal jump at $T_{BKT}$.
 - **`wolff_efficiency.py`**: Compares the Wolff-Evertz cluster reflection against the Metropolis checkerboard across the BKT window, reporting work-normalised $\tau_{\mathrm{int}}$, independent samples per second, mean cluster fraction, and the susceptibility agreement that validates both samplers. Saves `results/xy/wolff_efficiency.npz`.
-- **`correlation_comparison.py`**: Contrasts power-law decay (topological order) with exponential decay (disordered phase). Renamed from `compare_correlations.py` to match its Ising and Clock siblings.
+- **`correlation_comparison.py`**: Contrasts power-law decay (topological order) with exponential decay (disordered phase). Renamed from `compare_correlations.py` to match its Ising and Clock siblings. Reports the fitted anomalous dimension below $T_{\mathrm{BKT}}$ alongside the spin-wave prediction $\eta = T/(2\pi J)$, and the correlation length above it, as `eta_low`, `eta_low_spin_wave`, and `xi_high`.
 
 ## 3. Clock Model (`scripts/clock/`)
 
@@ -30,7 +30,7 @@ VibeSpin provides a suite of entry-point scripts for conducting physics experime
 - **`ordering_kinetics.py`**: Analyzes the ordering dynamics after a quench. Supports `--seeds N` and `--base-seed` for multi-seed ensemble averaging with IQR-based error bars.
 - **`ordering_evolution.py`**: Visualizes the evolution of discrete phase domains.
 - **`wolff_efficiency.py`**: The clock counterpart of the Ising and XY efficiency comparisons, spanning both $q=6$ crossovers. It runs at zero anisotropy, because the Wolff-Evertz bond construction sees only the exchange term: with a non-zero crystal field the cluster update no longer satisfies detailed balance for the full Hamiltonian, so the comparison would be between two models rather than two algorithms. Saves `results/clock/wolff_efficiency.npz`.
-- **`correlation_comparison.py`**: Compares the functional form of $G(r)$ in the ordered ($T < T_1$), quasi-ordered ($T_1 < T < T_2$), and disordered ($T > T_2$) phases of the $q = 6$ clock model. Uses convergence equilibration. Saves `results/clock/correlation_comparison.npz`.
+- **`correlation_comparison.py`**: Compares the functional form of $G(r)$ in the ordered ($T < T_1$), quasi-ordered ($T_1 < T < T_2$), and disordered ($T > T_2$) phases of the $q = 6$ clock model. Uses convergence equilibration, and reports the fitted anomalous dimension of the quasi-ordered phase against the same spin-wave prediction the XY model obeys there, plus the correlation length above $T_2$, as `eta_quasi`, `eta_quasi_spin_wave`, and `xi_disordered`. Saves `results/clock/correlation_comparison.npz`.
 - **`compare_discrete_vs_continuous.py`**: Provides a side-by-side performance and physical comparison between the continuous (XY + anisotropy, strength via `--aniso`) and discrete implementations. Supports `--seed` for reproducible sweeps and `--log-file` like the other clock scripts.
 
 ## 4. Cross-Model Benchmarking (`scripts/benchmarks/`)
@@ -62,7 +62,7 @@ As mandated in `AGENTS.md`, each script hardcodes the physically appropriate upd
 - Only the model `main()` entry points (`python -m models.ising_model` etc.) expose an `--update` CLI flag for direct experimentation.
 
 ### Results
-All scripts save their output (plots and data files) to the `results/` directory, sub-divided by model and experiment type.
+All scripts save their output (plots and data files) to the `results/` directory, sub-divided by model and experiment type. The three correlation comparisons run their temperatures across the worker pool, so their wall time is set by the slowest single temperature rather than by their sum.
 
 ## Production Defaults and Notebook Fallbacks
 
