@@ -52,6 +52,14 @@ scripts.xy.temperature\_sweep module
    :show-inheritance:
    :undoc-members:
 
+scripts.xy.wolff\_efficiency module
+-----------------------------------
+
+.. automodule:: scripts.xy.wolff_efficiency
+   :members:
+   :show-inheritance:
+   :undoc-members:
+
 Module contents
 ---------------
 

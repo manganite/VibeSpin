@@ -21,6 +21,7 @@ VibeSpin provides a suite of entry-point scripts for conducting physics experime
 - **`ordering_evolution.py`**: Visual snapshots including phase maps and vorticity configurations during ordering.
 - **`bkt_transition.py`**: Specifically focuses on the BKT transition by measuring average vortex density vs. temperature.
 - **`helicity_modulus.py`**: Calculates the superfluid stiffness to identify the universal jump at $T_{BKT}$.
+- **`wolff_efficiency.py`**: Compares the Wolff-Evertz cluster reflection against the Metropolis checkerboard across the BKT window, reporting work-normalised $\tau_{\mathrm{int}}$, independent samples per second, mean cluster fraction, and the susceptibility agreement that validates both samplers. Saves `results/xy/wolff_efficiency.npz`.
 - **`correlation_comparison.py`**: Contrasts power-law decay (topological order) with exponential decay (disordered phase). Renamed from `compare_correlations.py` to match its Ising and Clock siblings.
 
 ## 3. Clock Model (`scripts/clock/`)
@@ -28,6 +29,7 @@ VibeSpin provides a suite of entry-point scripts for conducting physics experime
 - **`temperature_sweep.py`**: Thermodynamic sweep for the q-state clock model, including $|M|$, $E$, $\chi$, $C_v$, entropy $S(T)$, a `--transition-preset` overlay marking the approximate $q=6$ crossover temperatures, and integrated autocorrelation time $\tau_{\mathrm{int}}$. Supports `--n-seeds` with the same single-seed blocking, entropy fallback propagation, multi-seed hierarchical uncertainty behavior, uncertainty-control CLI options, and `--eq-qs-*` stuck-detection flags as the Ising sweep, plus per-temperature quality flags. Saves `results/clock/temperature_sweep_data.npz` with the same standardized uncertainty schema and additive extras as the Ising sweep, along with separate thermodynamics and diagnostics figures for clearer uncertainty visualization.
 - **`ordering_kinetics.py`**: Analyzes the ordering dynamics after a quench. Supports `--seeds N` and `--base-seed` for multi-seed ensemble averaging with IQR-based error bars.
 - **`ordering_evolution.py`**: Visualizes the evolution of discrete phase domains.
+- **`wolff_efficiency.py`**: The clock counterpart of the Ising and XY efficiency comparisons, spanning both $q=6$ crossovers. It runs at zero anisotropy, because the Wolff-Evertz bond construction sees only the exchange term: with a non-zero crystal field the cluster update no longer satisfies detailed balance for the full Hamiltonian, so the comparison would be between two models rather than two algorithms. Saves `results/clock/wolff_efficiency.npz`.
 - **`correlation_comparison.py`**: Compares the functional form of $G(r)$ in the ordered ($T < T_1$), quasi-ordered ($T_1 < T < T_2$), and disordered ($T > T_2$) phases of the $q = 6$ clock model. Uses convergence equilibration. Saves `results/clock/correlation_comparison.npz`.
 - **`compare_discrete_vs_continuous.py`**: Provides a side-by-side performance and physical comparison between the continuous (XY + anisotropy, strength via `--aniso`) and discrete implementations. Supports `--seed` for reproducible sweeps and `--log-file` like the other clock scripts.
 
@@ -100,12 +102,14 @@ The table below maps each script to its data output and the notebook(s) that con
 | `scripts/xy/temperature_sweep.py` | `results/xy/temperature_sweep_data.npz` | `XY_Temperature_Sweep.ipynb` |
 | `scripts/xy/bkt_transition.py` | `results/xy/bkt_transition.npz` | `BKT_Transition.ipynb` |
 | `scripts/xy/helicity_modulus.py` | `results/xy/helicity_modulus.npz` | `BKT_Transition.ipynb` |
+| `scripts/xy/wolff_efficiency.py` | `results/xy/wolff_efficiency.npz` | `Wolff_Efficiency.ipynb` |
 | `scripts/xy/correlation_comparison.py` | `results/xy/correlation_comparison.npz` | `BKT_Transition.ipynb`, `Correlation_and_Coarsening.ipynb` |
 | `scripts/xy/ordering_kinetics.py` | `results/xy/ordering_kinetics.npz` | `Correlation_and_Coarsening.ipynb` |
 | `scripts/xy/ordering_evolution.py` | *(figure only)* | — |
 | **Clock** | | |
 | `scripts/clock/temperature_sweep.py` | `results/clock/temperature_sweep_data.npz` | `Clock_Temperature_Sweep.ipynb` |
 | `scripts/clock/ordering_kinetics.py` | `results/clock/ordering_kinetics.npz` | `Correlation_and_Coarsening.ipynb` |
+| `scripts/clock/wolff_efficiency.py` | `results/clock/wolff_efficiency.npz` | `Wolff_Efficiency.ipynb` |
 | `scripts/clock/correlation_comparison.py` | `results/clock/correlation_comparison.npz` | `Correlation_and_Coarsening.ipynb` |
 | `scripts/clock/ordering_evolution.py` | *(figure only)* | — |
 | `scripts/clock/compare_discrete_vs_continuous.py` | *(figure only)* | — |

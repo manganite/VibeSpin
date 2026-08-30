@@ -444,38 +444,6 @@ class IsingSimulation(MonteCarloSimulation):
                 )
         self.steps += 1
 
-    def run_with_cluster_sizes(self, *, n_steps: int) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
-        """Run the simulation and additionally record the Wolff cluster size at every step.
-
-        For non-Wolff update schemes the cluster-size array is filled with zeros because
-        local Metropolis flips exactly one spin at a time (cluster size = 1 by convention
-        would also be valid, but zero makes it easy to detect misuse).
-
-        Parameters
-        ----------
-        n_steps:
-            Number of MC steps to perform and record.
-
-        Returns
-        -------
-        magnetization:
-            Array of `|M|` per spin at each step.
-        energies:
-            Array of energy per spin at each step.
-        cluster_sizes:
-            Array of cluster sizes (number of spins flipped) at each step.
-            Always zero for non-Wolff algorithms.
-        """
-        magnetization = np.empty(n_steps, dtype=float)
-        energies = np.empty(n_steps, dtype=float)
-        cluster_sizes = np.zeros(n_steps, dtype=int)
-        for i in range(n_steps):
-            self.step()
-            magnetization[i] = self._get_magnetization()
-            energies[i] = self._get_energy()
-            cluster_sizes[i] = self.last_cluster_size
-        return magnetization, energies, cluster_sizes
-
     def _get_magnetization(self) -> float:
         """Calculate magnetization per spin."""
         if self.spins is not None:

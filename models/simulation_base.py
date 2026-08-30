@@ -558,3 +558,37 @@ class MonteCarloSimulation(ABC):
             magnetization[i] = self._get_magnetization()
             energies[i] = self._get_energy()
         return magnetization, energies
+
+    def run_with_cluster_sizes(self, *, n_steps: int) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
+        """
+        Run the simulation and additionally record the cluster size at every step.
+
+        For non-cluster update schemes the cluster-size array is filled with
+        zeros, because a local Metropolis move flips exactly one spin.  A
+        convention of one would be equally defensible; zero was chosen so that
+        misuse of this method on a local update is easy to spot in the output.
+
+        Parameters
+        ----------
+        n_steps : int
+            Number of MC steps to perform and record.
+
+        Returns
+        -------
+        magnetization : np.ndarray
+            Magnetization per spin at each step.
+        energies : np.ndarray
+            Energy per spin at each step.
+        cluster_sizes : np.ndarray
+            Number of spins the update touched at each step, zero for every
+            non-cluster scheme.
+        """
+        magnetization = np.empty(n_steps, dtype=float)
+        energies = np.empty(n_steps, dtype=float)
+        cluster_sizes = np.zeros(n_steps, dtype=int)
+        for i in range(n_steps):
+            self.step()
+            magnetization[i] = self._get_magnetization()
+            energies[i] = self._get_energy()
+            cluster_sizes[i] = self.last_cluster_size
+        return magnetization, energies, cluster_sizes

@@ -139,6 +139,15 @@ DATA_PRODUCTS: tuple[DataProduct, ...] = (
         ),
     ),
     DataProduct(
+        key='xy/wolff_efficiency',
+        module='scripts.xy.wolff_efficiency',
+        output='xy/wolff_efficiency.npz',
+        quick_args=(
+            '--size', '16', '--t-points', '5', '--n-seeds', '1',
+            '--meas-steps', '400', '--eq-max-steps', '2000',
+        ),
+    ),
+    DataProduct(
         key='xy/correlation_comparison',
         module='scripts.xy.correlation_comparison',
         output='xy/correlation_comparison.npz',
@@ -156,6 +165,15 @@ DATA_PRODUCTS: tuple[DataProduct, ...] = (
         output='clock/temperature_sweep_data.npz',
         quick_args=(
             '--size', '16', '--t-points', '6', '--n-seeds', '1',
+            '--meas-steps', '400', '--eq-max-steps', '2000',
+        ),
+    ),
+    DataProduct(
+        key='clock/wolff_efficiency',
+        module='scripts.clock.wolff_efficiency',
+        output='clock/wolff_efficiency.npz',
+        quick_args=(
+            '--size', '16', '--t-points', '5', '--n-seeds', '1',
             '--meas-steps', '400', '--eq-max-steps', '2000',
         ),
     ),

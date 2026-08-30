@@ -12,6 +12,17 @@ Subpackages
    vibespin.scripts.ising
    vibespin.scripts.xy
 
+Submodules
+----------
+
+scripts.generate\_all module
+----------------------------
+
+.. automodule:: scripts.generate_all
+   :members:
+   :show-inheritance:
+   :undoc-members:
+
 Module contents
 ---------------
 
