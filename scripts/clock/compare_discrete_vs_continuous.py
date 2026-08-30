@@ -14,7 +14,7 @@ import numpy as np
 from models.clock_model import ClockSimulation, DiscreteClockSimulation
 from utils.equilibration import convergence_equilibrate
 from utils.observables import calculate_thermodynamics
-from utils.system import setup_logging
+from utils.system import parse_args_compat, setup_logging
 
 
 def sweep_model(
@@ -26,17 +26,56 @@ def sweep_model(
     eq_probe_steps: int,
     eq_max_steps: int,
     meas_steps: int,
+    base_seed: int,
     extra_kwargs: dict,
 ) -> tuple[list[float], list[float], list[float], list[float]]:
+    """Sweep one clock-model variant over a temperature grid.
+
+    For each temperature, runs two-start convergence equilibration and then
+    measures thermodynamic observables on the random-start simulation.
+
+    Parameters
+    ----------
+    model_cls : type
+        Simulation class (``ClockSimulation`` or
+        ``DiscreteClockSimulation``).
+    temperatures : np.ndarray
+        Temperature grid to sweep.
+    L : int
+        Linear lattice size.
+    q : int
+        Number of clock states.
+    eq_probe_steps : int
+        Chunk size for convergence-equilibration probes.
+    eq_max_steps : int
+        Hard cap on equilibration steps per point.
+    meas_steps : int
+        Measurement steps per point.
+    base_seed : int
+        Base RNG seed; each temperature point uses
+        ``base_seed + point_index`` so points are reproducible yet
+        distinct.
+    extra_kwargs : dict
+        Extra constructor arguments (e.g. ``{'A': aniso}``).
+
+    Returns
+    -------
+    tuple[list[float], list[float], list[float], list[float]]
+        Lists of per-temperature (avg_m, avg_e, susceptibility, specific heat).
+    """
     avg_m_list: list[float] = []
     avg_e_list: list[float] = []
     susc_list: list[float] = []
     spec_h_list: list[float] = []
 
-    for T in temperatures:
-        sim_r = model_cls(size=L, temp=T, q=q, init_state='random', **extra_kwargs)
-        sim_o = model_cls(size=L, temp=T, q=q, init_state='ordered', **extra_kwargs)
-        convergence_equilibrate(sim_r, sim_o, chunk_size=eq_probe_steps, max_steps=eq_max_steps)
+    for t_idx, T in enumerate(temperatures):
+        seed = base_seed + t_idx
+        sim_r = model_cls(size=L, temp=T, q=q, init_state='random', seed=seed, **extra_kwargs)
+        sim_o = model_cls(size=L, temp=T, q=q, init_state='ordered', seed=seed, **extra_kwargs)
+        convergence_equilibrate(
+            sim_random=sim_r, sim_ordered=sim_o,
+            chunk_size=eq_probe_steps, max_steps=eq_max_steps,
+        )
 
         mags, engs = sim_r.run(n_steps=meas_steps)
         avg_m, avg_e, susc, spec_h = calculate_thermodynamics(
@@ -50,6 +89,7 @@ def sweep_model(
 
 
 def main() -> None:
+    """Run the continuous-vs-discrete clock comparison and save the figure."""
     parser = argparse.ArgumentParser(description='Compare Discrete vs Continuous Clock Models')
     parser.add_argument('--size', type=int, default=32, help='Lattice size L')
     parser.add_argument('--q', type=int, default=6, help='Number of clock states')
@@ -65,12 +105,16 @@ def main() -> None:
     parser.add_argument('--t-min', type=float, default=0.1, help='Minimum temperature')
     parser.add_argument('--t-max', type=float, default=2.0, help='Maximum temperature')
     parser.add_argument('--t-points', type=int, default=30, help='Number of temperature points')
+    parser.add_argument('--aniso', type=float, default=0.1,
+                        help='Anisotropy strength A for the continuous variant')
+    parser.add_argument('--seed', type=int, default=0, help='Base random seed')
     parser.add_argument('--output-dir', type=str, default='results/clock', help='Output directory')
+    parser.add_argument('--log-file', type=str, default=None, help='Optional log file path')
     parser.add_argument('--verbose', action='store_true', help='Enable verbose logging')
-    args = parser.parse_args()
+    args = parse_args_compat(parser=parser)
 
     log_level = logging.DEBUG if args.verbose else logging.INFO
-    logger = setup_logging(level=log_level)
+    logger = setup_logging(level=log_level, log_file=args.log_file)
 
     L = args.size
     q = args.q
@@ -85,8 +129,8 @@ def main() -> None:
         f'meas={meas_steps} steps each\n'
     )
 
-    # --- Continuous clock (XY + anisotropy A=0.1) ---
-    logger.info('Running continuous clock (A=0.1)...')
+    # --- Continuous clock (XY + anisotropy) ---
+    logger.info(f'Running continuous clock (A={args.aniso})...')
     t0 = time.perf_counter()
     cm, ce, cs, cc = sweep_model(
         model_cls=ClockSimulation,
@@ -95,7 +139,8 @@ def main() -> None:
         eq_probe_steps=eq_probe_steps,
         eq_max_steps=eq_max_steps,
         meas_steps=meas_steps,
-        extra_kwargs={'A': 0.1},
+        base_seed=args.seed,
+        extra_kwargs={'A': args.aniso},
     )
     logger.info(f'  Done in {time.perf_counter() - t0:.1f}s')
 
@@ -109,6 +154,7 @@ def main() -> None:
         eq_probe_steps=eq_probe_steps,
         eq_max_steps=eq_max_steps,
         meas_steps=meas_steps,
+        base_seed=args.seed,
         extra_kwargs={},
     )
     logger.info(f'  Done in {time.perf_counter() - t0:.1f}s')
@@ -128,7 +174,7 @@ def main() -> None:
     ]
 
     for ax, (ylabel, cont_data, disc_data) in zip(axes.flat, labels, strict=True):
-        ax.plot(temperatures, cont_data, 'o-', ms=4, label='Continuous (A=0.1)')
+        ax.plot(temperatures, cont_data, 'o-', ms=4, label=f'Continuous (A={args.aniso})')
         ax.plot(temperatures, disc_data, 's--', ms=4, label='Discrete')
         ax.set_xlabel('Temperature $T$')
         ax.set_ylabel(ylabel)

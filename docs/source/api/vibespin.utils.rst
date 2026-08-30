@@ -4,6 +4,14 @@ vibespin.utils package
 Submodules
 ----------
 
+utils.efficiency\_runner module
+-------------------------------
+
+.. automodule:: utils.efficiency_runner
+   :members:
+   :show-inheritance:
+   :undoc-members:
+
 utils.equilibration module
 --------------------------
 
@@ -64,6 +72,14 @@ utils.sweep\_helpers module
 ---------------------------
 
 .. automodule:: utils.sweep_helpers
+   :members:
+   :show-inheritance:
+   :undoc-members:
+
+utils.sweep\_runner module
+--------------------------
+
+.. automodule:: utils.sweep_runner
    :members:
    :show-inheritance:
    :undoc-members:

@@ -15,6 +15,38 @@ def _seed_numba(*, seed: int) -> None:
     np.random.seed(seed)
 
 
+_MASK64 = (1 << 64) - 1
+
+
+def _derive_step_seed(*, seed: int, step: int) -> int:
+    """Mix a (seed, step) pair into a decorrelated 32-bit per-sweep seed.
+
+    A plain ``seed + step`` derivation makes the per-sweep random stream of
+    seed ``s`` at sweep ``t + 1`` identical to that of seed ``s + 1`` at sweep
+    ``t``, so replicas seeded with consecutive integers (the common
+    ``base_seed + k`` convention) share almost all of their randomness and are
+    not statistically independent. The SplitMix64 finalizer scrambles the pair
+    so distinct (seed, step) inputs yield uncorrelated seeds.
+
+    Parameters
+    ----------
+    seed : int
+        Simulation base seed (non-negative integer).
+    step : int
+        Zero-based sweep index.
+
+    Returns
+    -------
+    int
+        A seed in [0, 2**32) suitable for ``np.random.seed`` inside Numba.
+    """
+    z = (seed * 0xD1B54A32D192ED03 + step * 0x9E3779B97F4A7C15) & _MASK64
+    z = ((z ^ (z >> 30)) * 0xBF58476D1CE4E5B9) & _MASK64
+    z = ((z ^ (z >> 27)) * 0x94D049BB133111EB) & _MASK64
+    z ^= z >> 31
+    return int(z & 0xFFFFFFFF)
+
+
 @njit(cache=True, fastmath=True)
 def _calculate_vorticity_angles_numba(angles: np.ndarray, idx_next: np.ndarray) -> np.ndarray:
     """Fast kernel to calculate vorticity from a 2D array of angles."""
@@ -46,12 +78,15 @@ def calculate_vorticity_numba(*, spins: np.ndarray, idx_next: np.ndarray) -> np.
 
     Parameters
     ----------
-        spins: (N, N, 2) array of unit vectors.
-        idx_next: Pre-calculated next-neighbor indices.
+    spins : np.ndarray
+        (N, N, 2) array of unit vectors.
+    idx_next : np.ndarray
+        Pre-calculated next-neighbor indices.
 
     Returns
     -------
-        vorticity: (N, N) array containing winding numbers (+1, -1, or 0).
+    vorticity : np.ndarray
+        (N, N) array containing winding numbers (+1, -1, or 0).
     """
     # Vectorized arctan2 is much faster than calling it inside a Numba loop
     angles = np.arctan2(spins[..., 1], spins[..., 0])
@@ -76,11 +111,14 @@ def calculate_vortex_density_numba(*, spins: np.ndarray, idx_next: np.ndarray) -
 
     Parameters
     ----------
-        spins: (N, N, 2) array of unit vectors.
-        idx_next: Pre-calculated next-neighbor indices.
+    spins : np.ndarray
+        (N, N, 2) array of unit vectors.
+    idx_next : np.ndarray
+        Pre-calculated next-neighbor indices.
 
     Returns
     -------
+    float
         Vortex density n_v in [0, 1].
     """
     vorticity = calculate_vorticity_numba(spins=spins, idx_next=idx_next)
@@ -94,13 +132,17 @@ def get_helicity_data_numba(*, spins: np.ndarray, idx_next: np.ndarray) -> tuple
 
     Parameters
     ----------
-        spins: (N, N, 2) array of unit vectors.
-        idx_next: Pre-calculated next-neighbor indices for PBCs.
+    spins : np.ndarray
+        (N, N, 2) array of unit vectors.
+    idx_next : np.ndarray
+        Pre-calculated next-neighbor indices for PBCs.
 
     Returns
     -------
-        cos_sum: Sum of cosine of angle differences.
-        sin_sum: Sum of sine of angle differences.
+    cos_sum : float
+        Sum of cosine of angle differences.
+    sin_sum : float
+        Sum of sine of angle differences.
     """
     N = spins.shape[0]
     cos_sum = 0.0
@@ -113,6 +155,206 @@ def get_helicity_data_numba(*, spins: np.ndarray, idx_next: np.ndarray) -> tuple
             # sin(theta_i - theta_j) = cross product
             sin_sum += spins[i, j, 0] * spins[i, j_next, 1] - spins[i, j, 1] * spins[i, j_next, 0]
     return cos_sum, sin_sum
+
+
+@njit(cache=True, fastmath=True)
+def o2_wolff_step_numba(
+    *,
+    spins: np.ndarray,
+    beta: float,
+    J: float,
+    idx_next: np.ndarray,
+    idx_prev: np.ndarray,
+    in_cluster: np.ndarray,
+    stack: np.ndarray,
+    cluster_spins: np.ndarray
+) -> tuple:
+    """
+    Perform one Wolff-Evertz cluster reflection on a planar unit-vector field.
+
+    A random mirror-plane axis is sampled uniformly from the unit circle, and
+    each spin is projected onto it.  Bonds between neighbours whose projections
+    share a sign are activated with probability
+    ``P_add = 1 - exp(-2 beta J sigma_i sigma_j)``, and every spin in the
+    resulting cluster is reflected through the plane perpendicular to the axis.
+    The reflection preserves unit length exactly.
+
+    The bond construction sees only the exchange term, so every O(2) model in
+    this project shares this update unchanged.  Where the Hamiltonian adds a
+    single-site term that breaks the reflection symmetry, such as the
+    crystal-field anisotropy of the clock model, detailed balance then holds
+    for the exchange part alone, and ``ClockSimulation`` warns when it is asked
+    to combine this update with a non-zero anisotropy.
+
+    One call constitutes one cluster sweep.  ``parallel=True`` is silently
+    ignored.
+
+    Parameters
+    ----------
+    spins : np.ndarray
+        (N, N, 2) array of unit vectors.
+    beta : float
+        Inverse temperature 1/kT.
+    J : float
+        Coupling constant.
+    idx_next : np.ndarray
+        Pre-calculated next-neighbor indices (PBC).
+    idx_prev : np.ndarray
+        Pre-calculated previous-neighbor indices (PBC).
+    in_cluster : np.ndarray
+        Pre-allocated (N, N) boolean array for cluster membership mask.
+    stack : np.ndarray
+        Pre-allocated (N*N) int64 array for DFS stack.
+    cluster_spins : np.ndarray
+        Pre-allocated (N*N) int64 array to track cluster elements.
+
+    Returns
+    -------
+    spins
+        Updated spins array.
+    cluster_size
+        Number of spins reflected in this step.
+    """
+    # The caller hands in an all-False in_cluster mask; the reflection loop
+    # below clears every entry it set, so the buffer stays reusable.
+    N = spins.shape[0]
+
+    # Random mirror-plane axis r\u0302 = (cos phi, sin phi)
+    phi = np.random.uniform(0.0, 2.0 * np.pi)
+    rx = np.cos(phi)
+    ry = np.sin(phi)
+
+    # Random seed site
+    si = np.random.randint(0, N)
+    sj = np.random.randint(0, N)
+
+    # Setup DFS from seed
+    seed_flat = si * N + sj
+    in_cluster[si, sj] = True
+    stack[0] = seed_flat
+    stack_top = 1
+
+    cluster_spins[0] = seed_flat
+    cluster_size = 1
+
+    while stack_top > 0:
+        stack_top -= 1
+        flat = stack[stack_top]
+        ci = flat // N
+        cj = flat % N
+
+        proj_c = spins[ci, cj, 0] * rx + spins[ci, cj, 1] * ry
+        inxt = idx_next[ci]
+        iprv = idx_prev[ci]
+        jnxt = idx_next[cj]
+        jprv = idx_prev[cj]
+
+        # North
+        if not in_cluster[iprv, cj]:
+            proj_n = spins[iprv, cj, 0] * rx + spins[iprv, cj, 1] * ry
+            prod = proj_c * proj_n
+            if prod > 0.0:
+                p_add = 1.0 - np.exp(-2.0 * beta * J * prod)
+                if np.random.random() < p_add:
+                    in_cluster[iprv, cj] = True
+                    new_idx = iprv * N + cj
+                    stack[stack_top] = new_idx
+                    stack_top += 1
+                    cluster_spins[cluster_size] = new_idx
+                    cluster_size += 1
+        # South
+        if not in_cluster[inxt, cj]:
+            proj_n = spins[inxt, cj, 0] * rx + spins[inxt, cj, 1] * ry
+            prod = proj_c * proj_n
+            if prod > 0.0:
+                p_add = 1.0 - np.exp(-2.0 * beta * J * prod)
+                if np.random.random() < p_add:
+                    in_cluster[inxt, cj] = True
+                    new_idx = inxt * N + cj
+                    stack[stack_top] = new_idx
+                    stack_top += 1
+                    cluster_spins[cluster_size] = new_idx
+                    cluster_size += 1
+        # West
+        if not in_cluster[ci, jprv]:
+            proj_n = spins[ci, jprv, 0] * rx + spins[ci, jprv, 1] * ry
+            prod = proj_c * proj_n
+            if prod > 0.0:
+                p_add = 1.0 - np.exp(-2.0 * beta * J * prod)
+                if np.random.random() < p_add:
+                    in_cluster[ci, jprv] = True
+                    new_idx = ci * N + jprv
+                    stack[stack_top] = new_idx
+                    stack_top += 1
+                    cluster_spins[cluster_size] = new_idx
+                    cluster_size += 1
+        # East
+        if not in_cluster[ci, jnxt]:
+            proj_n = spins[ci, jnxt, 0] * rx + spins[ci, jnxt, 1] * ry
+            prod = proj_c * proj_n
+            if prod > 0.0:
+                p_add = 1.0 - np.exp(-2.0 * beta * J * prod)
+                if np.random.random() < p_add:
+                    in_cluster[ci, jnxt] = True
+                    new_idx = ci * N + jnxt
+                    stack[stack_top] = new_idx
+                    stack_top += 1
+                    cluster_spins[cluster_size] = new_idx
+                    cluster_size += 1
+
+    # Reflect all cluster spins in-place and reset in_cluster mask
+    for i in range(cluster_size):
+        flat = cluster_spins[i]
+        ci = flat // N
+        cj = flat % N
+        proj = spins[ci, cj, 0] * rx + spins[ci, cj, 1] * ry
+        spins[ci, cj, 0] -= 2.0 * proj * rx
+        spins[ci, cj, 1] -= 2.0 * proj * ry
+        in_cluster[ci, cj] = False
+
+    return spins, cluster_size
+
+
+class VectorSpinObservablesMixin:
+    """Public topological-observable accessors for vector-spin models.
+
+    Mixed into ``XYSimulation``, ``ClockSimulation``, and
+    ``DiscreteClockSimulation``, which each provide the private
+    implementations. Keeping the public wrappers here gives scripts and
+    analysis helpers a stable API without duplicating docstrings per model.
+    """
+
+    def calculate_vorticity(self) -> np.ndarray:
+        """Calculate the vorticity (winding number) of each plaquette.
+
+        Returns
+        -------
+        np.ndarray
+            (N, N) array of winding numbers (+1, -1, or 0).
+        """
+        return self._calculate_vorticity()  # type: ignore[attr-defined]
+
+    def get_vortex_density(self) -> float:
+        """Calculate the vortex density n_v.
+
+        Returns
+        -------
+        float
+            Fraction of plaquettes with non-zero winding, in [0, 1].
+        """
+        return self._get_vortex_density()  # type: ignore[attr-defined]
+
+    def get_helicity_data(self) -> tuple[float, float]:
+        """Calculate the helicity-modulus raw sums along the x-direction.
+
+        Returns
+        -------
+        cos_sum : float
+            Sum of cosine of nearest-neighbor angle differences.
+        sin_sum : float
+            Sum of sine of nearest-neighbor angle differences.
+        """
+        return self._get_helicity_data()  # type: ignore[attr-defined]
 
 
 class MonteCarloSimulation(ABC):
@@ -129,14 +371,19 @@ class MonteCarloSimulation(ABC):
 
         Parameters
         ----------
-            size: Linear dimension L of the N x N lattice.
-            temp: Temperature T of the system.
-            init_state: Initial spin configuration: ``'random'`` (default) or ``'ordered'``.
-            seed: Optional random seed for reproducibility.
+        size : int
+            Linear dimension L of the N x N lattice.
+        temp : float
+            Temperature T of the system.
+        init_state : str
+            Initial spin configuration: ``'random'`` (default) or ``'ordered'``.
+        seed : int | None
+            Optional random seed for reproducibility.
 
         Raises
         ------
-            ValueError: If ``size`` is not a positive integer or ``temp`` is not positive.
+        ValueError
+            If ``size`` is not a positive integer or ``temp`` is not positive.
         """
         if not isinstance(size, (int, np.integer)) or size < 1:
             raise ValueError(f'size must be a positive integer, got {size!r}')
@@ -159,6 +406,8 @@ class MonteCarloSimulation(ABC):
         self._wolff_cluster_mask = np.zeros((size, size), dtype=np.bool_)
         self._wolff_stack = np.empty(size * size, dtype=np.int64)
         self._wolff_cluster_spins = np.empty(size * size, dtype=np.int64)
+        # Last Wolff cluster size (0 for non-Wolff updates or before any step)
+        self.last_cluster_size: int = 0
 
         # Pre-calculate radial distance bins for correlation analysis
         center = size // 2
@@ -167,6 +416,16 @@ class MonteCarloSimulation(ABC):
         self._r_int_pre = r.astype(int).ravel()
         self._nr_pre = np.bincount(self._r_int_pre)
         self._r_range_pre = np.arange(center)
+
+    def _reseed_numba_for_step(self) -> None:
+        """Reseed Numba's RNG deterministically for the upcoming sweep.
+
+        No-op when the simulation is unseeded. Serial kernels become fully
+        reproducible; parallel (``prange``) kernels are NOT seed-reproducible
+        because only the calling thread's Numba RNG state is seeded.
+        """
+        if self.seed is not None:
+            _seed_numba(seed=_derive_step_seed(seed=self.seed, step=self.steps))
 
     @abstractmethod
     def step(self) -> None:
@@ -196,8 +455,10 @@ class MonteCarloSimulation(ABC):
 
         Returns
         -------
-            r: Radial distances.
-            G_r: Radially averaged correlation values.
+        r : np.ndarray
+            Radial distances.
+        G_r : np.ndarray
+            Radially averaged correlation values.
         """
         Sk_sq = self._get_structure_factor_squared_unshifted()
 
@@ -222,13 +483,54 @@ class MonteCarloSimulation(ABC):
         center = self.size // 2
         return self._r_range_pre, radial_profile[:center]
 
+    def get_magnetization(self) -> float:
+        """Return the current absolute magnetization per site.
+
+        Public accessor for scripts and analysis helpers; delegates to the
+        model-specific implementation.
+
+        Returns
+        -------
+        float
+            Absolute magnetization per site.
+        """
+        return self._get_magnetization()
+
+    def get_energy(self) -> float:
+        """Return the current energy per site.
+
+        Public accessor for scripts and analysis helpers; delegates to the
+        model-specific implementation.
+
+        Returns
+        -------
+        float
+            Energy per site.
+        """
+        return self._get_energy()
+
+    def calculate_correlation_function(self) -> tuple[np.ndarray, np.ndarray]:
+        """Calculate the radially averaged spin-spin correlation function G(r).
+
+        Public accessor for scripts and analysis helpers.
+
+        Returns
+        -------
+        r : np.ndarray
+            Radial distances.
+        G_r : np.ndarray
+            Radially averaged correlation values, normalized to G(0) = 1.
+        """
+        return self._calculate_correlation_function()
+
     def equilibrate(self, *, n_steps: int) -> None:
         """
         Perform equilibration steps without recording measurements.
 
         Parameters
         ----------
-            n_steps: Number of MC steps to perform.
+        n_steps : int
+            Number of MC steps to perform.
         """
         for _ in range(n_steps):
             self.step()
@@ -239,12 +541,15 @@ class MonteCarloSimulation(ABC):
 
         Parameters
         ----------
-            n_steps: Number of MC steps to perform and record.
+        n_steps : int
+            Number of MC steps to perform and record.
 
         Returns
         -------
-            magnetization: Array of recorded magnetization values.
-            energies: Array of recorded energy values.
+        magnetization : np.ndarray
+            Array of recorded magnetization values.
+        energies : np.ndarray
+            Array of recorded energy values.
         """
         magnetization: np.ndarray = np.empty(n_steps)
         energies: np.ndarray = np.empty(n_steps)
@@ -253,3 +558,37 @@ class MonteCarloSimulation(ABC):
             magnetization[i] = self._get_magnetization()
             energies[i] = self._get_energy()
         return magnetization, energies
+
+    def run_with_cluster_sizes(self, *, n_steps: int) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
+        """
+        Run the simulation and additionally record the cluster size at every step.
+
+        For non-cluster update schemes the cluster-size array is filled with
+        zeros, because a local Metropolis move flips exactly one spin.  A
+        convention of one would be equally defensible; zero was chosen so that
+        misuse of this method on a local update is easy to spot in the output.
+
+        Parameters
+        ----------
+        n_steps : int
+            Number of MC steps to perform and record.
+
+        Returns
+        -------
+        magnetization : np.ndarray
+            Magnetization per spin at each step.
+        energies : np.ndarray
+            Energy per spin at each step.
+        cluster_sizes : np.ndarray
+            Number of spins the update touched at each step, zero for every
+            non-cluster scheme.
+        """
+        magnetization = np.empty(n_steps, dtype=float)
+        energies = np.empty(n_steps, dtype=float)
+        cluster_sizes = np.zeros(n_steps, dtype=int)
+        for i in range(n_steps):
+            self.step()
+            magnetization[i] = self._get_magnetization()
+            energies[i] = self._get_energy()
+            cluster_sizes[i] = self.last_cluster_size
+        return magnetization, energies, cluster_sizes

@@ -24,7 +24,7 @@ def main() -> None:
     parser.add_argument('--samples', type=int, default=25, help='Number of measurement points')
     parser.add_argument('--fit-min', type=int, default=5, help='Min step for power-law fit')
     parser.add_argument(
-        '--seeds', type=int, default=4,
+        '--n-seeds', '--seeds', dest='seeds', type=int, default=4,
         help='Number of independent seeds for ensemble averaging',
     )
     parser.add_argument('--base-seed', type=int, default=42, help='Starting seed for the ensemble')
@@ -32,7 +32,7 @@ def main() -> None:
     parser.add_argument('--log-file', type=str, default=None, help='Optional log file path')
     parser.add_argument('--verbose', action='store_true', help='Enable verbose logging')
 
-    args = parse_args_compat(parser)
+    args = parse_args_compat(parser=parser)
 
     log_level = logging.DEBUG if args.verbose else logging.INFO
     logger = setup_logging(level=log_level, log_file=args.log_file)
@@ -45,7 +45,7 @@ def main() -> None:
     run_ordering_kinetics(
         model_cls=IsingSimulation,
         model_kwargs={},
-        third_metric_fn=compute_mean_intercept_length,
+        third_metric_fn=lambda s: compute_mean_intercept_length(sim=s),
         third_metric_label='Mean Intercept Length $R_{MIL}$',
         title=(
             f'2D Ising Ordering Kinetics - $T = {args.temp}$'

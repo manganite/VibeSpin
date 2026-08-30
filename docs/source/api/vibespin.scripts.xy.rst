@@ -12,10 +12,10 @@ scripts.xy.bkt\_transition module
    :show-inheritance:
    :undoc-members:
 
-scripts.xy.compare\_correlations module
----------------------------------------
+scripts.xy.correlation\_comparison module
+-----------------------------------------
 
-.. automodule:: scripts.xy.compare_correlations
+.. automodule:: scripts.xy.correlation_comparison
    :members:
    :show-inheritance:
    :undoc-members:
@@ -48,6 +48,14 @@ scripts.xy.temperature\_sweep module
 ------------------------------------
 
 .. automodule:: scripts.xy.temperature_sweep
+   :members:
+   :show-inheritance:
+   :undoc-members:
+
+scripts.xy.wolff\_efficiency module
+-----------------------------------
+
+.. automodule:: scripts.xy.wolff_efficiency
    :members:
    :show-inheritance:
    :undoc-members:

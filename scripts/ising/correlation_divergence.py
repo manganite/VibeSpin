@@ -6,6 +6,7 @@ from __future__ import annotations
 
 import argparse
 import logging
+from typing import Any
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -21,10 +22,12 @@ def get_correlation_length(params: tuple[float, int, int, int, int]) -> tuple[fl
 
     Parameters
     ----------
-        params: Tuple of (T, L, steps, eq_steps, sample_interval).
+    params : tuple[float, int, int, int, int]
+        Tuple of (T, L, steps, eq_steps, sample_interval).
 
     Returns
     -------
+    tuple[float, float]
         A tuple of (T, xi).
     """
     T, L, steps, eq_steps, sample_interval = params
@@ -56,7 +59,7 @@ def get_correlation_length(params: tuple[float, int, int, int, int]) -> tuple[fl
     return T, xi
 
 
-def run_divergence_analysis() -> None:
+def main() -> None:
     """Run parallel simulation to extract the critical exponent nu from xi(T) divergence."""
     parser = argparse.ArgumentParser(description='2D Ising Model Correlation Divergence Analysis')
     parser.add_argument('--size', type=int, default=128, help='Linear lattice size L')
@@ -67,7 +70,7 @@ def run_divergence_analysis() -> None:
     parser.add_argument('--log-file', type=str, default=None, help='Optional log file path')
     parser.add_argument('--verbose', action='store_true', help='Enable verbose logging')
 
-    args = parse_args_compat(parser)
+    args = parse_args_compat(parser=parser)
 
     # Configure logging
     log_level = logging.DEBUG if args.verbose else logging.INFO
@@ -147,31 +150,20 @@ def run_divergence_analysis() -> None:
 
     # Save data for notebook consumption
     npz_path = f'{output_dir}/correlation_divergence.npz'
+    save_kwargs: dict[str, Any] = dict(
+        temperatures=temps,
+        xi=xis,
+        T_c=TC_THEORETICAL,
+        L=args.size,
+        steps=args.steps,
+        eq_steps=args.eq_steps,
+        sample_interval=args.interval,
+    )
     if nu is not None:
-        np.savez_compressed(
-            npz_path,
-            temperatures=temps,
-            xi=xis,
-            T_c=TC_THEORETICAL,
-            L=args.size,
-            steps=args.steps,
-            eq_steps=args.eq_steps,
-            sample_interval=args.interval,
-            nu=nu,
-        )
-    else:
-        np.savez_compressed(
-            npz_path,
-            temperatures=temps,
-            xi=xis,
-            T_c=TC_THEORETICAL,
-            L=args.size,
-            steps=args.steps,
-            eq_steps=args.eq_steps,
-            sample_interval=args.interval,
-        )
+        save_kwargs['nu'] = nu
+    np.savez_compressed(npz_path, **save_kwargs)
     logger.info(f'Data saved to {npz_path}')
 
 
 if __name__ == '__main__':
-    run_divergence_analysis()
+    main()

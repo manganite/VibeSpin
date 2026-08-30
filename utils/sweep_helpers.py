@@ -22,10 +22,176 @@ import numpy as np
 
 from utils.equilibration import convergence_equilibrate_with_status
 from utils.statistics import (
+    UNCERTAINTY_METHOD_BOOTSTRAP,
+    _z_multiplier,
+    blocking_error,
+    estimate_tau_int_or_nan,
     summarize_derived_observable,
     summarize_primary_observable,
     summarize_seed_ensemble,
 )
+
+
+def validate_sweep_uncertainty_args(
+    *,
+    confidence_level: float,
+    max_undefined_fraction: float,
+    min_effective_samples: float,
+    max_tau_relative_width: float,
+    derived_uncertainty_method: str,
+    derived_bootstrap_resamples: int,
+    n_seeds: int,
+) -> None:
+    """Validate the shared uncertainty-related CLI arguments of sweep scripts.
+
+    Centralized here so that the Ising, XY, and Clock temperature sweeps
+    reject invalid inputs identically instead of failing deep inside worker
+    statistics after simulations have already started.
+
+    Parameters
+    ----------
+    confidence_level : float
+        Two-sided confidence level; must satisfy 0 < c < 1.
+    max_undefined_fraction : float
+        Strict-mode threshold; must satisfy 0 <= f <= 1.
+    min_effective_samples : float
+        Quality-flag threshold; must be >= 0.
+    max_tau_relative_width : float
+        Quality-flag threshold; must be >= 0.
+    derived_uncertainty_method : str
+        Method name for derived observables; bootstrap requires resamples.
+    derived_bootstrap_resamples : int
+        Bootstrap resample count; must be > 0 when the method is bootstrap.
+    n_seeds : int
+        Target converged seed replicas; must be >= 1.
+
+    Raises
+    ------
+    ValueError
+        If any argument is outside its documented range.
+    """
+    if not (0.0 < float(confidence_level) < 1.0):
+        raise ValueError(
+            f'confidence-level must satisfy 0 < c < 1, got {confidence_level}'
+        )
+    if max_undefined_fraction < 0.0 or max_undefined_fraction > 1.0:
+        raise ValueError(
+            f'max-undefined-fraction must satisfy 0 <= f <= 1, got {max_undefined_fraction}'
+        )
+    if min_effective_samples < 0.0:
+        raise ValueError(
+            f'min-effective-samples must be >= 0, got {min_effective_samples}'
+        )
+    if max_tau_relative_width < 0.0:
+        raise ValueError(
+            f'max-tau-relative-width must be >= 0, got {max_tau_relative_width}'
+        )
+    if (
+        derived_uncertainty_method == UNCERTAINTY_METHOD_BOOTSTRAP
+        and derived_bootstrap_resamples <= 0
+    ):
+        raise ValueError(
+            'derived-bootstrap-resamples must be > 0 when '
+            'derived-uncertainty-method=bootstrap'
+        )
+    if n_seeds < 1:
+        raise ValueError(f'n-seeds must be >= 1, got {n_seeds}')
+
+
+#: Spacing between the base seeds of two replicas at the same grid point and
+#: stream. Callers derive short sub-streams by small addition, such as the
+#: ``seed + 1`` and ``seed + 2`` runs of the efficiency worker, so a replica
+#: needs room around its base rather than the next integer.
+SEED_REPLICA_STRIDE = 1_000
+
+#: Replicas a single stream can hold. The sweeps allow ten attempts per
+#: requested replica, so this covers ``--n-seeds 100``.
+SEED_REPLICAS_PER_STREAM = 1_000
+
+#: Independent algorithm streams a grid point can hold, such as the separate
+#: Metropolis and Wolff streams that ``measure_z`` runs at the same point.
+SEED_STREAMS_PER_POINT = 4
+
+#: Size of the seed block one stream owns within a grid point.
+SEED_STREAM_STRIDE = SEED_REPLICA_STRIDE * SEED_REPLICAS_PER_STREAM
+
+#: Size of the seed block one grid point owns.
+SEED_POINT_STRIDE = SEED_STREAM_STRIDE * SEED_STREAMS_PER_POINT
+
+#: Largest seed the numba and numpy generators accept without truncation.
+_MAX_SEED = 2**32 - 1
+
+
+def derive_point_seed(
+    *,
+    temperature_index: int,
+    seed_index: int,
+    stream_index: int = 0,
+) -> int:
+    """
+    Derive a deterministic RNG seed for one sweep grid point.
+
+    The three indices address three nested blocks: a grid point owns
+    ``SEED_POINT_STRIDE`` seeds, a stream within it owns
+    ``SEED_STREAM_STRIDE``, and a replica within that owns
+    ``SEED_REPLICA_STRIDE``, leaving room for the sub-streams callers derive
+    by small addition. Because each index scales its own block rather than
+    being added into a shared range, two different index triples cannot
+    produce the same seed, and an index that would leave its block is
+    rejected rather than silently reusing a neighbour's seeds.
+
+    Parameters
+    ----------
+    temperature_index : int
+        Index of the outer sweep axis (temperature or lattice-size grid).
+    seed_index : int
+        Replica index within the seed ensemble for this grid point.
+    stream_index : int
+        Index of the independent seed stream at this grid point, used where
+        one point runs more than one algorithm; ``measure_z`` gives its Wolff
+        runs a different stream from its Metropolis runs (default 0).
+
+    Returns
+    -------
+    int
+        The seed addressed by the three indices.
+
+    Raises
+    ------
+    ValueError
+        If any index is negative or outside the capacity of its block, or if
+        the resulting seed exceeds the 32-bit range the generators accept.
+    """
+    if temperature_index < 0 or seed_index < 0 or stream_index < 0:
+        raise ValueError(
+            'derive_point_seed requires non-negative indices, got '
+            f'temperature_index={temperature_index}, seed_index={seed_index}, '
+            f'stream_index={stream_index}.'
+        )
+    if seed_index >= SEED_REPLICAS_PER_STREAM:
+        raise ValueError(
+            f'seed_index={seed_index} exceeds the {SEED_REPLICAS_PER_STREAM} replicas a '
+            'stream can hold; a larger ensemble would collide with the next stream.'
+        )
+    if stream_index >= SEED_STREAMS_PER_POINT:
+        raise ValueError(
+            f'stream_index={stream_index} exceeds the {SEED_STREAMS_PER_POINT} streams a '
+            'grid point can hold; another stream would collide with the next grid point.'
+        )
+
+    seed = (
+        temperature_index * SEED_POINT_STRIDE
+        + stream_index * SEED_STREAM_STRIDE
+        + seed_index * SEED_REPLICA_STRIDE
+    )
+    if seed > _MAX_SEED:
+        raise ValueError(
+            f'Derived seed {seed} for grid point {temperature_index} exceeds the 32-bit '
+            f'generator range; a sweep can hold at most {_MAX_SEED // SEED_POINT_STRIDE} '
+            'grid points.'
+        )
+    return seed
+
 
 # ---------------------------------------------------------------------------
 # Input type
@@ -171,8 +337,8 @@ def simulate_at_temperature(point: ThermoPoint) -> RawThermoData:
     )
 
     total_steps, converged = convergence_equilibrate_with_status(
-        sim_r,
-        sim_o,
+        sim_random=sim_r,
+        sim_ordered=sim_o,
         chunk_size=point.eq_probe_steps,
         max_steps=point.eq_max_steps,
         qs_sigma_threshold=point.eq_qs_sigma_threshold,
@@ -196,8 +362,8 @@ def simulate_at_temperature(point: ThermoPoint) -> RawThermoData:
     # switch to it when its magnetisation is substantially higher.
     active_sim = sim_r
     if point.prefer_ordered_start:
-        m_r = float(np.abs(sim_r._get_magnetization()))
-        m_o = float(np.abs(sim_o._get_magnetization()))
+        m_r = float(np.abs(sim_r.get_magnetization()))
+        m_o = float(np.abs(sim_o.get_magnetization()))
         if m_o > m_r + 0.2:
             active_sim = sim_o
 
@@ -261,13 +427,24 @@ def compute_thermo_observables(
     mags_arr = raw.mags_arr
     engs_arr = raw.engs_arr
 
+    # Blocking and autocorrelation are shared between the primary summary and
+    # the derived observable of the same series, so compute each exactly once.
+    mag_blocking = blocking_error(time_series=mags_arr)
+    mag_tau = estimate_tau_int_or_nan(time_series=mags_arr)
+    eng_blocking = blocking_error(time_series=engs_arr)
+    eng_tau = estimate_tau_int_or_nan(time_series=engs_arr)
+
     mag = summarize_primary_observable(
         time_series=mags_arr,
         confidence=point.confidence,
+        blocking=mag_blocking,
+        tau_int=mag_tau,
     )
     eng = summarize_primary_observable(
         time_series=engs_arr,
         confidence=point.confidence,
+        blocking=eng_blocking,
+        tau_int=eng_tau,
     )
     chi = summarize_derived_observable(
         magnetization_series=mags_arr,
@@ -277,6 +454,8 @@ def compute_thermo_observables(
         method=point.derived_method,
         confidence=point.confidence,
         bootstrap_resamples=point.bootstrap_resamples,
+        blocking=mag_blocking,
+        tau_int=mag_tau,
     )
     cv = summarize_derived_observable(
         energy_series=engs_arr,
@@ -286,6 +465,8 @@ def compute_thermo_observables(
         method=point.derived_method,
         confidence=point.confidence,
         bootstrap_resamples=point.bootstrap_resamples,
+        blocking=eng_blocking,
+        tau_int=eng_tau,
     )
 
     return {
@@ -419,17 +600,20 @@ def build_uncertainty_bundle(
         if np.any(nan_mask):
             logger = logging.getLogger('vibespin')
             logger.warning(
-                'Autocorrelation diagnostics are undefined for %d temperature '
-                'points (all seeds returned NaN). This is expected in the deep '
-                'ordered/frozen phase.',
-                int(np.sum(nan_mask)),
+                f'Autocorrelation diagnostics are undefined for '
+                f'{int(np.sum(nan_mask))} temperature points (all seeds '
+                f'returned NaN). This is expected in the deep ordered/frozen '
+                f'phase.'
             )
     else:
+        # Apply the same Gaussian z-multiplier as the multi-seed path so that
+        # 'ci_low'/'ci_high' honor the requested confidence level here too.
+        z = _z_multiplier(confidence=confidence)
         res = {
             'value': values_by_seed[:, 0],
             'err': errors_by_seed[:, 0],
-            'ci_low': values_by_seed[:, 0] - errors_by_seed[:, 0],
-            'ci_high': values_by_seed[:, 0] + errors_by_seed[:, 0],
+            'ci_low': values_by_seed[:, 0] - z * errors_by_seed[:, 0],
+            'ci_high': values_by_seed[:, 0] + z * errors_by_seed[:, 0],
         }
         tau_int = tau_by_seed[:, 0]
         n_eff = n_eff_by_seed[:, 0]

@@ -22,23 +22,28 @@ def simulate_bkt_point(params: tuple[float, int, int, int, int]) -> float:
 
     Parameters
     ----------
-        params: Tuple of (T, L, eq_probe_steps, eq_max_steps, meas_steps).
+    params : tuple[float, int, int, int, int]
+        Tuple of (T, L, eq_probe_steps, eq_max_steps, meas_steps).
 
     Returns
     -------
+    float
         Average vortex density n_v.
     """
     T, L, eq_probe_steps, eq_max_steps, meas_steps = params
     sim_r = XYSimulation(size=L, temp=T, init_state='random')
     sim_o = XYSimulation(size=L, temp=T, init_state='ordered')
-    convergence_equilibrate(sim_r, sim_o, chunk_size=eq_probe_steps, max_steps=eq_max_steps)
+    convergence_equilibrate(
+        sim_random=sim_r, sim_ordered=sim_o,
+        chunk_size=eq_probe_steps, max_steps=eq_max_steps,
+    )
 
-    total_vortex_density = 0.0
-    for _ in range(meas_steps):
+    densities = np.empty(meas_steps, dtype=np.float64)
+    for k in range(meas_steps):
         sim_r.step()
-        total_vortex_density += sim_r._get_vortex_density()
+        densities[k] = sim_r.get_vortex_density()
 
-    return total_vortex_density / meas_steps
+    return float(np.mean(densities))
 
 
 def main() -> None:
@@ -61,7 +66,7 @@ def main() -> None:
     parser.add_argument('--log-file', type=str, default=None, help='Optional log file path')
     parser.add_argument('--verbose', action='store_true', help='Enable verbose logging')
 
-    args = parse_args_compat(parser)
+    args = parse_args_compat(parser=parser)
 
     # Configure logging
     log_level = logging.DEBUG if args.verbose else logging.INFO

@@ -14,37 +14,47 @@ from models.xy_model import XYSimulation
 
 def test_ising_detailed_balance():
     """
-    Verify detailed balance for Ising model: P(A->B)/P(B->A) = exp(-beta * (E_B - E_A)).
-    We use a 2x2 system and transition between two states differing by one flip.
+    Empirical stationarity check for the random-site Metropolis kernel.
+
+    On a 2x2 Ising lattice all 16 microstates and their Boltzmann weights are
+    exactly enumerable (using the same double-bond-counting energy kernel the
+    dynamics uses, so the comparison is self-consistent). A long trajectory
+    from the actual kernel must reproduce this distribution; any violation of
+    detailed balance or ergodicity in the compiled kernel shifts the empirical
+    frequencies and fails the tolerance.
     """
+    import itertools
+
     size = 2
-    temp = 2.269
+    temp = 2.5
     beta = 1.0 / temp
     J = 1.0
-    sim = IsingSimulation(size=size, temp=temp, J=J, update='random', seed=42)
+    n_sweeps = 40_000
+    sim = IsingSimulation(size=size, temp=temp, J=J, update='random', seed=3)
 
-    # State A: All up
-    state_A = np.ones((size, size), dtype=np.int8)
-    # State B: One spin flipped at (0,0)
-    state_B = state_A.copy()
-    state_B[0, 0] = -1
+    counts: dict[tuple, int] = {}
+    for _ in range(n_sweeps):
+        sim.step()
+        key = tuple(sim.spins.flatten())
+        counts[key] = counts.get(key, 0) + 1
 
-    # Energy of A and B
-    E_A = ising_energy_numba(spins=state_A, J=J, idx_next=sim.idx_next)
-    E_B = ising_energy_numba(spins=state_B, J=J, idx_next=sim.idx_next)
-    dE = (E_B - E_A) * (size * size) # total energy change
+    # Exact Boltzmann weights for all 2^4 states of the 2x2 lattice.
+    states = list(itertools.product((-1, 1), repeat=4))
+    weights = {}
+    for st in states:
+        spins = np.array(st, dtype=np.int8).reshape(size, size)
+        e_total = ising_energy_numba(spins=spins, J=J, idx_next=sim.idx_next) * size * size
+        weights[st] = np.exp(-beta * e_total)
+    Z = sum(weights.values())
 
-    # Metropolis acceptance probability: P = min(1, exp(-beta * dE))
-    # Note: Transition probability is P_trans = P_selection * P_acceptance
-    # P_selection is 1/N for both A->B and B->A, so it cancels out.
-
-    prob_A_to_B = np.exp(-beta * dE) if dE > 0 else 1.0
-    prob_B_to_A = np.exp(-beta * (-dE)) if -dE > 0 else 1.0
-
-    expected_ratio = np.exp(-beta * dE)
-    actual_ratio = prob_A_to_B / prob_B_to_A
-
-    assert actual_ratio == pytest.approx(expected_ratio)
+    # Statistical precision: with 40k correlated sweeps, per-state frequencies
+    # are accurate to well under 0.02 in absolute probability.
+    for st in states:
+        p_exact = weights[st] / Z
+        p_empirical = counts.get(st, 0) / n_sweeps
+        assert p_empirical == pytest.approx(p_exact, abs=0.02), (
+            f'State {st}: empirical {p_empirical:.4f} vs Boltzmann {p_exact:.4f}'
+        )
 
 
 def test_ising_ergodicity():
@@ -71,19 +81,32 @@ def test_ising_ergodicity():
 
 def test_xy_proposal_symmetry():
     """
-    Verify that the XY model uses symmetric proposals.
-    The update delta is chosen from a uniform distribution [-0.5, 0.5].
-    """
-    # In xy_step_numba and xy_step_random_numba:
-    # deltas = np.random.uniform(-0.5, 0.5, size=...)
-    # This is symmetric: g(theta -> theta + delta) = g(theta + delta -> theta)
-    # because the interval is centered at zero.
+    Empirically verify that the XY checkerboard kernel uses symmetric proposals.
 
-    # We can't easily test the JIT kernel's internal logic without mocking,
-    # but we can verify the simulation initialization and range logic.
-    # Here we just audit the code (which we did) and add a placeholder
-    # that would fail if we changed the proposal to something asymmetric.
-    pass
+    With J=0 every move has dE=0 and is accepted, so the observed per-site
+    angle changes ARE the raw proposal distribution. The checkerboard sweep
+    visits each site exactly once, so per-sweep angle differences must stay
+    inside the documented [-0.5, 0.5] proposal window, be centered at zero
+    (the Metropolis symmetric-proposal prerequisite), and split evenly
+    between positive and negative rotations.
+    """
+    n_sweeps = 20
+    sim = XYSimulation(size=32, temp=1.0, J=0.0, update='checkerboard', seed=5)
+
+    deltas = []
+    for _ in range(n_sweeps):
+        before = np.arctan2(sim.spins[..., 1], sim.spins[..., 0])
+        sim.step()
+        after = np.arctan2(sim.spins[..., 1], sim.spins[..., 0])
+        wrapped = (after - before + np.pi) % (2.0 * np.pi) - np.pi
+        deltas.append(wrapped.ravel())
+    all_deltas = np.concatenate(deltas)
+
+    assert np.max(np.abs(all_deltas)) <= 0.5 + 1e-9
+    # Mean of ~20k uniform(-0.5, 0.5) draws has sigma ~ 0.002.
+    assert abs(np.mean(all_deltas)) < 0.01
+    frac_positive = np.mean(all_deltas > 0)
+    assert frac_positive == pytest.approx(0.5, abs=0.02)
 
 def test_discrete_clock_ergodicity():
     """
@@ -258,7 +281,7 @@ def test_clock_wolff_unit_norm_preservation():
     """
     Verify that the Clock Wolff reflection preserves spin unit length exactly.
     """
-    sim = ClockSimulation(size=8, temp=0.5, q=6, update='wolff', seed=13)
+    sim = ClockSimulation(size=8, temp=0.5, q=6, A=0.0, update='wolff', seed=13)
     for _ in range(20):
         sim.step()
         norms = np.linalg.norm(sim.spins, axis=-1)

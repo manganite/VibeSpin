@@ -19,7 +19,7 @@ def test_parse_args_compat_prefers_parse_arguments() -> None:
     """Helper should use parse_arguments when the parser wrapper provides it."""
     parser = _WrappedParser(prog='vibespin-test')
 
-    args = parse_args_compat(parser)
+    args = parse_args_compat(parser=parser)
 
     assert args.mode == 'wrapped'
 
@@ -30,6 +30,6 @@ def test_parse_args_compat_falls_back_to_parse_args(monkeypatch) -> None:
     parser.add_argument('--size', type=int, default=16)
     monkeypatch.setattr(sys, 'argv', ['vibespin-test', '--size', '32'])
 
-    args = parse_args_compat(parser)
+    args = parse_args_compat(parser=parser)
 
     assert args.size == 32

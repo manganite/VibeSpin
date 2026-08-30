@@ -8,6 +8,7 @@ import models.ising_model as ising_model
 import models.xy_model as xy_model
 from models.clock_model import ClockSimulation, DiscreteClockSimulation
 from models.ising_model import IsingSimulation
+from models.simulation_base import _derive_step_seed
 from models.xy_model import XYSimulation
 
 # ---------------------------------------------------------------------------
@@ -110,7 +111,7 @@ def test_ising_step_uses_serial_checkerboard_kernel(monkeypatch) -> None:
 
 
 def test_ising_seeded_step_seeds_numba_rng(monkeypatch) -> None:
-    """When seed is provided, each step should reseed Numba RNG with seed + step."""
+    """When seed is provided, each step should reseed Numba RNG with the mixed step seed."""
     sim = IsingSimulation(size=4, temp=2.0, seed=10)
     seeded: list[int] = []
 
@@ -126,7 +127,10 @@ def test_ising_seeded_step_seeds_numba_rng(monkeypatch) -> None:
     sim.step()
     sim.step()
 
-    assert seeded == [10, 11]
+    assert seeded == [
+        _derive_step_seed(seed=10, step=0),
+        _derive_step_seed(seed=10, step=1),
+    ]
 
 
 # ---------------------------------------------------------------------------
@@ -192,7 +196,7 @@ def test_xy_step_uses_wolff_kernel(monkeypatch) -> None:
         calls.append('wolff')
         return kwargs['spins'], 5
 
-    monkeypatch.setattr(xy_model, 'xy_wolff_step_numba', _fake_wolff)
+    monkeypatch.setattr(xy_model, 'o2_wolff_step_numba', _fake_wolff)
 
     sim.step()
 
@@ -235,7 +239,7 @@ def test_xy_step_uses_serial_checkerboard_kernel(monkeypatch) -> None:
 
 
 def test_xy_seeded_step_seeds_numba_rng(monkeypatch) -> None:
-    """When seed is provided, each step should reseed Numba RNG with seed + step."""
+    """When seed is provided, each step should reseed Numba RNG with the mixed step seed."""
     sim = XYSimulation(size=4, temp=1.0, seed=21)
     seeded: list[int] = []
 
@@ -251,7 +255,10 @@ def test_xy_seeded_step_seeds_numba_rng(monkeypatch) -> None:
     sim.step()
     sim.step()
 
-    assert seeded == [21, 22]
+    assert seeded == [
+        _derive_step_seed(seed=21, step=0),
+        _derive_step_seed(seed=21, step=1),
+    ]
 
 
 # ---------------------------------------------------------------------------
@@ -310,14 +317,14 @@ def test_clock_step_uses_random_kernel(monkeypatch) -> None:
 
 def test_clock_step_uses_wolff_kernel(monkeypatch) -> None:
     """Clock wolff mode should dispatch to the wolff cluster kernel."""
-    sim = ClockSimulation(size=4, temp=1.0, update='wolff')
+    sim = ClockSimulation(size=4, temp=1.0, A=0.0, update='wolff')
     calls: list[str] = []
 
     def _fake_wolff(**kwargs):
         calls.append('wolff')
-        return kwargs['spins']
+        return kwargs['spins'], 0
 
-    monkeypatch.setattr(clock_model, 'clock_wolff_step_numba', _fake_wolff)
+    monkeypatch.setattr(clock_model, 'o2_wolff_step_numba', _fake_wolff)
 
     sim.step()
 
@@ -376,7 +383,10 @@ def test_clock_seeded_step_seeds_numba_rng(monkeypatch) -> None:
     sim.step()
     sim.step()
 
-    assert seeded == [30, 31]
+    assert seeded == [
+        _derive_step_seed(seed=30, step=0),
+        _derive_step_seed(seed=30, step=1),
+    ]
 
 
 # ---------------------------------------------------------------------------
@@ -483,4 +493,7 @@ def test_discrete_clock_seeded_step_seeds_numba_rng(monkeypatch) -> None:
     sim.step()
     sim.step()
 
-    assert seeded == [40, 41]
+    assert seeded == [
+        _derive_step_seed(seed=40, step=0),
+        _derive_step_seed(seed=40, step=1),
+    ]

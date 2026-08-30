@@ -13,6 +13,7 @@ Usage
 from __future__ import annotations
 
 import argparse
+import logging
 import os
 import time
 
@@ -21,9 +22,10 @@ import numpy as np
 
 from models.clock_model import ClockSimulation, DiscreteClockSimulation
 from models.ising_model import IsingSimulation
-from models.simulation_base import MonteCarloSimulation
+from models.simulation_base import MonteCarloSimulation, VectorSpinObservablesMixin
 from models.xy_model import XYSimulation
 from utils.plotting import ensure_results_dir, save_plot
+from utils.system import parse_args_compat, setup_logging
 
 
 def measure_performance(
@@ -32,15 +34,13 @@ def measure_performance(
     """Measure sweeps/sec and analysis times for a simulation instance."""
     # Warm-up: trigger JIT
     sim.step()
-    sim._get_energy()
-    sim._get_magnetization()
-    sim._calculate_correlation_function()
-    if hasattr(sim, '_calculate_vorticity'):
-        sim._calculate_vorticity()
-    if hasattr(sim, '_get_vortex_density'):
-        sim._get_vortex_density()
-    if hasattr(sim, '_get_helicity_data'):
-        sim._get_helicity_data()
+    sim.get_energy()
+    sim.get_magnetization()
+    sim.calculate_correlation_function()
+    if isinstance(sim, VectorSpinObservablesMixin):
+        sim.calculate_vorticity()
+        sim.get_vortex_density()
+        sim.get_helicity_data()
 
     # 1. Sweep speed
     start = time.perf_counter()
@@ -52,38 +52,34 @@ def measure_performance(
     # 2. Thermodynamic measurements (Energy + Mag)
     start = time.perf_counter()
     for _ in range(analysis_iters):
-        sim._get_energy()
-        sim._get_magnetization()
+        sim.get_energy()
+        sim.get_magnetization()
     thermo_ms = (time.perf_counter() - start) / analysis_iters * 1000
 
     # 3. Correlation function G(r)
     start = time.perf_counter()
     for _ in range(analysis_iters):
-        sim._calculate_correlation_function()
+        sim.calculate_correlation_function()
     corr_ms = (time.perf_counter() - start) / analysis_iters * 1000
 
-    # 4. Vorticity
+    # 4-6. Topological observables (vector-spin models only)
     vort_ms = 0.0
-    if hasattr(sim, '_calculate_vorticity'):
+    vden_ms = 0.0
+    heli_ms = 0.0
+    if isinstance(sim, VectorSpinObservablesMixin):
         start = time.perf_counter()
         for _ in range(analysis_iters):
-            sim._calculate_vorticity()
+            sim.calculate_vorticity()
         vort_ms = (time.perf_counter() - start) / analysis_iters * 1000
 
-    # 5. Vortex Density
-    vden_ms = 0.0
-    if hasattr(sim, '_get_vortex_density'):
         start = time.perf_counter()
         for _ in range(analysis_iters):
-            sim._get_vortex_density()
+            sim.get_vortex_density()
         vden_ms = (time.perf_counter() - start) / analysis_iters * 1000
 
-    # 6. Helicity
-    heli_ms = 0.0
-    if hasattr(sim, '_get_helicity_data'):
         start = time.perf_counter()
         for _ in range(analysis_iters):
-            sim._get_helicity_data()
+            sim.get_helicity_data()
         heli_ms = (time.perf_counter() - start) / analysis_iters * 1000
 
     return {
@@ -97,6 +93,7 @@ def measure_performance(
 
 
 def main() -> None:
+    """Run the cross-model scaling benchmark and save figure plus NPZ data."""
     parser = argparse.ArgumentParser(description='Scaling Benchmark')
     parser.add_argument(
         '--sizes',
@@ -109,7 +106,12 @@ def main() -> None:
     parser.add_argument(
         '--output-dir', type=str, default='results/benchmarks', help='Output directory'
     )
-    args = parser.parse_args()
+    parser.add_argument('--log-file', type=str, default=None, help='Optional log file path')
+    parser.add_argument('--verbose', action='store_true', help='Enable verbose logging')
+    args = parse_args_compat(parser=parser)
+
+    log_level = logging.DEBUG if args.verbose else logging.INFO
+    logger = setup_logging(level=log_level, log_file=args.log_file)
 
     sizes = sorted(args.sizes)
     model_configs = [
@@ -140,17 +142,15 @@ def main() -> None:
 
     all_results: dict[str, dict[int, dict[str, float]]] = {name: {} for name, _ in model_configs}
 
-    print(f'Starting scaling benchmark for sizes: {sizes}\n')
+    logger.info(f'Starting scaling benchmark for sizes: {sizes}')
 
     for L in sizes:
-        print(f'--- Lattice Size L = {L} (N = {L*L}) ---')
+        logger.info(f'--- Lattice Size L = {L} (N = {L*L}) ---')
         for name, constructor in model_configs:
-            print(f'Benchmarking {name}...', end=' ', flush=True)
             sim = constructor(L)
             metrics = measure_performance(sim, sweeps=args.sweeps)
             all_results[name][L] = metrics
-            print(f"{metrics['sps']:.1f} sweeps/s")
-        print()
+            logger.info(f"{name}: {metrics['sps']:.1f} sweeps/s")
 
     # --- Visualization ---
     fig, axes = plt.subplots(3, 2, figsize=(15, 18))
@@ -260,29 +260,29 @@ def main() -> None:
         vden_ms=metric_arrays['vden_ms'],
         heli_ms=metric_arrays['heli_ms'],
     )
-    print(f'Data saved to {npz_path}')
+    logger.info(f'Data saved to {npz_path}')
 
     # Print summary table for largest size
     L_max = sizes[-1]
-    print(f'\nFinal Performance Table (L={L_max}):')
-    print('=' * 125)
+    logger.info(f'Final Performance Table (L={L_max}):')
+    logger.info('=' * 125)
     row_fmt = '{:<32} | {:>10} | {:>10} | {:>10} | {:>10} | {:>10} | {:>10}'
-    print(row_fmt.format(
+    logger.info(row_fmt.format(
         'Model', 'Sweeps/s', 'ns/site', 'Thermo(ms)', 'Corr(ms)', 'Topo(ms)', 'Overhead'
     ))
-    print('-' * 125)
+    logger.info('-' * 125)
     for name in all_results:
         m = all_results[name][L_max]
         sw_ms = (1.0 / m['sps']) * 1000
         ns_site = sw_ms / (L_max * L_max) * 1e6
         topo_total_ms: float = m['vort_ms'] + m['vden_ms'] + m['heli_ms']
         ratio = (m['thermo_ms'] + m['corr_ms'] + topo_total_ms) / sw_ms
-        print(
+        logger.info(
             f'{name:<32} | {m["sps"]:>10.1f} | {ns_site:>10.2f} | '
             f'{m["thermo_ms"]:>10.3f} | {m["corr_ms"]:>10.3f} | '
             f'{topo_total_ms:>10.3f} | {ratio:>10.2f}x'
         )
-    print('=' * 125)
+    logger.info('=' * 125)
 
 
 if __name__ == '__main__':

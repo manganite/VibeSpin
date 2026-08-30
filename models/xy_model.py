@@ -11,9 +11,11 @@ from numba import njit, prange
 
 from .simulation_base import (
     MonteCarloSimulation,
+    VectorSpinObservablesMixin,
     calculate_vortex_density_numba,
     calculate_vorticity_numba,
     get_helicity_data_numba,
+    o2_wolff_step_numba,
 )
 
 
@@ -27,14 +29,20 @@ def xy_step_numba(
 
     Parameters
     ----------
-        spins: (N, N, 2) array of unit vectors.
-        beta: Inverse temperature 1/kT.
-        J: Coupling constant.
-        idx_next: Pre-calculated next-neighbor indices.
-        idx_prev: Pre-calculated previous-neighbor indices.
+    spins : np.ndarray
+        (N, N, 2) array of unit vectors.
+    beta : float
+        Inverse temperature 1/kT.
+    J : float
+        Coupling constant.
+    idx_next : np.ndarray
+        Pre-calculated next-neighbor indices.
+    idx_prev : np.ndarray
+        Pre-calculated previous-neighbor indices.
 
     Returns
     -------
+    np.ndarray
         Updated spins array.
     """
     N = spins.shape[0]
@@ -91,14 +99,20 @@ def xy_step_parallel_numba(
 
     Parameters
     ----------
-        spins: (N, N, 2) array of unit vectors.
-        beta: Inverse temperature 1/kT.
-        J: Coupling constant.
-        idx_next: Pre-calculated next-neighbor indices.
-        idx_prev: Pre-calculated previous-neighbor indices.
+    spins : np.ndarray
+        (N, N, 2) array of unit vectors.
+    beta : float
+        Inverse temperature 1/kT.
+    J : float
+        Coupling constant.
+    idx_next : np.ndarray
+        Pre-calculated next-neighbor indices.
+    idx_prev : np.ndarray
+        Pre-calculated previous-neighbor indices.
 
     Returns
     -------
+    np.ndarray
         Updated spins array.
     """
     N = spins.shape[0]
@@ -145,14 +159,20 @@ def xy_step_random_numba(
 
     Parameters
     ----------
-        spins: (N, N, 2) array of unit vectors.
-        beta: Inverse temperature 1/kT.
-        J: Coupling constant.
-        idx_next: Pre-calculated next-neighbor indices.
-        idx_prev: Pre-calculated previous-neighbor indices.
+    spins : np.ndarray
+        (N, N, 2) array of unit vectors.
+    beta : float
+        Inverse temperature 1/kT.
+    J : float
+        Coupling constant.
+    idx_next : np.ndarray
+        Pre-calculated next-neighbor indices.
+    idx_prev : np.ndarray
+        Pre-calculated previous-neighbor indices.
 
     Returns
     -------
+    np.ndarray
         Updated spins array.
     """
     N = spins.shape[0]
@@ -209,13 +229,17 @@ def xy_energy_numba(*, spins: np.ndarray, J: float, idx_next: np.ndarray) -> flo
 
     Parameters
     ----------
-        spins: (N, N, 2) array of unit vectors.
-        J: Coupling constant.
-        idx_next: Pre-calculated next-neighbor indices.
+    spins : np.ndarray
+        (N, N, 2) array of unit vectors.
+    J : float
+        Coupling constant.
+    idx_next : np.ndarray
+        Pre-calculated next-neighbor indices.
 
     Returns
     -------
-        energy: Total energy per site.
+    energy : float
+        Total energy per site.
     """
     N = spins.shape[0]
     energy = 0.0
@@ -230,147 +254,7 @@ def xy_energy_numba(*, spins: np.ndarray, J: float, idx_next: np.ndarray) -> flo
     return energy / (N * N)
 
 
-@njit(cache=True, fastmath=True)
-def xy_wolff_step_numba(
-    *,
-    spins: np.ndarray,
-    beta: float,
-    J: float,
-    idx_next: np.ndarray,
-    idx_prev: np.ndarray,
-    in_cluster: np.ndarray,
-    stack: np.ndarray,
-    cluster_spins: np.ndarray
-) -> tuple:
-    """
-    Perform one Wolff cluster flip on the XY lattice (Wolff-Evertz reflection).
-
-    A random mirror-plane axis r\u0302 is sampled uniformly from S^1.  Each spin
-    projects onto r\u0302 as sigma_i = s_i \u00b7 r\u0302.  Bonds between neighbouring sites
-    with aligned projections (sigma_i * sigma_j > 0) are activated with
-    probability ``P_add = 1 - exp(-2 beta J sigma_i sigma_j)``.  All cluster
-    spins are then reflected through the plane perpendicular to r\u0302:
-    ``s -> s - 2 (s \u00b7 r\u0302) r\u0302``, which preserves unit length exactly and
-    satisfies detailed balance for the pure exchange term.
-
-    One call constitutes one cluster sweep.  ``parallel=True`` is silently
-    ignored.
-
-    Parameters
-    ----------
-        spins: (N, N, 2) array of unit vectors.
-        beta: Inverse temperature 1/kT.
-        J: Coupling constant.
-        idx_next: Pre-calculated next-neighbor indices (PBC).
-        idx_prev: Pre-calculated previous-neighbor indices (PBC).
-        in_cluster: Pre-allocated (N, N) boolean array for cluster membership mask.
-        stack: Pre-allocated (N*N) int64 array for DFS stack.
-        cluster_spins: Pre-allocated (N*N) int64 array to track cluster elements.
-
-    Returns
-    -------
-        spins: Updated spins array.
-        cluster_size: Number of spins flipped in this step.
-    """
-    N = spins.shape[0]
-
-    # Random mirror-plane axis r\u0302 = (cos phi, sin phi)
-    phi = np.random.uniform(0.0, 2.0 * np.pi)
-    rx = np.cos(phi)
-    ry = np.sin(phi)
-
-    # Random seed site
-    si = np.random.randint(0, N)
-    sj = np.random.randint(0, N)
-
-    # Setup DFS from seed
-    seed_flat = si * N + sj
-    in_cluster[si, sj] = True
-    stack[0] = seed_flat
-    stack_top = 1
-
-    cluster_spins[0] = seed_flat
-    cluster_size = 1
-
-    while stack_top > 0:
-        stack_top -= 1
-        flat = stack[stack_top]
-        ci = flat // N
-        cj = flat % N
-
-        proj_c = spins[ci, cj, 0] * rx + spins[ci, cj, 1] * ry
-        inxt = idx_next[ci]
-        iprv = idx_prev[ci]
-        jnxt = idx_next[cj]
-        jprv = idx_prev[cj]
-
-        # North
-        if not in_cluster[iprv, cj]:
-            proj_n = spins[iprv, cj, 0] * rx + spins[iprv, cj, 1] * ry
-            prod = proj_c * proj_n
-            if prod > 0.0:
-                p_add = 1.0 - np.exp(-2.0 * beta * J * prod)
-                if np.random.random() < p_add:
-                    in_cluster[iprv, cj] = True
-                    new_idx = iprv * N + cj
-                    stack[stack_top] = new_idx
-                    stack_top += 1
-                    cluster_spins[cluster_size] = new_idx
-                    cluster_size += 1
-        # South
-        if not in_cluster[inxt, cj]:
-            proj_n = spins[inxt, cj, 0] * rx + spins[inxt, cj, 1] * ry
-            prod = proj_c * proj_n
-            if prod > 0.0:
-                p_add = 1.0 - np.exp(-2.0 * beta * J * prod)
-                if np.random.random() < p_add:
-                    in_cluster[inxt, cj] = True
-                    new_idx = inxt * N + cj
-                    stack[stack_top] = new_idx
-                    stack_top += 1
-                    cluster_spins[cluster_size] = new_idx
-                    cluster_size += 1
-        # West
-        if not in_cluster[ci, jprv]:
-            proj_n = spins[ci, jprv, 0] * rx + spins[ci, jprv, 1] * ry
-            prod = proj_c * proj_n
-            if prod > 0.0:
-                p_add = 1.0 - np.exp(-2.0 * beta * J * prod)
-                if np.random.random() < p_add:
-                    in_cluster[ci, jprv] = True
-                    new_idx = ci * N + jprv
-                    stack[stack_top] = new_idx
-                    stack_top += 1
-                    cluster_spins[cluster_size] = new_idx
-                    cluster_size += 1
-        # East
-        if not in_cluster[ci, jnxt]:
-            proj_n = spins[ci, jnxt, 0] * rx + spins[ci, jnxt, 1] * ry
-            prod = proj_c * proj_n
-            if prod > 0.0:
-                p_add = 1.0 - np.exp(-2.0 * beta * J * prod)
-                if np.random.random() < p_add:
-                    in_cluster[ci, jnxt] = True
-                    new_idx = ci * N + jnxt
-                    stack[stack_top] = new_idx
-                    stack_top += 1
-                    cluster_spins[cluster_size] = new_idx
-                    cluster_size += 1
-
-    # Reflect all cluster spins in-place and reset in_cluster mask
-    for i in range(cluster_size):
-        flat = cluster_spins[i]
-        ci = flat // N
-        cj = flat % N
-        proj = spins[ci, cj, 0] * rx + spins[ci, cj, 1] * ry
-        spins[ci, cj, 0] -= 2.0 * proj * rx
-        spins[ci, cj, 1] -= 2.0 * proj * ry
-        in_cluster[ci, cj] = False
-
-    return spins, cluster_size
-
-
-class XYSimulation(MonteCarloSimulation):
+class XYSimulation(VectorSpinObservablesMixin, MonteCarloSimulation):
     """
     Simulation of the 2D XY model on a square lattice.
     """
@@ -393,21 +277,32 @@ class XYSimulation(MonteCarloSimulation):
 
         Parameters
         ----------
-            size: Linear dimension L of the L x L lattice.
-            temp: Temperature T.
-            J: Coupling constant (default 1.0).
-            update: Update scheme - ``'checkerboard'`` (default, faster),
-                ``'random'`` (random sequential Metropolis, physical
-                stochastic dynamics for kinetics studies), or
-                ``'wolff'`` (Wolff-Evertz cluster algorithm, efficient near
-                the BKT transition).
-            init_state: Initial spin configuration: ``'random'`` (default) or ``'ordered'``.
-            parallel: Whether to use parallelized Numba kernels (only for checkerboard).
-            seed: Optional random seed for reproducibility.
+        size : int
+            Linear dimension L of the L x L lattice.
+        temp : float
+            Temperature T.
+        J : float
+            Coupling constant (default 1.0).
+        update : str
+            Update scheme - ``'checkerboard'`` (default, faster),
+            ``'random'`` (random sequential Metropolis, physical
+            stochastic dynamics for kinetics studies), or
+            ``'wolff'`` (Wolff-Evertz cluster algorithm, efficient near
+            the BKT transition).
+        init_state : str
+            Initial spin configuration: ``'random'`` (default) or ``'ordered'``.
+        parallel : bool
+            Whether to use parallelized Numba kernels (only for
+            checkerboard). Parallel kernels are NOT seed-reproducible:
+            only the calling thread's Numba RNG is seeded, so two runs
+            with the same seed may differ.
+        seed : int | None
+            Optional random seed for reproducibility.
 
         Raises
         ------
-            ValueError: If ``update`` is not one of the recognised schemes.
+        ValueError
+            If ``update`` is not one of the recognised schemes.
         """
         super().__init__(size=size, temp=temp, init_state=init_state, seed=seed)
         if update not in self._VALID_UPDATES:
@@ -429,10 +324,7 @@ class XYSimulation(MonteCarloSimulation):
     def step(self) -> None:
         """Perform one Monte Carlo step using Numba."""
         if self.spins is not None:
-            if self.seed is not None:
-                from .simulation_base import _seed_numba
-
-                _seed_numba(seed=self.seed + self.steps)
+            self._reseed_numba_for_step()
 
             if self.update == 'random':
                 self.spins = xy_step_random_numba(
@@ -443,7 +335,7 @@ class XYSimulation(MonteCarloSimulation):
                     idx_prev=self.idx_prev,
                 )
             elif self.update == 'wolff':
-                self.spins, self.last_cluster_size = xy_wolff_step_numba(
+                self.spins, self.last_cluster_size = o2_wolff_step_numba(
                     spins=self.spins,
                     beta=self.beta,
                     J=self.J,
@@ -565,14 +457,14 @@ def main() -> None:
         fig.colorbar(im1, ax=ax1, label='Phase (rad)', shrink=0.8)
 
     # Vorticity map
-    vort = sim._calculate_vorticity()
+    vort = sim.calculate_vorticity()
     im2 = ax2.imshow(vort, cmap='bwr', interpolation='none', vmin=-1, vmax=1)
     ax2.set_title(f'Vorticity (Total: {int(np.sum(np.abs(vort)))})')
     ax2.axis('off')
     fig.colorbar(im2, ax=ax2, ticks=[-1, 0, 1], label='Winding No.', shrink=0.8)
 
     # Spin-Spin Correlation Function
-    r, G_r = sim._calculate_correlation_function()
+    r, G_r = sim.calculate_correlation_function()
     ax3.plot(r[1:], G_r[1:], 'o-', markersize=3)
     ax3.set_title('Spin-Spin Correlation G(r)')
     ax3.set_xlabel('Distance r')

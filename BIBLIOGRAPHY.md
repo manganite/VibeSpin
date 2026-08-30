@@ -5,7 +5,7 @@ This file collects all scientific references used throughout the VibeSpin projec
 
 ## Referencing Policy
 
-Referencing policy is defined in [AGENTS.md](./agents.md#7-scientific-referencing). Please consult that file for the official rules and enforcement details.
+Referencing policy is defined in [AGENTS.md](https://github.com/manganite/VibeSpin/blob/HEAD/AGENTS.md#7-scientific-referencing). Please consult that file for the official rules and enforcement details.
 
 
 ## 1. Physical Models
@@ -59,6 +59,8 @@ Referencing policy is defined in [AGENTS.md](./agents.md#7-scientific-referencin
 
 ### Topological Diagnostics and BKT Transition
 - J. M. Kosterlitz and D. J. Thouless, "Ordering, metastability and phase transitions in two-dimensional systems," Journal of Physics C: Solid State Physics, vol. 6, no. 7, pp. 1181–1203, 1973. [IOP Open Access](https://iopscience.iop.org/article/10.1088/0022-3719/6/7/010)
+- V. L. Berezinskii, "Destruction of Long-range Order in One-dimensional and Two-dimensional Systems Possessing a Continuous Symmetry Group. II. Quantum Systems," Soviet Physics JETP, vol. 34, no. 3, pp. 610–616, 1972. [JETP Archive (Open Access)](http://jetp.ras.ru/cgi-bin/e/index/e/34/3/p610?a=list)
+- D. R. Nelson and J. M. Kosterlitz, "Universal Jump in the Superfluid Density of Two-Dimensional Superfluids," Physical Review Letters, vol. 39, no. 19, pp. 1201–1205, 1977. [APS](https://journals.aps.org/prl/abstract/10.1103/PhysRevLett.39.1201)
 - [BKT transition on Wikipedia](https://en.wikipedia.org/wiki/Berezinskii%E2%80%93Kosterlitz%E2%80%93Thouless_transition)
 - [Vortex on Wikipedia](https://en.wikipedia.org/wiki/Vortex)
 - [Superfluid stiffness (Helicity modulus) on Wikipedia](https://en.wikipedia.org/wiki/Superfluid_stiffness)

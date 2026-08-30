@@ -1,7 +1,7 @@
 # mypy: disable-error-code=no-untyped-def
 
 """
-Unit tests for system-related utility functions in utils/system_helpers.py.
+Unit tests for system-related utility functions in utils/equilibration.py.
 Covers logging, directory management, plotting, parallel execution,
 and adaptive equilibration.
 """
@@ -236,7 +236,9 @@ def test_plot_temperature_sweep(temp_dir):
             filename='test.png',
             directory=temp_dir,
         )
-        mock_save.assert_called_once_with(filename='test.png', directory=temp_dir)
+        mock_save.assert_called_once()
+        assert mock_save.call_args.kwargs.get('filename') == 'test.png'
+        assert mock_save.call_args.kwargs.get('directory') == temp_dir
     plt.close('all')
 
 
@@ -452,8 +454,8 @@ def test_convergence_equilibrate_warns_on_max_steps(caplog):
         from utils.equilibration import convergence_equilibrate
 
         total = convergence_equilibrate(
-            _ConvergenceStub(),
-            _ConvergenceStub(),
+            sim_random=_ConvergenceStub(),
+            sim_ordered=_ConvergenceStub(),
             chunk_size=50,
             max_steps=100,
         )
@@ -473,8 +475,8 @@ def test_convergence_equilibrate_with_status_reports_success():
         from utils.equilibration import convergence_equilibrate_with_status
 
         total, converged = convergence_equilibrate_with_status(
-            _ConvergenceStub(),
-            _ConvergenceStub(),
+            sim_random=_ConvergenceStub(),
+            sim_ordered=_ConvergenceStub(),
             chunk_size=50,
             max_steps=200,
         )
@@ -495,8 +497,8 @@ def test_convergence_equilibrate_with_status_reports_failure(caplog):
         from utils.equilibration import convergence_equilibrate_with_status
 
         total, converged = convergence_equilibrate_with_status(
-            _ConvergenceStub(),
-            _ConvergenceStub(),
+            sim_random=_ConvergenceStub(),
+            sim_ordered=_ConvergenceStub(),
             chunk_size=50,
             max_steps=100,
         )
@@ -524,8 +526,8 @@ def test_convergence_equilibrate_with_status_exits_early_when_stuck(caplog):
         from utils.equilibration import convergence_equilibrate_with_status
 
         total, converged = convergence_equilibrate_with_status(
-            _ConvergenceStubRandom(),
-            _ConvergenceStubOrdered(),
+            sim_random=_ConvergenceStubRandom(),
+            sim_ordered=_ConvergenceStubOrdered(),
             chunk_size=50,
             max_steps=1_000,
             smooth_window=10,
@@ -558,8 +560,8 @@ def test_convergence_equilibrate_with_status_gate_blocks_stuck_detection(caplog)
 
         # qs_min_steps=10_000 means stuck detection can never fire in this run
         total, converged = convergence_equilibrate_with_status(
-            _ConvergenceStubRandom(),
-            _ConvergenceStubOrdered(),
+            sim_random=_ConvergenceStubRandom(),
+            sim_ordered=_ConvergenceStubOrdered(),
             chunk_size=50,
             max_steps=200,
             smooth_window=10,
@@ -592,11 +594,16 @@ def test_plot_temperature_sweep_with_entropy_only(temp_dir):
             directory=temp_dir,
         )
         assert mock_save.call_count == 2
-        mock_save.assert_any_call(filename='entropy_only.png', directory=temp_dir)
-        mock_save.assert_any_call(
-            filename='entropy_only_diagnostics.png',
-            directory=temp_dir,
-            tight_layout=False,
+        assert any(
+            c.kwargs.get('filename') == 'entropy_only.png'
+            and c.kwargs.get('directory') == temp_dir
+            for c in mock_save.call_args_list
+        )
+        assert any(
+            c.kwargs.get('filename') == 'entropy_only_diagnostics.png'
+            and c.kwargs.get('directory') == temp_dir
+            and c.kwargs.get('tight_layout') is False
+            for c in mock_save.call_args_list
         )
     plt.close('all')
 
@@ -619,11 +626,16 @@ def test_plot_temperature_sweep_with_tau_only(temp_dir):
             directory=temp_dir,
         )
         assert mock_save.call_count == 2
-        mock_save.assert_any_call(filename='tau_only.png', directory=temp_dir)
-        mock_save.assert_any_call(
-            filename='tau_only_diagnostics.png',
-            directory=temp_dir,
-            tight_layout=False,
+        assert any(
+            c.kwargs.get('filename') == 'tau_only.png'
+            and c.kwargs.get('directory') == temp_dir
+            for c in mock_save.call_args_list
+        )
+        assert any(
+            c.kwargs.get('filename') == 'tau_only_diagnostics.png'
+            and c.kwargs.get('directory') == temp_dir
+            and c.kwargs.get('tight_layout') is False
+            for c in mock_save.call_args_list
         )
     plt.close('all')
 
@@ -652,11 +664,16 @@ def test_plot_temperature_sweep_with_tau_invalid_band(temp_dir):
             mark_invalid_uncertainty=True,
         )
         assert mock_save.call_count == 2
-        mock_save.assert_any_call(filename='tau_invalid_band.png', directory=temp_dir)
-        mock_save.assert_any_call(
-            filename='tau_invalid_band_diagnostics.png',
-            directory=temp_dir,
-            tight_layout=False,
+        assert any(
+            c.kwargs.get('filename') == 'tau_invalid_band.png'
+            and c.kwargs.get('directory') == temp_dir
+            for c in mock_save.call_args_list
+        )
+        assert any(
+            c.kwargs.get('filename') == 'tau_invalid_band_diagnostics.png'
+            and c.kwargs.get('directory') == temp_dir
+            and c.kwargs.get('tight_layout') is False
+            for c in mock_save.call_args_list
         )
     plt.close('all')
 
@@ -683,11 +700,16 @@ def test_plot_temperature_sweep_with_entropy_band_saves_diagnostics(temp_dir):
             directory=temp_dir,
         )
         assert mock_save.call_count == 2
-        mock_save.assert_any_call(filename='entropy_band.png', directory=temp_dir)
-        mock_save.assert_any_call(
-            filename='entropy_band_diagnostics.png',
-            directory=temp_dir,
-            tight_layout=False,
+        assert any(
+            c.kwargs.get('filename') == 'entropy_band.png'
+            and c.kwargs.get('directory') == temp_dir
+            for c in mock_save.call_args_list
+        )
+        assert any(
+            c.kwargs.get('filename') == 'entropy_band_diagnostics.png'
+            and c.kwargs.get('directory') == temp_dir
+            and c.kwargs.get('tight_layout') is False
+            for c in mock_save.call_args_list
         )
     plt.close('all')
 
@@ -713,11 +735,16 @@ def test_plot_temperature_sweep_with_transition_guides(temp_dir):
             directory=temp_dir,
         )
         assert mock_save.call_count == 2
-        mock_save.assert_any_call(filename='transition_guides.png', directory=temp_dir)
-        mock_save.assert_any_call(
-            filename='transition_guides_diagnostics.png',
-            directory=temp_dir,
-            tight_layout=False,
+        assert any(
+            c.kwargs.get('filename') == 'transition_guides.png'
+            and c.kwargs.get('directory') == temp_dir
+            for c in mock_save.call_args_list
+        )
+        assert any(
+            c.kwargs.get('filename') == 'transition_guides_diagnostics.png'
+            and c.kwargs.get('directory') == temp_dir
+            and c.kwargs.get('tight_layout') is False
+            for c in mock_save.call_args_list
         )
     plt.close('all')
 
@@ -742,11 +769,16 @@ def test_plot_temperature_sweep_with_low_effective_sample_flags(temp_dir):
             directory=temp_dir,
         )
         assert mock_save.call_count == 2
-        mock_save.assert_any_call(filename='low_effective_samples.png', directory=temp_dir)
-        mock_save.assert_any_call(
-            filename='low_effective_samples_diagnostics.png',
-            directory=temp_dir,
-            tight_layout=False,
+        assert any(
+            c.kwargs.get('filename') == 'low_effective_samples.png'
+            and c.kwargs.get('directory') == temp_dir
+            for c in mock_save.call_args_list
+        )
+        assert any(
+            c.kwargs.get('filename') == 'low_effective_samples_diagnostics.png'
+            and c.kwargs.get('directory') == temp_dir
+            and c.kwargs.get('tight_layout') is False
+            for c in mock_save.call_args_list
         )
     plt.close('all')
 
@@ -778,11 +810,16 @@ def test_plot_temperature_sweep_with_metadata_and_quality_summary(temp_dir):
             directory=temp_dir,
         )
         assert mock_save.call_count == 2
-        mock_save.assert_any_call(filename='metadata_summary.png', directory=temp_dir)
-        mock_save.assert_any_call(
-            filename='metadata_summary_diagnostics.png',
-            directory=temp_dir,
-            tight_layout=False,
+        assert any(
+            c.kwargs.get('filename') == 'metadata_summary.png'
+            and c.kwargs.get('directory') == temp_dir
+            for c in mock_save.call_args_list
+        )
+        assert any(
+            c.kwargs.get('filename') == 'metadata_summary_diagnostics.png'
+            and c.kwargs.get('directory') == temp_dir
+            and c.kwargs.get('tight_layout') is False
+            for c in mock_save.call_args_list
         )
     plt.close('all')
 
@@ -806,11 +843,16 @@ def test_plot_temperature_sweep_with_entropy_reference(temp_dir):
             directory=temp_dir,
         )
         assert mock_save.call_count == 2
-        mock_save.assert_any_call(filename='entropy_reference.png', directory=temp_dir)
-        mock_save.assert_any_call(
-            filename='entropy_reference_diagnostics.png',
-            directory=temp_dir,
-            tight_layout=False,
+        assert any(
+            c.kwargs.get('filename') == 'entropy_reference.png'
+            and c.kwargs.get('directory') == temp_dir
+            for c in mock_save.call_args_list
+        )
+        assert any(
+            c.kwargs.get('filename') == 'entropy_reference_diagnostics.png'
+            and c.kwargs.get('directory') == temp_dir
+            and c.kwargs.get('tight_layout') is False
+            for c in mock_save.call_args_list
         )
     plt.close('all')
 

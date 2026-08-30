@@ -87,7 +87,13 @@ def test_wolff_update_accepted():
     """Verify that update='wolff' is accepted for all applicable models."""
     IsingSimulation(size=4, temp=2.269, update='wolff')
     XYSimulation(size=4, temp=0.8, update='wolff')
-    ClockSimulation(size=4, temp=0.5, q=6, update='wolff')
+    ClockSimulation(size=4, temp=0.5, q=6, A=0.0, update='wolff')
+
+
+def test_clock_wolff_with_anisotropy_warns():
+    """Clock Wolff must warn when A != 0: the reflection ignores anisotropy."""
+    with pytest.warns(UserWarning, match='detailed balance holds exactly only for A=0'):
+        ClockSimulation(size=4, temp=0.5, q=6, A=1.0, update='wolff')
 
 
 def test_wolff_invalid_update_still_rejected():

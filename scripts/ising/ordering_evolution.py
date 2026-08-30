@@ -27,11 +27,15 @@ def main() -> None:
         default=[1, 10, 100, 1000],
         help='MC steps at which to take snapshots',
     )
+    parser.add_argument(
+        '--seed', type=int, default=None,
+        help='Random seed for a reproducible quench (default: unseeded)',
+    )
     parser.add_argument('--output-dir', type=str, default='results/ising', help='Output directory')
     parser.add_argument('--log-file', type=str, default=None, help='Optional log file path')
     parser.add_argument('--verbose', action='store_true', help='Enable verbose logging')
 
-    args = parse_args_compat(parser)
+    args = parse_args_compat(parser=parser)
 
     log_level = logging.DEBUG if args.verbose else logging.INFO
     logger = setup_logging(level=log_level, log_file=args.log_file)
@@ -42,7 +46,7 @@ def main() -> None:
 
     run_ordering_evolution(
         model_cls=IsingSimulation,
-        model_kwargs={},
+        model_kwargs={} if args.seed is None else {'seed': args.seed},
         capture_vorticity=False,
         title=(
             f'2D Ising Ordering Evolution - T = {args.temp}'
