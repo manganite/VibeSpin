@@ -38,6 +38,104 @@ def ensure_results_dir(*, directory: str = 'results') -> str:
     return directory
 
 
+def plot_ordering_evolution_snapshots(
+    *,
+    targets: Sequence[int],
+    snapshots: Sequence[np.ndarray],
+    gr_data: Sequence[tuple[np.ndarray, np.ndarray]],
+    sk_data: Sequence[tuple[np.ndarray, np.ndarray]],
+    size: int,
+    temp: float,
+) -> tuple[plt.Figure, np.ndarray, list[float]]:
+    """
+    Build a 3-row diagnostic grid of ordering-evolution snapshots.
+
+    Row 1 shows binary spin matrices, row 2 the structure factor
+    :math:`S(|k|)` on log-log axes, and row 3 the spatial correlation
+    function G(r) with the 1/e crossing (correlation length xi) annotated.
+
+    Unlike :func:`plot_ordering_evolution`, this helper returns the figure
+    instead of writing it to disk, so notebooks can render the grid inline.
+
+    Parameters
+    ----------
+    targets : Sequence[int]
+        Target Monte Carlo sweep counts, one per column.
+    snapshots : Sequence[np.ndarray]
+        Spin matrices, one per target.
+    gr_data : Sequence[tuple[np.ndarray, np.ndarray]]
+        Correlation data ``(r, G(r))``, one per target.
+    sk_data : Sequence[tuple[np.ndarray, np.ndarray]]
+        Structure-factor data ``(k, S(|k|))``, one per target.
+    size : int
+        Lattice size L, used in the suptitle.
+    temp : float
+        Quench temperature, used in the suptitle.
+
+    Returns
+    -------
+    fig : plt.Figure
+        The figure holding the grid.
+    axes : np.ndarray
+        The (3, n_targets) axes grid.
+    xi_values : list[float]
+        Correlation length per target; NaN where G(r) never crosses 1/e.
+    """
+    n_cols = len(targets)
+    fig, axes = plt.subplots(
+        3, n_cols, figsize=(n_cols * 3.5, 10.5),
+        gridspec_kw={'hspace': 0.45, 'wspace': 0.25},
+    )
+    fig.suptitle(f'Ising ordering evolution  (L = {size}, T = {temp})', fontsize=13, y=0.99)
+    inv_e = 1.0 / np.e
+    xi_values: list[float] = []
+
+    for col, target in enumerate(targets):
+        r_ev, G_ev = gr_data[col]
+        k_vals, S_r = sk_data[col]
+
+        ax_s = axes[0, col]
+        ax_s.imshow(snapshots[col], cmap='binary', interpolation='none', vmin=-1, vmax=1)
+        ax_s.set_title(f't = {target} sweep{"s" if target != 1 else ""}', fontsize=11)
+        ax_s.axis('off')
+
+        ax_sk = axes[1, col]
+        S_pos, k_pos = S_r[1:], k_vals[1:]
+        if np.any(S_pos > 0):
+            ax_sk.plot(k_pos[S_pos > 0], S_pos[S_pos > 0], lw=1.2)
+            ax_sk.set_xscale('log')
+            ax_sk.set_yscale('log')
+            ax_sk.grid(True, which='both', alpha=0.25)
+        else:
+            ax_sk.text(0.5, 0.5, 'fully\nordered', ha='center', va='center',
+                       transform=ax_sk.transAxes, fontsize=11, color='0.4')
+            ax_sk.set_axis_off()
+        ax_sk.set_xlabel('$|k|$', fontsize=9)
+        if col == 0:
+            ax_sk.set_ylabel('$S(|k|)$', fontsize=9)
+
+        ax_gr = axes[2, col]
+        r_plot, G_plot = r_ev[1:], G_ev[1:]
+        ax_gr.plot(r_plot, G_plot, lw=1.5)
+        ax_gr.axhline(0, color='tab:gray', lw=0.7, ls='--')
+        ax_gr.axhline(inv_e, color='tab:red', lw=0.8, ls=':', alpha=0.7, label='$1/e$')
+        ax_gr.set_xscale('log')
+        ax_gr.set_xlabel('Distance $r$', fontsize=9)
+        if col == 0:
+            ax_gr.set_ylabel('$G(r)/G(0)$', fontsize=9)
+        ax_gr.grid(True, which='both', alpha=0.3)
+        ax_gr.set_ylim(-0.1, 1.1)
+
+        # Shared 1/e-crossing helper keeps this consistent with the kinetics metrics.
+        xi = correlation_length_1e(r=r_plot, G=G_plot)
+        if np.isfinite(xi):
+            ax_gr.axvline(xi, color='tab:red', lw=1.0, ls='--', alpha=0.8)
+            ax_gr.text(xi * 1.15, inv_e + 0.04, rf'$\xi = {xi:.1f}$', fontsize=9, color='tab:red')
+        xi_values.append(xi)
+
+    return fig, axes, xi_values
+
+
 def save_plot(
     *,
     filename: str,
