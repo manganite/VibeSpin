@@ -379,7 +379,9 @@ class TestTemperatureSweepMainPayloads:
             if expected_eq_max_steps is not None:
                 assert int(cast(Any, payload).eq_max_steps) == expected_eq_max_steps
 
-    def test_ising_main_builds_typed_sweep_payloads(self, monkeypatch: Any) -> None:
+    def test_ising_main_builds_typed_sweep_payloads(
+        self, monkeypatch: Any, tmp_path: Path,
+    ) -> None:
         """Ising temperature sweep main should build Ising SeedSweepPoint payloads."""
         if not HAS_TEMPERATURE_SWEEP:
             import pytest
@@ -405,12 +407,15 @@ class TestTemperatureSweepMainPayloads:
             [
                 'ising_temperature_sweep',
                 '--size', '8', '--meas-steps', '20', '--t-points', '2', '--n-seeds', '1',
+                '--output-dir', str(tmp_path),
             ],
             expected_len=2,
             expected_eq_max_steps=20000,
         )
 
-    def test_xy_main_builds_typed_sweep_payloads(self, monkeypatch: Any) -> None:
+    def test_xy_main_builds_typed_sweep_payloads(
+        self, monkeypatch: Any, tmp_path: Path,
+    ) -> None:
         """XY temperature sweep main should build XY SweepPoint payloads."""
         if not HAS_TEMPERATURE_SWEEP:
             import pytest
@@ -438,11 +443,14 @@ class TestTemperatureSweepMainPayloads:
             [
                 'xy_temperature_sweep', '--size', '8', '--meas-steps', '20',
                 '--t-points', '2', '--n-seeds', '1',
+                '--output-dir', str(tmp_path),
             ],
             expected_len=2,
         )
 
-    def test_clock_main_builds_typed_sweep_payloads(self, monkeypatch: Any) -> None:
+    def test_clock_main_builds_typed_sweep_payloads(
+        self, monkeypatch: Any, tmp_path: Path,
+    ) -> None:
         """Clock temperature sweep main should build Clock SweepPoint payloads."""
         if not HAS_TEMPERATURE_SWEEP:
             import pytest
@@ -470,6 +478,7 @@ class TestTemperatureSweepMainPayloads:
             [
                 'clock_temperature_sweep', '--size', '8', '--meas-steps', '20',
                 '--t-points', '2', '--n-seeds', '1',
+                '--output-dir', str(tmp_path),
             ],
             expected_len=2,
         )
@@ -897,14 +906,10 @@ class TestOrderingKineticsHelpers:
         assert isinstance(result, float)
         assert result > 0.0
 
-    def test_run_ordering_kinetics_ising(self, monkeypatch: pytest.MonkeyPatch) -> None:
+    def test_run_ordering_kinetics_ising(self, tmp_path: Path) -> None:
         """run_ordering_kinetics completes for IsingSimulation with small parameters."""
         from models.ising_model import IsingSimulation
         from utils.kinetics_helpers import compute_mean_intercept_length, run_ordering_kinetics
-
-        monkeypatch.setattr('matplotlib.pyplot.savefig', lambda *args, **kwargs: None)
-        monkeypatch.setattr('matplotlib.pyplot.close', lambda *args, **kwargs: None)
-        monkeypatch.setattr('os.makedirs', lambda *args, **kwargs: None)
 
         run_ordering_kinetics(
             model_cls=IsingSimulation,
@@ -919,17 +924,13 @@ class TestOrderingKineticsHelpers:
             max_steps=5,
             samples=3,
             fit_min=2,
-            output_dir='results/ising',
+            output_dir=str(tmp_path),
         )
 
-    def test_run_ordering_kinetics_xy(self, monkeypatch: pytest.MonkeyPatch) -> None:
+    def test_run_ordering_kinetics_xy(self, tmp_path: Path) -> None:
         """run_ordering_kinetics completes for XYSimulation using vortex density."""
         from models.xy_model import XYSimulation
         from utils.kinetics_helpers import run_ordering_kinetics
-
-        monkeypatch.setattr('matplotlib.pyplot.savefig', lambda *args, **kwargs: None)
-        monkeypatch.setattr('matplotlib.pyplot.close', lambda *args, **kwargs: None)
-        monkeypatch.setattr('os.makedirs', lambda *args, **kwargs: None)
 
         run_ordering_kinetics(
             model_cls=XYSimulation,
@@ -944,21 +945,17 @@ class TestOrderingKineticsHelpers:
             max_steps=5,
             samples=3,
             fit_min=2,
-            output_dir='results/xy',
+            output_dir=str(tmp_path),
         )
 
 
 class TestOrderingEvolutionHelpers:
     """Verify shared ordering-evolution helper infrastructure in utils/evolution_helpers."""
 
-    def test_run_ordering_evolution_ising(self, monkeypatch: pytest.MonkeyPatch) -> None:
+    def test_run_ordering_evolution_ising(self, tmp_path: Path) -> None:
         """run_ordering_evolution completes for IsingSimulation (no vorticity)."""
         from models.ising_model import IsingSimulation
         from utils.evolution_helpers import run_ordering_evolution
-
-        monkeypatch.setattr('matplotlib.pyplot.savefig', lambda *args, **kwargs: None)
-        monkeypatch.setattr('matplotlib.pyplot.close', lambda *args, **kwargs: None)
-        monkeypatch.setattr('os.makedirs', lambda *args, **kwargs: None)
 
         run_ordering_evolution(
             model_cls=IsingSimulation,
@@ -968,17 +965,13 @@ class TestOrderingEvolutionHelpers:
             size=16,
             temp=2.0,
             step_targets=[1, 2],
-            output_dir='results/ising',
+            output_dir=str(tmp_path),
         )
 
-    def test_run_ordering_evolution_xy(self, monkeypatch: pytest.MonkeyPatch) -> None:
+    def test_run_ordering_evolution_xy(self, tmp_path: Path) -> None:
         """run_ordering_evolution completes for XYSimulation with vorticity capture."""
         from models.xy_model import XYSimulation
         from utils.evolution_helpers import run_ordering_evolution
-
-        monkeypatch.setattr('matplotlib.pyplot.savefig', lambda *args, **kwargs: None)
-        monkeypatch.setattr('matplotlib.pyplot.close', lambda *args, **kwargs: None)
-        monkeypatch.setattr('os.makedirs', lambda *args, **kwargs: None)
 
         run_ordering_evolution(
             model_cls=XYSimulation,
@@ -988,19 +981,13 @@ class TestOrderingEvolutionHelpers:
             size=16,
             temp=0.5,
             step_targets=[1, 2],
-            output_dir='results/xy',
+            output_dir=str(tmp_path),
         )
 
-    def test_run_ordering_evolution_unsorted_targets(
-        self, monkeypatch: pytest.MonkeyPatch
-    ) -> None:
+    def test_run_ordering_evolution_unsorted_targets(self, tmp_path: Path) -> None:
         """run_ordering_evolution sorts step_targets internally."""
         from models.ising_model import IsingSimulation
         from utils.evolution_helpers import run_ordering_evolution
-
-        monkeypatch.setattr('matplotlib.pyplot.savefig', lambda *args, **kwargs: None)
-        monkeypatch.setattr('matplotlib.pyplot.close', lambda *args, **kwargs: None)
-        monkeypatch.setattr('os.makedirs', lambda *args, **kwargs: None)
 
         # Pass targets out of order; should not raise
         run_ordering_evolution(
@@ -1011,7 +998,7 @@ class TestOrderingEvolutionHelpers:
             size=16,
             temp=2.0,
             step_targets=[3, 1, 2],
-            output_dir='results/ising',
+            output_dir=str(tmp_path),
         )
 
 
