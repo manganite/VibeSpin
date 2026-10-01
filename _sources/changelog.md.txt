@@ -155,6 +155,7 @@ All notable changes to VibeSpin are documented here. The format follows [Keep a 
 - Remove stale `notebooks/results/` directory (leftover from an older notebook version; canonical path is `../results/`).
 - Remove orphaned development result directories (`results/ising_n5/`, `results/ising_replacement_demo/`, `results/ising_replacement_stress/`) and unreferenced test images (`results/_smoke.png`, `results/_test.png`, `results/ising_simulation.png`).
 - Remove `test_results/` from `.gitignore` (no longer written by any test).
+- Update `tornado` to 6.5.10 (security fixes in request parsing), `mistune` to 3.3.4, and `soupsieve` to 2.10 in `requirements.txt` and `uv.lock`. Replaces Dependabot PR #12, whose regenerated lockfile also raised `jupyterlab` to 4.6.3, which `notebook` 7.5.6 does not accept (`jupyterlab<4.6`), so `pip install -r requirements.txt` failed in CI.
 
 ---
 
