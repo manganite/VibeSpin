@@ -157,6 +157,7 @@ All notable changes to VibeSpin are documented here. The format follows [Keep a 
 - Remove `test_results/` from `.gitignore` (no longer written by any test).
 - Update `tornado` to 6.5.10 (security fixes in request parsing), `mistune` to 3.3.4, and `soupsieve` to 2.10 in `requirements.txt` and `uv.lock`. Replaces Dependabot PR #12, whose regenerated lockfile also raised `jupyterlab` to 4.6.3, which `notebook` 7.5.6 does not accept (`jupyterlab<4.6`), so `pip install -r requirements.txt` failed in CI.
 - Update `jupyter-server` to 2.21.1, `urllib3` to 2.8.0, `anyio` to 4.14.2, and `virtualenv` to 21.14.2 in `requirements.txt` and `uv.lock`. Replaces Dependabot PR #14, which again raised `jupyterlab` to 4.6 against the `notebook` 7.5 pin; `jupyterlab` stays on 4.5.
+- Update `notebook` to 7.6.3 and `jupyterlab` to 4.6.4 together. notebook 7.6 requires `jupyterlab>=4.6.4,<4.7`, so the two must move as a pair; Dependabot had bumped `jupyterlab` alone (#12, #14), which `notebook` 7.5 rejects. `setuptools` drops out of `requirements.txt` because only the old `jupyterlab` pulled it in at runtime; the build backend still fetches it in its isolated build environment.
 
 ---
 
