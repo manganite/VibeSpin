@@ -21,6 +21,7 @@ from __future__ import annotations
 import argparse
 
 from models.clock_model import DiscreteClockSimulation
+from scripts.clock._model_choice import ORDERED_BELOW_DISCRETE
 from utils.efficiency_runner import add_wolff_efficiency_arguments, run_wolff_efficiency
 from utils.system import parse_args_compat
 
@@ -54,6 +55,7 @@ def main() -> None:
         model_kwargs={'q': args.q},
         model_label=f'{args.q}-state Clock Model',
         transitions=transitions,
+        stuck_below=ORDERED_BELOW_DISCRETE.get(args.q),
     )
 
 

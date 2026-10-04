@@ -1462,10 +1462,11 @@ class TestCoarseningAnalysisTiming:
 
         import scripts.ising.coarsening_analysis as coarsening
 
-        xi = coarsening._measure_xi_eq(
+        xi, equilibrated = coarsening._measure_xi_eq(
             size=16, temp=0.5 * coarsening.TC_ISING, seed=5, eq_probe=50, eq_max=1000,
             meas_steps=200, meas_interval=10, logger=logging.getLogger('test'),
         )
+        assert equilibrated
         assert 0.0 < xi < 2.0
 
 
@@ -1588,3 +1589,179 @@ class TestSingleSeedIntervals:
         gaussian = float(norm.ppf(0.84)) * result['avg_m_err']
         # Student-t with finitely many blocks is strictly wider than Gaussian.
         assert half_width > gaussian * (1.0 + 1e-6)
+
+
+class TestUncertifiedEquilibration:
+    """A pair that hits the step cap without converging is never measured.
+
+    Every caller of the two-start protocol stores NaN for such a point and
+    records that it was not equilibrated, instead of measuring the ordered
+    start as if it had relaxed.
+    """
+
+    _CAPPED = (100, False, False)
+
+    @classmethod
+    def _capped_prepare(cls, measured: list[str]) -> Any:
+        """Return a stand-in for ``prepare_equilibrated_simulation`` that caps."""
+        from utils.equilibration import TwoStartOutcome
+
+        class _Unmeasurable:
+            def __getattr__(self, name: str) -> Any:
+                measured.append(name)
+                raise AssertionError(f'uncertified simulation was measured via {name}')
+
+        def _fake(**_kwargs: Any) -> tuple[Any, TwoStartOutcome]:
+            return _Unmeasurable(), TwoStartOutcome(*cls._CAPPED)
+
+        return _fake
+
+    def test_certified_flag(self) -> None:
+        from utils.equilibration import TwoStartOutcome
+
+        assert TwoStartOutcome(10, True, False).certified
+        assert TwoStartOutcome(10, False, True).certified
+        assert not TwoStartOutcome(*self._CAPPED).certified
+
+    @pytest.mark.parametrize(
+        'module_name, worker_name',
+        [
+            ('scripts.xy.helicity_modulus', 'simulate_helicity'),
+            ('scripts.xy.bkt_transition', 'simulate_bkt_point'),
+        ],
+    )
+    def test_xy_workers_return_nan(
+        self, monkeypatch: pytest.MonkeyPatch, module_name: str, worker_name: str,
+    ) -> None:
+        import importlib
+
+        module = importlib.import_module(module_name)
+        measured: list[str] = []
+        monkeypatch.setattr(
+            module, 'prepare_equilibrated_simulation', self._capped_prepare(measured),
+        )
+        value = getattr(module, worker_name)((0.9, 8, 50, 100, 10, 1))
+        assert np.isnan(value)
+        assert measured == []
+
+    def test_measure_z_marks_point(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        import scripts.ising.measure_z as mz
+
+        monkeypatch.setattr(mz, 'prepare_equilibrated_simulation', self._capped_prepare([]))
+        record = mz._measure_tau_point((0, 0, 'random', 8, 50, 100, 10, 1))
+        assert record['equilibrated'] is False
+        assert np.isnan(record['tau_int'])
+
+    def test_efficiency_point_is_nan(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        from utils import efficiency_runner
+        from utils.efficiency_runner import EfficiencyPoint, measure_efficiency_point
+
+        monkeypatch.setattr(
+            efficiency_runner, 'prepare_equilibrated_simulation', self._capped_prepare([]),
+        )
+        record = measure_efficiency_point(EfficiencyPoint(
+            temp_idx=0, seed_idx=0, temperature=2.0, size=8,
+            eq_probe_steps=50, eq_max_steps=100, meas_steps=20,
+            model_cls=IsingSimulation, model_kwargs={},
+        ))
+        assert record['converged_metro'] == 0.0
+        assert record['converged_wolff'] == 0.0
+        for key in ('tau_metro', 'tau_wolff', 'chi_metro', 'chi_wolff',
+                    'mean_cluster_frac', 'wolff_flips_per_sample'):
+            assert np.isnan(record[key]), key
+
+    def test_coarsening_xi_eq_is_nan(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        import logging
+
+        import scripts.ising.coarsening_analysis as coarsening
+
+        monkeypatch.setattr(
+            coarsening, 'prepare_equilibrated_simulation', self._capped_prepare([]),
+        )
+        xi, equilibrated = coarsening._measure_xi_eq(
+            size=8, temp=1.0, seed=1, eq_probe=50, eq_max=100,
+            meas_steps=10, meas_interval=5, logger=logging.getLogger('test'),
+        )
+        assert np.isnan(xi)
+        assert equilibrated is False
+
+    def test_clock_comparison_sweep_is_nan(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        import scripts.clock.compare_discrete_vs_continuous as compare
+        from models.clock_model import DiscreteClockSimulation
+
+        monkeypatch.setattr(
+            compare, 'prepare_equilibrated_simulation', self._capped_prepare([]),
+        )
+        results = compare.sweep_model(
+            model_cls=DiscreteClockSimulation, temperatures=np.array([0.5, 1.0]),
+            L=8, q=6, eq_probe_steps=50, eq_max_steps=100, meas_steps=10,
+            base_seed=0, extra_kwargs={},
+        )
+        assert all(np.isnan(v) for values in results for v in values)
+
+    def test_correlation_helper_returns_nan(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        from utils import observables
+        from utils.equilibration import TwoStartOutcome
+
+        monkeypatch.setattr(
+            observables, 'convergence_equilibrate_two_start',
+            lambda **_kwargs: TwoStartOutcome(*self._CAPPED),
+        )
+        r, G = observables.simulate_equilibrium_correlation(
+            model_cls=IsingSimulation, model_kwargs={}, size=8, temp=2.0, seed=1,
+            eq_probe=50, eq_max=100, meas_steps=10, interval=5,
+        )
+        assert len(r) == len(G) > 0
+        assert np.isnan(G).all()
+
+
+class TestStuckDetectionOptIn:
+    """Scripts enable stuck detection only in an ordered phase with domain states."""
+
+    def test_ising_correlation_comparison(
+        self, monkeypatch: pytest.MonkeyPatch, tmp_path: Path,
+    ) -> None:
+        import scripts.ising.correlation_comparison as ising_corr
+
+        captured: list[Any] = []
+
+        class _Stop(Exception):
+            pass
+
+        def _fake_parallel_sweep(*, worker_func: Any, params: Any, num_processes: Any = None):
+            captured.extend(params)
+            raise _Stop
+
+        monkeypatch.setattr(ising_corr, 'parallel_sweep', _fake_parallel_sweep)
+        monkeypatch.setattr(sys, 'argv', ['ising_corr', '--output-dir', str(tmp_path)])
+        with pytest.raises(_Stop):
+            ising_corr.main()
+        assert {p.label: p.detect_stuck for p in captured} == {
+            'ferro': True, 'crit': False, 'para': False,
+        }
+
+    def test_efficiency_runner_below_threshold(
+        self, monkeypatch: pytest.MonkeyPatch, tmp_path: Path,
+    ) -> None:
+        import scripts.ising.wolff_efficiency as ising_wolff
+        from utils import efficiency_runner
+
+        captured: list[Any] = []
+
+        class _Stop(Exception):
+            pass
+
+        def _fake_parallel_sweep(*, worker_func: Any, params: Any, num_processes: Any = None):
+            captured.extend(params)
+            raise _Stop
+
+        monkeypatch.setattr(efficiency_runner, 'parallel_sweep', _fake_parallel_sweep)
+        monkeypatch.setattr(
+            sys, 'argv',
+            ['ising_wolff', '--output-dir', str(tmp_path), '--n-seeds', '1'],
+        )
+        with pytest.raises(_Stop):
+            ising_wolff.main()
+        assert captured
+        for p in captured:
+            assert p.detect_stuck == (p.temperature < ising_wolff.TC_ISING)

@@ -115,7 +115,13 @@ def main() -> None:
         meas_steps=args.steps, interval=args.interval,
     )
     points = [
-        CorrelationPoint(label=label, temperature=T, **common)
+        # Below T1 a discrete random start can freeze into a domain state;
+        # stuck detection then ends the run and the ordered start is measured.
+        # The continuous model has no such accepted stuck state.
+        CorrelationPoint(
+            label=label, temperature=T,
+            detect_stuck=choice.is_discrete and label == 'ordered', **common,
+        )
         for label, T in (
             ('ordered', T_ORDERED), ('quasi', T_QUASI), ('disordered', T_DISORDERED),
         )

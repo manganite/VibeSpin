@@ -9,9 +9,12 @@ planar spins with the anisotropy ``-A cos(q theta)`` instead.
 from __future__ import annotations
 
 import argparse
-import math
 
-from scripts.clock._model_choice import add_clock_model_arguments, resolve_clock_model
+from scripts.clock._model_choice import (
+    ORDERED_BELOW_DISCRETE,
+    add_clock_model_arguments,
+    resolve_clock_model,
+)
 from utils.sweep_runner import add_temperature_sweep_arguments, run_temperature_sweep
 from utils.system import parse_args_compat
 
@@ -23,19 +26,6 @@ _T2_CLOCK6_APPROX = 0.92
 # Anisotropy of the continuous model when --continuous is given without
 # --aniso; it matches the ClockSimulation constructor default.
 _DEFAULT_CONTINUOUS_ANISO = 1.0
-
-# Temperature below which the discrete q-state clock model has true long-range
-# order. For q = 2, 3 and 4 these are exact: q = 2 is the Ising model, q = 3
-# maps onto the 3-state Potts model with coupling 3J/2, and q = 4 decouples
-# into two Ising models with coupling J/2. For q = 6 the value is the
-# approximate lower BKT temperature T1. Other q have no entry, so the sweep
-# runs without the ordered-start fallback for them.
-_ORDERED_BELOW_DISCRETE: dict[int, float] = {
-    2: 2.0 / math.log(1.0 + math.sqrt(2.0)),
-    3: 1.5 / math.log(1.0 + math.sqrt(3.0)),
-    4: 1.0 / math.log(1.0 + math.sqrt(2.0)),
-    6: _T1_CLOCK6_APPROX,
-}
 
 
 def main() -> None:
@@ -97,7 +87,7 @@ def main() -> None:
         # preference: its transition temperatures depend on A, and between T1
         # and T2 the clock model is only quasi-ordered.
         ordered_start_below=(
-            _ORDERED_BELOW_DISCRETE.get(args.q) if choice.is_discrete else None
+            ORDERED_BELOW_DISCRETE.get(args.q) if choice.is_discrete else None
         ),
     )
 

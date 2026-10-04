@@ -30,17 +30,20 @@ def simulate_bkt_point(params: tuple[float, int, int, int, int, int]) -> float:
     Returns
     -------
     float
-        Average vortex density n_v.
+        Average vortex density n_v, or NaN when the two starts did not
+        converge within ``eq_max_steps``.
     """
     T, L, eq_probe_steps, eq_max_steps, meas_steps, seed = params
     # The XY model has no metastable domain states, but its random start can
     # relax for thousands of sweeps near T_BKT; the stuck detector would end
     # such runs early, so the pair runs until it converges. If it never does,
-    # the ordered start is measured.
-    sim, _ = prepare_equilibrated_simulation(
+    # the point is not certified and is stored as NaN.
+    sim, outcome = prepare_equilibrated_simulation(
         model_cls=XYSimulation, model_kwargs={}, size=L, temp=T, seed=seed,
         chunk_size=eq_probe_steps, max_steps=eq_max_steps, detect_stuck=False,
     )
+    if not outcome.certified:
+        return float('nan')
 
     densities = np.empty(meas_steps, dtype=np.float64)
     for k in range(meas_steps):
@@ -124,6 +127,9 @@ def main() -> None:
         npz_path,
         temperatures=temperatures,
         vortex_densities=np.array(vortex_densities),
+        # The worker returns NaN only for points whose equilibration hit
+        # eq_max_steps without convergence.
+        equilibrated=np.isfinite(np.array(vortex_densities)),
         T_BKT_theoretical=T_BKT_THEORETICAL,
         L=args.size,
         eq_probe_steps=args.eq_probe_steps,

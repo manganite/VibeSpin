@@ -95,6 +95,18 @@ class TwoStartOutcome(NamedTuple):
     converged: bool
     stuck: bool
 
+    @property
+    def certified(self) -> bool:
+        """Whether a measurement on this pair is valid.
+
+        True after convergence or after a stuck exit. A stuck exit can only
+        occur where the caller enabled ``detect_stuck``, which callers do only
+        where a stuck state is accepted. A run that reached ``max_steps`` is
+        not certified: neither start is known to have relaxed, and callers
+        store NaN for the point instead of measuring it.
+        """
+        return self.converged or self.stuck
+
 
 def select_measurement_simulation[SimT](
     *, outcome: TwoStartOutcome, sim_random: SimT, sim_ordered: SimT
@@ -104,9 +116,9 @@ def select_measurement_simulation[SimT](
 
     The random start is used only when the two starts converged to the same
     state. After a stuck exit the random start sits on a metastable plateau,
-    and after hitting the step cap neither start is certified, so in both
-    cases the ordered start, the one closer to the ordered equilibrium state
-    that the stuck detector assumes, is returned.
+    so the ordered start is returned. After hitting the step cap the ordered
+    start is returned as well, but neither start is certified
+    (``outcome.certified`` is False) and callers must not measure it.
 
     Parameters
     ----------
@@ -742,7 +754,9 @@ def prepare_equilibrated_simulation(
     ``ordered_start_seed(seed=seed)``, so the two runs draw independent random
     numbers. After equilibration the random start is returned when the pair
     converged, and the ordered start otherwise (see
-    ``select_measurement_simulation``).
+    ``select_measurement_simulation``). When the run hit ``max_steps``,
+    ``outcome.certified`` is False and the caller should record NaN for the
+    point rather than measure the returned simulation.
 
     Parameters
     ----------
@@ -782,13 +796,13 @@ def prepare_equilibrated_simulation(
         max_steps=max_steps,
         **kwargs,
     )
-    if not outcome.converged:
-        reason = (
-            'random start stranded' if outcome.stuck
-            else f'no convergence in {max_steps} steps'
-        )
-        logging.getLogger('vibespin').info(
-            f'T={temp:.4f}, L={size}: {reason}; measuring the ordered start.'
+    logger = logging.getLogger('vibespin')
+    if outcome.stuck:
+        logger.info(f'T={temp:.4f}, L={size}: random start stranded; measuring the ordered start.')
+    elif not outcome.converged:
+        logger.warning(
+            f'T={temp:.4f}, L={size}: no convergence in {max_steps} steps; '
+            'the point is not certified and is stored as NaN.'
         )
     sim = select_measurement_simulation(
         outcome=outcome, sim_random=sim_random, sim_ordered=sim_ordered,

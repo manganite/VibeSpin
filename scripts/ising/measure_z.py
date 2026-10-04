@@ -51,15 +51,27 @@ def _measure_tau_point(
     -------
     dict
         Keys: ``size_idx``, ``seed_idx``, ``update``, ``L``, ``tau_int``,
-        ``wall_time``.
+        ``wall_time``, and ``equilibrated``. When the two starts did not
+        converge within ``eq_max_steps``, ``equilibrated`` is False and
+        ``tau_int`` and ``wall_time`` are NaN.
     """
     size_idx, seed_idx, update, L, eq_probe_steps, eq_max_steps, meas_steps, seed = params
-    # Thorough equilibration at Tc via two-start convergence; the ordered start
-    # is measured if the random start never joined it.
-    sim, _ = prepare_equilibrated_simulation(
+    # Thorough equilibration at Tc via two-start convergence. A pair that never
+    # converges is not measured; its tau_int is stored as NaN.
+    sim, outcome = prepare_equilibrated_simulation(
         model_cls=IsingSimulation, model_kwargs={}, size=L, temp=TC_ISING, seed=seed,
         chunk_size=eq_probe_steps, max_steps=eq_max_steps, update=update,
     )
+    if not outcome.certified:
+        return {
+            'size_idx': int(size_idx),
+            'seed_idx': int(seed_idx),
+            'update': update,
+            'L': float(L),
+            'tau_int': float('nan'),
+            'wall_time': float('nan'),
+            'equilibrated': False,
+        }
 
     t0 = time.perf_counter()
     mags, _ = sim.run(n_steps=meas_steps)
@@ -78,6 +90,7 @@ def _measure_tau_point(
         'L': float(L),
         'tau_int': float(tau_int),
         'wall_time': float(wall_time),
+        'equilibrated': True,
     }
 
 
@@ -156,14 +169,18 @@ def main() -> None:
     n_sizes = len(sizes)
     tau_metro_samples = np.full((n_sizes, n_seeds), np.nan)
     tau_wolff_samples = np.full((n_sizes, n_seeds), np.nan)
+    metro_equilibrated = np.zeros((n_sizes, n_seeds), dtype=bool)
+    wolff_equilibrated = np.zeros((n_sizes, n_seeds), dtype=bool)
 
     for r in raw:
         i = int(r['size_idx'])
         s = int(r['seed_idx'])
         if r['update'] == 'random':
             tau_metro_samples[i, s] = float(r['tau_int'])
+            metro_equilibrated[i, s] = bool(r['equilibrated'])
         else:
             tau_wolff_samples[i, s] = float(r['tau_int'])
+            wolff_equilibrated[i, s] = bool(r['equilibrated'])
 
     L_arr = np.asarray(sizes, dtype=float)
     # summarize_replicate_samples at the default 0.68 confidence yields exactly
@@ -191,6 +208,8 @@ def main() -> None:
         tau_wolff_p16=tau_wolff_p16,
         tau_wolff_p84=tau_wolff_p84,
         tau_wolff_samples=tau_wolff_samples,
+        metro_equilibrated=metro_equilibrated,
+        wolff_equilibrated=wolff_equilibrated,
         Tc=TC_ISING,
         n_seeds=np.int64(n_seeds),
         tau_metro_value=metro_summary['value'],
