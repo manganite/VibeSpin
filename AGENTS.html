@@ -63,7 +63,7 @@
 <li class="toctree-l2"><a class="reference internal" href="#explanatory-writing-style">Explanatory Writing Style</a><ul>
 <li class="toctree-l3"><a class="reference internal" href="#scope">Scope</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#instructions">Instructions</a></li>
-<li class="toctree-l3"><a class="reference internal" href="#additional-writing-guidance-practical-additive">Additional Writing Guidance (Practical, Additive)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#additional-writing-guidance">Additional Writing Guidance</a></li>
 </ul>
 </li>
 <li class="toctree-l2"><a class="reference internal" href="#mandatory-development-policies">Mandatory Development Policies</a><ul>
@@ -84,7 +84,7 @@
 <li class="toctree-l3"><a class="reference internal" href="#task-investigate-performance-regression">Task: Investigate Performance Regression</a></li>
 </ul>
 </li>
-<li class="toctree-l2"><a class="reference internal" href="#additional-engineering-guidance-additive">Additional Engineering Guidance (Additive)</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#additional-engineering-guidance">Additional Engineering Guidance</a><ul>
 <li class="toctree-l3"><a class="reference internal" href="#notebook-data-and-calculation-strategy">Notebook Data and Calculation Strategy</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#python-implementation-practices">Python Implementation Practices</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#comments-and-docstrings">Comments and Docstrings</a></li>
@@ -159,7 +159,7 @@
 </section>
 <section id="writing-role">
 <h3>Writing Role<a class="headerlink" href="#writing-role" title="Link to this heading"></a></h3>
-<p>You are an excellent human writer, and you write explanatory text in a human voice with clarity, precision, and conciseness. You are also an expert in statistical physics and numerical simulations, especially Monte Carlo methods.</p>
+<p>You are an excellent human writer, and you write explanatory text in a human voice with clarity, precision, and conciseness.</p>
 </section>
 <section id="goal">
 <h3>Goal<a class="headerlink" href="#goal" title="Link to this heading"></a></h3>
@@ -178,16 +178,17 @@
 </section>
 <section id="instructions">
 <h3>Instructions<a class="headerlink" href="#instructions" title="Link to this heading"></a></h3>
+<p>Explanatory text should read as sober scientific prose. Avoid the register of AI-generated text: enthusiastic or promotional phrasing, inflated vocabulary, and em dashes. The rules below implement this.</p>
 <ul class="simple">
 <li><p><strong>Destroy the List</strong>: In user-facing explanatory prose, do not use bullet points unless procedural. Use continuous, flowing prose.</p></li>
 <li><p><strong>Vary Sentence Length</strong>: Avoid a monotonous rhythm of medium-length sentences.</p></li>
 <li><p><strong>Mechanism over Slogan</strong>: Favor technical interpretation over abstract praise. Plainly describe crossovers, plateaus, and decay laws.</p></li>
 <li><p><strong>Regime Awareness</strong>: Always specify whether a claim concerns equilibrium, kinetics, topological defects, or numerical cost.</p></li>
-<li><p><strong>No Conversational Filler</strong>: Adopt a direct, professional tone suitable for a CLI environment. Fulfill the user’s request thoroughly while maintaining simplicity.</p></li>
+<li><p><strong>No Conversational Filler</strong>: Adopt a direct, professional tone.</p></li>
 </ul>
 </section>
-<section id="additional-writing-guidance-practical-additive">
-<h3>Additional Writing Guidance (Practical, Additive)<a class="headerlink" href="#additional-writing-guidance-practical-additive" title="Link to this heading"></a></h3>
+<section id="additional-writing-guidance">
+<h3>Additional Writing Guidance<a class="headerlink" href="#additional-writing-guidance" title="Link to this heading"></a></h3>
 <ul class="simple">
 <li><p>Write for engineering communication, not paper-style performance. Prioritize useful explanation over rhetorical polish.</p></li>
 <li><p>Prefer plain, concrete wording. Avoid inflated terms where simpler alternatives are clearer.</p></li>
@@ -291,7 +292,7 @@ mypy<span class="w"> </span>--explicit-package-bases<span class="w"> </span>mode
 </ul>
 </li>
 <li><p><strong>GitHub Sync</strong>: After a successful local commit, ask the user if they wish to push to the remote repository.</p></li>
-<li><p><strong>Changelog Updates</strong>: You must proactively and automatically update <code class="docutils literal notranslate"><span class="pre">CHANGELOG.md</span></code> whenever you complete a task that alters user-facing behavior (physics, new features, CLI changes, bug fixes, breaking API changes, or NPZ schemas). Add an entry describing your work under the <code class="docutils literal notranslate"><span class="pre">[Unreleased]</span></code> heading, grouping it appropriately (e.g., Added, Changed, Deprecated, Removed, Fixed, Security). Never wait for the user to ask for changelog updates; treat this as an integral part of completing any behavior-altering change.</p></li>
+<li><p><strong>Changelog Updates</strong>: Update <code class="docutils literal notranslate"><span class="pre">CHANGELOG.md</span></code> as part of any task that alters user-facing behavior (physics, new features, CLI changes, bug fixes, breaking API changes, or NPZ schemas): add an entry under the <code class="docutils literal notranslate"><span class="pre">[Unreleased]</span></code> heading, grouped as Added, Changed, Deprecated, Removed, Fixed, or Security.</p></li>
 <li><p><strong>Versioning Policy</strong>: The project follows Semantic Versioning (<code class="docutils literal notranslate"><span class="pre">MAJOR.MINOR.PATCH</span></code>). When instructed to prepare a release, automatically transition all <code class="docutils literal notranslate"><span class="pre">[Unreleased]</span></code> entries in <code class="docutils literal notranslate"><span class="pre">CHANGELOG.md</span></code> to a new version block (e.g., <code class="docutils literal notranslate"><span class="pre">##</span> <span class="pre">[1.2.0]</span> <span class="pre">-</span> <span class="pre">YYYY-MM-DD</span></code>). Propose the appropriate version increment based on the types of changes in the unreleased section (MAJOR for breaking changes, MINOR for new features, PATCH for bug fixes).</p></li>
 </ul>
 </section>
@@ -401,8 +402,8 @@ mypy<span class="w"> </span>--explicit-package-bases<span class="w"> </span>mode
 </ol>
 </section>
 </section>
-<section id="additional-engineering-guidance-additive">
-<h2>Additional Engineering Guidance (Additive)<a class="headerlink" href="#additional-engineering-guidance-additive" title="Link to this heading"></a></h2>
+<section id="additional-engineering-guidance">
+<h2>Additional Engineering Guidance<a class="headerlink" href="#additional-engineering-guidance" title="Link to this heading"></a></h2>
 <section id="notebook-data-and-calculation-strategy">
 <h3>Notebook Data and Calculation Strategy<a class="headerlink" href="#notebook-data-and-calculation-strategy" title="Link to this heading"></a></h3>
 <p>The recommended approach for scientific notebooks is to import precomputed simulation or analysis results from NPZ files or similar formats whenever available. This ensures responsiveness, reproducibility, and efficient workflow for large or computationally expensive tasks. If the precomputed data file is unavailable, notebooks should offer a lightweight fallback calculation for demonstration, testing, or small-scale analysis, with clear documentation of its limitations.</p>
@@ -413,6 +414,7 @@ mypy<span class="w"> </span>--explicit-package-bases<span class="w"> </span>mode
 </section>
 <section id="python-implementation-practices">
 <h3>Python Implementation Practices<a class="headerlink" href="#python-implementation-practices" title="Link to this heading"></a></h3>
+<p>These conventions set a common professional baseline and keep the programming style consistent across the codebase; the next section does the same for comments and docstrings.</p>
 <ul class="simple">
 <li><p>Prefer explicit, readable Python over clever shortcuts. Use clear names and small helper functions.</p></li>
 <li><p>Never use mutable default arguments (<code class="docutils literal notranslate"><span class="pre">[]</span></code>, <code class="docutils literal notranslate"><span class="pre">{}</span></code>, <code class="docutils literal notranslate"><span class="pre">set()</span></code>). Use <code class="docutils literal notranslate"><span class="pre">None</span></code> sentinels and initialize inside the function.</p></li>
