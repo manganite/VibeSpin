@@ -520,7 +520,7 @@ def convergence_equilibrate_two_start(
     max_steps: int = 200_000,
     qs_sigma_threshold: float = 0.05,
     qs_min_steps: int = 1500,
-    detect_stuck: bool = True,
+    detect_stuck: bool = False,
     **kwargs: Any,
 ) -> TwoStartOutcome:
     """
@@ -550,11 +550,12 @@ def convergence_equilibrate_two_start(
     qs_min_steps : int
         Minimum accumulated steps before stuck detection may fire.
     detect_stuck : bool
-        Whether a quasi-steady stuck state ends the run early (default True).
+        Whether a quasi-steady stuck state ends the run early (default False).
         The detector cannot tell a stranded random start from one that is
-        still relaxing slowly, which is common for the XY model near and
-        below T_BKT, so callers whose model has no metastable domain states
-        should disable it and let the run continue to convergence.
+        still relaxing slowly, which is common near a transition and for the
+        XY model below T_BKT, so it is opt-in: enable it only in the ordered
+        phase of a model with metastable domain states, where measuring the
+        ordered start after a stuck exit is valid.
     **kwargs : Any
         Passed to ``estimate_relaxation_time_two_start`` (k, smooth_window,
         dwell_window, min_fraction_inside, sigma_floor, etc.).
@@ -681,6 +682,9 @@ def convergence_equilibrate_with_status(
     tuple[int, bool]
         Tuple ``(total_steps, converged)``.
     """
+    # The legacy wrapper keeps its historical behaviour of stopping on a
+    # stuck state unless the caller passes detect_stuck explicitly.
+    kwargs.setdefault('detect_stuck', True)
     outcome = convergence_equilibrate_two_start(
         sim_random=sim_random,
         sim_ordered=sim_ordered,
@@ -760,7 +764,8 @@ def prepare_equilibrated_simulation(
         Update scheme for both starts (default ``'checkerboard'``).
     **kwargs : Any
         Passed to ``convergence_equilibrate_two_start``, for example
-        ``detect_stuck=False`` for models without metastable domain states.
+        ``detect_stuck=True`` in the ordered phase of a model with metastable
+        domain states.
 
     Returns
     -------

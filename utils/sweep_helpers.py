@@ -577,9 +577,10 @@ def build_uncertainty_bundle(
         Two-sided confidence level for the returned CI bounds.
     ci_low_by_seed, ci_high_by_seed : np.ndarray or None
         Shape ``(n_temps, n_seeds)``. Per-seed interval bounds from the
-        summarizers. Used for single-seed sweeps, whose intervals then keep
-        the Student-t width of the blocking estimate; without them the
-        bounds are a Gaussian multiple of the error.
+        summarizers. Used for single-seed sweeps and for temperatures where
+        only one seed has a finite value, whose intervals then keep the
+        Student-t width of the blocking estimate; without them the bounds
+        are a Gaussian multiple of the error.
 
     Returns
     -------
@@ -603,6 +604,19 @@ def build_uncertainty_bundle(
                 res_errors.append(np.nan)
                 res_low.append(np.nan)
                 res_high.append(np.nan)
+                continue
+            if (
+                np.count_nonzero(mask) == 1
+                and ci_low_by_seed is not None
+                and ci_high_by_seed is not None
+            ):
+                # One surviving seed keeps its own Student-t interval, as in
+                # the single-seed branch below.
+                k = int(np.flatnonzero(mask)[0])
+                res_values.append(values_by_seed[t, k])
+                res_errors.append(errors_by_seed[t, k])
+                res_low.append(ci_low_by_seed[t, k])
+                res_high.append(ci_high_by_seed[t, k])
                 continue
 
             summary = summarize_seed_ensemble(

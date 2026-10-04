@@ -1307,6 +1307,20 @@ class TestClockModelChoice:
         with pytest.raises(_Stop):
             clock_corr.main()
         assert {p.model_cls for p in captured} == {DiscreteClockSimulation}
+        assert [p.temperature for p in captured] == [0.5, 0.8, 1.2]
+
+    @pytest.mark.parametrize('extra', [['--continuous'], ['--q', '8'], ['--q', '4']])
+    def test_correlation_comparison_rejects_default_temperatures_elsewhere(
+        self, monkeypatch: pytest.MonkeyPatch, tmp_path: Path, extra: list[str],
+    ) -> None:
+        """The q=6 phase temperatures must not be applied to another model."""
+        import scripts.clock.correlation_comparison as clock_corr
+
+        monkeypatch.setattr(
+            sys, 'argv', ['clock_corr', '--output-dir', str(tmp_path), *extra],
+        )
+        with pytest.raises(SystemExit):
+            clock_corr.main()
 
 
 class TestTwoStartMeasurementPolicy:
@@ -1542,6 +1556,21 @@ class TestSingleSeedIntervals:
         )
         np.testing.assert_allclose(bundle['ci_low'], [0.8, 1.5])
         np.testing.assert_allclose(bundle['ci_high'], [1.2, 2.5])
+
+    def test_bundle_keeps_bounds_of_single_surviving_seed(self) -> None:
+        """A row with one finite seed out of several keeps that seed's interval."""
+        values = np.array([[1.0, 1.2], [2.0, np.nan]])
+        errors = np.array([[0.1, 0.1], [0.2, np.nan]])
+        bundle = build_uncertainty_bundle(
+            values_by_seed=values, errors_by_seed=errors,
+            tau_by_seed=np.ones((2, 2)), n_eff_by_seed=np.ones((2, 2)),
+            confidence=0.68,
+            ci_low_by_seed=np.array([[0.8, 1.0], [1.5, np.nan]]),
+            ci_high_by_seed=np.array([[1.2, 1.4], [2.5, np.nan]]),
+        )
+        assert bundle['value'][1] == 2.0
+        assert bundle['ci_low'][1] == 1.5
+        assert bundle['ci_high'][1] == 2.5
 
     def test_worker_emits_t_intervals(self) -> None:
         """The worker's interval is wider than the Gaussian one built from its error."""
