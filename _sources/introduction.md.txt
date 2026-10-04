@@ -25,48 +25,30 @@ The framework provides a full suite of diagnostics for physical analysis. Thermo
 
 ## Installation
 
-The recommended method for managing this project is using [uv](https://github.com/astral-sh/uv), a fast Python package installer and resolver.
-
-To install dependencies and set up the local virtual environment in editable mode:
+The project runs in a local virtual environment managed by [uv](https://github.com/astral-sh/uv). `uv.lock` pins every dependency, and `.python-version` selects Python 3.12, which uv downloads if it is not already installed. On Windows, use WSL and clone the repository into the Linux file system (for example `~/code/VibeSpin`) rather than under `/mnt/c`, where file access is slow and permissions behave differently.
 
 ```bash
+curl -LsSf https://astral.sh/uv/install.sh | sh   # once per machine
 uv sync --all-extras
 uv run pre-commit install --hook-type pre-commit --hook-type pre-push
 ```
 
-Alternatively, you can install the package using standard pip:
+`uv sync` creates `.venv/` in the repository and installs VibeSpin in editable mode with the development, notebook, and documentation extras. Prefix commands with `uv run`, or activate the environment with `source .venv/bin/activate`. JupyterLab starts with `uv run jupyter lab`. In VS Code, select `.venv/bin/python` as the interpreter; under WSL, open the folder through the WSL extension first.
+
+GitHub access needs no project-specific setup: use `gh auth login` or an SSH key in `~/.ssh`, on Windows inside WSL rather than in Windows itself.
+
+Without uv, the same pinned set installs with pip from `requirements.txt`, which a pre-commit hook exports from `uv.lock`:
 
 ```bash
-pip install -e .
-```
-
-Or for full development capabilities with standard pip:
-
-```bash
-pip install -e ".[dev,notebook,docs]"
+python -m venv .venv && source .venv/bin/activate
+pip install -r requirements.txt
+pip install -e . --no-deps
 pre-commit install --hook-type pre-commit --hook-type pre-push
 ```
 
+To change a dependency, edit `pyproject.toml` or run `uv lock --upgrade-package <name>`, then commit `uv.lock` together with the regenerated `requirements.txt`. CI installs from `uv.lock` and fails if the two files disagree.
+
 The repository enforces documentation consistency at both commit and push time. The pre-push hook runs link validation, API docs sync checks, and a Sphinx HTML build with warnings treated as errors.
-
-### Devcontainer Jupyter Auto-Start
-
-In this repository's devcontainer, JupyterLab starts automatically and listens on port 8888. The startup path is defined in the repository's [devcontainer.json on GitHub](https://github.com/manganite/VibeSpin/blob/HEAD/.devcontainer/devcontainer.json) and launches the companion [start-jupyter.sh helper on GitHub](https://github.com/manganite/VibeSpin/blob/HEAD/.devcontainer/scripts/start-jupyter.sh), which waits for the project virtual environment to be ready and then starts JupyterLab in detached mode.
-
-After rebuilding the container, verify the server with the venv binary directly:
-
-```bash
-/workspaces/vibespin/.venv/bin/jupyter notebook list
-```
-
-The startup log is written to `/tmp/jupyter.log`, and lifecycle-hook output is written to `/tmp/devcontainer-poststart.log`.
-
-If no server is listed, inspect both logs first:
-
-```bash
-tail -n 200 /tmp/devcontainer-poststart.log
-tail -n 200 /tmp/jupyter.log
-```
 
 ## Benchmarking & Performance
 
@@ -146,30 +128,22 @@ Full documentation is available at **[https://manganite.github.io/VibeSpin/](htt
 To build the documentation locally:
 
 ```bash
-cd docs
-make html
+uv run make -C docs html
 ```
 
 ### Sphinx Setup Notes
 
-The documentation stack uses Sphinx with MyST Markdown and nbsphinx for notebook pages. A standard development install for documentation is:
-
-```bash
-pip install -e ".[docs]"
-```
-
-In this repository's devcontainer, documentation dependencies are installed automatically during container creation via the `.[dev,notebook,docs]` extras group.
+The documentation stack uses Sphinx with MyST Markdown and nbsphinx for notebook pages. Its dependencies are part of the `docs` extra, which `uv sync --all-extras` installs.
 
 Notebook rendering requires Pandoc. The docs configuration includes a fallback that uses the bundled binary from `pypandoc-binary` when a system `pandoc` executable is not available, so normal builds should work without manual Pandoc installation.
 
 ### Docs Troubleshooting
 
-If `make html` fails after opening or rebuilding the container, verify the project environment was created successfully and reinstall extras:
+If `make html` fails, resynchronize the environment and rebuild:
 
 ```bash
-pip install -e ".[dev,notebook,docs]"
-cd docs
-make html
+uv sync --all-extras
+uv run make -C docs html
 ```
 
 If this still fails, check that the selected interpreter is the project virtual environment at `.venv/bin/python`.

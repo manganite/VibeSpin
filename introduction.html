@@ -55,10 +55,7 @@
 </ul>
 </li>
 <li class="toctree-l2"><a class="reference internal" href="#scope-and-methods">Scope and Methods</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#installation">Installation</a><ul>
-<li class="toctree-l3"><a class="reference internal" href="#devcontainer-jupyter-auto-start">Devcontainer Jupyter Auto-Start</a></li>
-</ul>
-</li>
+<li class="toctree-l2"><a class="reference internal" href="#installation">Installation</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#benchmarking-performance">Benchmarking &amp; Performance</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#typical-usage">Typical Usage</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#development-guidance">Development Guidance</a><ul>
@@ -147,36 +144,23 @@
 </section>
 <section id="installation">
 <h2>Installation<a class="headerlink" href="#installation" title="Link to this heading"></a></h2>
-<p>The recommended method for managing this project is using <a class="reference external" href="https://github.com/astral-sh/uv">uv</a>, a fast Python package installer and resolver.</p>
-<p>To install dependencies and set up the local virtual environment in editable mode:</p>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>uv<span class="w"> </span>sync<span class="w"> </span>--all-extras
+<p>The project runs in a local virtual environment managed by <a class="reference external" href="https://github.com/astral-sh/uv">uv</a>. <code class="docutils literal notranslate"><span class="pre">uv.lock</span></code> pins every dependency, and <code class="docutils literal notranslate"><span class="pre">.python-version</span></code> selects Python 3.12, which uv downloads if it is not already installed. On Windows, use WSL and clone the repository into the Linux file system (for example <code class="docutils literal notranslate"><span class="pre">~/code/VibeSpin</span></code>) rather than under <code class="docutils literal notranslate"><span class="pre">/mnt/c</span></code>, where file access is slow and permissions behave differently.</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>curl<span class="w"> </span>-LsSf<span class="w"> </span>https://astral.sh/uv/install.sh<span class="w"> </span><span class="p">|</span><span class="w"> </span>sh<span class="w">   </span><span class="c1"># once per machine</span>
+uv<span class="w"> </span>sync<span class="w"> </span>--all-extras
 uv<span class="w"> </span>run<span class="w"> </span>pre-commit<span class="w"> </span>install<span class="w"> </span>--hook-type<span class="w"> </span>pre-commit<span class="w"> </span>--hook-type<span class="w"> </span>pre-push
 </pre></div>
 </div>
-<p>Alternatively, you can install the package using standard pip:</p>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>pip<span class="w"> </span>install<span class="w"> </span>-e<span class="w"> </span>.
-</pre></div>
-</div>
-<p>Or for full development capabilities with standard pip:</p>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>pip<span class="w"> </span>install<span class="w"> </span>-e<span class="w"> </span><span class="s2">&quot;.[dev,notebook,docs]&quot;</span>
+<p><code class="docutils literal notranslate"><span class="pre">uv</span> <span class="pre">sync</span></code> creates <code class="docutils literal notranslate"><span class="pre">.venv/</span></code> in the repository and installs VibeSpin in editable mode with the development, notebook, and documentation extras. Prefix commands with <code class="docutils literal notranslate"><span class="pre">uv</span> <span class="pre">run</span></code>, or activate the environment with <code class="docutils literal notranslate"><span class="pre">source</span> <span class="pre">.venv/bin/activate</span></code>. JupyterLab starts with <code class="docutils literal notranslate"><span class="pre">uv</span> <span class="pre">run</span> <span class="pre">jupyter</span> <span class="pre">lab</span></code>. In VS Code, select <code class="docutils literal notranslate"><span class="pre">.venv/bin/python</span></code> as the interpreter; under WSL, open the folder through the WSL extension first.</p>
+<p>GitHub access needs no project-specific setup: use <code class="docutils literal notranslate"><span class="pre">gh</span> <span class="pre">auth</span> <span class="pre">login</span></code> or an SSH key in <code class="docutils literal notranslate"><span class="pre">~/.ssh</span></code>, on Windows inside WSL rather than in Windows itself.</p>
+<p>Without uv, the same pinned set installs with pip from <code class="docutils literal notranslate"><span class="pre">requirements.txt</span></code>, which a pre-commit hook exports from <code class="docutils literal notranslate"><span class="pre">uv.lock</span></code>:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>python<span class="w"> </span>-m<span class="w"> </span>venv<span class="w"> </span>.venv<span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span><span class="nb">source</span><span class="w"> </span>.venv/bin/activate
+pip<span class="w"> </span>install<span class="w"> </span>-r<span class="w"> </span>requirements.txt
+pip<span class="w"> </span>install<span class="w"> </span>-e<span class="w"> </span>.<span class="w"> </span>--no-deps
 pre-commit<span class="w"> </span>install<span class="w"> </span>--hook-type<span class="w"> </span>pre-commit<span class="w"> </span>--hook-type<span class="w"> </span>pre-push
 </pre></div>
 </div>
+<p>To change a dependency, edit <code class="docutils literal notranslate"><span class="pre">pyproject.toml</span></code> or run <code class="docutils literal notranslate"><span class="pre">uv</span> <span class="pre">lock</span> <span class="pre">--upgrade-package</span> <span class="pre">&lt;name&gt;</span></code>, then commit <code class="docutils literal notranslate"><span class="pre">uv.lock</span></code> together with the regenerated <code class="docutils literal notranslate"><span class="pre">requirements.txt</span></code>. CI installs from <code class="docutils literal notranslate"><span class="pre">uv.lock</span></code> and fails if the two files disagree.</p>
 <p>The repository enforces documentation consistency at both commit and push time. The pre-push hook runs link validation, API docs sync checks, and a Sphinx HTML build with warnings treated as errors.</p>
-<section id="devcontainer-jupyter-auto-start">
-<h3>Devcontainer Jupyter Auto-Start<a class="headerlink" href="#devcontainer-jupyter-auto-start" title="Link to this heading"></a></h3>
-<p>In this repository’s devcontainer, JupyterLab starts automatically and listens on port 8888. The startup path is defined in the repository’s <a class="reference external" href="https://github.com/manganite/VibeSpin/blob/HEAD/.devcontainer/devcontainer.json">devcontainer.json on GitHub</a> and launches the companion <a class="reference external" href="https://github.com/manganite/VibeSpin/blob/HEAD/.devcontainer/scripts/start-jupyter.sh">start-jupyter.sh helper on GitHub</a>, which waits for the project virtual environment to be ready and then starts JupyterLab in detached mode.</p>
-<p>After rebuilding the container, verify the server with the venv binary directly:</p>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>/workspaces/vibespin/.venv/bin/jupyter<span class="w"> </span>notebook<span class="w"> </span>list
-</pre></div>
-</div>
-<p>The startup log is written to <code class="docutils literal notranslate"><span class="pre">/tmp/jupyter.log</span></code>, and lifecycle-hook output is written to <code class="docutils literal notranslate"><span class="pre">/tmp/devcontainer-poststart.log</span></code>.</p>
-<p>If no server is listed, inspect both logs first:</p>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>tail<span class="w"> </span>-n<span class="w"> </span><span class="m">200</span><span class="w"> </span>/tmp/devcontainer-poststart.log
-tail<span class="w"> </span>-n<span class="w"> </span><span class="m">200</span><span class="w"> </span>/tmp/jupyter.log
-</pre></div>
-</div>
-</section>
 </section>
 <section id="benchmarking-performance">
 <h2>Benchmarking &amp; Performance<a class="headerlink" href="#benchmarking-performance" title="Link to this heading"></a></h2>
@@ -237,25 +221,19 @@ uv<span class="w"> </span>run<span class="w"> </span>pre-commit<span class="w"> 
 <h2>Documentation<a class="headerlink" href="#documentation" title="Link to this heading"></a></h2>
 <p>Full documentation is available at <strong><a class="reference external" href="https://manganite.github.io/VibeSpin/">https://manganite.github.io/VibeSpin/</a></strong>.</p>
 <p>To build the documentation locally:</p>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="nb">cd</span><span class="w"> </span>docs
-make<span class="w"> </span>html
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>uv<span class="w"> </span>run<span class="w"> </span>make<span class="w"> </span>-C<span class="w"> </span>docs<span class="w"> </span>html
 </pre></div>
 </div>
 <section id="sphinx-setup-notes">
 <h3>Sphinx Setup Notes<a class="headerlink" href="#sphinx-setup-notes" title="Link to this heading"></a></h3>
-<p>The documentation stack uses Sphinx with MyST Markdown and nbsphinx for notebook pages. A standard development install for documentation is:</p>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>pip<span class="w"> </span>install<span class="w"> </span>-e<span class="w"> </span><span class="s2">&quot;.[docs]&quot;</span>
-</pre></div>
-</div>
-<p>In this repository’s devcontainer, documentation dependencies are installed automatically during container creation via the <code class="docutils literal notranslate"><span class="pre">.[dev,notebook,docs]</span></code> extras group.</p>
+<p>The documentation stack uses Sphinx with MyST Markdown and nbsphinx for notebook pages. Its dependencies are part of the <code class="docutils literal notranslate"><span class="pre">docs</span></code> extra, which <code class="docutils literal notranslate"><span class="pre">uv</span> <span class="pre">sync</span> <span class="pre">--all-extras</span></code> installs.</p>
 <p>Notebook rendering requires Pandoc. The docs configuration includes a fallback that uses the bundled binary from <code class="docutils literal notranslate"><span class="pre">pypandoc-binary</span></code> when a system <code class="docutils literal notranslate"><span class="pre">pandoc</span></code> executable is not available, so normal builds should work without manual Pandoc installation.</p>
 </section>
 <section id="docs-troubleshooting">
 <h3>Docs Troubleshooting<a class="headerlink" href="#docs-troubleshooting" title="Link to this heading"></a></h3>
-<p>If <code class="docutils literal notranslate"><span class="pre">make</span> <span class="pre">html</span></code> fails after opening or rebuilding the container, verify the project environment was created successfully and reinstall extras:</p>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>pip<span class="w"> </span>install<span class="w"> </span>-e<span class="w"> </span><span class="s2">&quot;.[dev,notebook,docs]&quot;</span>
-<span class="nb">cd</span><span class="w"> </span>docs
-make<span class="w"> </span>html
+<p>If <code class="docutils literal notranslate"><span class="pre">make</span> <span class="pre">html</span></code> fails, resynchronize the environment and rebuild:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>uv<span class="w"> </span>sync<span class="w"> </span>--all-extras
+uv<span class="w"> </span>run<span class="w"> </span>make<span class="w"> </span>-C<span class="w"> </span>docs<span class="w"> </span>html
 </pre></div>
 </div>
 <p>If this still fails, check that the selected interpreter is the project virtual environment at <code class="docutils literal notranslate"><span class="pre">.venv/bin/python</span></code>.</p>

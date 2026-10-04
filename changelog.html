@@ -58,6 +58,7 @@
 <li class="toctree-l2"><a class="reference internal" href="#unreleased">Unreleased</a><ul>
 <li class="toctree-l3"><a class="reference internal" href="#added">Added</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#changed">Changed</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#removed">Removed</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#fixed">Fixed</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#performance">Performance</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#test">Test</a></li>
@@ -171,6 +172,7 @@
 <section id="changed">
 <h3>Changed<a class="headerlink" href="#changed" title="Link to this heading"></a></h3>
 <ul class="simple">
+<li><p>Development runs in a local uv-managed virtual environment instead of a devcontainer. <code class="docutils literal notranslate"><span class="pre">uv.lock</span></code> is now the single source of truth for dependencies: both CI workflows install with <code class="docutils literal notranslate"><span class="pre">uv</span> <span class="pre">sync</span> <span class="pre">--locked</span> <span class="pre">--all-extras</span></code>, and <code class="docutils literal notranslate"><span class="pre">requirements.txt</span></code> is exported from <code class="docutils literal notranslate"><span class="pre">uv.lock</span></code> by a pre-commit hook for pip users. A CI step fails if the two files disagree, which closes the gap that let <code class="docutils literal notranslate"><span class="pre">uv.lock</span></code> keep pillow 12.2.0 and bleach 6.3.0 after <code class="docutils literal notranslate"><span class="pre">requirements.txt</span></code> had moved on. A new <code class="docutils literal notranslate"><span class="pre">.python-version</span></code> pins Python 3.12 for uv. The README describes the setup, including WSL on Windows.</p></li>
 <li><p>The cross-file links in README.md, BIBLIOGRAPHY.md, and CODE.md use <code class="docutils literal notranslate"><span class="pre">blob/HEAD</span></code> rather than <code class="docutils literal notranslate"><span class="pre">blob/master</span></code>, so they follow the repository’s default branch instead of breaking if it is renamed. They stay absolute because the documentation symlinks these files into <code class="docutils literal notranslate"><span class="pre">docs/source/</span></code>, and MyST resolves a relative link against the symlink’s target in the repository root rather than against the documentation tree, which makes every such link a dead cross-reference under the strict Sphinx build.</p></li>
 <li><p>The XY and clock correlation comparisons run their temperatures across the worker pool, as the Ising one already did, through a shared pickleable worker that replaces the Ising script’s local copy. Measured at L=96: XY drops from 14 to 10 seconds, clock from 55 to 29 on four cores. Every pre-existing NPZ key is bit-identical to the serial output for all three models.</p></li>
 <li><p>The correlation fits now bound their window at L/4 rather than at a hardcoded index, since beyond that distance the periodic images of a site are nearer than the nominal separation and flatten the tail for reasons unrelated to the decay. The Ising correlation length is unchanged by this, because the positivity cut already ended its window at the same distance.</p></li>
@@ -236,6 +238,12 @@
 <li><p>Updated integration tests in <code class="docutils literal notranslate"><span class="pre">tests/integration/test_script_infrastructure.py</span></code> to import from <code class="docutils literal notranslate"><span class="pre">utils.sweep_helpers</span></code> rather than private script symbols. Added <code class="docutils literal notranslate"><span class="pre">TestSweepHelpersContract</span></code> class covering picklability, required return keys, and bundle schema shapes.</p></li>
 <li><p>Removed deprecated <code class="docutils literal notranslate"><span class="pre">system_helpers.py</span></code> re-exports (<code class="docutils literal notranslate"><span class="pre">ensure_results_dir</span></code>, <code class="docutils literal notranslate"><span class="pre">adaptive_equilibrate</span></code>, etc.). All tests and Jupyter notebooks have been updated to explicitly import from <code class="docutils literal notranslate"><span class="pre">utils.equilibration</span></code> and <code class="docutils literal notranslate"><span class="pre">utils.plotting</span></code> directly.</p></li>
 <li><p>Renamed <code class="docutils literal notranslate"><span class="pre">run_scaling_benchmark()</span></code> to <code class="docutils literal notranslate"><span class="pre">main()</span></code> in <code class="docutils literal notranslate"><span class="pre">scripts/benchmarks/throughput.py</span></code> for consistency with other analysis scripts.</p></li>
+</ul>
+</section>
+<section id="removed">
+<h3>Removed<a class="headerlink" href="#removed" title="Link to this heading"></a></h3>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">.devcontainer/</span></code> (container definition, SSH-agent check, and JupyterLab auto-start). Start JupyterLab with <code class="docutils literal notranslate"><span class="pre">uv</span> <span class="pre">run</span> <span class="pre">jupyter</span> <span class="pre">lab</span></code>.</p></li>
 </ul>
 </section>
 <section id="fixed">
