@@ -606,7 +606,8 @@ def test_two_start_outcome_separates_stuck_from_convergence():
 
     with patch('utils.equilibration.estimate_relaxation_time_two_start', return_value=10**6):
         outcome = convergence_equilibrate_two_start(
-            sim_random=_StuckRandomStub(), sim_ordered=_OrderedStub(), **_STUCK_KWARGS,
+            sim_random=_StuckRandomStub(), sim_ordered=_OrderedStub(),
+            detect_stuck=True, **_STUCK_KWARGS,
         )
     assert outcome.stuck is True
     assert outcome.converged is False
@@ -614,15 +615,18 @@ def test_two_start_outcome_separates_stuck_from_convergence():
 
 
 def test_two_start_detect_stuck_false_runs_to_cap():
-    """With detect_stuck=False the stuck detector never ends the run early."""
+    """Stuck detection is opt-in: by default the run continues to the cap."""
     from utils.equilibration import convergence_equilibrate_two_start
 
     with patch('utils.equilibration.estimate_relaxation_time_two_start', return_value=10**6):
-        outcome = convergence_equilibrate_two_start(
+        default = convergence_equilibrate_two_start(
+            sim_random=_StuckRandomStub(), sim_ordered=_OrderedStub(), **_STUCK_KWARGS,
+        )
+        explicit = convergence_equilibrate_two_start(
             sim_random=_StuckRandomStub(), sim_ordered=_OrderedStub(),
             detect_stuck=False, **_STUCK_KWARGS,
         )
-    assert outcome == (1_000, False, False)
+    assert default == explicit == (1_000, False, False)
 
 
 def test_status_wrapper_accepts_stuck_only_when_allowed():

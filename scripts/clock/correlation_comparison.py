@@ -54,6 +54,18 @@ def main() -> None:
         '--seed', type=int, default=520,
         help='Random seed shared by all three temperature points',
     )
+    parser.add_argument(
+        '--t-ordered', type=float, default=None,
+        help='Temperature below T1 (default 0.5, discrete q=6 only)',
+    )
+    parser.add_argument(
+        '--t-quasi', type=float, default=None,
+        help='Temperature between T1 and T2 (default 0.8, discrete q=6 only)',
+    )
+    parser.add_argument(
+        '--t-disordered', type=float, default=None,
+        help='Temperature above T2 (default 1.2, discrete q=6 only)',
+    )
     parser.add_argument('--output-dir', type=str, default='results/clock', help='Output directory')
     parser.add_argument('--log-file', type=str, default=None, help='Optional log file path')
     parser.add_argument('--verbose', action='store_true', help='Enable verbose logging')
@@ -63,13 +75,31 @@ def main() -> None:
         parser=parser, args=args, default_aniso=_DEFAULT_CONTINUOUS_ANISO,
     )
 
+    # Only q >= 5 has the intermediate algebraic phase this comparison fits.
+    if args.q < 5:
+        parser.error(f'--q {args.q} has no quasi-ordered phase; use q >= 5')
+    # The default temperatures bracket the transitions of the discrete q=6
+    # model only. T1 and T2 shift with q and, for the continuous model, with A,
+    # so other choices must name all three temperatures.
+    default_model = choice.is_discrete and args.q == 6
+    phase_temps = (args.t_ordered, args.t_quasi, args.t_disordered)
+    if default_model:
+        T_ORDERED, T_QUASI, T_DISORDERED = (
+            default if given is None else float(given)
+            for given, default in zip(phase_temps, (0.5, 0.8, 1.2), strict=True)
+        )
+    elif any(T is None for T in phase_temps):
+        parser.error(
+            'The default temperatures apply to the discrete q=6 model only; '
+            'give --t-ordered, --t-quasi, and --t-disordered for this model'
+        )
+    else:
+        T_ORDERED, T_QUASI, T_DISORDERED = (float(T) for T in phase_temps)
+    if not T_ORDERED < T_QUASI < T_DISORDERED:
+        parser.error('Temperatures must satisfy t-ordered < t-quasi < t-disordered')
+
     log_level = logging.DEBUG if args.verbose else logging.INFO
     logger = setup_logging(level=log_level, log_file=args.log_file)
-
-    # Three representative temperatures spanning the three phases.
-    T_ORDERED: float = 0.5   # T < T1  (long-range order)
-    T_QUASI: float = 0.8     # T1 < T < T2  (algebraic quasi-order)
-    T_DISORDERED: float = 1.2  # T > T2  (exponential decay)
 
     logger.info(
         f'Starting clock correlation comparison '
@@ -164,8 +194,10 @@ def main() -> None:
         T_ordered=T_ORDERED,
         T_quasi=T_QUASI,
         T_disordered=T_DISORDERED,
-        T1=T1_CLOCK6,
-        T2=T2_CLOCK6,
+        # The reference transition temperatures belong to the discrete q=6
+        # model and are NaN for any other choice.
+        T1=T1_CLOCK6 if default_model else np.nan,
+        T2=T2_CLOCK6 if default_model else np.nan,
         L=args.size,
         q=args.q,
         model_variant=choice.variant,

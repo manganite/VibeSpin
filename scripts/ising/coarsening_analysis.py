@@ -151,9 +151,11 @@ def _measure_xi_eq(
         Equilibrium correlation length (1/e criterion).
     """
     logger.info(f'Measuring xi_eq at T={temp:.4f} (L={size})...')
+    # Below T_c a random start can freeze into a stripe state; stopping on it
+    # and measuring the ordered start is valid there, as in the sweep worker.
     sim, _ = prepare_equilibrated_simulation(
         model_cls=IsingSimulation, model_kwargs={}, size=size, temp=temp, seed=seed,
-        chunk_size=eq_probe, max_steps=eq_max,
+        chunk_size=eq_probe, max_steps=eq_max, detect_stuck=temp < TC_ISING,
     )
     xi = connected_correlation_length(
         sim=sim, meas_steps=meas_steps, sample_interval=meas_interval,
