@@ -24,6 +24,8 @@ Referencing policy is defined in [AGENTS.md](https://github.com/manganite/VibeSp
 
 ### q-state Clock Model
 - J. Lapilli, P. Pfeifer, and C. Wexler, "Universality away from critical points in two-dimensional phase transitions," Physical Review Letters, vol. 96, no. 14, 140603, 2006. [APS](https://journals.aps.org/prl/abstract/10.1103/PhysRevLett.96.140603)
+- M. S. S. Challa and D. P. Landau, Physical Review B, vol. 33, p. 437, 1986. Early Monte Carlo estimates of the q = 6 clock transitions, T1 = 0.68(2) and T2 = 0.92(1), as quoted by Tomita and Okabe.
+- S. K. Baek and P. Minnhagen, "Non-Kosterlitz-Thouless transitions for the q-state clock models," Physical Review E, vol. 82, 031102, 2010. [arXiv:1009.0356](https://arxiv.org/abs/1009.0356)
 - Y. Tomita and Y. Okabe, "Probability-changing cluster algorithm for two-dimensional XY and clock models," 2002. Transition temperatures of the q = 6, 8, 12 clock models and the mirror-axis choice for cluster updates. [arXiv:cond-mat/0202161](https://arxiv.org/abs/cond-mat/0202161)
 - [Clock model (Vector Potts model) on Wikipedia](https://en.wikipedia.org/wiki/Potts_model#Vector_Potts_model)
 
