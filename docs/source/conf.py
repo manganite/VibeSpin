@@ -32,7 +32,7 @@ _ensure_pandoc_on_path()
 project = 'VibeSpin'
 copyright = '2026, Thomas Lottermoser'
 author = 'Thomas Lottermoser'
-release = '0.1.0'
+release = '0.2.0'
 
 # -- General configuration ---------------------------------------------------
 extensions = [
