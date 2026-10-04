@@ -493,18 +493,26 @@ def compute_thermo_observables(
         **base,
         'avg_m_value': float(mag['value']),
         'avg_m_err': float(mag['err']),
+        'avg_m_ci_low': float(mag['ci_low']),
+        'avg_m_ci_high': float(mag['ci_high']),
         'avg_m_tau_int': float(mag['tau_int']),
         'avg_m_n_eff': float(mag['n_eff']),
         'avg_e_value': float(eng['value']),
         'avg_e_err': float(eng['err']),
+        'avg_e_ci_low': float(eng['ci_low']),
+        'avg_e_ci_high': float(eng['ci_high']),
         'avg_e_tau_int': float(eng['tau_int']),
         'avg_e_n_eff': float(eng['n_eff']),
         'susc_value': float(chi['value']),
         'susc_err': float(chi['err']),
+        'susc_ci_low': float(chi['ci_low']),
+        'susc_ci_high': float(chi['ci_high']),
         'susc_tau_int': float(chi['tau_int']),
         'susc_n_eff': float(chi['n_eff']),
         'spec_h_value': float(cv['value']),
         'spec_h_err': float(cv['err']),
+        'spec_h_ci_low': float(cv['ci_low']),
+        'spec_h_ci_high': float(cv['ci_high']),
         'spec_h_tau_int': float(cv['tau_int']),
         'spec_h_n_eff': float(cv['n_eff']),
     }
@@ -546,6 +554,8 @@ def build_uncertainty_bundle(
     tau_by_seed: np.ndarray,
     n_eff_by_seed: np.ndarray,
     confidence: float,
+    ci_low_by_seed: np.ndarray | None = None,
+    ci_high_by_seed: np.ndarray | None = None,
 ) -> dict[str, np.ndarray]:
     """Aggregate per-seed results for one observable across a temperature axis.
 
@@ -565,6 +575,11 @@ def build_uncertainty_bundle(
         Shape ``(n_temps, n_seeds)``.  Per-seed effective sample sizes.
     confidence : float
         Two-sided confidence level for the returned CI bounds.
+    ci_low_by_seed, ci_high_by_seed : np.ndarray or None
+        Shape ``(n_temps, n_seeds)``. Per-seed interval bounds from the
+        summarizers. Used for single-seed sweeps, whose intervals then keep
+        the Student-t width of the blocking estimate; without them the
+        bounds are a Gaussian multiple of the error.
 
     Returns
     -------
@@ -625,9 +640,19 @@ def build_uncertainty_bundle(
                 f'returned NaN). This is expected in the deep ordered/frozen '
                 f'phase.'
             )
+    elif ci_low_by_seed is not None and ci_high_by_seed is not None:
+        # A single seed keeps the interval its summarizer built, which uses the
+        # Student-t quantile for the number of blocks behind the error.
+        res = {
+            'value': values_by_seed[:, 0],
+            'err': errors_by_seed[:, 0],
+            'ci_low': ci_low_by_seed[:, 0],
+            'ci_high': ci_high_by_seed[:, 0],
+        }
+        tau_int = tau_by_seed[:, 0]
+        n_eff = n_eff_by_seed[:, 0]
     else:
-        # Apply the same Gaussian z-multiplier as the multi-seed path so that
-        # 'ci_low'/'ci_high' honor the requested confidence level here too.
+        # Without per-seed intervals, fall back to a Gaussian multiple of the error.
         z = _z_multiplier(confidence=confidence)
         res = {
             'value': values_by_seed[:, 0],

@@ -1525,3 +1525,37 @@ class TestTauIntervalQualityFlag:
         data = self._run(monkeypatch, tmp_path, [10.0])
         assert np.isnan(data['tau_int_ci_low']).all()
         assert not data['tau_interval_unstable_flag'].any()
+
+
+class TestSingleSeedIntervals:
+    """Single-seed sweeps keep the Student-t interval of the blocking estimate."""
+
+    def test_bundle_uses_per_seed_bounds(self) -> None:
+        values = np.array([[1.0], [2.0]])
+        errors = np.array([[0.1], [0.2]])
+        bundle = build_uncertainty_bundle(
+            values_by_seed=values, errors_by_seed=errors,
+            tau_by_seed=np.ones((2, 1)), n_eff_by_seed=np.ones((2, 1)),
+            confidence=0.68,
+            ci_low_by_seed=np.array([[0.8], [1.5]]),
+            ci_high_by_seed=np.array([[1.2], [2.5]]),
+        )
+        np.testing.assert_allclose(bundle['ci_low'], [0.8, 1.5])
+        np.testing.assert_allclose(bundle['ci_high'], [1.2, 2.5])
+
+    def test_worker_emits_t_intervals(self) -> None:
+        """The worker's interval is wider than the Gaussian one built from its error."""
+        payload = ThermoPoint(
+            temperature=2.6, size=8, meas_steps=400, eq_probe_steps=100, eq_max_steps=4000,
+            eq_qs_sigma_threshold=0.05, eq_qs_min_steps=1500, qs_allow_stuck=False,
+            prefer_ordered_start=False, temperature_index=0, seed_index=0, seed=9,
+            model_cls=IsingSimulation, model_kwargs={}, confidence=0.68,
+            derived_method='blocking', bootstrap_resamples=0,
+        )
+        result = simulate_thermo_point(payload)
+        from scipy.stats import norm
+
+        half_width = 0.5 * (result['avg_m_ci_high'] - result['avg_m_ci_low'])
+        gaussian = float(norm.ppf(0.84)) * result['avg_m_err']
+        # Student-t with finitely many blocks is strictly wider than Gaussian.
+        assert half_width > gaussian * (1.0 + 1e-6)
