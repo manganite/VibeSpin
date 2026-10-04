@@ -48,8 +48,56 @@ def _derive_step_seed(*, seed: int, step: int) -> int:
 
 
 @njit(cache=True, fastmath=True)
+def _wrap_bond_angle_numba(delta: float) -> float:
+    """
+    Wrap a bond angle difference into the half-open interval (-pi, pi].
+
+    The tie at exactly antiparallel neighbours is resolved to ``+pi``. A
+    tolerance absorbs the rounding of ``arctan2`` on discrete clock angles, so
+    a difference of pi is never split between ``+pi`` and ``-pi`` at random.
+
+    Parameters
+    ----------
+    delta : float
+        Raw angle difference in radians.
+
+    Returns
+    -------
+    float
+        Wrapped difference in (-pi, pi].
+    """
+    wrapped = (delta + np.pi) % (2.0 * np.pi) - np.pi
+    if wrapped <= -np.pi + 1e-9:
+        wrapped = np.pi
+    return wrapped
+
+
+@njit(cache=True, fastmath=True)
 def _calculate_vorticity_angles_numba(angles: np.ndarray, idx_next: np.ndarray) -> np.ndarray:
-    """Fast kernel to calculate vorticity from a 2D array of angles."""
+    """
+    Calculate the winding number of every plaquette from a 2D array of angles.
+
+    Each bond difference is wrapped once in its canonical lattice direction
+    (+x or +y) and negated when the plaquette loop traverses the bond
+    backwards. This keeps the bond contribution exactly antisymmetric, so the
+    winding numbers of the two plaquettes sharing a bond cancel and the total
+    vorticity on the torus is zero. Wrapping the backward differences
+    independently breaks this for antiparallel neighbours, which occur
+    routinely in the discrete clock model with even q: both directions then
+    wrap to the same value and bias the vorticity towards one sign.
+
+    Parameters
+    ----------
+    angles : np.ndarray
+        (N, N) array of spin angles in radians.
+    idx_next : np.ndarray
+        Pre-calculated next-neighbor indices.
+
+    Returns
+    -------
+    np.ndarray
+        (N, N) array of winding numbers.
+    """
     N = angles.shape[0]
     vorticity = np.zeros((N, N))
     for i in range(N):
@@ -62,10 +110,12 @@ def _calculate_vorticity_angles_numba(angles: np.ndarray, idx_next: np.ndarray) 
             t3 = angles[inxt, jnxt]
             t4 = angles[inxt, j]
 
-            d1 = (t2 - t1 + np.pi) % (2 * np.pi) - np.pi
-            d2 = (t3 - t2 + np.pi) % (2 * np.pi) - np.pi
-            d3 = (t4 - t3 + np.pi) % (2 * np.pi) - np.pi
-            d4 = (t1 - t4 + np.pi) % (2 * np.pi) - np.pi
+            # Loop (i,j) -> (i,j+1) -> (i+1,j+1) -> (i+1,j) -> (i,j); the last
+            # two legs run against the canonical bond direction.
+            d1 = _wrap_bond_angle_numba(t2 - t1)
+            d2 = _wrap_bond_angle_numba(t3 - t2)
+            d3 = -_wrap_bond_angle_numba(t3 - t4)
+            d4 = -_wrap_bond_angle_numba(t4 - t1)
 
             vorticity[i, j] = np.round((d1 + d2 + d3 + d4) / (2 * np.pi))
     return vorticity
@@ -183,8 +233,8 @@ def o2_wolff_step_numba(
     this project shares this update unchanged.  Where the Hamiltonian adds a
     single-site term that breaks the reflection symmetry, such as the
     crystal-field anisotropy of the clock model, detailed balance then holds
-    for the exchange part alone, and ``ClockSimulation`` warns when it is asked
-    to combine this update with a non-zero anisotropy.
+    for the exchange part alone, so ``ClockSimulation`` rejects this update
+    when combined with a non-zero anisotropy.
 
     One call constitutes one cluster sweep.  ``parallel=True`` is silently
     ignored.
@@ -417,6 +467,31 @@ class MonteCarloSimulation(ABC):
         self._nr_pre = np.bincount(self._r_int_pre)
         self._r_range_pre = np.arange(center)
 
+    @staticmethod
+    def _validate_coupling(*, J: float) -> None:
+        """Reject couplings the kernels cannot sample correctly.
+
+        The Metropolis acceptance tables and the Wolff bond probability
+        ``1 - exp(-2 beta J ...)`` are derived for ferromagnetic exchange.
+        With ``J < 0`` the precomputed Boltzmann factors exceed one and the
+        cluster bond probability turns negative, so the chains would no longer
+        satisfy detailed balance.
+
+        Parameters
+        ----------
+        J : float
+            Exchange coupling constant.
+
+        Raises
+        ------
+        ValueError
+            If ``J`` is negative or not finite.
+        """
+        if not np.isfinite(J) or J < 0.0:
+            raise ValueError(
+                f'J must be a finite, non-negative (ferromagnetic) coupling, got {J}'
+            )
+
     def _reseed_numba_for_step(self) -> None:
         """Reseed Numba's RNG deterministically for the upcoming sweep.
 
@@ -482,6 +557,29 @@ class MonteCarloSimulation(ABC):
 
         center = self.size // 2
         return self._r_range_pre, radial_profile[:center]
+
+    def get_spin_field(self) -> np.ndarray:
+        """Return the spin configuration in its physical representation.
+
+        Scalar models return the ``(L, L)`` array of spins; vector models
+        return ``(L, L, 2)`` unit vectors. Models that store an internal
+        encoding (the discrete clock model keeps integer state indices)
+        override this method, so analysis helpers never misread state
+        indices as scalar spin values.
+
+        Returns
+        -------
+        np.ndarray
+            Spin field suitable for structure-factor and correlation analysis.
+
+        Raises
+        ------
+        RuntimeError
+            If the lattice has not been initialised.
+        """
+        if self.spins is None:
+            raise RuntimeError('Simulation lattice is uninitialized (spins is None).')
+        return self.spins
 
     def get_magnetization(self) -> float:
         """Return the current absolute magnetization per site.

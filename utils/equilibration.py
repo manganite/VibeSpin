@@ -10,7 +10,7 @@ circular dependencies.  Unifying them here eliminates that workaround.
 from __future__ import annotations
 
 import logging
-from typing import Any, Protocol
+from typing import Any, NamedTuple, Protocol
 
 import numpy as np
 
@@ -29,6 +29,112 @@ class _Sim(Protocol):
     def equilibrate(self, *, n_steps: int) -> None: ...
 
     def run(self, *, n_steps: int) -> tuple[np.ndarray, np.ndarray]: ...
+
+
+#: Offset between the seed of a random start and that of its ordered partner.
+#: The per-sweep RNG streams depend only on (seed, step), so two starts built
+#: with one seed draw identical random numbers and their traces become
+#: correlated, which weakens the cross-band test that assumes independent
+#: runs. The offset sits inside the 1000-seed block that ``derive_point_seed``
+#: reserves for one replica, clear of the small ``seed + 1`` and ``seed + 2``
+#: sub-streams callers derive.
+ORDERED_START_SEED_OFFSET = 500
+
+_MAX_SEED = 2**32 - 1
+
+
+def ordered_start_seed(*, seed: int | None) -> int | None:
+    """
+    Return the seed for the ordered-start partner of a seeded random start.
+
+    Parameters
+    ----------
+    seed : int or None
+        Seed of the random-start simulation. ``None`` (unseeded) is passed
+        through unchanged.
+
+    Returns
+    -------
+    int or None
+        ``seed + ORDERED_START_SEED_OFFSET``, or ``None`` for an unseeded run.
+
+    Raises
+    ------
+    ValueError
+        If the partner seed would leave the 32-bit generator range.
+    """
+    if seed is None:
+        return None
+    partner = int(seed) + ORDERED_START_SEED_OFFSET
+    if partner > _MAX_SEED:
+        raise ValueError(
+            f'seed {seed} leaves no room for its ordered-start partner '
+            f'(seed + {ORDERED_START_SEED_OFFSET} exceeds {_MAX_SEED}).'
+        )
+    return partner
+
+
+class TwoStartOutcome(NamedTuple):
+    """Result of a two-start equilibration.
+
+    Parameters
+    ----------
+    total_steps : int
+        MC steps run by each of the two simulations.
+    converged : bool
+        Whether the mutual cross-band criterion was met, i.e. both starts
+        reached the same stationary state.
+    stuck : bool
+        Whether the run stopped on a quasi-steady stuck state: the ordered
+        start had settled while the random start stayed stranded on a
+        metastable plateau. Only the ordered start is then a valid
+        measurement source.
+    """
+
+    total_steps: int
+    converged: bool
+    stuck: bool
+
+    @property
+    def certified(self) -> bool:
+        """Whether a measurement on this pair is valid.
+
+        True after convergence or after a stuck exit. A stuck exit can only
+        occur where the caller enabled ``detect_stuck``, which callers do only
+        where a stuck state is accepted. A run that reached ``max_steps`` is
+        not certified: neither start is known to have relaxed, and callers
+        store NaN for the point instead of measuring it.
+        """
+        return self.converged or self.stuck
+
+
+def select_measurement_simulation[SimT](
+    *, outcome: TwoStartOutcome, sim_random: SimT, sim_ordered: SimT
+) -> SimT:
+    """
+    Choose which start of an equilibrated pair to measure.
+
+    The random start is used only when the two starts converged to the same
+    state. After a stuck exit the random start sits on a metastable plateau,
+    so the ordered start is returned. After hitting the step cap the ordered
+    start is returned as well, but neither start is certified
+    (``outcome.certified`` is False) and callers must not measure it.
+
+    Parameters
+    ----------
+    outcome : TwoStartOutcome
+        Result of ``convergence_equilibrate_two_start``.
+    sim_random : simulation
+        Random-start simulation.
+    sim_ordered : simulation
+        Ordered-start simulation.
+
+    Returns
+    -------
+    simulation
+        ``sim_random`` if the pair converged, otherwise ``sim_ordered``.
+    """
+    return sim_random if outcome.converged else sim_ordered
 
 
 # ---------------------------------------------------------------------------
@@ -418,7 +524,7 @@ def convergence_equilibrate(
     return total
 
 
-def convergence_equilibrate_with_status(
+def convergence_equilibrate_two_start(
     *,
     sim_random: _Sim,
     sim_ordered: _Sim,
@@ -426,51 +532,51 @@ def convergence_equilibrate_with_status(
     max_steps: int = 200_000,
     qs_sigma_threshold: float = 0.05,
     qs_min_steps: int = 1500,
-    qs_allow_stuck: bool = False,
+    detect_stuck: bool = False,
     **kwargs: Any,
-) -> tuple[int, bool]:
+) -> TwoStartOutcome:
     """
-    Equilibrate two simulations and report whether convergence was reached.
+    Equilibrate a random-start and an ordered-start simulation side by side.
 
-    Uses ``estimate_relaxation_time_two_start`` to detect convergence via the
-    mutual cross-band criterion: each smoothed trajectory must enter and sustain
-    a band defined by the other trajectory's tail statistics.  A sigma floor
-    prevents false positives when one trace is nearly flat.  This variant returns
-    both the total number of MC steps executed and a boolean convergence flag.
+    The two runs advance in chunks until their smoothed magnetization traces
+    pass the mutual cross-band criterion of
+    ``estimate_relaxation_time_two_start``, until the quasi-steady stuck
+    detector fires, or until ``max_steps`` is reached. Unlike
+    ``convergence_equilibrate_with_status`` the result keeps a stuck exit
+    apart from genuine convergence, so callers can measure on the start that
+    is actually valid (see ``select_measurement_simulation``).
 
     Parameters
     ----------
     sim_random : _Sim
         Simulation instance started from a random state.
     sim_ordered : _Sim
-        Simulation instance started from an ordered state.
+        Simulation instance started from an ordered state. It should carry a
+        different seed from ``sim_random`` (see ``ordered_start_seed``).
     chunk_size : int
         Number of steps to run between convergence checks.
     max_steps : int
         Hard cap on total steps.
     qs_sigma_threshold : float
-        Tail-std threshold used to detect a quasi-steady,
-        non-converged stuck state and exit early.
+        Tail-std threshold used to detect a quasi-steady stuck state.
     qs_min_steps : int
-        Minimum accumulated steps before stuck detection is allowed
-        to fire.  Ensures tail statistics are computed from enough data to be
-        reliable, preventing false positives when traces have not yet had time
-        to settle.
-    qs_allow_stuck : bool
-        If True, detecting a quasi-steady stuck state (where the
-        ordered trace is stable but the random trace is stranded) is treated
-        as a successful equilibration. Useful for Ising sweeps where
-        random-start domain-wall trapping is physically expected.
+        Minimum accumulated steps before stuck detection may fire.
+    detect_stuck : bool
+        Whether a quasi-steady stuck state ends the run early (default False).
+        The detector cannot tell a stranded random start from one that is
+        still relaxing slowly, which is common near a transition and for the
+        XY model below T_BKT, so it is opt-in: enable it only in the ordered
+        phase of a model with metastable domain states, where measuring the
+        ordered start after a stuck exit is valid.
     **kwargs : Any
         Passed to ``estimate_relaxation_time_two_start`` (k, smooth_window,
         dwell_window, min_fraction_inside, sigma_floor, etc.).
 
     Returns
     -------
-    tuple[int, bool]
-        Tuple ``(total_steps, converged)``.
+    TwoStartOutcome
+        Steps run, convergence flag, and stuck flag. At most one flag is set.
     """
-    logger = logging.getLogger('vibespin')
     mags_r = np.full(max_steps, np.nan, dtype=float)
     mags_o = np.full(max_steps, np.nan, dtype=float)
     total = 0
@@ -513,9 +619,9 @@ def convergence_equilibrate_with_status(
             # If estimate_relaxation_time_two_start returns a value < total,
             # it means convergence was detected at some point in the past.
             if tau < total:
-                return total, True
+                return TwoStartOutcome(total_steps=total, converged=True, stuck=False)
 
-            if total >= qs_min_steps and _detect_quasi_steady_stuck(
+            if detect_stuck and total >= qs_min_steps and _detect_quasi_steady_stuck(
                 trace_random=trace_r,
                 trace_ordered=trace_o,
                 k=float(kwargs.get('k', _TWO_START_DEFAULT_K)),
@@ -525,21 +631,180 @@ def convergence_equilibrate_with_status(
                 lattice_size=getattr(sim_random, 'size', None),
                 skip_validation=True,
             ):
-                if qs_allow_stuck:
-                    logger.info(
-                        'convergence_equilibrate: detected stable quasi-steady stuck state; '
-                        'stopping early and accepting ordered start.'
-                    )
-                    return total, True
+                return TwoStartOutcome(total_steps=total, converged=False, stuck=True)
 
-                logger.warning(
-                    'convergence_equilibrate: detected quasi-steady stuck state '
-                    f'before max_steps={max_steps}; stopping early without convergence.'
-                )
-                return total, False
+    return TwoStartOutcome(total_steps=total, converged=False, stuck=False)
 
-    logger.warning(
-        f'convergence_equilibrate: reached max_steps={max_steps} without convergence; '
-        'proceeding anyway.'
+
+def convergence_equilibrate_with_status(
+    *,
+    sim_random: _Sim,
+    sim_ordered: _Sim,
+    chunk_size: int = 500,
+    max_steps: int = 200_000,
+    qs_sigma_threshold: float = 0.05,
+    qs_min_steps: int = 1500,
+    qs_allow_stuck: bool = False,
+    **kwargs: Any,
+) -> tuple[int, bool]:
+    """
+    Equilibrate two simulations and report whether convergence was reached.
+
+    Uses ``estimate_relaxation_time_two_start`` to detect convergence via the
+    mutual cross-band criterion: each smoothed trajectory must enter and sustain
+    a band defined by the other trajectory's tail statistics.  A sigma floor
+    prevents false positives when one trace is nearly flat.  This variant returns
+    both the total number of MC steps executed and a boolean convergence flag.
+
+    The boolean cannot tell an accepted stuck state from genuine convergence;
+    after an accepted stuck state only the ordered start is a valid
+    measurement source. Callers that measure should use
+    ``convergence_equilibrate_two_start`` with
+    ``select_measurement_simulation`` instead.
+
+    Parameters
+    ----------
+    sim_random : _Sim
+        Simulation instance started from a random state.
+    sim_ordered : _Sim
+        Simulation instance started from an ordered state.
+    chunk_size : int
+        Number of steps to run between convergence checks.
+    max_steps : int
+        Hard cap on total steps.
+    qs_sigma_threshold : float
+        Tail-std threshold used to detect a quasi-steady,
+        non-converged stuck state and exit early.
+    qs_min_steps : int
+        Minimum accumulated steps before stuck detection is allowed
+        to fire.  Ensures tail statistics are computed from enough data to be
+        reliable, preventing false positives when traces have not yet had time
+        to settle.
+    qs_allow_stuck : bool
+        If True, detecting a quasi-steady stuck state (where the
+        ordered trace is stable but the random trace is stranded) is treated
+        as a successful equilibration. Useful for Ising sweeps where
+        random-start domain-wall trapping is physically expected.
+    **kwargs : Any
+        Passed to ``estimate_relaxation_time_two_start`` (k, smooth_window,
+        dwell_window, min_fraction_inside, sigma_floor, etc.).
+
+    Returns
+    -------
+    tuple[int, bool]
+        Tuple ``(total_steps, converged)``.
+    """
+    # The legacy wrapper keeps its historical behaviour of stopping on a
+    # stuck state unless the caller passes detect_stuck explicitly.
+    kwargs.setdefault('detect_stuck', True)
+    outcome = convergence_equilibrate_two_start(
+        sim_random=sim_random,
+        sim_ordered=sim_ordered,
+        chunk_size=chunk_size,
+        max_steps=max_steps,
+        qs_sigma_threshold=qs_sigma_threshold,
+        qs_min_steps=qs_min_steps,
+        **kwargs,
     )
-    return total, False
+    _log_two_start_outcome(outcome=outcome, max_steps=max_steps, qs_allow_stuck=qs_allow_stuck)
+    if outcome.stuck:
+        return outcome.total_steps, qs_allow_stuck
+    return outcome.total_steps, outcome.converged
+
+
+def _log_two_start_outcome(
+    *, outcome: TwoStartOutcome, max_steps: int, qs_allow_stuck: bool
+) -> None:
+    """Log a stuck or capped two-start equilibration in the established wording."""
+    logger = logging.getLogger('vibespin')
+    if outcome.stuck:
+        if qs_allow_stuck:
+            logger.info(
+                'convergence_equilibrate: detected stable quasi-steady stuck state; '
+                'stopping early and accepting ordered start.'
+            )
+        else:
+            logger.warning(
+                'convergence_equilibrate: detected quasi-steady stuck state '
+                f'before max_steps={max_steps}; stopping early without convergence.'
+            )
+    elif not outcome.converged:
+        logger.warning(
+            f'convergence_equilibrate: reached max_steps={max_steps} without convergence; '
+            'proceeding anyway.'
+        )
+
+
+def prepare_equilibrated_simulation(
+    *,
+    model_cls: type,
+    model_kwargs: dict[str, Any],
+    size: int,
+    temp: float,
+    seed: int | None,
+    chunk_size: int,
+    max_steps: int,
+    update: str = 'checkerboard',
+    **kwargs: Any,
+) -> tuple[Any, TwoStartOutcome]:
+    """
+    Build a two-start pair, equilibrate it, and return the start to measure.
+
+    The random start receives ``seed`` and the ordered start
+    ``ordered_start_seed(seed=seed)``, so the two runs draw independent random
+    numbers. After equilibration the random start is returned when the pair
+    converged, and the ordered start otherwise (see
+    ``select_measurement_simulation``). When the run hit ``max_steps``,
+    ``outcome.certified`` is False and the caller should record NaN for the
+    point rather than measure the returned simulation.
+
+    Parameters
+    ----------
+    model_cls : type
+        Simulation class to instantiate.
+    model_kwargs : dict[str, Any]
+        Constructor arguments beyond size, temperature, update, start, and seed.
+    size : int
+        Linear lattice size L.
+    temp : float
+        Simulation temperature T.
+    seed : int or None
+        Seed of the random start; ``None`` leaves both starts unseeded.
+    chunk_size : int
+        Steps between convergence checks.
+    max_steps : int
+        Hard cap on equilibration steps.
+    update : str
+        Update scheme for both starts (default ``'checkerboard'``).
+    **kwargs : Any
+        Passed to ``convergence_equilibrate_two_start``, for example
+        ``detect_stuck=True`` in the ordered phase of a model with metastable
+        domain states.
+
+    Returns
+    -------
+    tuple[Any, TwoStartOutcome]
+        The simulation to measure and the equilibration outcome.
+    """
+    common = dict(size=size, temp=temp, update=update, **model_kwargs)
+    sim_random = model_cls(init_state='random', seed=seed, **common)
+    sim_ordered = model_cls(init_state='ordered', seed=ordered_start_seed(seed=seed), **common)
+    outcome = convergence_equilibrate_two_start(
+        sim_random=sim_random,
+        sim_ordered=sim_ordered,
+        chunk_size=chunk_size,
+        max_steps=max_steps,
+        **kwargs,
+    )
+    logger = logging.getLogger('vibespin')
+    if outcome.stuck:
+        logger.info(f'T={temp:.4f}, L={size}: random start stranded; measuring the ordered start.')
+    elif not outcome.converged:
+        logger.warning(
+            f'T={temp:.4f}, L={size}: no convergence in {max_steps} steps; '
+            'the point is not certified and is stored as NaN.'
+        )
+    sim = select_measurement_simulation(
+        outcome=outcome, sim_random=sim_random, sim_ordered=sim_ordered,
+    )
+    return sim, outcome

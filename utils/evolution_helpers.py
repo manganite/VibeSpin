@@ -82,7 +82,9 @@ def run_ordering_evolution(
                 f'Simulation lattice is uninitialized (spins is None) at step {target}; '
                 'cannot capture ordering-evolution snapshots.'
             )
-        snapshots.append(sim.spins.copy())
+        # get_spin_field() decodes internal representations (discrete clock
+        # state indices) into the vectors the plot helper expects.
+        snapshots.append(np.array(sim.get_spin_field(), copy=True))
         snapshots_gr.append(sim.calculate_correlation_function())
         if capture_vorticity:
             snapshots_vort.append(sim.calculate_vorticity())

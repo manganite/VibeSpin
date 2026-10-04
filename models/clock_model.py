@@ -11,7 +11,6 @@ compatibility.
 from __future__ import annotations
 
 import os
-import warnings
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -359,7 +358,7 @@ class ClockSimulation(VectorSpinObservablesMixin, MonteCarloSimulation):
             ``'random'`` (random sequential Metropolis, physical
             stochastic dynamics for kinetics studies), or
             ``'wolff'`` (Wolff-Evertz cluster algorithm using the exchange
-            term J; detailed balance holds exactly only when A=0).
+            term J; only valid for A=0, where the model reduces to XY).
         init_state : str
             Initial spin configuration: ``'random'`` (default) or ``'ordered'``.
         parallel : bool
@@ -373,7 +372,8 @@ class ClockSimulation(VectorSpinObservablesMixin, MonteCarloSimulation):
         Raises
         ------
         ValueError
-            If ``q`` is less than 2 or update scheme is unknown.
+            If ``q`` is less than 2, the update scheme is unknown, ``J`` is
+            negative, or ``update='wolff'`` is combined with ``A != 0``.
         """
         super().__init__(size=size, temp=temp, init_state=init_state, seed=seed)
         if q < 2:
@@ -382,16 +382,16 @@ class ClockSimulation(VectorSpinObservablesMixin, MonteCarloSimulation):
             valid_opts = sorted(self._VALID_UPDATES)
             raise ValueError(f'Unknown update scheme {update!r}. Valid options: {valid_opts}')
         if update == 'wolff' and A != 0.0:
-            # The Wolff-Evertz reflection ignores the anisotropy term, so the
-            # sampled distribution is exactly Boltzmann only for A = 0.
-            warnings.warn(
-                f'ClockSimulation with update=\'wolff\' ignores the anisotropy '
-                f'term (A={A}); detailed balance holds exactly only for A=0. '
-                f'Set A=0.0 for exchange-only studies or use a local update '
-                f'scheme for anisotropic sampling.',
-                UserWarning,
-                stacklevel=2,
+            # The Wolff-Evertz reflection sees only the exchange term, so the
+            # chain samples the anisotropic Boltzmann weight only for A = 0;
+            # with A != 0 it would silently sample the XY model instead.
+            raise ValueError(
+                f"ClockSimulation with update='wolff' requires A=0.0 (got A={A}): "
+                f'the cluster reflection ignores the anisotropy term and violates '
+                f'detailed balance otherwise. Use a local update scheme, or '
+                f"DiscreteClockSimulation with update='wolff'."
             )
+        self._validate_coupling(J=J)
         self.J = J
         self.A = A
         self.q = q
@@ -739,6 +739,159 @@ def discrete_clock_step_random_numba(
 
 
 @njit(cache=True, fastmath=True)
+def discrete_clock_wolff_step_numba(
+    *,
+    spins: np.ndarray,
+    beta: float,
+    J: float,
+    q: int,
+    sigma_table: np.ndarray,
+    idx_next: np.ndarray,
+    idx_prev: np.ndarray,
+    in_cluster: np.ndarray,
+    stack: np.ndarray,
+    cluster_spins: np.ndarray,
+) -> tuple:
+    """
+    Perform one Wolff cluster reflection on the discrete clock lattice.
+
+    The reflection axis is drawn uniformly from the q mirror axes of the
+    regular q-gon, at angles ``phi_m = pi * m / q``.  Reflecting the angle
+    ``theta_s = 2 pi s / q`` about ``phi_m`` gives ``2 phi_m - theta_s``, which
+    is again an allowed state, ``s' = (m - s) mod q``.  The update therefore
+    never leaves the discrete state space, and because every state ``s'`` is
+    reachable from ``s`` with a single-site cluster, the chain is ergodic.
+
+    Bonds follow the Wolff-Evertz rule: with ``sigma_i`` the component of spin
+    ``i`` perpendicular to the mirror axis, a bond to a neighbour is activated
+    with probability ``1 - exp(-2 beta J sigma_i sigma_j)`` when
+    ``sigma_i sigma_j > 0`` and never otherwise.  Each reflection is an
+    involution chosen with the same probability in both directions, so
+    detailed balance holds for the full discrete Hamiltonian.
+
+    One call constitutes one cluster flip, not one lattice sweep.
+
+    Parameters
+    ----------
+    spins : np.ndarray
+        (N, N) array of integer spin states in {0, ..., q-1}.
+    beta : float
+        Inverse temperature 1/kT.
+    J : float
+        Coupling constant.
+    q : int
+        Number of clock states.
+    sigma_table : np.ndarray
+        Length-2q table with ``sigma_table[k] = sin(pi k / q)``, exactly
+        antisymmetric under ``k -> 2q - k``. The perpendicular projection of
+        state ``s`` for mirror axis ``m`` is ``sigma_table[(2 s - m) mod 2q]``.
+    idx_next : np.ndarray
+        Pre-calculated next-neighbor indices (PBC).
+    idx_prev : np.ndarray
+        Pre-calculated previous-neighbor indices (PBC).
+    in_cluster : np.ndarray
+        Pre-allocated (N, N) boolean array for cluster membership mask.
+    stack : np.ndarray
+        Pre-allocated (N*N) int64 array for DFS stack.
+    cluster_spins : np.ndarray
+        Pre-allocated (N*N) int64 array to track cluster elements.
+
+    Returns
+    -------
+    spins
+        Updated spins array.
+    cluster_size
+        Number of spins reflected in this step.
+    """
+    # The caller hands in an all-False in_cluster mask; the reflection loop
+    # below clears every entry it set, so the buffer stays reusable.
+    N = spins.shape[0]
+    two_q = 2 * q
+
+    # Mirror axis index; 2*s - m + 2q is non-negative for s, m in [0, q).
+    m = np.random.randint(0, q)
+    offset = two_q - m
+
+    si = np.random.randint(0, N)
+    sj = np.random.randint(0, N)
+
+    seed_flat = si * N + sj
+    in_cluster[si, sj] = True
+    stack[0] = seed_flat
+    stack_top = 1
+
+    cluster_spins[0] = seed_flat
+    cluster_size = 1
+
+    while stack_top > 0:
+        stack_top -= 1
+        flat = stack[stack_top]
+        ci = flat // N
+        cj = flat % N
+
+        sig_c = sigma_table[(2 * spins[ci, cj] + offset) % two_q]
+        inxt = idx_next[ci]
+        iprv = idx_prev[ci]
+        jnxt = idx_next[cj]
+        jprv = idx_prev[cj]
+
+        # North
+        if not in_cluster[iprv, cj]:
+            prod = sig_c * sigma_table[(2 * spins[iprv, cj] + offset) % two_q]
+            if prod > 0.0:
+                if np.random.random() < 1.0 - np.exp(-2.0 * beta * J * prod):
+                    in_cluster[iprv, cj] = True
+                    new_idx = iprv * N + cj
+                    stack[stack_top] = new_idx
+                    stack_top += 1
+                    cluster_spins[cluster_size] = new_idx
+                    cluster_size += 1
+        # South
+        if not in_cluster[inxt, cj]:
+            prod = sig_c * sigma_table[(2 * spins[inxt, cj] + offset) % two_q]
+            if prod > 0.0:
+                if np.random.random() < 1.0 - np.exp(-2.0 * beta * J * prod):
+                    in_cluster[inxt, cj] = True
+                    new_idx = inxt * N + cj
+                    stack[stack_top] = new_idx
+                    stack_top += 1
+                    cluster_spins[cluster_size] = new_idx
+                    cluster_size += 1
+        # West
+        if not in_cluster[ci, jprv]:
+            prod = sig_c * sigma_table[(2 * spins[ci, jprv] + offset) % two_q]
+            if prod > 0.0:
+                if np.random.random() < 1.0 - np.exp(-2.0 * beta * J * prod):
+                    in_cluster[ci, jprv] = True
+                    new_idx = ci * N + jprv
+                    stack[stack_top] = new_idx
+                    stack_top += 1
+                    cluster_spins[cluster_size] = new_idx
+                    cluster_size += 1
+        # East
+        if not in_cluster[ci, jnxt]:
+            prod = sig_c * sigma_table[(2 * spins[ci, jnxt] + offset) % two_q]
+            if prod > 0.0:
+                if np.random.random() < 1.0 - np.exp(-2.0 * beta * J * prod):
+                    in_cluster[ci, jnxt] = True
+                    new_idx = ci * N + jnxt
+                    stack[stack_top] = new_idx
+                    stack_top += 1
+                    cluster_spins[cluster_size] = new_idx
+                    cluster_size += 1
+
+    # Reflect every cluster spin, s -> (m - s) mod q, and reset the mask.
+    for k in range(cluster_size):
+        flat = cluster_spins[k]
+        ci = flat // N
+        cj = flat % N
+        spins[ci, cj] = (m - spins[ci, cj] + q) % q
+        in_cluster[ci, cj] = False
+
+    return spins, cluster_size
+
+
+@njit(cache=True, fastmath=True)
 def discrete_clock_energy_numba(
     *,
     spins: np.ndarray,
@@ -795,7 +948,7 @@ class DiscreteClockSimulation(VectorSpinObservablesMixin, MonteCarloSimulation):
     and enforces the discrete symmetry exactly.
     """
 
-    _VALID_UPDATES: frozenset = frozenset({'checkerboard', 'random'})
+    _VALID_UPDATES: frozenset = frozenset({'checkerboard', 'random', 'wolff'})
 
     def __init__(
         self,
@@ -823,9 +976,11 @@ class DiscreteClockSimulation(VectorSpinObservablesMixin, MonteCarloSimulation):
         q : int
             Number of clock states (default 6). Must be >= 2.
         update : str
-            Update scheme - ``'checkerboard'`` (default, faster) or
+            Update scheme - ``'checkerboard'`` (default, faster),
             ``'random'`` (random sequential Metropolis, more physical
-            stochastic dynamics for kinetics studies).
+            stochastic dynamics for kinetics studies), or ``'wolff'``
+            (Wolff cluster reflections about the q mirror axes; one step is
+            one cluster flip).
         init_state : str
             Initial spin configuration: ``'random'`` (default) or ``'ordered'``.
         parallel : bool
@@ -839,7 +994,8 @@ class DiscreteClockSimulation(VectorSpinObservablesMixin, MonteCarloSimulation):
         Raises
         ------
         ValueError
-            If ``q`` is less than 2 or update scheme is unknown.
+            If ``q`` is less than 2, the update scheme is unknown, or ``J`` is
+            negative.
         """
         super().__init__(size=size, temp=temp, init_state=init_state, seed=seed)
         if q < 2:
@@ -847,6 +1003,7 @@ class DiscreteClockSimulation(VectorSpinObservablesMixin, MonteCarloSimulation):
         if update not in self._VALID_UPDATES:
             valid_opts = sorted(self._VALID_UPDATES)
             raise ValueError(f'Unknown update scheme {update!r}. Valid options: {valid_opts}')
+        self._validate_coupling(J=J)
         self.J = J
         self.q = q
         self.update = update
@@ -857,6 +1014,14 @@ class DiscreteClockSimulation(VectorSpinObservablesMixin, MonteCarloSimulation):
         self.cos_table = np.cos(angles)  # cos(2*pi*d/q)  for dE calculation
         self._cos_angles = np.cos(angles)  # per-state cos for observables
         self._sin_angles = np.sin(angles)  # per-state sin for observables
+        # Perpendicular projections for the Wolff reflection, sin(pi k / q)
+        # for k in [0, 2q). Mirroring the upper half enforces the exact
+        # antisymmetry sigma[2q - k] = -sigma[k] that detailed balance relies
+        # on, independent of floating-point rounding in np.sin.
+        half = np.sin(np.pi * np.arange(q + 1) / q)
+        half[0] = 0.0
+        half[q] = 0.0
+        self._wolff_sigma_table = np.concatenate([half[:q], -half[q:0:-1]])
 
         if self.init_state == 'ordered':
             # Initialize ordered discrete spins (state 0)
@@ -879,6 +1044,19 @@ class DiscreteClockSimulation(VectorSpinObservablesMixin, MonteCarloSimulation):
                     cos_table=self.cos_table,
                     idx_next=self.idx_next,
                     idx_prev=self.idx_prev,
+                )
+            elif self.update == 'wolff':
+                self.spins, self.last_cluster_size = discrete_clock_wolff_step_numba(
+                    spins=self.spins,
+                    beta=self.beta,
+                    J=self.J,
+                    q=self.q,
+                    sigma_table=self._wolff_sigma_table,
+                    idx_next=self.idx_next,
+                    idx_prev=self.idx_prev,
+                    in_cluster=self._wolff_cluster_mask,
+                    stack=self._wolff_stack,
+                    cluster_spins=self._wolff_cluster_spins,
                 )
             elif self.parallel:
                 self.spins = discrete_clock_step_parallel_numba(
@@ -929,6 +1107,26 @@ class DiscreteClockSimulation(VectorSpinObservablesMixin, MonteCarloSimulation):
         sx = self._cos_angles[self.spins]
         sy = self._sin_angles[self.spins]
         return np.stack([sx, sy], axis=-1)
+
+    def get_spin_field(self) -> np.ndarray:
+        """Return the spins as ``(L, L, 2)`` unit vectors.
+
+        The integer state indices are an internal encoding; analysis helpers
+        need the planar vectors they represent.
+
+        Returns
+        -------
+        np.ndarray
+            Unit-vector field of shape ``(L, L, 2)``.
+
+        Raises
+        ------
+        RuntimeError
+            If the lattice has not been initialised.
+        """
+        if self.spins is None:
+            raise RuntimeError('Simulation lattice is uninitialized (spins is None).')
+        return self._spins_as_vectors()
 
     def _calculate_vorticity(self) -> np.ndarray:
         """Calculate the vorticity (winding number) of each plaquette."""
@@ -985,19 +1183,40 @@ def main() -> None:
         choices=['checkerboard', 'random', 'wolff'],
         help='Update scheme (default: checkerboard)',
     )
+    parser.add_argument(
+        '--continuous', action='store_true',
+        help='Continuous planar spins with anisotropy -A cos(q theta) instead of '
+             'the discrete model (default: discrete)',
+    )
+    parser.add_argument(
+        '--aniso', type=float, default=None,
+        help='Anisotropy A of the continuous model (default 1.0); requires --continuous',
+    )
     parser.add_argument('--verbose', action='store_true', help='Enable verbose logging')
     args = parser.parse_args()
+    if args.aniso is not None and not args.continuous:
+        parser.error('--aniso applies only to the continuous model; add --continuous')
 
     log_level = logging.DEBUG if args.verbose else logging.INFO
     logger = setup_logging(level=log_level)
 
+    sim: ClockSimulation | DiscreteClockSimulation
+    if args.continuous:
+        aniso = 1.0 if args.aniso is None else args.aniso
+        variant = f'continuous, A={aniso}'
+        sim = ClockSimulation(
+            size=args.size, temp=args.temp, q=args.q, A=aniso, seed=args.seed,
+            parallel=args.parallel, update=args.update,
+        )
+    else:
+        variant = 'discrete'
+        sim = DiscreteClockSimulation(
+            size=args.size, temp=args.temp, q=args.q, seed=args.seed,
+            parallel=args.parallel, update=args.update,
+        )
     logger.info(
-        f'Initializing {args.q}-state Clock Model (L={args.size}, T={args.temp}, '
-        f'update={args.update}, parallel={args.parallel})...'
-    )
-    sim = ClockSimulation(
-        size=args.size, temp=args.temp, q=args.q, seed=args.seed, parallel=args.parallel,
-        update=args.update
+        f'Initialized {args.q}-state Clock Model ({variant}, L={args.size}, '
+        f'T={args.temp}, update={args.update}, parallel={args.parallel})'
     )
 
     logger.info(f'Running for {args.steps} steps...')
@@ -1009,7 +1228,8 @@ def main() -> None:
 
     # Final Phase Configuration
     if sim.spins is not None:
-        angles = np.arctan2(sim.spins[..., 1], sim.spins[..., 0])
+        field = sim.get_spin_field()
+        angles = np.arctan2(field[..., 1], field[..., 0])
         im1 = ax1.imshow(angles, cmap='hsv', interpolation='none', vmin=-np.pi, vmax=np.pi)
         ax1.set_title('Final Spin Phase')
         ax1.axis('off')

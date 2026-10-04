@@ -39,6 +39,7 @@ def main() -> None:
         model_kwargs={},
         model_label='2D Ising Model',
         transitions={r'$T_c$': TC_ISING},
+        stuck_below=TC_ISING,
     )
 
 

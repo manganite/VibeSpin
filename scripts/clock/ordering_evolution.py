@@ -10,9 +10,14 @@ from __future__ import annotations
 import argparse
 import logging
 
-from models.clock_model import ClockSimulation
+from scripts.clock._model_choice import add_clock_model_arguments, resolve_clock_model
 from utils.evolution_helpers import run_ordering_evolution
 from utils.system import parse_args_compat, setup_logging
+
+# Anisotropy of the continuous model when --continuous is given without
+# --aniso; it keeps the value this script used before the discrete model
+# became the default.
+_DEFAULT_CONTINUOUS_ANISO = 0.5
 
 
 def main() -> None:
@@ -21,7 +26,7 @@ def main() -> None:
     parser.add_argument('--size', type=int, default=256, help='Linear lattice size L')
     parser.add_argument('--temp', type=float, default=0.2, help='Quench temperature T')
     parser.add_argument('--q', type=int, default=6, help='Number of clock states')
-    parser.add_argument('--aniso', type=float, default=0.5, help='Anisotropy strength A')
+    add_clock_model_arguments(parser=parser, default_aniso=_DEFAULT_CONTINUOUS_ANISO)
     parser.add_argument(
         '--targets',
         type=int,
@@ -38,26 +43,29 @@ def main() -> None:
     parser.add_argument('--verbose', action='store_true', help='Enable verbose logging')
 
     args = parse_args_compat(parser=parser)
+    choice = resolve_clock_model(
+        parser=parser, args=args, default_aniso=_DEFAULT_CONTINUOUS_ANISO,
+    )
 
     log_level = logging.DEBUG if args.verbose else logging.INFO
     logger = setup_logging(level=log_level, log_file=args.log_file)
 
     logger.info(
         f'Clock phase ordering evolution (L={args.size}, T={args.temp},'
-        f' q={args.q}, A={args.aniso})'
+        f' q={args.q}, {choice.variant})'
     )
     logger.info(f'Recording snapshots at steps {sorted(args.targets)} ...')
 
     run_ordering_evolution(
-        model_cls=ClockSimulation,
+        model_cls=choice.model_cls,
         model_kwargs=(
-            {'q': args.q, 'A': args.aniso}
+            choice.model_kwargs
             | ({} if args.seed is None else {'seed': args.seed})
         ),
         capture_vorticity=True,
         title=(
-            f'2D {args.q}-state Clock Model Evolution -'
-            f' T = {args.temp}, L = {args.size}, A = {args.aniso}'
+            f'2D {args.q}-state Clock Model Evolution ({choice.variant}) -'
+            f' T = {args.temp}, L = {args.size}'
         ),
         size=args.size,
         temp=args.temp,

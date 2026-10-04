@@ -11,10 +11,15 @@ supplies only its own physics.
 
 Comparing raw autocorrelation times across the two algorithms would be
 meaningless, because one Wolff step touches a cluster and one Metropolis sweep
-touches the whole lattice.  The work-normalised time multiplies the Wolff
-autocorrelation time by the mean cluster fraction, putting both on a
-lattice-sweep footing; the independent-samples-per-second figure sidesteps the
-question entirely by measuring against the clock.
+touches the whole lattice.  The Wolff run therefore records one sample every
+``round(L^2 / <C>)`` cluster flips, roughly one lattice sweep of work, so that
+both algorithms receive the same measurement budget in sweep units; giving
+both the same number of raw steps would leave Wolff with a few sweeps of work
+in the paramagnet, where clusters hold a handful of spins.  ``tau_wolff`` is
+stored in cluster flips as before, and the work-normalised time multiplies it
+by the mean cluster fraction, putting both algorithms on a lattice-sweep
+footing; the independent-samples-per-second figure sidesteps the question
+entirely by measuring against the clock.
 """
 from __future__ import annotations
 
@@ -27,7 +32,7 @@ from typing import Any, NamedTuple, cast
 import matplotlib.pyplot as plt
 import numpy as np
 
-from utils.equilibration import convergence_equilibrate
+from utils.equilibration import prepare_equilibrated_simulation
 from utils.exceptions import ZeroVarianceAutocorrelationError
 from utils.observables import calculate_thermodynamics
 from utils.statistics import (
@@ -43,10 +48,12 @@ from utils.system import parallel_sweep, setup_logging
 _MEASURED_KEYS = (
     'tau_metro', 'tau_wolff', 'iss_metro', 'iss_wolff',
     'mean_cluster_frac', 'chi_metro', 'chi_wolff',
+    'wolff_flips_per_sample', 'converged_metro', 'converged_wolff',
 )
 
 #: Cluster sizes are measured in a separate short pass so that the timing runs
-#: stay free of the per-step bookkeeping the cluster record would add.
+#: stay free of the per-step bookkeeping the cluster record would add. The
+#: same pass sets how many cluster flips make up one sweep-equivalent sample.
 _CLUSTER_PASS_STEPS = 300
 
 
@@ -76,6 +83,10 @@ class EfficiencyPoint(NamedTuple):
     model_kwargs : dict[str, typing.Any]
         Extra constructor arguments beyond size, temperature, update, start,
         and seed.
+    detect_stuck : bool
+        Enable quasi-steady stuck detection for both equilibrations; set only
+        below the ordering temperature of a model with metastable domain
+        states (default False).
     """
 
     temp_idx: int
@@ -87,11 +98,14 @@ class EfficiencyPoint(NamedTuple):
     meas_steps: int
     model_cls: type
     model_kwargs: dict[str, Any]
+    detect_stuck: bool = False
 
 
-def _equilibrated_pair(*, point: EfficiencyPoint, update: str, seed: int) -> Any:
+def _equilibrated_simulation(
+    *, point: EfficiencyPoint, update: str, seed: int,
+) -> tuple[Any, bool]:
     """
-    Build a two-start pair, equilibrate it, and return the random-start run.
+    Build a two-start pair, equilibrate it, and return the start to measure.
 
     Parameters
     ----------
@@ -100,29 +114,68 @@ def _equilibrated_pair(*, point: EfficiencyPoint, update: str, seed: int) -> Any
     update : str
         Update scheme for both simulations.
     seed : int
-        Seed shared by both starts of this pair.
+        Seed of the random start; the ordered start derives its own.
 
     Returns
     -------
-    typing.Any
-        The equilibrated random-start simulation, ready to be measured.
+    tuple[typing.Any, bool]
+        The simulation to measure (the random start after convergence, the
+        ordered start otherwise) and whether the pair is certified for
+        measurement (``TwoStartOutcome.certified``).
     """
-    common = dict(
-        size=point.size, temp=point.temperature, update=update, **point.model_kwargs
-    )
-    sim_random = point.model_cls(init_state='random', seed=seed, **common)
-    sim_ordered = point.model_cls(init_state='ordered', seed=seed, **common)
-    convergence_equilibrate(
-        sim_random=sim_random,
-        sim_ordered=sim_ordered,
+    sim, outcome = prepare_equilibrated_simulation(
+        model_cls=point.model_cls,
+        model_kwargs=point.model_kwargs,
+        size=point.size,
+        temp=point.temperature,
+        seed=seed,
         chunk_size=point.eq_probe_steps,
         max_steps=point.eq_max_steps,
+        update=update,
+        detect_stuck=point.detect_stuck,
     )
-    return sim_random
+    return sim, bool(outcome.certified)
+
+
+def _record_samples(
+    *, sim: Any, n_samples: int, steps_per_sample: int,
+) -> tuple[np.ndarray, np.ndarray, float]:
+    """
+    Record magnetisation and energy every ``steps_per_sample`` steps, timed.
+
+    Parameters
+    ----------
+    sim : typing.Any
+        Equilibrated simulation to measure.
+    n_samples : int
+        Number of samples to record.
+    steps_per_sample : int
+        Steps between two samples; 1 reproduces ``sim.run``.
+
+    Returns
+    -------
+    tuple[np.ndarray, np.ndarray, float]
+        Magnetisation series, energy series, and elapsed wall-clock seconds.
+    """
+    started = time.perf_counter()
+    if steps_per_sample == 1:
+        mags, engs = sim.run(n_steps=n_samples)
+        elapsed = time.perf_counter() - started
+        return np.asarray(mags), np.asarray(engs), elapsed
+    mags_arr = np.empty(n_samples)
+    engs_arr = np.empty(n_samples)
+    for k in range(n_samples):
+        for _ in range(steps_per_sample):
+            sim.step()
+        mags_arr[k] = sim.get_magnetization()
+        engs_arr[k] = sim.get_energy()
+    elapsed = time.perf_counter() - started
+    return mags_arr, engs_arr, elapsed
 
 
 def _timed_measurement(
     *, sim: Any, meas_steps: int, temperature: float, size: int,
+    steps_per_sample: int = 1,
 ) -> tuple[float, float, float]:
     """
     Run a timed measurement pass and reduce it to the efficiency quantities.
@@ -132,7 +185,10 @@ def _timed_measurement(
     sim : typing.Any
         Equilibrated simulation to measure.
     meas_steps : int
-        Number of steps to run and time.
+        Number of samples to record and time.
+    steps_per_sample : int
+        Update steps between two samples (default 1). The autocorrelation
+        time is returned in update steps, i.e. multiplied by this factor.
     temperature : float
         Temperature, needed for the susceptibility.
     size : int
@@ -145,23 +201,23 @@ def _timed_measurement(
         magnetic susceptibility.  The first two are NaN where the
         magnetisation series has no usable variance.
     """
-    started = time.perf_counter()
-    mags, engs = sim.run(n_steps=meas_steps)
-    elapsed = time.perf_counter() - started
-
-    mags_arr = np.asarray(mags)
-    engs_arr = np.asarray(engs)
+    mags_arr, engs_arr, elapsed = _record_samples(
+        sim=sim, n_samples=meas_steps, steps_per_sample=steps_per_sample,
+    )
     try:
-        _, tau_int = calculate_autocorr(time_series=mags_arr)
+        _, tau_samples = calculate_autocorr(time_series=mags_arr)
     except ZeroVarianceAutocorrelationError:
-        tau_int = float('nan')
+        tau_samples = float('nan')
+    # Independent samples per second count samples, so they use the
+    # autocorrelation time in sample units; the returned time is in steps.
+    tau_int = tau_samples * steps_per_sample
 
     _, _, chi, _ = calculate_thermodynamics(
         mags=mags_arr, engs=engs_arr, T=temperature, L=size,
     )
     iss = (
-        (meas_steps / elapsed) / tau_int
-        if np.isfinite(tau_int) and tau_int > 0
+        (meas_steps / elapsed) / tau_samples
+        if np.isfinite(tau_samples) and tau_samples > 0
         else float('nan')
     )
     return tau_int, iss, chi
@@ -172,8 +228,9 @@ def measure_efficiency_point(point: EfficiencyPoint) -> dict[str, float]:
     Measure local-update and cluster-update efficiency at one grid point.
 
     Both algorithms start from their own independently equilibrated state, so
-    that neither inherits the other's correlations, and each is timed over the
-    same number of its own steps.
+    that neither inherits the other's correlations. Metropolis records one
+    sample per sweep; Wolff records one sample every ``round(L^2 / <C>)``
+    cluster flips, so both receive the same budget in sweep units.
 
     Parameters
     ----------
@@ -183,29 +240,46 @@ def measure_efficiency_point(point: EfficiencyPoint) -> dict[str, float]:
     Returns
     -------
     dict[str, float]
-        Grid indices, temperature, and the seven measured quantities.
+        Grid indices, temperature, the measured quantities, and the
+        ``converged_metro`` and ``converged_wolff`` flags. An algorithm whose
+        two starts did not converge within ``eq_max_steps`` is not measured,
+        and its quantities are NaN.
     """
     seed = derive_point_seed(
         temperature_index=point.temp_idx, seed_index=point.seed_idx,
     )
 
-    sim_metro = _equilibrated_pair(point=point, update='checkerboard', seed=seed)
-    tau_metro, iss_metro, chi_metro = _timed_measurement(
-        sim=sim_metro, meas_steps=point.meas_steps,
-        temperature=point.temperature, size=point.size,
+    nan = float('nan')
+    # A pair that never converged is not measured; its quantities stay NaN.
+    sim_metro, converged_metro = _equilibrated_simulation(
+        point=point, update='checkerboard', seed=seed,
     )
+    tau_metro, iss_metro, chi_metro = nan, nan, nan
+    if converged_metro:
+        tau_metro, iss_metro, chi_metro = _timed_measurement(
+            sim=sim_metro, meas_steps=point.meas_steps,
+            temperature=point.temperature, size=point.size,
+        )
 
-    sim_wolff = _equilibrated_pair(point=point, update='wolff', seed=seed + 1)
-    tau_wolff, iss_wolff, chi_wolff = _timed_measurement(
-        sim=sim_wolff, meas_steps=point.meas_steps,
-        temperature=point.temperature, size=point.size,
+    sim_wolff, converged_wolff = _equilibrated_simulation(
+        point=point, update='wolff', seed=seed + 1,
     )
-
-    sim_cluster = _equilibrated_pair(point=point, update='wolff', seed=seed + 2)
-    _, _, cluster_sizes = sim_cluster.run_with_cluster_sizes(
-        n_steps=min(point.meas_steps, _CLUSTER_PASS_STEPS),
-    )
-    mean_cluster_frac = float(np.mean(cluster_sizes)) / float(point.size**2)
+    tau_wolff, iss_wolff, chi_wolff = nan, nan, nan
+    mean_cluster_frac, flips_per_sample = nan, nan
+    if converged_wolff:
+        # The cluster pass on the equilibrated Wolff run sets the sample
+        # spacing: one sample per lattice sweep of flipped spins on average.
+        _, _, cluster_sizes = sim_wolff.run_with_cluster_sizes(
+            n_steps=min(point.meas_steps, _CLUSTER_PASS_STEPS),
+        )
+        mean_cluster_frac = float(np.mean(cluster_sizes)) / float(point.size**2)
+        spacing = max(1, int(round(1.0 / mean_cluster_frac)))
+        flips_per_sample = float(spacing)
+        tau_wolff, iss_wolff, chi_wolff = _timed_measurement(
+            sim=sim_wolff, meas_steps=point.meas_steps,
+            temperature=point.temperature, size=point.size,
+            steps_per_sample=spacing,
+        )
 
     return {
         'temp_idx': float(point.temp_idx),
@@ -218,6 +292,9 @@ def measure_efficiency_point(point: EfficiencyPoint) -> dict[str, float]:
         'mean_cluster_frac': mean_cluster_frac,
         'chi_metro': chi_metro,
         'chi_wolff': chi_wolff,
+        'wolff_flips_per_sample': flips_per_sample,
+        'converged_metro': float(converged_metro),
+        'converged_wolff': float(converged_wolff),
     }
 
 
@@ -397,6 +474,7 @@ def run_wolff_efficiency(
     model_kwargs: dict[str, Any],
     model_label: str,
     transitions: dict[str, float] | None,
+    stuck_below: float | None = None,
 ) -> None:
     """
     Run the efficiency comparison and write its NPZ file and figure.
@@ -416,6 +494,10 @@ def run_wolff_efficiency(
     transitions : dict[str, float] or None
         Temperatures to mark in every panel, keyed by legend label, or None to
         omit the markers.  The first by label is drawn dashed, the rest dotted.
+    stuck_below : float or None
+        Temperature below which stuck detection is enabled, i.e. the ordering
+        temperature of a model with metastable domain states. None disables
+        stuck detection everywhere.
 
     Returns
     -------
@@ -448,6 +530,7 @@ def run_wolff_efficiency(
             meas_steps=int(args.meas_steps),
             model_cls=model_cls,
             model_kwargs=model_kwargs,
+            detect_stuck=stuck_below is not None and temperature < stuck_below,
         )
         for temp_idx, temperature in enumerate(temperatures)
         for seed_idx in range(n_seeds)

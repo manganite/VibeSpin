@@ -20,7 +20,11 @@ from typing import Any, NamedTuple
 
 import numpy as np
 
-from utils.equilibration import convergence_equilibrate_with_status
+from utils.equilibration import (
+    convergence_equilibrate_two_start,
+    ordered_start_seed,
+    select_measurement_simulation,
+)
 from utils.statistics import (
     UNCERTAINTY_METHOD_BOOTSTRAP,
     _z_multiplier,
@@ -209,7 +213,7 @@ class ThermoPoint(NamedTuple):
     meas_steps : int
         Number of Monte Carlo sweeps to record after equilibration.
     eq_probe_steps : int
-        Chunk size passed to ``convergence_equilibrate_with_status``.
+        Chunk size passed to ``convergence_equilibrate_two_start``.
     eq_max_steps : int
         Hard cap on total equilibration steps.
     eq_qs_sigma_threshold : float
@@ -217,16 +221,22 @@ class ThermoPoint(NamedTuple):
     eq_qs_min_steps : int
         Minimum steps before stuck detection is allowed to fire.
     qs_allow_stuck : bool
-        If True, a quasi-steady stuck state counts as convergence (Ising low-T).
+        If True, stuck detection is active and a quasi-steady stuck state
+        counts as convergence, measured on the ordered start (Ising and the
+        discrete clock model at low T). If False, stuck detection is off and
+        the pair runs until it converges or reaches ``eq_max_steps``.
     prefer_ordered_start : bool
-        If True, switch to the ordered-start simulation when its magnetisation
-        substantially exceeds the random-start value.  Appropriate for Ising below T_c.
+        Retained for payload compatibility; it no longer changes the result.
+        The ordered start is measured whenever the random start was stranded
+        in an accepted stuck state, and the former magnetisation-gap
+        heuristic this flag controlled is removed.
     temperature_index : int
         Index of this temperature in the sweep's temperature array.
     seed_index : int
         Replica index within the multi-seed ensemble for this temperature.
     seed : int
-        RNG seed for both the random- and ordered-start simulations.
+        RNG seed of the random-start simulation; the ordered start uses
+        ``ordered_start_seed(seed=seed)`` so the two runs are independent.
     model_cls : type
         Simulation class to instantiate (e.g. ``IsingSimulation``). Must be
         importable by its qualified name so it survives multiprocessing pickle.
@@ -308,10 +318,12 @@ class RawThermoData(NamedTuple):
 def simulate_at_temperature(point: ThermoPoint) -> RawThermoData:
     """Run equilibration and measurement for one (temperature, seed) point.
 
-    Creates a random-start and an ordered-start simulation with the same seed,
-    runs two-start convergence equilibration, then records ``meas_steps`` sweeps
-    on the active simulation.  Returns raw magnetisation and energy time series
-    for downstream statistical processing.
+    Creates a random-start and an ordered-start simulation with independent
+    seeds, runs two-start convergence equilibration, then records
+    ``meas_steps`` sweeps on the start that is valid: the random start after
+    genuine convergence, the ordered start after an accepted stuck state.
+    Returns raw magnetisation and energy time series for downstream
+    statistical processing.
 
     Parameters
     ----------
@@ -332,21 +344,31 @@ def simulate_at_temperature(point: ThermoPoint) -> RawThermoData:
         **point.model_kwargs,
     )
     sim_o = point.model_cls(
-        size=L, temp=T, init_state='ordered', seed=point.seed,
+        size=L, temp=T, init_state='ordered', seed=ordered_start_seed(seed=point.seed),
         **point.model_kwargs,
     )
 
-    total_steps, converged = convergence_equilibrate_with_status(
+    outcome = convergence_equilibrate_two_start(
         sim_random=sim_r,
         sim_ordered=sim_o,
         chunk_size=point.eq_probe_steps,
         max_steps=point.eq_max_steps,
         qs_sigma_threshold=point.eq_qs_sigma_threshold,
         qs_min_steps=point.eq_qs_min_steps,
-        qs_allow_stuck=point.qs_allow_stuck,
+        # Stuck detection only where a stuck state is accepted: elsewhere an
+        # early exit just discards a run that is still relaxing, as the XY
+        # model does for thousands of sweeps near T_BKT.
+        detect_stuck=point.qs_allow_stuck,
     )
+    total_steps = outcome.total_steps
+    stuck_accepted = outcome.stuck and point.qs_allow_stuck
+    if outcome.stuck:
+        logging.getLogger('vibespin').debug(
+            f'T={T:.4f} seed={point.seed}: random start stranded after {total_steps} steps'
+            f' ({"measuring the ordered start" if stuck_accepted else "point rejected"}).'
+        )
 
-    if not converged:
+    if not (outcome.converged or stuck_accepted):
         return RawThermoData(
             temperature_index=point.temperature_index,
             seed_index=point.seed_index,
@@ -358,14 +380,12 @@ def simulate_at_temperature(point: ThermoPoint) -> RawThermoData:
             engs_arr=None,
         )
 
-    # For models where the ordered start is physically cleaner (Ising below T_c),
-    # switch to it when its magnetisation is substantially higher.
-    active_sim = sim_r
-    if point.prefer_ordered_start:
-        m_r = float(np.abs(sim_r.get_magnetization()))
-        m_o = float(np.abs(sim_o.get_magnetization()))
-        if m_o > m_r + 0.2:
-            active_sim = sim_o
+    # After an accepted stuck state the random start sits on a metastable
+    # plateau (for example a domain-wall stripe), so only the ordered start
+    # samples the equilibrium state.
+    active_sim = select_measurement_simulation(
+        outcome=outcome, sim_random=sim_r, sim_ordered=sim_o,
+    )
 
     mags, engs = active_sim.run(n_steps=point.meas_steps)
 
@@ -473,18 +493,26 @@ def compute_thermo_observables(
         **base,
         'avg_m_value': float(mag['value']),
         'avg_m_err': float(mag['err']),
+        'avg_m_ci_low': float(mag['ci_low']),
+        'avg_m_ci_high': float(mag['ci_high']),
         'avg_m_tau_int': float(mag['tau_int']),
         'avg_m_n_eff': float(mag['n_eff']),
         'avg_e_value': float(eng['value']),
         'avg_e_err': float(eng['err']),
+        'avg_e_ci_low': float(eng['ci_low']),
+        'avg_e_ci_high': float(eng['ci_high']),
         'avg_e_tau_int': float(eng['tau_int']),
         'avg_e_n_eff': float(eng['n_eff']),
         'susc_value': float(chi['value']),
         'susc_err': float(chi['err']),
+        'susc_ci_low': float(chi['ci_low']),
+        'susc_ci_high': float(chi['ci_high']),
         'susc_tau_int': float(chi['tau_int']),
         'susc_n_eff': float(chi['n_eff']),
         'spec_h_value': float(cv['value']),
         'spec_h_err': float(cv['err']),
+        'spec_h_ci_low': float(cv['ci_low']),
+        'spec_h_ci_high': float(cv['ci_high']),
         'spec_h_tau_int': float(cv['tau_int']),
         'spec_h_n_eff': float(cv['n_eff']),
     }
@@ -526,6 +554,8 @@ def build_uncertainty_bundle(
     tau_by_seed: np.ndarray,
     n_eff_by_seed: np.ndarray,
     confidence: float,
+    ci_low_by_seed: np.ndarray | None = None,
+    ci_high_by_seed: np.ndarray | None = None,
 ) -> dict[str, np.ndarray]:
     """Aggregate per-seed results for one observable across a temperature axis.
 
@@ -545,6 +575,12 @@ def build_uncertainty_bundle(
         Shape ``(n_temps, n_seeds)``.  Per-seed effective sample sizes.
     confidence : float
         Two-sided confidence level for the returned CI bounds.
+    ci_low_by_seed, ci_high_by_seed : np.ndarray or None
+        Shape ``(n_temps, n_seeds)``. Per-seed interval bounds from the
+        summarizers. Used for single-seed sweeps and for temperatures where
+        only one seed has a finite value, whose intervals then keep the
+        Student-t width of the blocking estimate; without them the bounds
+        are a Gaussian multiple of the error.
 
     Returns
     -------
@@ -568,6 +604,19 @@ def build_uncertainty_bundle(
                 res_errors.append(np.nan)
                 res_low.append(np.nan)
                 res_high.append(np.nan)
+                continue
+            if (
+                np.count_nonzero(mask) == 1
+                and ci_low_by_seed is not None
+                and ci_high_by_seed is not None
+            ):
+                # One surviving seed keeps its own Student-t interval, as in
+                # the single-seed branch below.
+                k = int(np.flatnonzero(mask)[0])
+                res_values.append(values_by_seed[t, k])
+                res_errors.append(errors_by_seed[t, k])
+                res_low.append(ci_low_by_seed[t, k])
+                res_high.append(ci_high_by_seed[t, k])
                 continue
 
             summary = summarize_seed_ensemble(
@@ -605,9 +654,19 @@ def build_uncertainty_bundle(
                 f'returned NaN). This is expected in the deep ordered/frozen '
                 f'phase.'
             )
+    elif ci_low_by_seed is not None and ci_high_by_seed is not None:
+        # A single seed keeps the interval its summarizer built, which uses the
+        # Student-t quantile for the number of blocks behind the error.
+        res = {
+            'value': values_by_seed[:, 0],
+            'err': errors_by_seed[:, 0],
+            'ci_low': ci_low_by_seed[:, 0],
+            'ci_high': ci_high_by_seed[:, 0],
+        }
+        tau_int = tau_by_seed[:, 0]
+        n_eff = n_eff_by_seed[:, 0]
     else:
-        # Apply the same Gaussian z-multiplier as the multi-seed path so that
-        # 'ci_low'/'ci_high' honor the requested confidence level here too.
+        # Without per-seed intervals, fall back to a Gaussian multiple of the error.
         z = _z_multiplier(confidence=confidence)
         res = {
             'value': values_by_seed[:, 0],

@@ -576,6 +576,144 @@ def test_convergence_equilibrate_with_status_gate_blocks_stuck_detection(caplog)
     assert 'without convergence' in caplog.text
 
 
+class _StuckRandomStub:
+    """Random start stranded on a plateau below the ordered value."""
+
+    size = 32
+
+    def run(self, *, n_steps: int) -> tuple[np.ndarray, np.ndarray]:
+        return np.full(n_steps, 0.55), np.zeros(n_steps)
+
+
+class _OrderedStub:
+    """Ordered start that has settled at full magnetisation."""
+
+    size = 32
+
+    def run(self, *, n_steps: int) -> tuple[np.ndarray, np.ndarray]:
+        return np.ones(n_steps), np.zeros(n_steps)
+
+
+_STUCK_KWARGS = dict(
+    chunk_size=50, max_steps=1_000, smooth_window=10,
+    qs_sigma_threshold=0.02, qs_min_steps=50, sigma_floor=0.02,
+)
+
+
+def test_two_start_outcome_separates_stuck_from_convergence():
+    """A stuck exit is reported as stuck, never as converged."""
+    from utils.equilibration import convergence_equilibrate_two_start
+
+    with patch('utils.equilibration.estimate_relaxation_time_two_start', return_value=10**6):
+        outcome = convergence_equilibrate_two_start(
+            sim_random=_StuckRandomStub(), sim_ordered=_OrderedStub(),
+            detect_stuck=True, **_STUCK_KWARGS,
+        )
+    assert outcome.stuck is True
+    assert outcome.converged is False
+    assert outcome.total_steps < 1_000
+
+
+def test_two_start_detect_stuck_false_runs_to_cap():
+    """Stuck detection is opt-in: by default the run continues to the cap."""
+    from utils.equilibration import convergence_equilibrate_two_start
+
+    with patch('utils.equilibration.estimate_relaxation_time_two_start', return_value=10**6):
+        default = convergence_equilibrate_two_start(
+            sim_random=_StuckRandomStub(), sim_ordered=_OrderedStub(), **_STUCK_KWARGS,
+        )
+        explicit = convergence_equilibrate_two_start(
+            sim_random=_StuckRandomStub(), sim_ordered=_OrderedStub(),
+            detect_stuck=False, **_STUCK_KWARGS,
+        )
+    assert default == explicit == (1_000, False, False)
+
+
+def test_status_wrapper_accepts_stuck_only_when_allowed():
+    """The legacy status flag keeps its meaning for both qs_allow_stuck values."""
+    from utils.equilibration import convergence_equilibrate_with_status
+
+    with patch('utils.equilibration.estimate_relaxation_time_two_start', return_value=10**6):
+        _, accepted = convergence_equilibrate_with_status(
+            sim_random=_StuckRandomStub(), sim_ordered=_OrderedStub(),
+            qs_allow_stuck=True, **_STUCK_KWARGS,
+        )
+        _, rejected = convergence_equilibrate_with_status(
+            sim_random=_StuckRandomStub(), sim_ordered=_OrderedStub(),
+            qs_allow_stuck=False, **_STUCK_KWARGS,
+        )
+    assert accepted is True
+    assert rejected is False
+
+
+@pytest.mark.parametrize(
+    'converged, stuck, expected',
+    [(True, False, 'random'), (False, True, 'ordered'), (False, False, 'ordered')],
+)
+def test_select_measurement_simulation(converged, stuck, expected):
+    """Only a converged pair may be measured on its random start."""
+    from utils.equilibration import TwoStartOutcome, select_measurement_simulation
+
+    picked = select_measurement_simulation(
+        outcome=TwoStartOutcome(total_steps=10, converged=converged, stuck=stuck),
+        sim_random='random', sim_ordered='ordered',
+    )
+    assert picked == expected
+
+
+def test_ordered_start_seed():
+    """The ordered partner gets a distinct, deterministic seed; None passes through."""
+    from utils.equilibration import ORDERED_START_SEED_OFFSET, ordered_start_seed
+
+    assert ordered_start_seed(seed=None) is None
+    assert ordered_start_seed(seed=42) == 42 + ORDERED_START_SEED_OFFSET
+    with pytest.raises(ValueError, match='ordered-start partner'):
+        ordered_start_seed(seed=2**32 - 1)
+
+
+def test_prepare_equilibrated_simulation_uses_independent_seeds():
+    """The two starts must not share a seed, or their RNG streams coincide."""
+    from utils.equilibration import prepare_equilibrated_simulation
+
+    built: list[dict] = []
+
+    class _Recorder(_OrderedStub):
+        def __init__(self, **kwargs):
+            built.append(kwargs)
+
+    with patch('utils.equilibration.estimate_relaxation_time_two_start', return_value=0):
+        sim, outcome = prepare_equilibrated_simulation(
+            model_cls=_Recorder, model_kwargs={}, size=8, temp=1.0, seed=7,
+            chunk_size=50, max_steps=200,
+        )
+    seeds = {kw['init_state']: kw['seed'] for kw in built}
+    assert seeds['random'] == 7
+    assert seeds['ordered'] != 7
+    assert outcome.converged
+
+
+def test_independent_seeds_decorrelate_two_starts():
+    """
+    With a shared seed the two starts draw identical random numbers and the
+    chains couple: below T_c their |m| traces become perfectly correlated, so
+    the two-start comparison is satisfied trivially. Independent seeds must
+    remove that coupling.
+    """
+    from utils.equilibration import ordered_start_seed
+
+    def trace_correlation(seed_random, seed_ordered):
+        r = IsingSimulation(size=16, temp=2.0, init_state='random', seed=seed_random)
+        o = IsingSimulation(size=16, temp=2.0, init_state='ordered', seed=seed_ordered)
+        m_r, _ = r.run(n_steps=2000)
+        m_o, _ = o.run(n_steps=2000)
+        return float(np.corrcoef(m_r[1000:], m_o[1000:])[0, 1])
+
+    shared = [trace_correlation(s, s) for s in range(4)]
+    independent = [trace_correlation(s, ordered_start_seed(seed=s)) for s in range(4)]
+    assert np.mean(shared) > 0.95
+    assert abs(np.mean(independent)) < 0.3
+
+
 def test_plot_temperature_sweep_with_entropy_only(temp_dir):
     """Optional panel layout should handle entropy-only inputs."""
     temps = np.array([1.0, 2.0])

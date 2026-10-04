@@ -7,10 +7,10 @@ Precomputes three data sets used by the Correlation_and_Coarsening notebook:
    median R_xi(t) at each, confirming that the growth exponent n = 1/2 is
    independent of quench depth while the prefactor depends on temperature.
 
-2. **Equilibrium crossover**: Coarsening R_xi(t) trajectory on a small lattice
-   long enough to saturate at the equilibrium correlation length xi_eq,
-   demonstrating the bridge between non-equilibrium coarsening and
-   equilibrium structure.
+2. **Equilibrium comparison**: A long coarsening R_xi(t) trajectory next to the
+   equilibrium correlation length xi_eq at the same temperature. Below T_c
+   xi_eq is the short connected correlation length of the ordered phase, so
+   the domain size grows far beyond it and stops only at the lattice size.
 
 3. **Stochastic ensemble**: Multiple independent seeds at one quench
    temperature, storing per-seed traces to visualize run-to-run variability
@@ -26,8 +26,8 @@ import numpy as np
 from tqdm import tqdm
 
 from models.ising_model import IsingSimulation
-from utils.equilibration import convergence_equilibrate
-from utils.observables import correlation_length_1e, get_averaged_correlation
+from utils.equilibration import prepare_equilibrated_simulation
+from utils.observables import connected_correlation_length, correlation_length_1e
 from utils.plotting import ensure_results_dir
 from utils.system import _BAR_FORMAT, parse_args_compat, setup_logging
 
@@ -96,9 +96,10 @@ def _run_coarsening_traces(
         for t in range(1, n_steps + 1):
             sim.step()
             if t % sample_interval == 0:
-                r_arr, G_arr = get_averaged_correlation(
-                    sim=sim, total_steps=1, sample_interval=1,
-                )
+                # Measure the current configuration; get_averaged_correlation
+                # would advance the lattice by one more sweep first and shift
+                # the time axis by a factor (interval + 1) / interval.
+                r_arr, G_arr = sim.calculate_correlation_function()
                 traces[s, rec] = _correlation_length_1e(r_arr, G_arr)
                 rec += 1
         logger.debug(f'{desc} seed={seed}: final R_xi={traces[s, -1]:.2f}')
@@ -116,10 +117,14 @@ def _measure_xi_eq(
     meas_steps: int,
     meas_interval: int,
     logger: logging.Logger,
-) -> float:
+) -> tuple[float, bool]:
     """Measure the equilibrium correlation length at a given temperature.
 
-    Uses two-start convergence equilibration before measuring.
+    Uses two-start convergence equilibration before measuring and the
+    connected correlation function (``connected_correlation_length``). The
+    disconnected function plateaus at m^2 below T_c and never crosses 1/e,
+    which made the previous estimate return the largest available distance
+    instead of a correlation length.
 
     Parameters
     ----------
@@ -142,25 +147,25 @@ def _measure_xi_eq(
 
     Returns
     -------
-    float
-        Equilibrium correlation length (1/e criterion).
+    tuple[float, bool]
+        Equilibrium correlation length (1/e criterion) and whether the two
+        starts converged. When they did not converge within ``eq_max`` steps
+        the length is not measured and is NaN.
     """
     logger.info(f'Measuring xi_eq at T={temp:.4f} (L={size})...')
-    sim_r = IsingSimulation(
-        size=size, temp=temp, update='checkerboard', init_state='random', seed=seed,
+    # Below T_c a random start can freeze into a stripe state; stopping on it
+    # and measuring the ordered start is valid there, as in the sweep worker.
+    sim, outcome = prepare_equilibrated_simulation(
+        model_cls=IsingSimulation, model_kwargs={}, size=size, temp=temp, seed=seed,
+        chunk_size=eq_probe, max_steps=eq_max, detect_stuck=temp < TC_ISING,
     )
-    sim_o = IsingSimulation(
-        size=size, temp=temp, update='checkerboard', init_state='ordered', seed=seed,
+    if not outcome.certified:
+        return float('nan'), False
+    xi = connected_correlation_length(
+        sim=sim, meas_steps=meas_steps, sample_interval=meas_interval,
     )
-    convergence_equilibrate(
-        sim_random=sim_r, sim_ordered=sim_o, chunk_size=eq_probe, max_steps=eq_max,
-    )
-    r_eq, G_eq = get_averaged_correlation(
-        sim=sim_r, total_steps=meas_steps, sample_interval=meas_interval,
-    )
-    xi = _correlation_length_1e(r_eq, G_eq)
     logger.info(f'xi_eq = {xi:.2f} lattice spacings')
-    return xi
+    return xi, True
 
 
 def main() -> None:
@@ -266,7 +271,7 @@ def main() -> None:
     logger.info('=== Equilibrium crossover ===')
     T_bridge = args.bridge_frac * TC_ISING
 
-    xi_eq = _measure_xi_eq(
+    xi_eq, xi_eq_equilibrated = _measure_xi_eq(
         size=args.size, temp=T_bridge, seed=args.base_seed + 200,
         eq_probe=args.xi_eq_probe, eq_max=args.xi_eq_max,
         meas_steps=args.xi_eq_steps, meas_interval=args.xi_eq_interval,
@@ -285,6 +290,8 @@ def main() -> None:
     npz_data['bridge_frac'] = args.bridge_frac
     npz_data['bridge_temp'] = T_bridge
     npz_data['bridge_xi_eq'] = xi_eq
+    npz_data['bridge_xi_eq_method'] = 'connected_axis_1e'
+    npz_data['bridge_xi_eq_equilibrated'] = xi_eq_equilibrated
     npz_data['bridge_times'] = times_b
     npz_data['bridge_seeds'] = traces_b
     npz_data['bridge_median'] = np.median(traces_b, axis=0)

@@ -21,7 +21,7 @@ The Ising model [[1]](#bibliography), XY model [[2]](#bibliography), and q-state
 
 VibeSpin supports three update schemes tailored to specific physical regimes. **Checkerboard Updates** maximize equilibrium throughput via SIMD vectorization and multi-core execution. **Random Site Selection** is mandatory for non-equilibrium kinetics and aging studies, where preserving the stochastic trajectory is essential for physical validity. The **Wolff Cluster Algorithm** provides high efficiency near critical temperatures by mitigating critical slowing down through collective spin updates.
 
-The framework provides a full suite of diagnostics for physical analysis. Thermodynamic measurements include magnetization magnitude, total energy, susceptibility, and specific heat. Spatial correlations are analyzed through radially averaged spin-spin correlation functions and 2D structure factor mapping. For topological systems, the engine supports directed phase-wrapping for vorticity maps, vortex density tracking, and helicity modulus calculations. Kinetics studies use integrated autocorrelation times and phase-ordering growth law extraction to quantify the temporal evolution of the system.
+The framework provides a full suite of diagnostics for physical analysis. Thermodynamic measurements include magnetization magnitude, energy per site, susceptibility, and specific heat. Spatial correlations are analyzed through radially averaged spin-spin correlation functions and 2D structure factor mapping. For topological systems, the engine supports directed phase-wrapping for vorticity maps, vortex density tracking, and helicity modulus calculations. Kinetics studies use integrated autocorrelation times and phase-ordering growth law extraction to quantify the temporal evolution of the system.
 
 ## Installation
 
@@ -68,7 +68,7 @@ instead of their inline fallbacks:
 
 ```bash
 python -m scripts.generate_all             # production parameters, about an hour on four cores
-python -m scripts.generate_all --quick     # the same sixteen scripts in about a minute, as a smoke test
+python -m scripts.generate_all --quick     # the same eighteen scripts in about a minute, as a smoke test
 ```
 
 Run an individual experiment instead. Launch an equilibrium temperature sweep for the XY model:
@@ -79,7 +79,7 @@ python scripts/xy/temperature_sweep.py --size 64 --t-min 0.2 --t-max 1.5 --t-poi
 
 Temperature sweep scripts use **Two-Start Convergence equilibration**: for every temperature/seed point, two independent simulations (one starting from a random disordered state and one from a fully ordered state) are evolved in parallel. The burn-in continues in chunks (defined by `--eq-probe-steps`) until both smoothed magnetization traces pass a mutual cross-band test: the random-start trace must lie within a band of $\pm k$ standard deviations of the ordered-start tail mean, and vice versa. A sigma floor prevents band collapse when either trace is nearly variance-free.
 
-This protocol includes **Quasi-Steady Stuck Detection** to handle metastable domain-wall trapping in the deep ordered phase. If the random-start trace becomes stranded in a plateau while the ordered-start trace remains stable and cleanly ordered, the system identifies the stuck state and declares convergence early, automatically falling back to the stable ordered-start simulation for measurements. This non-equilibrium diagnostic guarantees that measurements are free from initialization bias. To maximize throughput, individual points are parallelized across the worker pool, ensuring full CPU utilization even for single-seed sweeps. The `--eq-max-steps` flag provides a hard cap on the total equilibration time.
+The two starts use independent seeds; with a shared seed they draw identical random numbers and their traces become correlated, which lets them pass the cross-band test without having relaxed independently. Below the ordering temperature of models with a discrete order parameter (Ising, discrete clock), the protocol adds **Quasi-Steady Stuck Detection**: if the random-start trace stays stranded on a metastable plateau while the ordered-start trace has settled, the point is accepted and measured on the ordered start. Elsewhere, and for the XY model at any temperature, stuck detection is off, because the detector cannot distinguish a stranded run from one that is still relaxing slowly. To maximize throughput, individual points are parallelized across the worker pool, ensuring full CPU utilization even for single-seed sweeps. The `--eq-max-steps` flag provides a hard cap on the total equilibration time; a point that reaches it without converging is stored as NaN rather than measured.
 
 Investigate phase-ordering kinetics in the Ising model using random-site updates:
 
@@ -107,7 +107,7 @@ python scripts/ising/measure_z.py --sizes 16 32 48 64 96 128 --n-seeds 10
 
 ## Development Guidance
 
-VibeSpin maintains rigorous engineering and physical standards. All update algorithms must strictly satisfy **detailed balance** and **ergodicity**, whether via the Metropolis-Hastings acceptance rule (for single-spin updates) or the Fortuin-Kasteleyn bond construction (for Wolff cluster updates).
+VibeSpin enforces engineering and physical standards. All update algorithms must strictly satisfy **detailed balance** and **ergodicity**, whether via the Metropolis-Hastings acceptance rule (for single-spin updates) or the Fortuin-Kasteleyn bond construction (for Wolff cluster updates).
 
 Performance-critical kernels are implemented with Numba JIT compilation to minimize execution time and memory allocation. These kernels use `@njit(cache=True, fastmath=True)` and avoid expensive modulo operations by using precomputed neighbor index arrays. To maintain reproducibility, models synchronize Numba's internal random number generator with the project seed.
 
@@ -171,12 +171,12 @@ For detailed procedural instructions, see {doc}`Agent Instruction Guide <AGENTS>
 
 ## Bibliography
 
-[[1]](#bibliography) L. Onsager, "Crystal Statistics. I. A Two-Dimensional Model with an Order-Disorder Transition," *Physical Review*, vol. 65, no. 3-4, pp. 117–149, 1944. [APS Open Access](https://journals.aps.org/pr/abstract/10.1103/PhysRev.65.117)
+[[1]](#bibliography) L. Onsager, "Crystal Statistics. I. A Two-Dimensional Model with an Order-Disorder Transition," *Physical Review*, vol. 65, no. 3-4, pp. 117–149, 1944. [APS](https://journals.aps.org/pr/abstract/10.1103/PhysRev.65.117)
 
-[[2]](#bibliography) J. M. Kosterlitz and D. J. Thouless, "Ordering, metastability and phase transitions in two-dimensional systems," *Journal of Physics C: Solid State Physics*, vol. 6, no. 7, pp. 1181–1203, 1973. [IOP Open Access](https://iopscience.iop.org/article/10.1088/0022-3719/6/7/010)
+[[2]](#bibliography) J. M. Kosterlitz and D. J. Thouless, "Ordering, metastability and phase transitions in two-dimensional systems," *Journal of Physics C: Solid State Physics*, vol. 6, no. 7, pp. 1181–1203, 1973. [IOP](https://iopscience.iop.org/article/10.1088/0022-3719/6/7/010)
 
-[[3]](#bibliography) J. Villain, "Theory of one- and two-dimensional magnets with an easy magnetization plane. II. The planar, classical, two-dimensional magnet," *J. Phys. France* 36, 581-590 (1975). [Open Access](https://doi.org/10.1051/jphys:01975003606058100)
+[[3]](#bibliography) J. V. José, L. P. Kadanoff, S. Kirkpatrick, and D. R. Nelson, "Renormalization, vortices, and symmetry-breaking perturbations in the two-dimensional planar model," *Physical Review B* 16, 1217-1241 (1977). [APS](https://journals.aps.org/prb/abstract/10.1103/PhysRevB.16.1217)
 
 [[4]](#bibliography) W. K. Hastings, "Monte Carlo sampling methods using Markov chains and their applications," *Biometrika*, vol. 57, no. 1, pp. 97–109, 1970. [Oxford Academic Open Access](https://academic.oup.com/biomet/article/57/1/97/252073)
 
-[[5]](#bibliography) U. Wolff, "Collective Monte Carlo Updating for Spin Systems," *Physical Review Letters*, vol. 62, no. 4, pp. 361–364, 1989. [APS Open Access](https://journals.aps.org/prl/abstract/10.1103/PhysRevLett.62.361)
+[[5]](#bibliography) U. Wolff, "Collective Monte Carlo Updating for Spin Systems," *Physical Review Letters*, vol. 62, no. 4, pp. 361–364, 1989. [APS](https://journals.aps.org/prl/abstract/10.1103/PhysRevLett.62.361)

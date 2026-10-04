@@ -11,37 +11,44 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 from models.xy_model import XYSimulation
-from utils.equilibration import convergence_equilibrate
+from utils.equilibration import prepare_equilibrated_simulation
 from utils.plotting import ensure_results_dir, save_plot
+from utils.sweep_helpers import derive_point_seed
 from utils.system import parallel_sweep, parse_args_compat, setup_logging
 
 
-def simulate_bkt_point(params: tuple[float, int, int, int, int]) -> float:
+def simulate_bkt_point(params: tuple[float, int, int, int, int, int]) -> float:
     """
     Worker function to simulate a single temperature and measure average vortex density.
 
     Parameters
     ----------
-    params : tuple[float, int, int, int, int]
-        Tuple of (T, L, eq_probe_steps, eq_max_steps, meas_steps).
+    params : tuple[float, int, int, int, int, int]
+        Tuple of (T, L, eq_probe_steps, eq_max_steps, meas_steps, seed). The
+        seed belongs to the random start; the ordered start derives its own.
 
     Returns
     -------
     float
-        Average vortex density n_v.
+        Average vortex density n_v, or NaN when the two starts did not
+        converge within ``eq_max_steps``.
     """
-    T, L, eq_probe_steps, eq_max_steps, meas_steps = params
-    sim_r = XYSimulation(size=L, temp=T, init_state='random')
-    sim_o = XYSimulation(size=L, temp=T, init_state='ordered')
-    convergence_equilibrate(
-        sim_random=sim_r, sim_ordered=sim_o,
-        chunk_size=eq_probe_steps, max_steps=eq_max_steps,
+    T, L, eq_probe_steps, eq_max_steps, meas_steps, seed = params
+    # The XY model has no metastable domain states, but its random start can
+    # relax for thousands of sweeps near T_BKT; the stuck detector would end
+    # such runs early, so the pair runs until it converges. If it never does,
+    # the point is not certified and is stored as NaN.
+    sim, outcome = prepare_equilibrated_simulation(
+        model_cls=XYSimulation, model_kwargs={}, size=L, temp=T, seed=seed,
+        chunk_size=eq_probe_steps, max_steps=eq_max_steps, detect_stuck=False,
     )
+    if not outcome.certified:
+        return float('nan')
 
     densities = np.empty(meas_steps, dtype=np.float64)
     for k in range(meas_steps):
-        sim_r.step()
-        densities[k] = sim_r.get_vortex_density()
+        sim.step()
+        densities[k] = sim.get_vortex_density()
 
     return float(np.mean(densities))
 
@@ -62,6 +69,10 @@ def main() -> None:
     parser.add_argument('--t-min', type=float, default=0.5, help='Minimum temperature')
     parser.add_argument('--t-max', type=float, default=1.5, help='Maximum temperature')
     parser.add_argument('--t-points', type=int, default=21, help='Number of temperature points')
+    parser.add_argument(
+        '--seed', type=int, default=0,
+        help='Replica index selecting a reproducible seed per temperature (default: 0)',
+    )
     parser.add_argument('--output-dir', type=str, default='results/xy', help='Output directory')
     parser.add_argument('--log-file', type=str, default=None, help='Optional log file path')
     parser.add_argument('--verbose', action='store_true', help='Enable verbose logging')
@@ -80,8 +91,11 @@ def main() -> None:
     logger.info(f'Range: [{args.t_min}, {args.t_max}] with {args.t_points} points.')
 
     sweep_params = [
-        (T, args.size, args.eq_probe_steps, args.eq_max_steps, args.meas_steps)
-        for T in temperatures
+        (
+            float(T), args.size, args.eq_probe_steps, args.eq_max_steps, args.meas_steps,
+            derive_point_seed(temperature_index=i, seed_index=args.seed),
+        )
+        for i, T in enumerate(temperatures)
     ]
     vortex_densities: list[float] = parallel_sweep(
         worker_func=simulate_bkt_point, params=sweep_params
@@ -113,11 +127,15 @@ def main() -> None:
         npz_path,
         temperatures=temperatures,
         vortex_densities=np.array(vortex_densities),
+        # The worker returns NaN only for points whose equilibration hit
+        # eq_max_steps without convergence.
+        equilibrated=np.isfinite(np.array(vortex_densities)),
         T_BKT_theoretical=T_BKT_THEORETICAL,
         L=args.size,
         eq_probe_steps=args.eq_probe_steps,
         eq_max_steps=args.eq_max_steps,
         meas_steps=args.meas_steps,
+        seed_index=args.seed,
     )
     logger.info(f'Data saved to {npz_path}')
 

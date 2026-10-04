@@ -88,12 +88,37 @@ def test_wolff_update_accepted():
     IsingSimulation(size=4, temp=2.269, update='wolff')
     XYSimulation(size=4, temp=0.8, update='wolff')
     ClockSimulation(size=4, temp=0.5, q=6, A=0.0, update='wolff')
+    DiscreteClockSimulation(size=4, temp=0.5, q=6, update='wolff')
 
 
-def test_clock_wolff_with_anisotropy_warns():
-    """Clock Wolff must warn when A != 0: the reflection ignores anisotropy."""
-    with pytest.warns(UserWarning, match='detailed balance holds exactly only for A=0'):
+def test_clock_wolff_with_anisotropy_rejected():
+    """Clock Wolff must reject A != 0: the reflection ignores the anisotropy term."""
+    with pytest.raises(ValueError, match="requires A=0.0"):
         ClockSimulation(size=4, temp=0.5, q=6, A=1.0, update='wolff')
+    # The constructor default A=1.0 must not silently fall back to XY sampling.
+    with pytest.raises(ValueError, match="requires A=0.0"):
+        ClockSimulation(size=4, temp=0.5, q=6, update='wolff')
+
+
+@pytest.mark.parametrize('update', ['checkerboard', 'random', 'wolff'])
+def test_negative_coupling_rejected(update):
+    """All models must reject J < 0: kernels assume ferromagnetic exchange."""
+    with pytest.raises(ValueError, match='non-negative'):
+        IsingSimulation(size=4, temp=1.0, J=-1.0, update=update)
+    with pytest.raises(ValueError, match='non-negative'):
+        XYSimulation(size=4, temp=1.0, J=-1.0, update=update)
+    with pytest.raises(ValueError, match='non-negative'):
+        ClockSimulation(size=4, temp=1.0, J=-1.0, A=0.0, update=update)
+    with pytest.raises(ValueError, match='non-negative'):
+        DiscreteClockSimulation(size=4, temp=1.0, J=-1.0, update=update)
+
+
+def test_non_finite_coupling_rejected():
+    """A NaN or infinite coupling must be rejected rather than propagated."""
+    with pytest.raises(ValueError, match='finite'):
+        IsingSimulation(size=4, temp=1.0, J=float('nan'))
+    with pytest.raises(ValueError, match='finite'):
+        DiscreteClockSimulation(size=4, temp=1.0, J=float('inf'))
 
 
 def test_wolff_invalid_update_still_rejected():

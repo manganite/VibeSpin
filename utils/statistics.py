@@ -6,6 +6,7 @@ from __future__ import annotations
 
 import numpy as np
 from scipy.stats import norm
+from scipy.stats import t as student_t
 
 from utils.exceptions import ZeroVarianceAutocorrelationError
 from utils.observables import calculate_entropy, derived_thermo_estimate
@@ -51,6 +52,23 @@ def _as_1d_float_array(*, time_series: np.ndarray, name: str) -> np.ndarray:
 def _z_multiplier(*, confidence: float) -> float:
     """Return Gaussian z-score for two-sided confidence interval."""
     return float(norm.ppf(0.5 + 0.5 * confidence))
+
+
+def _t_multiplier(*, confidence: float, n_estimates: float) -> float:
+    """Return the Student-t quantile for an interval built from ``n_estimates`` values.
+
+    A standard error estimated from ``n`` block means or seed values carries
+    ``n - 1`` degrees of freedom. The blocking plateau often settles on a
+    handful of large blocks for strongly correlated series, and a Gaussian
+    multiplier then undercovers: on AR(1) series with tau_int between 1 and
+    100 and 2 000 to 20 000 samples, the nominal 68 % interval covered 54 to
+    69 % of runs with z and 64 to 71 % with t. Falls back to the Gaussian
+    value when fewer than two estimates are available.
+    """
+    dof = float(n_estimates) - 1.0
+    if not np.isfinite(dof) or dof < 1.0:
+        return _z_multiplier(confidence=confidence)
+    return float(student_t.ppf(0.5 + 0.5 * confidence, dof))
 
 
 def _blocking_block_sizes(*, n: int, min_block_size: int, max_block_size: int) -> list[int]:
@@ -115,8 +133,13 @@ def _propagate_entropy_uncertainty_from_cv_errors(
 ) -> np.ndarray:
     """Propagate pointwise specific-heat errors into entropy uncertainty.
 
-    Uses independent-error propagation through the trapezoidal integration used
-    in :func:`calculate_entropy` for S(T).
+    Propagates independent per-temperature errors through the trapezoidal
+    integration of :func:`calculate_entropy`. Each interior point enters the
+    two trapezoids it bounds, so its weight in S(T_j) is half the sum of the
+    adjacent spacings and its variance enters once with that weight squared.
+    Summing the two trapezoid variances separately would drop the covariance
+    between neighbouring segments and underestimate the error (about 0.73 of
+    the Monte Carlo value on a uniform grid).
     """
     t = np.asarray(temperatures, dtype=np.float64)
     cv_err = np.asarray(specific_heat_err, dtype=np.float64)
@@ -133,21 +156,22 @@ def _propagate_entropy_uncertainty_from_cv_errors(
     cv_err_sorted = cv_err[sort_idx]
     sigma_f = cv_err_sorted / t_sorted
     dt = np.diff(t_sorted)
-    seg_var = 0.25 * (dt * dt) * (sigma_f[:-1] * sigma_f[:-1] + sigma_f[1:] * sigma_f[1:])
 
-    # Tail sums of the segment variances: var_sorted[i] = sum(seg_var[i:]).
-    # The reversed cumulative sum accumulates from the high-temperature anchor
-    # downward, exactly like the previous explicit loop. A non-finite segment
-    # poisons its own point and every lower-temperature point (whose tail sum
-    # would include it), while higher-temperature points stay exact because
-    # their tail sums never touch it.
+    # S(T_j) = s_ref - sum_{i >= j} dt_i (f_i + f_{i+1}) / 2, so point k
+    # carries weight dt_{k-1}/2 (if k > j) + dt_k/2 (if k < n-1) in S(T_j).
+    # Only points above T_j contribute; the anchor point T_max has no error.
     n_t = t_sorted.size
     var_sorted = np.zeros(n_t, dtype=np.float64)
-    if n_t > 1:
-        var_sorted[:-1] = np.cumsum(seg_var[::-1])[::-1]
-        nonfinite = np.where(~np.isfinite(seg_var))[0]
-        if nonfinite.size:
-            var_sorted[: int(nonfinite.max()) + 1] = np.nan
+    for j in range(n_t - 1):
+        k = np.arange(j, n_t)
+        weights = np.zeros(k.size, dtype=np.float64)
+        weights[1:] += 0.5 * dt[j:]
+        weights[:-1] += 0.5 * dt[j:]
+        contrib = weights * sigma_f[j:]
+        # A non-finite error poisons every entropy value whose integral it
+        # enters; higher-temperature points stay exact.
+        var_sorted[j] = float(np.sum(contrib * contrib)) if np.all(np.isfinite(contrib)) \
+            else float('nan')
 
     err_sorted = np.sqrt(var_sorted)
     err = np.empty_like(err_sorted)
@@ -516,9 +540,11 @@ def blocking_error(
     std = float(np.std(arr, ddof=1))
     naive_stderr = std / np.sqrt(arr.size)
     if std == 0.0:
+        # A constant window carries no information about its own fluctuations:
+        # the error is undefined, not zero (zero-variance policy, AGENTS.md 8).
         return {
-            'stderr': 0.0,
-            'stderr_naive': 0.0,
+            'stderr': float('nan'),
+            'stderr_naive': float('nan'),
             'block_size': float(min_block_size),
             'n_blocks': float(arr.size // min_block_size),
             'tau_int_from_blocking': float('nan'),
@@ -617,7 +643,7 @@ def summarize_primary_observable(
     value = float(np.mean(arr))
     block = blocking if blocking is not None else blocking_error(time_series=arr)
     err = float(block['stderr'])
-    z = _z_multiplier(confidence=confidence)
+    z = _t_multiplier(confidence=confidence, n_estimates=float(block['n_blocks']))
 
     if tau_int is None:
         tau_int = estimate_tau_int_or_nan(time_series=arr)
@@ -719,6 +745,15 @@ def summarize_derived_observable(
     else:
         raise ValueError(f"observable must be one of 'chi' or 'cv', got {observable!r}")
 
+    if np.isnan(base).any():
+        # Same contract as blocking_error: a NaN-poisoned series yields NaN
+        # fields instead of a crash on the NaN block size.
+        nan = float('nan')
+        return {
+            'value': nan, 'err': nan, 'ci_low': nan, 'ci_high': nan,
+            'tau_int': nan, 'n_eff': nan, 'samples': float(base.size),
+        }
+
     value = _derived_point_estimate(
         series=base,
         temperature=temperature,
@@ -726,11 +761,13 @@ def summarize_derived_observable(
         observable=observable,
     )
     if np.std(base, ddof=1) == 0.0:
+        # Zero variance: the fluctuation estimate is exactly zero, but its
+        # uncertainty is undefined and stored as NaN (AGENTS.md section 8).
         return {
             'value': value,
-            'err': 0.0,
-            'ci_low': value,
-            'ci_high': value,
+            'err': float('nan'),
+            'ci_low': float('nan'),
+            'ci_high': float('nan'),
             'tau_int': float('nan'),
             'n_eff': float('nan'),
             'samples': float(base.size),
@@ -763,7 +800,7 @@ def summarize_derived_observable(
         ci_high = float('nan')
     elif method == UNCERTAINTY_METHOD_BLOCKING:
         err = float(np.std(per_block, ddof=1) / np.sqrt(n_blocks))
-        z = _z_multiplier(confidence=confidence)
+        z = _t_multiplier(confidence=confidence, n_estimates=float(n_blocks))
         ci_low = float(value - z * err)
         ci_high = float(value + z * err)
     else:
@@ -774,9 +811,15 @@ def summarize_derived_observable(
         for i in range(bootstrap_resamples):
             sample = rng.choice(per_block, size=n_blocks, replace=True)
             boot[i] = float(np.mean(sample))
+        # Each block estimate measures the variance about its own block mean
+        # and is biased low, so the bootstrap distribution is centred on a
+        # biased mean. Its quantiles are therefore taken relative to the
+        # bootstrap mean and placed around the full-series estimate (basic
+        # bootstrap); raw quantiles could exclude the point estimate.
         alpha = 0.5 * (1.0 - confidence)
-        ci_low = float(np.quantile(boot, alpha))
-        ci_high = float(np.quantile(boot, 1.0 - alpha))
+        offsets = boot - float(np.mean(boot))
+        ci_low = float(value + np.quantile(offsets, alpha))
+        ci_high = float(value + np.quantile(offsets, 1.0 - alpha))
         err = float(np.std(boot, ddof=1))
 
     if tau_int is None:
@@ -858,10 +901,32 @@ def summarize_seed_ensemble(
     within_seed_errors: np.ndarray,
     confidence: float = DEFAULT_CONFIDENCE_LEVEL,
 ) -> dict[str, float]:
-    """Aggregate per-seed estimates into one mean with hierarchical uncertainty.
+    """Aggregate per-seed estimates into one mean with its standard error.
 
-    The total variance combines between-seed and within-seed components:
-    Var(mean) = Var_between / n_seeds + mean(Var_within) / n_seeds.
+    With two or more finite seeds the error is the standard error of the seed
+    mean, ``sqrt(Var_between / n_seeds)``, with a Student-t interval on
+    ``n_seeds - 1`` degrees of freedom. The spread of independent seed
+    estimates already contains each seed's own statistical noise, so adding
+    the within-seed variance again would count it twice (for independent
+    seeds the reported error was too large by a factor near sqrt(2)). With a
+    single seed the within-seed error is the only information and is used
+    directly. Both components are still reported for diagnostics.
+
+    Parameters
+    ----------
+    values : np.ndarray
+        Per-seed point estimates.
+    within_seed_errors : np.ndarray
+        Per-seed standard errors from blocking.
+    confidence : float
+        Two-sided confidence level for the CI bounds.
+
+    Returns
+    -------
+    dict[str, float]
+        ``value``, ``err``, ``ci_low``, ``ci_high``,
+        ``between_seed_component``, ``within_seed_component``, ``samples``,
+        and ``nan_or_undefined_count``.
     """
     _validate_confidence(confidence=confidence)
     values_arr = np.asarray(values, dtype=np.float64)
@@ -905,8 +970,14 @@ def summarize_seed_ensemble(
     if np.any(finite_errs):
         within_component = float(np.mean(e[finite_errs] ** 2) / n)
 
-    total_err = float(np.sqrt(max(0.0, between_component + within_component)))
-    z = _z_multiplier(confidence=confidence)
+    if n > 1:
+        total_err = float(np.sqrt(max(0.0, between_component)))
+        z = _t_multiplier(confidence=confidence, n_estimates=float(n))
+    else:
+        total_err = (
+            float(np.sqrt(within_component)) if np.any(finite_errs) else float('nan')
+        )
+        z = _z_multiplier(confidence=confidence)
 
     return {
         'value': value,

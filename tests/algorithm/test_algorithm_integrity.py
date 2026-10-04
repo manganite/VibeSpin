@@ -286,3 +286,114 @@ def test_clock_wolff_unit_norm_preservation():
         sim.step()
         norms = np.linalg.norm(sim.spins, axis=-1)
         np.testing.assert_allclose(norms, 1.0, atol=1e-12)
+
+
+def _discrete_clock_wolff_transition_matrix(*, q: int, temp: float):
+    """Build the exact one-step Wolff transition matrix on a 2x2 discrete clock lattice.
+
+    Wolff cluster growth is equivalent to activating every satisfied bond
+    independently with probability ``1 - exp(-2 beta J sigma_i sigma_j)`` and
+    reflecting the connected component of the seed. On a 2x2 torus each
+    neighbour pair is joined by two bonds (direct and wrap-around), exactly as
+    in the energy kernel, so all 8 bond slots are enumerated explicitly.
+    """
+    import itertools
+
+    L, J = 2, 1.0
+    beta = 1.0 / temp
+    sim = DiscreteClockSimulation(size=L, temp=temp, q=q, update='wolff')
+    sigma = sim._wolff_sigma_table
+    n_sites = L * L
+    bonds = []
+    for i in range(L):
+        for j in range(L):
+            bonds.append((i * L + j, i * L + (j + 1) % L))
+            bonds.append((i * L + j, ((i + 1) % L) * L + j))
+    states = list(itertools.product(range(q), repeat=n_sites))
+    index = {s: k for k, s in enumerate(states)}
+    P = np.zeros((len(states), len(states)))
+    for k, s in enumerate(states):
+        for m in range(q):
+            sig = [sigma[(2 * x - m) % (2 * q)] for x in s]
+            p_bond = []
+            for a, b in bonds:
+                prod = sig[a] * sig[b]
+                p_bond.append(1.0 - np.exp(-2.0 * beta * J * prod) if prod > 0 else 0.0)
+            for seed in range(n_sites):
+                for active in itertools.product((0, 1), repeat=len(bonds)):
+                    w = 1.0
+                    for on, p in zip(active, p_bond, strict=True):
+                        w *= p if on else 1.0 - p
+                    if w == 0.0:
+                        continue
+                    comp = {seed}
+                    grown = True
+                    while grown:
+                        grown = False
+                        for on, (a, b) in zip(active, bonds, strict=True):
+                            if on and ((a in comp) != (b in comp)):
+                                comp |= {a, b}
+                                grown = True
+                    s_new = tuple((m - x) % q if t in comp else x for t, x in enumerate(s))
+                    P[k, index[s_new]] += w / (q * n_sites)
+    theta = 2.0 * np.pi * np.array(states) / q
+    energy = np.array([
+        -J * sum(np.cos(th[a] - th[b]) for a, b in bonds) for th in theta
+    ])
+    pi = np.exp(-beta * (energy - energy.min()))
+    pi /= pi.sum()
+    return P, pi, index
+
+
+@pytest.mark.parametrize('q, temp', [(3, 0.9), (4, 1.1)])
+def test_discrete_clock_wolff_exact_detailed_balance(q, temp):
+    """
+    Exact detailed-balance check for the discrete clock Wolff reflection.
+
+    The full transition matrix of the reflection about the q mirror axes is
+    enumerated on a 2x2 lattice using the simulation's own projection table.
+    It must be row-stochastic and satisfy pi_s P_ss' = pi_s' P_s's for the
+    Boltzmann weights of the discrete clock Hamiltonian.
+    """
+    P, pi, _ = _discrete_clock_wolff_transition_matrix(q=q, temp=temp)
+    np.testing.assert_allclose(P.sum(axis=1), 1.0, atol=1e-12)
+    flux = pi[:, None] * P
+    np.testing.assert_allclose(flux, flux.T, atol=1e-14)
+    # Ergodicity: P is irreducible because single-site clusters can reach
+    # every state; a positive power of P must have no zero entries.
+    reach = np.linalg.matrix_power((P > 0).astype(float), 4)
+    assert np.all(reach > 0)
+
+
+def test_discrete_clock_wolff_kernel_matches_exact_row():
+    """
+    The compiled discrete clock Wolff kernel must reproduce the exact
+    one-step transition probabilities from a fixed 2x2 configuration.
+    """
+    from scipy.stats import chisquare
+
+    q, temp = 3, 0.9
+    P, _, index = _discrete_clock_wolff_transition_matrix(q=q, temp=temp)
+    start = (0, 1, 2, 0)
+    s0 = np.array(start, dtype=np.int32).reshape(2, 2)
+    sim = DiscreteClockSimulation(size=2, temp=temp, q=q, update='wolff', seed=11)
+    n_trials = 30_000
+    counts = np.zeros(len(index))
+    for _ in range(n_trials):
+        sim.spins = s0.copy()
+        sim.step()
+        counts[index[tuple(int(x) for x in sim.spins.ravel())]] += 1
+    expected = P[index[start]]
+    support = expected > 0
+    assert counts[~support].sum() == 0
+    assert chisquare(counts[support], n_trials * expected[support]).pvalue > 1e-3
+
+
+def test_discrete_clock_wolff_states_and_cluster_size():
+    """Wolff reflections keep every spin in {0, ..., q-1} and report the cluster size."""
+    sim = DiscreteClockSimulation(size=8, temp=0.8, q=6, update='wolff', seed=21)
+    for _ in range(50):
+        sim.step()
+        assert sim.spins.dtype == np.int32
+        assert sim.spins.min() >= 0 and sim.spins.max() < 6
+        assert 1 <= sim.last_cluster_size <= 64

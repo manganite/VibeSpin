@@ -52,6 +52,9 @@ def main() -> None:
             label=label, temperature=T, model_cls=IsingSimulation, model_kwargs={},
             size=args.size, seed=args.seed, eq_probe=args.eq_probe,
             eq_max=args.eq_max, meas_steps=args.steps, interval=args.interval,
+            # Below T_c a random start can freeze into a stripe state; stuck
+            # detection then ends the run and the ordered start is measured.
+            detect_stuck=label == 'ferro',
         )
         for label, T in (('ferro', T_FERRO), ('crit', T_CRIT), ('para', T_PARA))
     ]

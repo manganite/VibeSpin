@@ -3,7 +3,8 @@ Comparison of spin-spin correlation functions G(r) for the q-state Clock model.
 Analyzes correlation behavior in ordered, quasi-ordered, and disordered phases.
 
 The q=6 clock model has two Kosterlitz-Thouless transitions at T1 ≈ 0.68
-and T2 ≈ 0.92 (José et al. 1977), yielding three distinct correlation regimes:
+and T2 ≈ 0.92 (Challa and Landau 1986; Tomita and Okabe 2002 obtain 0.7014
+and 0.9008), yielding three distinct correlation regimes:
 long-range order below T1, algebraic (quasi-long-range) order between T1 and T2,
 and exponential decay above T2.
 """
@@ -16,7 +17,7 @@ from typing import Any
 import matplotlib.pyplot as plt
 import numpy as np
 
-from models.clock_model import ClockSimulation
+from scripts.clock._model_choice import add_clock_model_arguments, resolve_clock_model
 from utils.observables import (
     CorrelationPoint,
     fit_correlation_exponent,
@@ -26,9 +27,15 @@ from utils.observables import (
 from utils.plotting import ensure_results_dir, save_plot
 from utils.system import parallel_sweep, parse_args_compat, setup_logging
 
-# Approximate KT transition temperatures for q=6 (José et al. 1977).
+# Approximate transition temperatures of the discrete q=6 clock model
+# (Challa and Landau 1986, as quoted by Tomita and Okabe 2002).
 T1_CLOCK6: float = 0.68
 T2_CLOCK6: float = 0.92
+
+# Anisotropy of the continuous model when --continuous is given without
+# --aniso; it matches the ClockSimulation constructor default used before the
+# discrete model became the default.
+_DEFAULT_CONTINUOUS_ANISO = 1.0
 
 
 def main() -> None:
@@ -38,6 +45,7 @@ def main() -> None:
     )
     parser.add_argument('--size', type=int, default=128, help='Linear lattice size L')
     parser.add_argument('--q', type=int, default=6, help='Number of clock states')
+    add_clock_model_arguments(parser=parser, default_aniso=_DEFAULT_CONTINUOUS_ANISO)
     parser.add_argument('--steps', type=int, default=4000, help='Measurement steps')
     parser.add_argument('--eq-probe', type=int, default=200, help='Convergence probe chunk size')
     parser.add_argument('--eq-max', type=int, default=50000, help='Max equilibration steps')
@@ -46,35 +54,74 @@ def main() -> None:
         '--seed', type=int, default=520,
         help='Random seed shared by all three temperature points',
     )
+    parser.add_argument(
+        '--t-ordered', type=float, default=None,
+        help='Temperature below T1 (default 0.5, discrete q=6 only)',
+    )
+    parser.add_argument(
+        '--t-quasi', type=float, default=None,
+        help='Temperature between T1 and T2 (default 0.8, discrete q=6 only)',
+    )
+    parser.add_argument(
+        '--t-disordered', type=float, default=None,
+        help='Temperature above T2 (default 1.2, discrete q=6 only)',
+    )
     parser.add_argument('--output-dir', type=str, default='results/clock', help='Output directory')
     parser.add_argument('--log-file', type=str, default=None, help='Optional log file path')
     parser.add_argument('--verbose', action='store_true', help='Enable verbose logging')
 
     args = parse_args_compat(parser=parser)
+    choice = resolve_clock_model(
+        parser=parser, args=args, default_aniso=_DEFAULT_CONTINUOUS_ANISO,
+    )
+
+    # Only q >= 5 has the intermediate algebraic phase this comparison fits.
+    if args.q < 5:
+        parser.error(f'--q {args.q} has no quasi-ordered phase; use q >= 5')
+    # The default temperatures bracket the transitions of the discrete q=6
+    # model only. T1 and T2 shift with q and, for the continuous model, with A,
+    # so other choices must name all three temperatures.
+    default_model = choice.is_discrete and args.q == 6
+    phase_temps = (args.t_ordered, args.t_quasi, args.t_disordered)
+    if default_model:
+        T_ORDERED, T_QUASI, T_DISORDERED = (
+            default if given is None else float(given)
+            for given, default in zip(phase_temps, (0.5, 0.8, 1.2), strict=True)
+        )
+    elif any(T is None for T in phase_temps):
+        parser.error(
+            'The default temperatures apply to the discrete q=6 model only; '
+            'give --t-ordered, --t-quasi, and --t-disordered for this model'
+        )
+    else:
+        T_ORDERED, T_QUASI, T_DISORDERED = (float(T) for T in phase_temps)
+    if not T_ORDERED < T_QUASI < T_DISORDERED:
+        parser.error('Temperatures must satisfy t-ordered < t-quasi < t-disordered')
 
     log_level = logging.DEBUG if args.verbose else logging.INFO
     logger = setup_logging(level=log_level, log_file=args.log_file)
 
-    # Three representative temperatures spanning the three phases.
-    T_ORDERED: float = 0.5   # T < T1  (long-range order)
-    T_QUASI: float = 0.8     # T1 < T < T2  (algebraic quasi-order)
-    T_DISORDERED: float = 1.2  # T > T2  (exponential decay)
-
     logger.info(
         f'Starting clock correlation comparison '
-        f'(q={args.q}, L={args.size}, steps={args.steps})'
+        f'(q={args.q}, {choice.variant}, L={args.size}, steps={args.steps})'
     )
     logger.info(
         f'Temperatures: ordered={T_ORDERED}, quasi={T_QUASI}, disordered={T_DISORDERED}'
     )
 
     common: dict[str, Any] = dict(
-        model_cls=ClockSimulation, model_kwargs={'q': args.q}, size=args.size,
+        model_cls=choice.model_cls, model_kwargs=choice.model_kwargs, size=args.size,
         seed=args.seed, eq_probe=args.eq_probe, eq_max=args.eq_max,
         meas_steps=args.steps, interval=args.interval,
     )
     points = [
-        CorrelationPoint(label=label, temperature=T, **common)
+        # Below T1 a discrete random start can freeze into a domain state;
+        # stuck detection then ends the run and the ordered start is measured.
+        # The continuous model has no such accepted stuck state.
+        CorrelationPoint(
+            label=label, temperature=T,
+            detect_stuck=choice.is_discrete and label == 'ordered', **common,
+        )
         for label, T in (
             ('ordered', T_ORDERED), ('quasi', T_QUASI), ('disordered', T_DISORDERED),
         )
@@ -134,7 +181,10 @@ def main() -> None:
     ax2.legend()
     ax2.grid(True, which='both', ls='-', alpha=0.5)
 
-    fig.suptitle(f'{args.q}-state Clock Model: Correlation Comparison (L={args.size})')
+    fig.suptitle(
+        f'{args.q}-state Clock Model ({choice.variant}): '
+        f'Correlation Comparison (L={args.size})'
+    )
 
     output_dir: str = ensure_results_dir(directory=args.output_dir)
     save_plot(filename='correlation_comparison.png', directory=output_dir)
@@ -150,10 +200,13 @@ def main() -> None:
         T_ordered=T_ORDERED,
         T_quasi=T_QUASI,
         T_disordered=T_DISORDERED,
-        T1=T1_CLOCK6,
-        T2=T2_CLOCK6,
+        # The reference transition temperatures belong to the discrete q=6
+        # model and are NaN for any other choice.
+        T1=T1_CLOCK6 if default_model else np.nan,
+        T2=T2_CLOCK6 if default_model else np.nan,
         L=args.size,
         q=args.q,
+        model_variant=choice.variant,
         steps=args.steps,
         eq_probe=args.eq_probe,
         eq_max=args.eq_max,

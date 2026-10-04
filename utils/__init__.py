@@ -8,15 +8,21 @@ the canonical access path.
 from __future__ import annotations
 
 from utils.equilibration import (
+    TwoStartOutcome,
     adaptive_equilibrate,
     convergence_equilibrate,
+    convergence_equilibrate_two_start,
     convergence_equilibrate_with_status,
     estimate_relaxation_time_two_start,
+    ordered_start_seed,
+    prepare_equilibrated_simulation,
+    select_measurement_simulation,
 )
 from utils.exceptions import NumericalAnalysisError, VibeSpinError, ZeroVarianceAutocorrelationError
 from utils.observables import (
     calculate_entropy,
     calculate_thermodynamics,
+    connected_correlation_length,
     correlation_length_1e,
     derived_thermo_estimate,
     get_averaged_correlation,
@@ -47,6 +53,7 @@ from utils.system import parallel_sweep, parse_args_compat, setup_logging
 __all__ = [
     'VibeSpinError',
     'NumericalAnalysisError',
+    'TwoStartOutcome',
     'ZeroVarianceAutocorrelationError',
     'DEFAULT_CONFIDENCE_LEVEL',
     'UNCERTAINTY_METHOD_BLOCKING',
@@ -57,7 +64,9 @@ __all__ = [
     'calculate_autocorr',
     'calculate_entropy',
     'calculate_thermodynamics',
+    'connected_correlation_length',
     'convergence_equilibrate',
+    'convergence_equilibrate_two_start',
     'convergence_equilibrate_with_status',
     'correlation_length_1e',
     'derive_point_seed',
@@ -66,11 +75,14 @@ __all__ = [
     'estimate_relaxation_time_two_start',
     'estimate_tau_int_or_nan',
     'get_averaged_correlation',
+    'ordered_start_seed',
     'pair_correlation_x',
     'parallel_sweep',
     'parse_args_compat',
+    'prepare_equilibrated_simulation',
     'power_fit',
     'radial_average_sk',
+    'select_measurement_simulation',
     'setup_logging',
     'simulate_equilibrium_correlation',
     'summarize_asymmetric_replicate_uncertainty',

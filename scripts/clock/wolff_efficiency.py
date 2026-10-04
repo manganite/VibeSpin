@@ -6,11 +6,12 @@ brackets both crossovers of the q=6 model, the lower one out of the ordered
 phase and the upper one out of the quasi-ordered phase into the disordered
 one.
 
-The comparison runs at zero anisotropy, because the Wolff-Evertz bond
-construction sees only the exchange term: with a non-zero crystal field the
-cluster update no longer satisfies detailed balance for the full Hamiltonian,
-so an efficiency comparison against a local update that does would be
-comparing two different models rather than two algorithms.
+The comparison runs on the discrete clock model. Its Wolff update reflects
+clusters about the q mirror axes of the clock, which maps allowed states onto
+allowed states and satisfies detailed balance for the full discrete
+Hamiltonian, so both algorithms sample the same model.  The continuous
+``ClockSimulation`` cannot serve here: its cluster update ignores the
+anisotropy and is only valid at A = 0, where the model is plain XY.
 
 Results are saved to ``results/clock/wolff_efficiency.npz`` for notebook re-use
 and ``results/clock/wolff_efficiency.png`` as a four-panel figure.
@@ -19,7 +20,8 @@ from __future__ import annotations
 
 import argparse
 
-from models.clock_model import ClockSimulation
+from models.clock_model import DiscreteClockSimulation
+from scripts.clock._model_choice import ORDERED_BELOW_DISCRETE
 from utils.efficiency_runner import add_wolff_efficiency_arguments, run_wolff_efficiency
 from utils.system import parse_args_compat
 
@@ -49,10 +51,11 @@ def main() -> None:
 
     run_wolff_efficiency(
         args=args,
-        model_cls=ClockSimulation,
-        model_kwargs={'q': args.q, 'A': 0.0},
+        model_cls=DiscreteClockSimulation,
+        model_kwargs={'q': args.q},
         model_label=f'{args.q}-state Clock Model',
         transitions=transitions,
+        stuck_below=ORDERED_BELOW_DISCRETE.get(args.q),
     )
 
 
