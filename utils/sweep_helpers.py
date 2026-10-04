@@ -737,6 +737,14 @@ def build_quality_flags(
     }
 
 
+SUMMARY_FIELDS: tuple[str, ...] = (
+    'value', 'err', 'ci_low', 'ci_high', 'tau_int', 'n_eff', 'samples',
+)
+"""Fields of a ``summarize_primary_observable`` result, as read by
+``build_single_run_schema``. A worker that skips an unequilibrated point
+returns ``dict.fromkeys(SUMMARY_FIELDS, nan)``."""
+
+
 def build_single_run_schema(
     *,
     prefix: str,

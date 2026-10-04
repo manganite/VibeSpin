@@ -83,6 +83,10 @@ class EfficiencyPoint(NamedTuple):
     model_kwargs : dict[str, typing.Any]
         Extra constructor arguments beyond size, temperature, update, start,
         and seed.
+    detect_stuck : bool
+        Enable quasi-steady stuck detection for both equilibrations; set only
+        below the ordering temperature of a model with metastable domain
+        states (default False).
     """
 
     temp_idx: int
@@ -94,6 +98,7 @@ class EfficiencyPoint(NamedTuple):
     meas_steps: int
     model_cls: type
     model_kwargs: dict[str, Any]
+    detect_stuck: bool = False
 
 
 def _equilibrated_simulation(
@@ -115,7 +120,8 @@ def _equilibrated_simulation(
     -------
     tuple[typing.Any, bool]
         The simulation to measure (the random start after convergence, the
-        ordered start otherwise) and whether the pair converged.
+        ordered start otherwise) and whether the pair is certified for
+        measurement (``TwoStartOutcome.certified``).
     """
     sim, outcome = prepare_equilibrated_simulation(
         model_cls=point.model_cls,
@@ -126,8 +132,9 @@ def _equilibrated_simulation(
         chunk_size=point.eq_probe_steps,
         max_steps=point.eq_max_steps,
         update=update,
+        detect_stuck=point.detect_stuck,
     )
-    return sim, bool(outcome.converged)
+    return sim, bool(outcome.certified)
 
 
 def _record_samples(
@@ -233,35 +240,46 @@ def measure_efficiency_point(point: EfficiencyPoint) -> dict[str, float]:
     Returns
     -------
     dict[str, float]
-        Grid indices, temperature, and the seven measured quantities.
+        Grid indices, temperature, the measured quantities, and the
+        ``converged_metro`` and ``converged_wolff`` flags. An algorithm whose
+        two starts did not converge within ``eq_max_steps`` is not measured,
+        and its quantities are NaN.
     """
     seed = derive_point_seed(
         temperature_index=point.temp_idx, seed_index=point.seed_idx,
     )
 
+    nan = float('nan')
+    # A pair that never converged is not measured; its quantities stay NaN.
     sim_metro, converged_metro = _equilibrated_simulation(
         point=point, update='checkerboard', seed=seed,
     )
-    tau_metro, iss_metro, chi_metro = _timed_measurement(
-        sim=sim_metro, meas_steps=point.meas_steps,
-        temperature=point.temperature, size=point.size,
-    )
+    tau_metro, iss_metro, chi_metro = nan, nan, nan
+    if converged_metro:
+        tau_metro, iss_metro, chi_metro = _timed_measurement(
+            sim=sim_metro, meas_steps=point.meas_steps,
+            temperature=point.temperature, size=point.size,
+        )
 
     sim_wolff, converged_wolff = _equilibrated_simulation(
         point=point, update='wolff', seed=seed + 1,
     )
-    # The cluster pass on the equilibrated Wolff run sets the sample spacing:
-    # one sample per lattice sweep of flipped spins on average.
-    _, _, cluster_sizes = sim_wolff.run_with_cluster_sizes(
-        n_steps=min(point.meas_steps, _CLUSTER_PASS_STEPS),
-    )
-    mean_cluster_frac = float(np.mean(cluster_sizes)) / float(point.size**2)
-    flips_per_sample = max(1, int(round(1.0 / mean_cluster_frac)))
-    tau_wolff, iss_wolff, chi_wolff = _timed_measurement(
-        sim=sim_wolff, meas_steps=point.meas_steps,
-        temperature=point.temperature, size=point.size,
-        steps_per_sample=flips_per_sample,
-    )
+    tau_wolff, iss_wolff, chi_wolff = nan, nan, nan
+    mean_cluster_frac, flips_per_sample = nan, nan
+    if converged_wolff:
+        # The cluster pass on the equilibrated Wolff run sets the sample
+        # spacing: one sample per lattice sweep of flipped spins on average.
+        _, _, cluster_sizes = sim_wolff.run_with_cluster_sizes(
+            n_steps=min(point.meas_steps, _CLUSTER_PASS_STEPS),
+        )
+        mean_cluster_frac = float(np.mean(cluster_sizes)) / float(point.size**2)
+        spacing = max(1, int(round(1.0 / mean_cluster_frac)))
+        flips_per_sample = float(spacing)
+        tau_wolff, iss_wolff, chi_wolff = _timed_measurement(
+            sim=sim_wolff, meas_steps=point.meas_steps,
+            temperature=point.temperature, size=point.size,
+            steps_per_sample=spacing,
+        )
 
     return {
         'temp_idx': float(point.temp_idx),
@@ -274,7 +292,7 @@ def measure_efficiency_point(point: EfficiencyPoint) -> dict[str, float]:
         'mean_cluster_frac': mean_cluster_frac,
         'chi_metro': chi_metro,
         'chi_wolff': chi_wolff,
-        'wolff_flips_per_sample': float(flips_per_sample),
+        'wolff_flips_per_sample': flips_per_sample,
         'converged_metro': float(converged_metro),
         'converged_wolff': float(converged_wolff),
     }
@@ -457,6 +475,7 @@ def run_wolff_efficiency(
     model_kwargs: dict[str, Any],
     model_label: str,
     transitions: dict[str, float] | None,
+    stuck_below: float | None = None,
 ) -> None:
     """
     Run the efficiency comparison and write its NPZ file and figure.
@@ -476,6 +495,10 @@ def run_wolff_efficiency(
     transitions : dict[str, float] or None
         Temperatures to mark in every panel, keyed by legend label, or None to
         omit the markers.  The first by label is drawn dashed, the rest dotted.
+    stuck_below : float or None
+        Temperature below which stuck detection is enabled, i.e. the ordering
+        temperature of a model with metastable domain states. None disables
+        stuck detection everywhere.
 
     Returns
     -------
@@ -508,6 +531,7 @@ def run_wolff_efficiency(
             meas_steps=int(args.meas_steps),
             model_cls=model_cls,
             model_kwargs=model_kwargs,
+            detect_stuck=stuck_below is not None and temperature < stuck_below,
         )
         for temp_idx, temperature in enumerate(temperatures)
         for seed_idx in range(n_seeds)

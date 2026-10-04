@@ -247,6 +247,7 @@ def simulate_equilibrium_correlation(
     meas_steps: int,
     interval: int,
     logger: logging.Logger | None = None,
+    detect_stuck: bool = False,
 ) -> tuple[np.ndarray, np.ndarray]:
     """
     Equilibrate a model and measure its averaged correlation function.
@@ -255,7 +256,7 @@ def simulate_equilibrium_correlation(
     checkerboard updates) to avoid initialization bias, then averages the
     correlation function over ``meas_steps`` Monte Carlo steps, sampling every
     ``interval`` steps. When convergence is not reached within ``eq_max``
-    steps, measurement falls back to the ordered-start simulation.
+    steps, the point is not measured and G(r) is returned as NaN.
 
     Parameters
     ----------
@@ -282,13 +283,19 @@ def simulate_equilibrium_correlation(
         Spacing between correlation samples during measurement.
     logger : logging.Logger | None
         Optional logger for progress and fallback messages.
+    detect_stuck : bool
+        Enable quasi-steady stuck detection, so that a random start stranded
+        in a domain state ends the run and the ordered start is measured.
+        Set it only in the ordered phase of a model with metastable domain
+        states (default False).
 
     Returns
     -------
     r : np.ndarray
         Radial distances.
     G_r_avg : np.ndarray
-        Averaged correlation values G(r).
+        Averaged correlation values G(r), all NaN when the two starts did not
+        converge within ``eq_max`` steps.
     """
     if logger is not None:
         logger.debug(f'Equilibrating at T={temp:.3f} (L={size}, seed={seed})...')
@@ -302,13 +309,19 @@ def simulate_equilibrium_correlation(
     )
     outcome = convergence_equilibrate_two_start(
         sim_random=sim_r, sim_ordered=sim_o, chunk_size=eq_probe, max_steps=eq_max,
+        detect_stuck=detect_stuck,
     )
-    # Fall back to ordered-start simulation when random-start is stuck.
+    if not outcome.certified:
+        # Neither start is known to have relaxed, so G(r) is not measured.
+        if logger is not None:
+            logger.warning(
+                f'T={temp:.3f}: no convergence in {eq_max} steps; storing NaN for G(r)'
+            )
+        r, _ = sim_r.calculate_correlation_function()
+        return r, np.full(r.shape, np.nan)
     sim_meas = select_measurement_simulation(
         outcome=outcome, sim_random=sim_r, sim_ordered=sim_o,
     )
-    if not outcome.converged and logger is not None:
-        logger.info(f'T={temp:.3f}: convergence not reached, falling back to ordered start')
     if logger is not None:
         logger.debug(f'Measuring correlations at T={temp:.3f}...')
     return get_averaged_correlation(
@@ -347,6 +360,8 @@ class CorrelationPoint(NamedTuple):
         Measurement steps after equilibration.
     interval : int
         Spacing between correlation samples during measurement.
+    detect_stuck : bool
+        Forwarded to ``simulate_equilibrium_correlation`` (default False).
     """
 
     label: str
@@ -359,6 +374,7 @@ class CorrelationPoint(NamedTuple):
     eq_max: int
     meas_steps: int
     interval: int
+    detect_stuck: bool = False
 
 
 def measure_correlation_point(
@@ -379,7 +395,8 @@ def measure_correlation_point(
     Returns
     -------
     tuple[str, numpy.ndarray, numpy.ndarray]
-        The point's label, the radial distances, and the averaged G(r).
+        The point's label, the radial distances, and the averaged G(r), which
+        is all NaN when the two starts did not converge within ``eq_max``.
     """
     logger = logging.getLogger('vibespin')
     r, G = simulate_equilibrium_correlation(
@@ -393,6 +410,7 @@ def measure_correlation_point(
         meas_steps=point.meas_steps,
         interval=point.interval,
         logger=logger,
+        detect_stuck=point.detect_stuck,
     )
     return point.label, r, G
 

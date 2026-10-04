@@ -18,7 +18,7 @@ from utils.statistics import (
     UNCERTAINTY_METHOD_BLOCKING,
     summarize_primary_observable,
 )
-from utils.sweep_helpers import build_single_run_schema, derive_point_seed
+from utils.sweep_helpers import SUMMARY_FIELDS, build_single_run_schema, derive_point_seed
 from utils.system import parallel_sweep, parse_args_compat, setup_logging
 
 
@@ -39,7 +39,8 @@ def simulate_helicity(params: tuple[float, int, int, int, int, int]) -> dict[str
         ``ci_low``, ``ci_high``, ``tau_int``, ``n_eff``, ``samples``).
         Upsilon is the mean of the per-sweep quantity
         ``(Sum cos - (Sum sin)^2 / T) / L^2``, so its error follows from
-        blocking that series directly.
+        blocking that series directly. All fields are NaN when the two
+        starts did not converge within ``eq_max_steps``.
 
     Raises
     ------
@@ -53,11 +54,13 @@ def simulate_helicity(params: tuple[float, int, int, int, int, int]) -> dict[str
     # The XY model has no metastable domain states, but its random start can
     # relax for thousands of sweeps near T_BKT; the stuck detector would end
     # such runs early, so the pair runs until it converges. If it never does,
-    # the ordered start is measured.
-    sim, _ = prepare_equilibrated_simulation(
+    # the point is not certified and is stored as NaN.
+    sim, outcome = prepare_equilibrated_simulation(
         model_cls=XYSimulation, model_kwargs={}, size=L, temp=T, seed=seed,
         chunk_size=eq_probe_steps, max_steps=eq_max_steps, detect_stuck=False,
     )
+    if not outcome.certified:
+        return dict.fromkeys(SUMMARY_FIELDS, float('nan'))
 
     cos_sums: np.ndarray = np.empty(meas_steps)
     sin_sums: np.ndarray = np.empty(meas_steps)
@@ -142,7 +145,8 @@ def main() -> None:
     plt.grid(True)
     plt.legend()
     # Above T_BKT the estimator scatters around zero and can go negative.
-    plt.ylim(bottom=min(0.0, float(np.nanmin(upsilons)) - 0.03))
+    if np.any(np.isfinite(upsilons)):
+        plt.ylim(bottom=min(0.0, float(np.nanmin(upsilons)) - 0.03))
 
     output_dir: str = ensure_results_dir(directory=args.output_dir)
     save_plot(filename='helicity_modulus.png', directory=output_dir)
@@ -153,6 +157,9 @@ def main() -> None:
         npz_path,
         temperatures=temperatures,
         helicity_modulus=upsilons,
+        # The worker returns NaN only for points whose equilibration hit
+        # eq_max_steps without convergence.
+        equilibrated=np.isfinite(upsilons),
         **build_single_run_schema(
             prefix='helicity_modulus', summaries=summaries,
             uncertainty_method=UNCERTAINTY_METHOD_BLOCKING,

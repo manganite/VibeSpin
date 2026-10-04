@@ -27,7 +27,9 @@ def main() -> None:
     parser.add_argument('--size', type=int, default=128, help='Linear lattice size L')
     parser.add_argument('--steps', type=int, default=10000, help='Measurement steps')
     parser.add_argument('--eq-probe', type=int, default=200, help='Convergence probe chunk size')
-    parser.add_argument('--eq-max', type=int, default=50000, help='Max equilibration steps')
+    # At T = 0.4 the random start sheds its vortex pairs only after 46,000 to
+    # 58,000 sweeps on L = 128, so the cap leaves room for slower seeds.
+    parser.add_argument('--eq-max', type=int, default=200000, help='Max equilibration steps')
     parser.add_argument('--interval', type=int, default=20, help='Sample interval')
     parser.add_argument('--seed', type=int, default=510, help='Random seed')
     parser.add_argument('--output-dir', type=str, default='results/xy', help='Output directory')

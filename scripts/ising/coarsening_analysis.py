@@ -117,7 +117,7 @@ def _measure_xi_eq(
     meas_steps: int,
     meas_interval: int,
     logger: logging.Logger,
-) -> float:
+) -> tuple[float, bool]:
     """Measure the equilibrium correlation length at a given temperature.
 
     Uses two-start convergence equilibration before measuring and the
@@ -147,21 +147,25 @@ def _measure_xi_eq(
 
     Returns
     -------
-    float
-        Equilibrium correlation length (1/e criterion).
+    tuple[float, bool]
+        Equilibrium correlation length (1/e criterion) and whether the two
+        starts converged. When they did not converge within ``eq_max`` steps
+        the length is not measured and is NaN.
     """
     logger.info(f'Measuring xi_eq at T={temp:.4f} (L={size})...')
     # Below T_c a random start can freeze into a stripe state; stopping on it
     # and measuring the ordered start is valid there, as in the sweep worker.
-    sim, _ = prepare_equilibrated_simulation(
+    sim, outcome = prepare_equilibrated_simulation(
         model_cls=IsingSimulation, model_kwargs={}, size=size, temp=temp, seed=seed,
         chunk_size=eq_probe, max_steps=eq_max, detect_stuck=temp < TC_ISING,
     )
+    if not outcome.certified:
+        return float('nan'), False
     xi = connected_correlation_length(
         sim=sim, meas_steps=meas_steps, sample_interval=meas_interval,
     )
     logger.info(f'xi_eq = {xi:.2f} lattice spacings')
-    return xi
+    return xi, True
 
 
 def main() -> None:
@@ -267,7 +271,7 @@ def main() -> None:
     logger.info('=== Equilibrium crossover ===')
     T_bridge = args.bridge_frac * TC_ISING
 
-    xi_eq = _measure_xi_eq(
+    xi_eq, xi_eq_equilibrated = _measure_xi_eq(
         size=args.size, temp=T_bridge, seed=args.base_seed + 200,
         eq_probe=args.xi_eq_probe, eq_max=args.xi_eq_max,
         meas_steps=args.xi_eq_steps, meas_interval=args.xi_eq_interval,
@@ -287,6 +291,7 @@ def main() -> None:
     npz_data['bridge_temp'] = T_bridge
     npz_data['bridge_xi_eq'] = xi_eq
     npz_data['bridge_xi_eq_method'] = 'connected_axis_1e'
+    npz_data['bridge_xi_eq_equilibrated'] = xi_eq_equilibrated
     npz_data['bridge_times'] = times_b
     npz_data['bridge_seeds'] = traces_b
     npz_data['bridge_median'] = np.median(traces_b, axis=0)

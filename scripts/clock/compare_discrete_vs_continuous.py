@@ -12,6 +12,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 from models.clock_model import ClockSimulation, DiscreteClockSimulation
+from scripts.clock._model_choice import ORDERED_BELOW_DISCRETE
 from utils.equilibration import prepare_equilibrated_simulation
 from utils.observables import calculate_thermodynamics
 from utils.system import parse_args_compat, setup_logging
@@ -28,11 +29,13 @@ def sweep_model(
     meas_steps: int,
     base_seed: int,
     extra_kwargs: dict,
+    stuck_below: float | None = None,
 ) -> tuple[list[float], list[float], list[float], list[float]]:
     """Sweep one clock-model variant over a temperature grid.
 
     For each temperature, runs two-start convergence equilibration and then
-    measures thermodynamic observables on the random-start simulation.
+    measures thermodynamic observables on the start it certifies. A point
+    whose two starts do not converge within ``eq_max_steps`` is stored as NaN.
 
     Parameters
     ----------
@@ -57,6 +60,10 @@ def sweep_model(
         distinct, and its ordered start with a derived partner seed.
     extra_kwargs : dict
         Extra constructor arguments (e.g. ``{'A': aniso}``).
+    stuck_below : float or None
+        Temperature below which a random start stranded in a domain state is
+        accepted and the ordered start measured (stuck detection on). None
+        disables stuck detection at every temperature.
 
     Returns
     -------
@@ -72,10 +79,15 @@ def sweep_model(
         seed = base_seed + t_idx
         # Measure the random start only if it joined the ordered one; a start
         # stranded in a domain-wall state would bias |M| and chi.
-        sim, _ = prepare_equilibrated_simulation(
+        sim, outcome = prepare_equilibrated_simulation(
             model_cls=model_cls, model_kwargs={'q': q, **extra_kwargs}, size=L,
             temp=float(T), seed=seed, chunk_size=eq_probe_steps, max_steps=eq_max_steps,
+            detect_stuck=stuck_below is not None and T < stuck_below,
         )
+        if not outcome.certified:
+            for values in (avg_m_list, avg_e_list, susc_list, spec_h_list):
+                values.append(float('nan'))
+            continue
 
         mags, engs = sim.run(n_steps=meas_steps)
         avg_m, avg_e, susc, spec_h = calculate_thermodynamics(
@@ -156,6 +168,7 @@ def main() -> None:
         meas_steps=meas_steps,
         base_seed=args.seed,
         extra_kwargs={},
+        stuck_below=ORDERED_BELOW_DISCRETE.get(q),
     )
     logger.info(f'  Done in {time.perf_counter() - t0:.1f}s')
 

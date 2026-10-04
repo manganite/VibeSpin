@@ -10,9 +10,25 @@ temperatures depend on ``A`` and approach the discrete values only as A grows.
 from __future__ import annotations
 
 import argparse
+import math
 from typing import Any, NamedTuple
 
 from models.clock_model import ClockSimulation, DiscreteClockSimulation
+
+# Temperature below which the discrete q-state clock model has true long-range
+# order. For q = 2, 3 and 4 these are exact: q = 2 is the Ising model, q = 3
+# maps onto the 3-state Potts model with coupling 3J/2, and q = 4 decouples
+# into two Ising models with coupling J/2. For q = 6 the value is the
+# approximate lower BKT temperature T1 (Challa and Landau 1986). Other q have
+# no entry. Below these temperatures a random start can freeze into a domain
+# state, so the scripts enable stuck detection there and measure the ordered
+# start.
+ORDERED_BELOW_DISCRETE: dict[int, float] = {
+    2: 2.0 / math.log(1.0 + math.sqrt(2.0)),
+    3: 1.5 / math.log(1.0 + math.sqrt(3.0)),
+    4: 1.0 / math.log(1.0 + math.sqrt(2.0)),
+    6: 0.68,
+}
 
 
 class ClockModelChoice(NamedTuple):
