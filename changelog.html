@@ -6,14 +6,14 @@
   <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Changelog &mdash; VibeSpin 0.1.0 documentation</title>
+  <title>Changelog &mdash; VibeSpin 0.2.0 documentation</title>
       <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=b86133f3" />
       <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=9edc463e" />
 
   
       <script src="_static/jquery.js?v=5d32c60e"></script>
       <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-      <script src="_static/documentation_options.js?v=01f34227"></script>
+      <script src="_static/documentation_options.js?v=938c9ccc"></script>
       <script src="_static/doctools.js?v=fd6eb6e6"></script>
       <script src="_static/sphinx_highlight.js?v=6ffebe34"></script>
       <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
@@ -55,7 +55,8 @@
 <li class="toctree-l1"><a class="reference internal" href="AGENTS.html">Agent Instruction Guide: VibeSpin</a></li>
 <li class="toctree-l1"><a class="reference internal" href="BIBLIOGRAPHY.html">Project Bibliography: VibeSpin</a></li>
 <li class="toctree-l1 current"><a class="current reference internal" href="#">Changelog</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="#unreleased">Unreleased</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#unreleased">Unreleased</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#id1">0.2.0 - 2026-10-04</a><ul>
 <li class="toctree-l3"><a class="reference internal" href="#added">Added</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#changed">Changed</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#removed">Removed</a></li>
@@ -63,10 +64,10 @@
 <li class="toctree-l3"><a class="reference internal" href="#security">Security</a></li>
 </ul>
 </li>
-<li class="toctree-l2"><a class="reference internal" href="#id1">0.1.0 - 2026-03-25</a><ul>
-<li class="toctree-l3"><a class="reference internal" href="#id2">Added</a></li>
-<li class="toctree-l3"><a class="reference internal" href="#id3">Changed</a></li>
-<li class="toctree-l3"><a class="reference internal" href="#id4">Fixed</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#id2">0.1.0 - 2026-03-25</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#id3">Added</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#id4">Changed</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#id5">Fixed</a></li>
 </ul>
 </li>
 </ul>
@@ -119,7 +120,10 @@
 <p><strong>Policy:</strong> Update the <code class="docutils literal notranslate"><span class="pre">[Unreleased]</span></code> section for every commit that changes user-facing behavior (physics, CLI, NPZ schema, public API, or documentation). When cutting a release, move <code class="docutils literal notranslate"><span class="pre">[Unreleased]</span></code> entries to a dated version block.</p>
 <hr class="docutils" />
 <section id="unreleased">
-<h2><a class="reference external" href="https://github.com/manganite/VibeSpin/compare/v0.1.0...HEAD">Unreleased</a><a class="headerlink" href="#unreleased" title="Link to this heading"></a></h2>
+<h2><a class="reference external" href="https://github.com/manganite/VibeSpin/compare/v0.2.0...HEAD">Unreleased</a><a class="headerlink" href="#unreleased" title="Link to this heading"></a></h2>
+</section>
+<section id="id1">
+<h2><a class="reference external" href="https://github.com/manganite/VibeSpin/compare/v0.1.0...v0.2.0">0.2.0</a> - 2026-10-04<a class="headerlink" href="#id1" title="Link to this heading"></a></h2>
 <section id="added">
 <h3>Added<a class="headerlink" href="#added" title="Link to this heading"></a></h3>
 <ul class="simple">
@@ -328,11 +332,11 @@
 </section>
 </section>
 <hr class="docutils" />
-<section id="id1">
-<h2><a class="reference external" href="https://github.com/manganite/VibeSpin/releases/tag/v0.1.0">0.1.0</a> - 2026-03-25<a class="headerlink" href="#id1" title="Link to this heading"></a></h2>
-<p>This is the baseline release capturing the full initial development history. The entries below summarize the major milestones grouped by category.</p>
 <section id="id2">
-<h3>Added<a class="headerlink" href="#id2" title="Link to this heading"></a></h3>
+<h2><a class="reference external" href="https://github.com/manganite/VibeSpin/releases/tag/v0.1.0">0.1.0</a> - 2026-03-25<a class="headerlink" href="#id2" title="Link to this heading"></a></h2>
+<p>This is the baseline release capturing the full initial development history. The entries below summarize the major milestones grouped by category.</p>
+<section id="id3">
+<h3>Added<a class="headerlink" href="#id3" title="Link to this heading"></a></h3>
 <ul class="simple">
 <li><p><strong>Models:</strong> <code class="docutils literal notranslate"><span class="pre">IsingSimulation</span></code>, <code class="docutils literal notranslate"><span class="pre">XYSimulation</span></code>, <code class="docutils literal notranslate"><span class="pre">ClockSimulation</span></code>, and <code class="docutils literal notranslate"><span class="pre">DiscreteClockSimulation</span></code> with Numba-accelerated checkerboard, random-site, and Wolff cluster update schemes. Each model exposes a <code class="docutils literal notranslate"><span class="pre">main()</span></code> CLI entry point.</p></li>
 <li><p><strong>Equilibration:</strong> Two-Start Convergence protocol with mutual cross-band criterion and Quasi-Steady Stuck Detection for low-temperature metastable trapping. Adaptive equilibration fallback for lightweight use cases.</p></li>
@@ -351,8 +355,8 @@
 <li><p><strong>Hierarchical multi-seed uncertainty</strong> combining within-seed blocking error with between-seed spread.</p></li>
 </ul>
 </section>
-<section id="id3">
-<h3>Changed<a class="headerlink" href="#id3" title="Link to this heading"></a></h3>
+<section id="id4">
+<h3>Changed<a class="headerlink" href="#id4" title="Link to this heading"></a></h3>
 <ul class="simple">
 <li><p>Refactored <code class="docutils literal notranslate"><span class="pre">utils/analysis.py</span></code> into <code class="docutils literal notranslate"><span class="pre">utils/statistics.py</span></code> (domain-agnostic statistical estimators and schemas) and <code class="docutils literal notranslate"><span class="pre">utils/observables.py</span></code> (physics observables and spatial tools).</p></li>
 <li><p><code class="docutils literal notranslate"><span class="pre">ordering_kinetics</span></code> scripts unified and refactored; renamed from <code class="docutils literal notranslate"><span class="pre">domain_growth</span></code>.</p></li>
@@ -365,8 +369,8 @@
 <li><p>Vectorized angle extraction for vorticity calculation; radial mask pre-computation for correlation functions.</p></li>
 </ul>
 </section>
-<section id="id4">
-<h3>Fixed<a class="headerlink" href="#id4" title="Link to this heading"></a></h3>
+<section id="id5">
+<h3>Fixed<a class="headerlink" href="#id5" title="Link to this heading"></a></h3>
 <ul class="simple">
 <li><p>Diagnostics header/title overlap in temperature-sweep diagnostic plots.</p></li>
 <li><p>Restored notebook JSON after corruption; ensured stuck-detection prose and figures are consistent.</p></li>

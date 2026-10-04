@@ -8,6 +8,8 @@ All notable changes to VibeSpin are documented here. The format follows [Keep a 
 
 ## [Unreleased]
 
+## [0.2.0] - 2026-10-04
+
 ### Added
 - The NPZ outputs of `scripts/xy/helicity_modulus.py`, `scripts/xy/bkt_transition.py`, `scripts/ising/correlation_divergence.py`, and the three Wolff efficiency scripts write the standardized uncertainty fields and metadata of AGENTS.md section 8 (additive; legacy keys unchanged). The helicity modulus and vortex density get blocking errors from their per-sweep series, the correlation length a blocked error from fits to 16 contiguous sample blocks, and the efficiency quantities their replicate bands under the standard names. `scripts/ising/measure_z.py` adds the missing `bootstrap_resamples` and `nan_or_undefined_count`, and `tau_metro_tau_int`, `tau_metro_n_eff`, `tau_wolff_tau_int`, and `tau_wolff_n_eff` as NaN, since a seed-ensemble summary of autocorrelation times has no autocorrelation time of its own. The shared `build_single_run_schema` in `utils/sweep_helpers.py` assembles the fields for single-run sweeps.
 - The temperature sweeps write `tau_int_ci_low` and `tau_int_ci_high`, the 16th and 84th percentiles of the per-seed autocorrelation times (NaN for a single seed). CODE.md had documented these keys, but no script wrote them.
@@ -239,5 +241,6 @@ This is the baseline release capturing the full initial development history. The
 - Low-temperature sweep relaxation logic now correctly accepts stable ordered starts as converged.
 - Default `--eq-max-steps` lowered from 200,000 to 20,000 to prevent excessively long equilibration runs.
 
-[Unreleased]: https://github.com/manganite/VibeSpin/compare/v0.1.0...HEAD
+[Unreleased]: https://github.com/manganite/VibeSpin/compare/v0.2.0...HEAD
+[0.2.0]: https://github.com/manganite/VibeSpin/compare/v0.1.0...v0.2.0
 [0.1.0]: https://github.com/manganite/VibeSpin/releases/tag/v0.1.0
