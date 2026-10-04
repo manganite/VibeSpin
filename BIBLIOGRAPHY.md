@@ -75,6 +75,8 @@ Referencing policy is defined in [AGENTS.md](https://github.com/manganite/VibeSp
 - G. S. Madras and A. D. Sokal, "The pivot algorithm: A highly efficient Monte Carlo method for the self-avoiding walk," Journal of Statistical Physics, vol. 50, no. 1-2, pp. 109–186, 1988. [Springer](https://link.springer.com/article/10.1007/BF01022990)
 - A. D. Sokal, "Monte Carlo Methods in Statistical Mechanics: Foundations and New Algorithms," lecture notes (1989), published in Functional Integration: Basics and Applications (C. DeWitt-Morette, P. Cartier, A. Folacci, eds.), Springer, 1997, pp. 131–192. [Springer Link](https://link.springer.com/chapter/10.1007/978-1-4899-0319-8_6)
 - H. Flyvbjerg and H. G. Petersen, "Error estimates on averages of correlated data," Journal of Chemical Physics, vol. 91, no. 1, pp. 461–466, 1989. The blocking method and the uncertainty of its standard-error estimate. [AIP Publishing](https://doi.org/10.1063/1.457480)
+- M. P. Nightingale and H. W. J. Blöte, "Dynamic Exponent of the Two-Dimensional Ising Model and Monte Carlo Computation of the Subdominant Eigenvalue of the Stochastic Matrix," Physical Review Letters, vol. 76, p. 4548, 1996. Metropolis dynamic exponent z = 2.1665(12). [arXiv:cond-mat/9601059](https://arxiv.org/abs/cond-mat/9601059)
+- P. D. Coddington and C. F. Baillie, "Empirical relations between static and dynamic exponents for Ising model cluster algorithms," Physical Review Letters, vol. 68, p. 962, 1992. Wolff dynamic exponent in sweep units.
 - [Autocorrelation time on Wikipedia](https://en.wikipedia.org/wiki/Autocorrelation#Time_series)
 - [Critical slowing down on Wikipedia](https://en.wikipedia.org/wiki/Critical_slowing_down)
 
