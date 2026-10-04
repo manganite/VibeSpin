@@ -66,12 +66,17 @@ The proposal distribution must connect every configuration to every other in a f
 
 ### Update Schemes
 
-VibeSpin enforces a strict separation between two update strategies, each valid only in its own physical regime. **Checkerboard updates** are used exclusively for equilibrium and thermodynamic measurements: the lattice is divided into two independent sublattices (analogous to the black and white squares of a chessboard), and each sublattice is swept in parallel. Because no two simultaneously updated sites share a neighbor, this scheme is both correct and highly vectorizable, maximizing SIMD and multi-core throughput. **Random site selection** is mandatory for kinetics and non-equilibrium dynamics: $N^2$ sites are chosen uniformly at random per sweep, preserving the exact stochastic trajectory needed to study coarsening, domain growth, and aging phenomena. Mixing the two schemes across regimes would invalidate either the parallelism guarantee or the physical time evolution.
+VibeSpin enforces a strict separation between two update strategies, each valid only in its own physical regime. **Checkerboard updates** are used exclusively for equilibrium and thermodynamic measurements: the lattice is divided into two independent sublattices (analogous to the black and white squares of a chessboard), and each sublattice is swept in parallel. Because no two simultaneously updated sites share a neighbor, this scheme is both correct and highly vectorizable, maximizing SIMD and multi-core throughput. **Random site selection** is mandatory for kinetics and non-equilibrium dynamics: $L^2$ sites are chosen uniformly at random per sweep, preserving the exact stochastic trajectory needed to study coarsening, domain growth, and aging phenomena. Mixing the two schemes across regimes would invalidate either the parallelism guarantee or the physical time evolution.
 
 ## 3. Physical Observables
 
 ### Thermodynamic Averages
 
+All observables are measured per site on an $L \times L$ lattice with $N = L^2$ sites and $k_B = 1$. The order parameter is the magnitude of the mean spin, $m = |\sum_i \mathbf{s}_i| / N$, with $\mathbf{s}_i = \sigma_i$ for Ising and $\mathbf{s}_i = (\cos\theta_i, \sin\theta_i)$ for the planar models, and the energy density is $e = E/N$, counting each nearest-neighbour bond once. The fluctuation observables follow from the variances of these time series,
+
+$$\chi = \frac{N}{T}\left(\langle m^2 \rangle - \langle m \rangle^2\right), \qquad C_v = \frac{N}{T^2}\left(\langle e^2 \rangle - \langle e \rangle^2\right).$$
+
+Because $m$ is a magnitude, $\chi$ is the susceptibility of $|M|$: it peaks near the transition of a finite lattice instead of diverging, and below $T_c$ it measures the fluctuations of the order parameter about its spontaneous value. Both quantities are computed from the full measurement window; their uncertainties come from blocking (Section 5).
 
 For a pedagogical introduction to thermodynamic observables in spin models, see Huang [[6]](#Bibliography).
 See also the [Magnetization](https://en.wikipedia.org/wiki/Magnetization), [Magnetic susceptibility](https://en.wikipedia.org/wiki/Magnetic_susceptibility), and [Heat capacity](https://en.wikipedia.org/wiki/Heat_capacity) articles on Wikipedia.
@@ -80,7 +85,7 @@ Temperature-sweep simulations also compute the **entropy** by integrating the sp
 
 $$S(T) = S_{\mathrm{ref}} - \int_T^{T_{\mathrm{ref}}} \frac{C_v(T')}{T'}\,dT'.$$
 
-The highest simulated temperature serves as the reference point. For clock models the absolute high-temperature limit is $S_{\mathrm{ref}} = \ln q$ per site (in units of $k_B$), corresponding to equipartition over all $q$ orientations.
+The highest simulated temperature serves as the reference point, and the sweeps set $S_{\mathrm{ref}} = 0$ there, so the stored curve is the entropy relative to its value at $T_{\max}$, $S(T) - S(T_{\max})$. An absolute scale would need the high-temperature limit, $\ln 2$ per site for Ising and $\ln q$ for the discrete clock model, plus the entropy still missing between $T_{\max}$ and infinite temperature; the continuous models have no finite limit of this kind.
 
 Finally, the **integrated autocorrelation time** $\tau_{\mathrm{int}}$, extracted from the magnetization time series, quantifies how many sweeps separate statistically independent samples [[12]](#Bibliography).
  Near a critical point $\tau_{\mathrm{int}}$ diverges, the hallmark of critical slowing down, and its magnitude directly governs the statistical efficiency of the Monte Carlo run. To ensure measurements are strictly taken from the stationary distribution, VibeSpin uses a **Two-Start Convergence** equilibration routine: at each $(T, \text{seed})$ point, two independent simulations are launched: one from a random (disordered) state and one from a fully aligned (ordered) state. The burn-in proceeds in chunks until both smoothed magnetization traces satisfy a mutual cross-band test: the random-start trace must lie within a band of $\pm k$ standard deviations of the ordered-start tail mean, and the ordered-start trace must simultaneously lie within $\pm k$ standard deviations of the random-start tail mean. A sigma floor prevents band collapse when either trace is nearly variance-free.
@@ -91,6 +96,7 @@ This protocol includes **Quasi-Steady Stuck Detection** for domain-wall trapping
 
 ### Spatial Diagnostics
 
+The structure factor is the squared Fourier amplitude of the spin field, $S(\mathbf{k}) = |\sum_j \mathbf{s}_j e^{-i\mathbf{k}\cdot\mathbf{r}_j}|^2 / N$, summed over both components for planar spins. Its inverse transform gives the spin-spin correlation function $G(\mathbf{r}) = \langle \mathbf{s}_j \cdot \mathbf{s}_{j+\mathbf{r}} \rangle$ averaged over the lattice, which VibeSpin averages over radial shells and normalises to $G(0) = 1$. This function is not connected: in an ordered phase it approaches $m^2$ at large $r$ rather than zero. The correlation length $\xi$ is read off as the interpolated distance where $G$ first drops below $1/e$; equilibrium correlation lengths below the ordering temperature are taken from the connected function, with the mean spin subtracted, because the disconnected one never crosses $1/e$ there. For coarsening, the domain size is also estimated from the first moment of the radially averaged structure factor, $R_{S(k)} = 2\pi \sum_k S(k) / \sum_k k\,S(k)$, excluding $k = 0$.
 
 For a review of spatial diagnostics and correlation functions, see Goldenfeld [[7]](#Bibliography).
 See also the [Correlation function](https://en.wikipedia.org/wiki/Correlation_function_(statistical_mechanics)) and [Structure factor](https://en.wikipedia.org/wiki/Structure_factor) articles on Wikipedia.
@@ -98,6 +104,13 @@ See also the [Correlation function](https://en.wikipedia.org/wiki/Correlation_fu
 
 ### Topological Diagnostics
 
+The vorticity of a plaquette is its winding number, $w = \frac{1}{2\pi}\sum_{\square} \Delta\theta$, where each bond difference $\Delta\theta$ is wrapped into $(-\pi, \pi]$. A bond is wrapped once in its lattice direction and negated when the plaquette loop traverses it backwards, so the windings of neighbouring plaquettes cancel exactly and the total on the torus is zero; an exactly antiparallel bond, common in the discrete clock model with even $q$, is assigned $+\pi$. The vortex density $n_v$ is the fraction of plaquettes with $w \neq 0$. For random, uncorrelated planar spins it is $1/3$.
+
+The helicity modulus measures the free-energy cost of a uniform twist along $x$. With $J = 1$,
+
+$$\Upsilon = \frac{1}{L^2}\left[\left\langle \sum_{\langle ij \rangle_x} \cos(\theta_i - \theta_j) \right\rangle - \frac{1}{T}\left\langle \left(\sum_{\langle ij \rangle_x} \sin(\theta_i - \theta_j)\right)^{2} \right\rangle\right],$$
+
+where the sums run over all bonds in the $x$ direction. Nelson and Kosterlitz [[15]](#Bibliography) showed that $\Upsilon$ jumps from $2T_{\mathrm{BKT}}/\pi$ to zero at the transition in the thermodynamic limit, so on a finite lattice the crossing of $\Upsilon(T)$ with the line $2T/\pi$ estimates $T_{\mathrm{BKT}} \approx 0.893\,J$ [[13]](#Bibliography), with finite-size corrections that shift the crossing upward on small lattices.
 
 For the BKT transition and topological diagnostics, see Kosterlitz and Thouless [[2]](#Bibliography).
 See also the [BKT transition](https://en.wikipedia.org/wiki/Berezinskii%E2%80%93Kosterlitz%E2%80%93Thouless_transition), [Vortex](https://en.wikipedia.org/wiki/Vortex), and [Superfluid stiffness (Helicity modulus)](https://en.wikipedia.org/wiki/Superfluid_stiffness) articles on Wikipedia.
@@ -108,7 +121,7 @@ See also the [BKT transition](https://en.wikipedia.org/wiki/Berezinskii%E2%80%93
 
 The Metropolis single-spin-flip algorithm becomes increasingly inefficient as a continuous phase transition is approached. Near the critical point the correlation length $\xi$ diverges, and the spin configurations develop large coherent domains whose characteristic size $\xi$ sets the natural unit of any proposed single-site change. Because a single flip disturbs only one spin at a time, the algorithm must perform $O(\xi^z)$ sweeps to decorrelate the system from one independent sample to the next, where the dynamic critical exponent $z \approx 2.17$ for the 2D Ising model. This quadratic growth of autocorrelation time with lattice size, the critical slowing down, makes precise equilibrium measurements near $T_c$ computationally expensive with Metropolis alone.
 
-The Wolff cluster algorithm drastically reduces critical slowing down by operating at the scale of the correlated domain rather than the individual spin. Rather than proposing a single flip, it grows an entire correlated cluster and flips it as a single collective move. The dynamic exponent in cluster-step units is $z^{\mathrm{cs}} \approx 0.5$ asymptotically. However, a single cluster-step flips an $O(L^{\gamma/\nu})$-size cluster (where $\gamma/\nu = 7/4$ for the 2D Ising model), so normalizing to equivalent-sweep units yields $z^{\mathrm{sw}} = z^{\mathrm{cs}} - 1/4 \approx 0.25$, more than an order-of-magnitude reduction compared to Metropolis. Measured values of $z^{\mathrm{cs}}$ at finite lattice sizes (e.g., $L = 16$–$128$) can deviate from the asymptotic value due to finite-size effects.
+The Wolff cluster algorithm reduces critical slowing down by operating at the scale of the correlated domain rather than the individual spin. Rather than proposing a single flip, it grows an entire correlated cluster and flips it as a single collective move. The dynamic exponent in cluster-step units is $z^{\mathrm{cs}} \approx 0.5$ asymptotically. However, a single cluster-step flips an $O(L^{\gamma/\nu})$-size cluster (where $\gamma/\nu = 7/4$ for the 2D Ising model), so normalizing to equivalent-sweep units yields $z^{\mathrm{sw}} = z^{\mathrm{cs}} - 1/4 \approx 0.25$, more than an order-of-magnitude reduction compared to Metropolis. Measured values of $z^{\mathrm{cs}}$ at finite lattice sizes (e.g., $L = 16$–$128$) can deviate from the asymptotic value due to finite-size effects.
 
 ### Ising Wolff: Fortuin-Kasteleyn Construction
 
@@ -118,9 +131,9 @@ See also the [Random cluster model (Fortuin–Kasteleyn representation)](https:/
 
 $$P_{\mathrm{add}} = 1 - e^{-2\beta J}.$$
 
-After the cluster $\mathcal{C}$ is fully grown, all spins in $\mathcal{C}$ are flipped simultaneously: $\sigma_i \to -\sigma_i$ for all $i \in \mathcal{C}$. The bond probability is derived precisely so that this collective move satisfies detailed balance without any rejection step: the cluster flip is always accepted. This zero-rejection property, combined with the divergence of the mean cluster size $\langle|\mathcal{C}|\rangle \sim \xi^{d_f}$ at $T_c$ (where $d_f$ is the fractal dimension of the FK cluster), is the mechanism behind the dramatic acceleration near criticality.
+After the cluster $\mathcal{C}$ is fully grown, all spins in $\mathcal{C}$ are flipped simultaneously: $\sigma_i \to -\sigma_i$ for all $i \in \mathcal{C}$. The bond probability is derived precisely so that this collective move satisfies detailed balance without any rejection step: the cluster flip is always accepted. This zero-rejection property, combined with the growth of the mean Wolff cluster size $\langle|\mathcal{C}|\rangle \sim \xi^{\gamma/\nu} = \xi^{7/4}$ near $T_c$ (equivalently $\xi^{2 d_f - d}$ with the FK fractal dimension $d_f = 15/8$, since the seed site lands in a cluster with probability proportional to its size), is the mechanism behind the acceleration near criticality.
 
-**Unit Convention.** Reported measurements of $\tau_{\mathrm{int}}$ and the dynamic exponent $z$ depend critically on how a "step" is defined. In cluster-step units (one cluster-flip as one step), $\tau_{\mathrm{int}}$ and $z$ are measured directly from the Wolff trajectory. To convert to sweep-equivalent units (matching Metropolis, where one step = $N^2$ single-flip attempts), we normalize by the mean cluster size: $\tau^{\mathrm{sw}}_{\mathrm{Wolff}} = \tau^{\mathrm{cs}}_{\mathrm{Wolff}} \times \langle C \rangle / L^2 \sim \tau^{\mathrm{cs}}_{\mathrm{Wolff}} \times L^{7/4} / L^2 = \tau^{\mathrm{cs}}_{\mathrm{Wolff}} \times L^{-1/4}$. This gives $z^{\mathrm{sw}} = z^{\mathrm{cs}} - 1/4$, an exact relation for the 2D Ising model.
+**Unit Convention.** Reported measurements of $\tau_{\mathrm{int}}$ and the dynamic exponent $z$ depend critically on how a "step" is defined. In cluster-step units (one cluster-flip as one step), $\tau_{\mathrm{int}}$ and $z$ are measured directly from the Wolff trajectory. To convert to sweep-equivalent units (matching Metropolis, where one step = $L^2$ single-flip attempts), we normalize by the mean cluster size: $\tau^{\mathrm{sw}}_{\mathrm{Wolff}} = \tau^{\mathrm{cs}}_{\mathrm{Wolff}} \times \langle C \rangle / L^2 \sim \tau^{\mathrm{cs}}_{\mathrm{Wolff}} \times L^{7/4} / L^2 = \tau^{\mathrm{cs}}_{\mathrm{Wolff}} \times L^{-1/4}$. This gives $z^{\mathrm{sw}} = z^{\mathrm{cs}} - 1/4$, an exact relation for the 2D Ising model.
 
 ### XY and Clock Wolff: The Reflection Trick
 
@@ -144,7 +157,7 @@ The **discrete clock model** admits an exact cluster update because reflections 
 
 ### Practical Semantics
 
-One call to a Wolff `step()` constitutes one cluster sweep, meaning a single cluster is grown and flipped. This differs from the Metropolis convention, where one `step()` comprises $N^2$ single-spin-flip attempts. The two schemes are therefore not directly comparable on a per-step basis near $T_c$; the relevant comparison is per unit of computational time or per independent sample. Because the mean cluster size scales with the correlation length, the cost per cluster sweep also scales with $\xi$, but the autocorrelation time in units of sweeps falls far faster than it rises in cost, resulting in a substantial net gain precisely where it is most needed.
+One call to a Wolff `step()` constitutes one cluster sweep, meaning a single cluster is grown and flipped. This differs from the Metropolis convention, where one `step()` comprises $L^2$ single-spin-flip attempts. The two schemes are therefore not directly comparable on a per-step basis near $T_c$; the relevant comparison is per unit of computational time or per independent sample. Because the mean cluster size scales with the correlation length, the cost per cluster sweep also scales with $\xi$, but the autocorrelation time in units of sweeps falls far faster than it rises in cost, resulting in a substantial net gain precisely where it is most needed.
 
 The `parallel=True` flag is silently ignored when `update='wolff'`. Cluster growth is a sequential depth-first search whose frontier depends on each newly added site; it cannot be decomposed into independent sublattices and is therefore incompatible with the checkerboard parallelisation strategy. The Wolff algorithm is inherently a single-threaded traversal, and its performance advantage over Metropolis is algorithmic rather than hardware-parallel.
 
@@ -191,25 +204,25 @@ In the deep ordered phase (low $T$), configurations can be nearly frozen. The au
 
 ## Bibliography
 
-[[1]](#Bibliography) L. Onsager, "Crystal Statistics. I. A Two-Dimensional Model with an Order-Disorder Transition," *Physical Review*, vol. 65, no. 3-4, pp. 117–149, 1944. [APS Open Access](https://journals.aps.org/pr/abstract/10.1103/PhysRev.65.117)
+[[1]](#Bibliography) L. Onsager, "Crystal Statistics. I. A Two-Dimensional Model with an Order-Disorder Transition," *Physical Review*, vol. 65, no. 3-4, pp. 117–149, 1944. [APS](https://journals.aps.org/pr/abstract/10.1103/PhysRev.65.117)
 
-[[2]](#Bibliography) J. M. Kosterlitz and D. J. Thouless, "Ordering, metastability and phase transitions in two-dimensional systems," *Journal of Physics C: Solid State Physics*, vol. 6, no. 7, pp. 1181–1203, 1973. [IOP Open Access](https://iopscience.iop.org/article/10.1088/0022-3719/6/7/010)
+[[2]](#Bibliography) J. M. Kosterlitz and D. J. Thouless, "Ordering, metastability and phase transitions in two-dimensional systems," *Journal of Physics C: Solid State Physics*, vol. 6, no. 7, pp. 1181–1203, 1973. [IOP](https://iopscience.iop.org/article/10.1088/0022-3719/6/7/010)
 
-[[3]](#Bibliography) N. D. Mermin and H. Wagner, "Absence of Ferromagnetism or Antiferromagnetism in One- or Two-Dimensional Isotropic Heisenberg Models," *Physical Review Letters*, vol. 17, no. 22, pp. 1133–1136, 1966. [APS Open Access](https://journals.aps.org/prl/abstract/10.1103/PhysRevLett.17.1133)
+[[3]](#Bibliography) N. D. Mermin and H. Wagner, "Absence of Ferromagnetism or Antiferromagnetism in One- or Two-Dimensional Isotropic Heisenberg Models," *Physical Review Letters*, vol. 17, no. 22, pp. 1133–1136, 1966. [APS](https://journals.aps.org/prl/abstract/10.1103/PhysRevLett.17.1133)
 
-[[4]](#Bibliography) J. Lapilli, P. Pfeifer, and C. Wexler, "Universality away from critical points in two-dimensional phase transitions," *Physical Review Letters*, vol. 96, no. 14, 140603, 2006. [APS Open Access](https://journals.aps.org/prl/abstract/10.1103/PhysRevLett.96.140603)
+[[4]](#Bibliography) J. Lapilli, P. Pfeifer, and C. Wexler, "Universality away from critical points in two-dimensional phase transitions," *Physical Review Letters*, vol. 96, no. 14, 140603, 2006. [APS](https://journals.aps.org/prl/abstract/10.1103/PhysRevLett.96.140603)
 
 [[5]](#Bibliography) W. K. Hastings, "Monte Carlo sampling methods using Markov chains and their applications," *Biometrika*, vol. 57, no. 1, pp. 97–109, 1970. [Oxford Academic](https://academic.oup.com/biomet/article/57/1/97/252073)
 
-[[6]](#Bibliography) K. Huang, "Statistical Mechanics," 2nd Edition, Wiley, 1987. [Statistical Mechanics lecture notes, John Cardy, Oxford (Archive)](https://arxiv.org/pdf/0807.3472.pdf)
+[[6]](#Bibliography) K. Huang, "Statistical Mechanics," 2nd Edition, Wiley, 1987. Textbook; no open-access edition.
 
 [[7]](#Bibliography) N. Goldenfeld, "Lectures on Phase Transitions and the Renormalization Group," Addison-Wesley, 1992. [Internet Archive (Open Access)](https://archive.org/details/lecturesonphaset0000gold)
 
-[[8]](#Bibliography) C. M. Fortuin and P. W. Kasteleyn, "On the random-cluster model. I. Introduction and relation to other models," *Physica*, vol. 57, no. 4, pp. 536–564, 1972. [Elsevier Open Access](https://doi.org/10.1016/0031-8914(72)90045-6)
+[[8]](#Bibliography) C. M. Fortuin and P. W. Kasteleyn, "On the random-cluster model. I. Introduction and relation to other models," *Physica*, vol. 57, no. 4, pp. 536–564, 1972. [Elsevier](https://doi.org/10.1016/0031-8914(72)90045-6)
 
-[[9]](#Bibliography) U. Wolff, "Collective Monte Carlo Updating for Spin Systems," *Physical Review Letters*, vol. 62, no. 4, pp. 361–364, 1989. [APS Open Access](https://journals.aps.org/prl/abstract/10.1103/PhysRevLett.62.361)
+[[9]](#Bibliography) U. Wolff, "Collective Monte Carlo Updating for Spin Systems," *Physical Review Letters*, vol. 62, no. 4, pp. 361–364, 1989. [APS](https://journals.aps.org/prl/abstract/10.1103/PhysRevLett.62.361)
 
-[[10]](#Bibliography) M. E. J. Newman and G. T. Barkema, "Monte Carlo Methods in Statistical Physics," Oxford University Press, 1999. [Lecture Notes Summary (H. G. Katzgraber)](https://arxiv.org/abs/0905.1629)
+[[10]](#Bibliography) M. E. J. Newman and G. T. Barkema, "Monte Carlo Methods in Statistical Physics," Oxford University Press, 1999. Book; for an open introduction to the same methods see H. G. Katzgraber, "Introduction to Monte Carlo Methods" [arXiv:0905.1629](https://arxiv.org/abs/0905.1629)
 
 [[11]](#Bibliography) J. Villain, "Theory of one- and two-dimensional magnets with an easy magnetization plane. II. The planar, classical, two-dimensional magnet," *J. Phys. France* 36, 581-590 (1975). [Open Access](https://doi.org/10.1051/jphys:01975003606058100)
 
@@ -218,3 +231,5 @@ In the deep ordered phase (low $T$), configurations can be nearly frozen. The au
 [[13]](#Bibliography) Y. Tomita and Y. Okabe, "Probability-changing cluster algorithm for two-dimensional XY and clock models," 2002. [arXiv:cond-mat/0202161](https://arxiv.org/abs/cond-mat/0202161)
 
 [[14]](#Bibliography) H. Flyvbjerg and H. G. Petersen, "Error estimates on averages of correlated data," *Journal of Chemical Physics*, vol. 91, no. 1, pp. 461–466, 1989. [AIP Publishing](https://doi.org/10.1063/1.457480)
+
+[[15]](#Bibliography) D. R. Nelson and J. M. Kosterlitz, "Universal Jump in the Superfluid Density of Two-Dimensional Superfluids," *Physical Review Letters*, vol. 39, no. 19, pp. 1201–1205, 1977. [APS](https://journals.aps.org/prl/abstract/10.1103/PhysRevLett.39.1201)

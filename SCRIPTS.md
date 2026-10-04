@@ -44,7 +44,7 @@ The clock scripts run the discrete clock model (`DiscreteClockSimulation`) by de
 - **`generate_all.py`**: Runs every script that a notebook reads data from, in one command,
   and reports what it produced and how long each step took. Without arguments each script
   runs at its own production defaults, which is the data the published figures are built
-  from and takes roughly an hour on four cores. `--quick` runs the same sixteen scripts at
+  from and takes roughly an hour on four cores. `--quick` runs the same eighteen scripts at
   sharply reduced lattices and step counts, which exercises the whole pipeline in about a
   minute but produces output that is not physics. `--only` and `--skip` select by substring
   of the `model/script` key, `--list` prints the table, `--dry-run` prints the commands,
