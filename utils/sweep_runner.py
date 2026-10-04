@@ -407,6 +407,8 @@ def run_temperature_sweep(
             tau_by_seed=extract_grid(f'{name}_tau_int'),
             n_eff_by_seed=extract_grid(f'{name}_n_eff'),
             confidence=float(args.confidence_level),
+            ci_low_by_seed=extract_grid(f'{name}_ci_low'),
+            ci_high_by_seed=extract_grid(f'{name}_ci_high'),
         )
         for name in _BUNDLED_OBSERVABLES
     }
