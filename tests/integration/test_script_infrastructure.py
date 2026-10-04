@@ -1591,6 +1591,122 @@ class TestSingleSeedIntervals:
         assert half_width > gaussian * (1.0 + 1e-6)
 
 
+class TestSingleRunSchemas:
+    """Sweep-style NPZ outputs carry the standardized uncertainty fields (AGENTS.md 8)."""
+
+    _FIELDS = ('value', 'err', 'ci_low', 'ci_high', 'tau_int', 'n_eff', 'samples')
+    _META = (
+        'uncertainty_method', 'confidence_level', 'n_seeds',
+        'bootstrap_resamples', 'nan_or_undefined_count',
+    )
+
+    def _check(self, data: Any, prefix: str, legacy: str, n_points: int) -> None:
+        for field in self._FIELDS:
+            assert f'{prefix}_{field}' in data.files, f'{prefix}_{field}'
+        for key in self._META:
+            assert key in data.files, key
+        assert data[f'{prefix}_value'].shape == (n_points,)
+        assert data[f'{prefix}_samples'].shape == (n_points, 1)
+        # Additive: the legacy array is kept and agrees with the new value field.
+        np.testing.assert_allclose(data[legacy], data[f'{prefix}_value'])
+
+    @pytest.mark.parametrize(
+        'module_name, npz_name, prefix, legacy, argv',
+        [
+            ('scripts.xy.helicity_modulus', 'helicity_modulus.npz', 'helicity_modulus',
+             'helicity_modulus', ['--size', '8', '--meas-steps', '60', '--t-points', '2',
+                                  '--eq-max-steps', '2000', '--eq-probe-steps', '100']),
+            ('scripts.xy.bkt_transition', 'bkt_transition.npz', 'vortex_density',
+             'vortex_densities', ['--size', '8', '--meas-steps', '60', '--t-points', '2',
+                                  '--eq-max-steps', '2000', '--eq-probe-steps', '100']),
+        ],
+    )
+    def test_xy_scripts_write_schema(
+        self, monkeypatch: pytest.MonkeyPatch, tmp_path: Path, module_name: str,
+        npz_name: str, prefix: str, legacy: str, argv: list[str],
+    ) -> None:
+        import importlib
+
+        module = importlib.import_module(module_name)
+        monkeypatch.setattr('matplotlib.pyplot.savefig', lambda *args, **kwargs: None)
+        monkeypatch.setattr(sys, 'argv', [module_name, *argv, '--output-dir', str(tmp_path)])
+        module.main()
+        data = np.load(tmp_path / npz_name)
+        self._check(data, prefix, legacy, 2)
+        # A vortex-free low-temperature window has zero variance: its error is
+        # undefined (NaN) exactly where tau_int is, never silently zero.
+        err, tau = data[f'{prefix}_err'], data[f'{prefix}_tau_int']
+        np.testing.assert_array_equal(np.isfinite(err), np.isfinite(tau))
+        defined = np.isfinite(err)
+        assert np.all(data[f'{prefix}_ci_low'][defined] <= data[f'{prefix}_value'][defined])
+
+    def test_correlation_divergence_npz_has_schema(
+        self, monkeypatch: pytest.MonkeyPatch, tmp_path: Path,
+    ) -> None:
+        import scripts.ising.correlation_divergence as corr_div
+
+        monkeypatch.setattr('matplotlib.pyplot.savefig', lambda *args, **kwargs: None)
+        monkeypatch.setattr(sys, 'argv', [
+            'correlation_divergence', '--size', '32', '--steps', '640',
+            '--eq-steps', '200', '--interval', '5', '--output-dir', str(tmp_path),
+        ])
+        corr_div.main()
+        data = np.load(tmp_path / 'correlation_divergence.npz')
+        n_points = data['temperatures'].size
+        assert n_points > 0
+        self._check(data, 'xi', 'xi', n_points)
+
+    def test_measure_z_npz_has_schema(
+        self, monkeypatch: pytest.MonkeyPatch, tmp_path: Path,
+    ) -> None:
+        import scripts.ising.measure_z as mz
+
+        monkeypatch.setattr('matplotlib.pyplot.savefig', lambda *args, **kwargs: None)
+        monkeypatch.setattr(sys, 'argv', [
+            'measure_z', '--sizes', '8', '12', '--eq-probe-steps', '100',
+            '--eq-max-steps', '2000', '--meas-steps-metro', '200',
+            '--meas-steps-wolff', '100', '--n-seeds', '2', '--output-dir', str(tmp_path),
+        ])
+        mz.main()
+        data = np.load(tmp_path / 'dynamic_exponent_z.npz')
+        for key in ('tau_metro', 'tau_wolff'):
+            for field in self._FIELDS:
+                assert f'{key}_{field}' in data.files, f'{key}_{field}'
+                assert data[f'{key}_{field}'].shape[0] == 2
+            np.testing.assert_allclose(data[f'{key}_value'], data[key])
+        for key in self._META:
+            assert key in data.files, key
+
+    def test_correlation_divergence_blocked_xi_error(self) -> None:
+        """The xi worker reports a finite blocked error and an interval around the fit."""
+        from scripts.ising.correlation_divergence import get_correlation_length
+
+        _, summary = get_correlation_length((2.6, 32, 640, 200, 5, 3))
+        assert np.isfinite(summary['value'])
+        assert np.isfinite(summary['err']) and summary['err'] > 0.0
+        assert summary['ci_low'] < summary['value'] < summary['ci_high']
+
+    def test_efficiency_npz_has_schema(
+        self, monkeypatch: pytest.MonkeyPatch, tmp_path: Path,
+    ) -> None:
+        import scripts.ising.wolff_efficiency as wolff_efficiency
+
+        monkeypatch.setattr('matplotlib.pyplot.savefig', lambda *args, **kwargs: None)
+        monkeypatch.setattr(sys, 'argv', [
+            'wolff_efficiency', '--size', '8', '--t-points', '2', '--meas-steps', '60',
+            '--eq-max-steps', '1000', '--eq-probe-steps', '100', '--n-seeds', '2',
+            '--output-dir', str(tmp_path),
+        ])
+        wolff_efficiency.main()
+        data = np.load(tmp_path / 'wolff_efficiency.npz')
+        for key in ('tau_metro', 'chi_wolff'):
+            for field in self._FIELDS:
+                assert f'{key}_{field}' in data.files
+            np.testing.assert_allclose(data[f'{key}_value'], data[key])
+        for key in self._META:
+            assert key in data.files
+
+
 class TestUncertifiedEquilibration:
     """A pair that hits the step cap without converging is never measured.
 
@@ -1640,8 +1756,9 @@ class TestUncertifiedEquilibration:
         monkeypatch.setattr(
             module, 'prepare_equilibrated_simulation', self._capped_prepare(measured),
         )
-        value = getattr(module, worker_name)((0.9, 8, 50, 100, 10, 1))
-        assert np.isnan(value)
+        summary = getattr(module, worker_name)((0.9, 8, 50, 100, 10, 1))
+        assert all(np.isnan(v) for v in summary.values())
+        assert set(summary) >= {'value', 'err', 'ci_low', 'ci_high', 'tau_int'}
         assert measured == []
 
     def test_measure_z_marks_point(self, monkeypatch: pytest.MonkeyPatch) -> None:

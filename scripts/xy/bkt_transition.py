@@ -13,11 +13,16 @@ import numpy as np
 from models.xy_model import XYSimulation
 from utils.equilibration import prepare_equilibrated_simulation
 from utils.plotting import ensure_results_dir, save_plot
-from utils.sweep_helpers import derive_point_seed
+from utils.statistics import (
+    DEFAULT_CONFIDENCE_LEVEL,
+    UNCERTAINTY_METHOD_BLOCKING,
+    summarize_primary_observable,
+)
+from utils.sweep_helpers import SUMMARY_FIELDS, build_single_run_schema, derive_point_seed
 from utils.system import parallel_sweep, parse_args_compat, setup_logging
 
 
-def simulate_bkt_point(params: tuple[float, int, int, int, int, int]) -> float:
+def simulate_bkt_point(params: tuple[float, int, int, int, int, int]) -> dict[str, float]:
     """
     Worker function to simulate a single temperature and measure average vortex density.
 
@@ -29,9 +34,11 @@ def simulate_bkt_point(params: tuple[float, int, int, int, int, int]) -> float:
 
     Returns
     -------
-    float
-        Average vortex density n_v, or NaN when the two starts did not
-        converge within ``eq_max_steps``.
+    dict[str, float]
+        Blocking summary of the vortex density n_v (``value``, ``err``,
+        ``ci_low``, ``ci_high``, ``tau_int``, ``n_eff``, ``samples``). All
+        fields are NaN when the two starts did not converge within
+        ``eq_max_steps``.
     """
     T, L, eq_probe_steps, eq_max_steps, meas_steps, seed = params
     # The XY model has no metastable domain states, but its random start can
@@ -43,14 +50,16 @@ def simulate_bkt_point(params: tuple[float, int, int, int, int, int]) -> float:
         chunk_size=eq_probe_steps, max_steps=eq_max_steps, detect_stuck=False,
     )
     if not outcome.certified:
-        return float('nan')
+        return dict.fromkeys(SUMMARY_FIELDS, float('nan'))
 
     densities = np.empty(meas_steps, dtype=np.float64)
     for k in range(meas_steps):
         sim.step()
         densities[k] = sim.get_vortex_density()
 
-    return float(np.mean(densities))
+    return summarize_primary_observable(
+        time_series=densities, confidence=DEFAULT_CONFIDENCE_LEVEL,
+    )
 
 
 def main() -> None:
@@ -97,13 +106,18 @@ def main() -> None:
         )
         for i, T in enumerate(temperatures)
     ]
-    vortex_densities: list[float] = parallel_sweep(
+    summaries: list[dict[str, float]] = parallel_sweep(
         worker_func=simulate_bkt_point, params=sweep_params
     )
+    vortex_densities = np.array([s['value'] for s in summaries])
+    density_err = np.array([s['err'] for s in summaries])
 
     # Plotting results
     plt.figure(figsize=(10, 6))
-    plt.plot(temperatures, vortex_densities, 'o-', markersize=5, label='Vortex Density $n_v$')
+    plt.errorbar(
+        temperatures, vortex_densities, yerr=density_err, fmt='o-', markersize=5,
+        capsize=2, label='Vortex Density $n_v$',
+    )
 
     plt.axvline(
         x=T_BKT_THEORETICAL,
@@ -126,10 +140,15 @@ def main() -> None:
     np.savez_compressed(
         npz_path,
         temperatures=temperatures,
-        vortex_densities=np.array(vortex_densities),
+        vortex_densities=vortex_densities,
         # The worker returns NaN only for points whose equilibration hit
         # eq_max_steps without convergence.
-        equilibrated=np.isfinite(np.array(vortex_densities)),
+        equilibrated=np.isfinite(vortex_densities),
+        **build_single_run_schema(
+            prefix='vortex_density', summaries=summaries,
+            uncertainty_method=UNCERTAINTY_METHOD_BLOCKING,
+            confidence=DEFAULT_CONFIDENCE_LEVEL,
+        ),
         T_BKT_theoretical=T_BKT_THEORETICAL,
         L=args.size,
         eq_probe_steps=args.eq_probe_steps,

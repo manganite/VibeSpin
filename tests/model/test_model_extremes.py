@@ -129,3 +129,18 @@ def test_wolff_invalid_update_still_rejected():
         XYSimulation(size=4, temp=1.0, update='swendsen-wang')
     with pytest.raises(ValueError, match='Unknown update scheme'):
         ClockSimulation(size=4, temp=1.0, update='swendsen-wang')
+
+
+def test_parallel_checkerboard_rejects_odd_size():
+    """Odd L joins same-parity sites across the boundary; the parallel sweep would race."""
+    for cls, kwargs in (
+        (IsingSimulation, {}),
+        (XYSimulation, {}),
+        (ClockSimulation, {}),
+        (DiscreteClockSimulation, {}),
+    ):
+        with pytest.raises(ValueError, match='even lattice size'):
+            cls(size=5, temp=1.0, parallel=True, **kwargs)
+        # Serial checkerboard and the other schemes stay valid for odd L.
+        cls(size=5, temp=1.0, parallel=False, **kwargs)
+        cls(size=5, temp=1.0, update='random', parallel=True, **kwargs)

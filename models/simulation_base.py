@@ -492,6 +492,37 @@ class MonteCarloSimulation(ABC):
                 f'J must be a finite, non-negative (ferromagnetic) coupling, got {J}'
             )
 
+    def _validate_parallel_checkerboard(self, *, parallel: bool, update: str) -> None:
+        """Reject the parallel checkerboard kernel on lattices with odd L.
+
+        The two sublattices are independent only when L is even. For odd L
+        the periodic wrap makes rows 0 and L - 1 (and columns 0 and L - 1)
+        nearest neighbours of the same parity, and the ``prange`` loop may
+        update them on different threads at the same time, so a site can
+        read a neighbour that is being rewritten. The serial checkerboard
+        sweep stays valid for odd L, because it is an ordinary sequential
+        single-site update.
+
+        Parameters
+        ----------
+        parallel : bool
+            Whether the parallel kernel was requested.
+        update : str
+            Update scheme; only ``'checkerboard'`` uses the parallel kernel.
+
+        Raises
+        ------
+        ValueError
+            If ``parallel`` is set with the checkerboard update on odd ``L``.
+        """
+        if parallel and update == 'checkerboard' and self.size % 2 == 1:
+            raise ValueError(
+                f'parallel=True with the checkerboard update needs an even lattice size, '
+                f'got L={self.size}: for odd L the periodic boundary joins same-parity '
+                'sites and the parallel sublattice sweep would race. Use an even L or '
+                'parallel=False.'
+            )
+
     def _reseed_numba_for_step(self) -> None:
         """Reseed Numba's RNG deterministically for the upcoming sweep.
 

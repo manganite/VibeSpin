@@ -303,6 +303,7 @@ def _summarize(*, samples: np.ndarray) -> dict[str, np.ndarray]:
     summary = summarize_replicate_samples(samples=samples)
     return {
         'value': np.asarray(summary['value']),
+        'err': np.asarray(summary['err']),
         'p16': np.asarray(summary['ci_low']),
         'p84': np.asarray(summary['ci_high']),
     }
@@ -575,6 +576,23 @@ def run_wolff_efficiency(
         **cast(Any, {key: summaries[key]['value'] for key in _MEASURED_KEYS}),
         **cast(Any, {f'{key}_p16': summaries[key]['p16'] for key in _MEASURED_KEYS}),
         **cast(Any, {f'{key}_p84': summaries[key]['p84'] for key in _MEASURED_KEYS}),
+        # Standardized uncertainty schema (AGENTS.md section 8), additive: the
+        # value is the seed median and the interval the 16-84 % replicate band.
+        # The quantities are per-run summaries, so no autocorrelation time or
+        # effective sample size applies to them.
+        **cast(Any, {
+            f'{key}_{field}': array
+            for key in _MEASURED_KEYS
+            for field, array in (
+                ('value', summaries[key]['value']),
+                ('err', summaries[key]['err']),
+                ('ci_low', summaries[key]['p16']),
+                ('ci_high', summaries[key]['p84']),
+                ('tau_int', np.full(len(temperatures), np.nan)),
+                ('n_eff', np.full(len(temperatures), np.nan)),
+            )
+        }),
+        bootstrap_resamples=0,
     )
     logger.info(f'Data saved to {npz_path}')
 

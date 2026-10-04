@@ -735,3 +735,67 @@ def build_quality_flags(
         'low_effective_sample_flag': low_effective_sample.astype(np.uint8),
         'tau_interval_unstable_flag': tau_interval_unstable.astype(np.uint8),
     }
+
+
+SUMMARY_FIELDS: tuple[str, ...] = (
+    'value', 'err', 'ci_low', 'ci_high', 'tau_int', 'n_eff', 'samples',
+)
+"""Fields of a ``summarize_primary_observable`` result, as read by
+``build_single_run_schema``. A worker that skips an unequilibrated point
+returns ``dict.fromkeys(SUMMARY_FIELDS, nan)``."""
+
+
+def build_single_run_schema(
+    *,
+    prefix: str,
+    summaries: list[dict[str, float]],
+    uncertainty_method: str,
+    confidence: float,
+) -> dict[str, Any]:
+    """Assemble the standard NPZ uncertainty schema for single-run sweeps.
+
+    Scripts that run one simulation per grid point and summarize each with
+    ``summarize_primary_observable`` (or an equivalent dict) use this to
+    write the per-observable fields and metadata required by AGENTS.md
+    section 8 without re-implementing the layout.
+
+    Parameters
+    ----------
+    prefix : str
+        Observable name used as the key prefix, e.g. ``'helicity_modulus'``.
+    summaries : list[dict[str, float]]
+        One summary per grid point with ``value``, ``err``, ``ci_low``,
+        ``ci_high``, ``tau_int``, and ``n_eff``.
+    uncertainty_method : str
+        Label stored as ``uncertainty_method``.
+    confidence : float
+        Confidence level the intervals were built for.
+
+    Returns
+    -------
+    dict[str, Any]
+        ``<prefix>_value``, ``_err``, ``_ci_low``, ``_ci_high``, ``_tau_int``,
+        ``_n_eff`` (shape ``(n_points,)``), ``<prefix>_samples`` (shape
+        ``(n_points, 1)``, the single run's point estimate), and the metadata
+        ``uncertainty_method``, ``confidence_level``, ``n_seeds``,
+        ``bootstrap_resamples``, and ``nan_or_undefined_count``.
+    """
+    def column(field: str) -> np.ndarray:
+        return np.array([float(s.get(field, np.nan)) for s in summaries], dtype=np.float64)
+
+    values = column('value')
+    tau = column('tau_int')
+    return {
+        f'{prefix}_value': values,
+        f'{prefix}_err': column('err'),
+        f'{prefix}_ci_low': column('ci_low'),
+        f'{prefix}_ci_high': column('ci_high'),
+        f'{prefix}_tau_int': tau,
+        f'{prefix}_n_eff': column('n_eff'),
+        f'{prefix}_samples': values[:, None],
+        'uncertainty_method': uncertainty_method,
+        'confidence_level': float(confidence),
+        'n_seeds': 1,
+        'bootstrap_resamples': 0,
+        'nan_or_undefined_count': int(np.sum(~np.isfinite(tau))),
+    }

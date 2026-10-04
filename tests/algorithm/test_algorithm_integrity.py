@@ -129,39 +129,65 @@ def test_discrete_clock_ergodicity():
     assert len(visited_states) == q
 
 
-def test_markov_property_reproducibility():
+@pytest.mark.parametrize(
+    'factory',
+    [
+        lambda seed: IsingSimulation(size=10, temp=2.0, update='checkerboard', seed=seed),
+        lambda seed: IsingSimulation(size=10, temp=2.0, update='random', seed=seed),
+        lambda seed: IsingSimulation(size=10, temp=2.0, update='wolff', seed=seed),
+        lambda seed: XYSimulation(size=10, temp=0.8, update='checkerboard', seed=seed),
+        lambda seed: DiscreteClockSimulation(size=10, temp=0.8, q=6, update='wolff', seed=seed),
+    ],
+    ids=['ising-cb', 'ising-random', 'ising-wolff', 'xy-cb', 'clock-wolff'],
+)
+def test_markov_property_reproducibility(factory):
     """
-    Verify that the next state depends ONLY on the current state and RNG.
-    If we force two simulations into the same state, their next step must be identical
-    (assuming same RNG state).
+    The next state must depend only on the current state and the random stream.
+
+    Two simulations share a seed, so at equal step counts they draw the same
+    random numbers, but they reach the current configuration along different
+    histories: one evolves normally, the other is advanced from a different
+    seed and then overwritten with the first one's spins and step count. If
+    anything besides the lattice and the stream influenced a transition (for
+    example a stale Wolff cluster mask or a cached field), the trajectories
+    would separate.
     """
-    size = 10
-    temp = 2.0
-    sim1 = IsingSimulation(size=size, temp=temp, seed=42)
-    sim2 = IsingSimulation(size=size, temp=temp, seed=42)
+    reference = factory(42)
+    for _ in range(5):
+        reference.step()
 
-    # Ensure they start identical
-    assert np.array_equal(sim1.spins, sim2.spins)
+    other = factory(7)
+    for _ in range(9):
+        other.step()
+    other.spins = np.array(reference.spins, copy=True)
+    other.steps = reference.steps
+    other.seed = reference.seed
 
-    # Run one step
-    sim1.step()
-    sim2.step()
-    assert np.array_equal(sim1.spins, sim2.spins)
+    for _ in range(5):
+        reference.step()
+        other.step()
+        np.testing.assert_array_equal(reference.spins, other.spins)
 
-    # Now manually deviate sim2
-    sim2.spins[0, 0] *= -1
-
-    # Resync seeds to ensure the same 'random' choices are made
-    # (assuming the next step consumes the same amount of entropy)
-    from models.simulation_base import _seed_numba
-    _seed_numba(seed=100)
-    sim1.step()
-
-    _seed_numba(seed=100)
-    sim2.step()
-
-    # They should still be different because their starting states were different
-    assert not np.array_equal(sim1.spins, sim2.spins)
+    # A single flipped spin must change the trajectory, otherwise the check
+    # above would also pass for a kernel that ignored the lattice.
+    probe = factory(42)
+    probe.spins = np.array(reference.spins, copy=True)
+    probe.steps = reference.steps
+    flat = probe.spins.reshape(-1, *probe.spins.shape[2:])
+    if probe.spins.ndim == 2 and probe.spins.dtype == np.int8:
+        flat[0] = -flat[0]
+    elif probe.spins.ndim == 2:
+        flat[0] = (flat[0] + 3) % 6
+    else:
+        flat[0] = -flat[0]
+    diverged = False
+    for _ in range(5):
+        reference.step()
+        probe.step()
+        if not np.array_equal(reference.spins, probe.spins):
+            diverged = True
+            break
+    assert diverged
 
 
 def test_ising_wolff_detailed_balance():

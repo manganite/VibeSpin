@@ -295,7 +295,7 @@ class XYSimulation(VectorSpinObservablesMixin, MonteCarloSimulation):
             Whether to use parallelized Numba kernels (only for
             checkerboard). Parallel kernels are NOT seed-reproducible:
             only the calling thread's Numba RNG is seeded, so two runs
-            with the same seed may differ.
+            with the same seed may differ. Requires an even ``size``.
         seed : int | None
             Optional random seed for reproducibility.
 
@@ -312,6 +312,7 @@ class XYSimulation(VectorSpinObservablesMixin, MonteCarloSimulation):
         self._validate_coupling(J=J)
         self.J = J
         self.update = update
+        self._validate_parallel_checkerboard(parallel=parallel, update=update)
         self.parallel = parallel
 
         if self.init_state == 'ordered':
