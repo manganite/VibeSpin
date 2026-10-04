@@ -220,6 +220,13 @@ def main() -> None:
         tau_wolff_err=wolff_summary['err'],
         tau_wolff_ci_low=wolff_summary['ci_low'],
         tau_wolff_ci_high=wolff_summary['ci_high'],
+        # The observable is itself an autocorrelation time summarised over
+        # independent seeds, so no autocorrelation time or effective sample
+        # size of its own applies; the fields are NaN to complete the schema.
+        tau_metro_tau_int=np.full(n_sizes, np.nan),
+        tau_metro_n_eff=np.full(n_sizes, np.nan),
+        tau_wolff_tau_int=np.full(n_sizes, np.nan),
+        tau_wolff_n_eff=np.full(n_sizes, np.nan),
         uncertainty_method=UNCERTAINTY_METHOD_REPLICATE,
         confidence_level=DEFAULT_CONFIDENCE_LEVEL,
         bootstrap_resamples=0,

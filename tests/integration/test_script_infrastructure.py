@@ -1640,6 +1640,43 @@ class TestSingleRunSchemas:
         defined = np.isfinite(err)
         assert np.all(data[f'{prefix}_ci_low'][defined] <= data[f'{prefix}_value'][defined])
 
+    def test_correlation_divergence_npz_has_schema(
+        self, monkeypatch: pytest.MonkeyPatch, tmp_path: Path,
+    ) -> None:
+        import scripts.ising.correlation_divergence as corr_div
+
+        monkeypatch.setattr('matplotlib.pyplot.savefig', lambda *args, **kwargs: None)
+        monkeypatch.setattr(sys, 'argv', [
+            'correlation_divergence', '--size', '32', '--steps', '640',
+            '--eq-steps', '200', '--interval', '5', '--output-dir', str(tmp_path),
+        ])
+        corr_div.main()
+        data = np.load(tmp_path / 'correlation_divergence.npz')
+        n_points = data['temperatures'].size
+        assert n_points > 0
+        self._check(data, 'xi', 'xi', n_points)
+
+    def test_measure_z_npz_has_schema(
+        self, monkeypatch: pytest.MonkeyPatch, tmp_path: Path,
+    ) -> None:
+        import scripts.ising.measure_z as mz
+
+        monkeypatch.setattr('matplotlib.pyplot.savefig', lambda *args, **kwargs: None)
+        monkeypatch.setattr(sys, 'argv', [
+            'measure_z', '--sizes', '8', '12', '--eq-probe-steps', '100',
+            '--eq-max-steps', '2000', '--meas-steps-metro', '200',
+            '--meas-steps-wolff', '100', '--n-seeds', '2', '--output-dir', str(tmp_path),
+        ])
+        mz.main()
+        data = np.load(tmp_path / 'dynamic_exponent_z.npz')
+        for key in ('tau_metro', 'tau_wolff'):
+            for field in self._FIELDS:
+                assert f'{key}_{field}' in data.files, f'{key}_{field}'
+                assert data[f'{key}_{field}'].shape[0] == 2
+            np.testing.assert_allclose(data[f'{key}_value'], data[key])
+        for key in self._META:
+            assert key in data.files, key
+
     def test_correlation_divergence_blocked_xi_error(self) -> None:
         """The xi worker reports a finite blocked error and an interval around the fit."""
         from scripts.ising.correlation_divergence import get_correlation_length
