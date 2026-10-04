@@ -14,26 +14,31 @@ import numpy as np
 from models.ising_model import IsingSimulation
 from utils.observables import get_averaged_correlation
 from utils.plotting import ensure_results_dir, save_plot
+from utils.sweep_helpers import derive_point_seed
 from utils.system import parallel_sweep, parse_args_compat, setup_logging
 
 
-def get_correlation_length(params: tuple[float, int, int, int, int]) -> tuple[float, float]:
+def get_correlation_length(
+    params: tuple[float, int, int, int, int, int],
+) -> tuple[float, float]:
     """Simulate and extract correlation length xi for a given temperature.
 
     Parameters
     ----------
-    params : tuple[float, int, int, int, int]
-        Tuple of (T, L, steps, eq_steps, sample_interval).
+    params : tuple[float, int, int, int, int, int]
+        Tuple of (T, L, steps, eq_steps, sample_interval, seed).
 
     Returns
     -------
     tuple[float, float]
         A tuple of (T, xi).
     """
-    T, L, steps, eq_steps, sample_interval = params
+    T, L, steps, eq_steps, sample_interval, seed = params
     logger = logging.getLogger('vibespin')
     logger.debug(f'Calculating xi for T={T}...')
-    sim = IsingSimulation(size=L, temp=T)
+    # All temperatures lie above T_c, where a fixed burn-in of many
+    # autocorrelation times suffices and no ordered-start bias can arise.
+    sim = IsingSimulation(size=L, temp=T, seed=seed)
     sim.equilibrate(n_steps=eq_steps)
 
     r, G_r = get_averaged_correlation(sim=sim, total_steps=steps, sample_interval=sample_interval)
@@ -66,6 +71,10 @@ def main() -> None:
     parser.add_argument('--steps', type=int, default=50000, help='Measurement steps')
     parser.add_argument('--eq-steps', type=int, default=10000, help='Equilibration steps')
     parser.add_argument('--interval', type=int, default=20, help='Sample interval')
+    parser.add_argument(
+        '--seed', type=int, default=0,
+        help='Replica index selecting a reproducible seed per temperature (default: 0)',
+    )
     parser.add_argument('--output-dir', type=str, default='results/ising', help='Output directory')
     parser.add_argument('--log-file', type=str, default=None, help='Optional log file path')
     parser.add_argument('--verbose', action='store_true', help='Enable verbose logging')
@@ -85,7 +94,13 @@ def main() -> None:
     logger.info(f'Calculating correlation lengths for T > Tc (L={args.size})...')
     logger.info(f'Approaching Tc={TC_THEORETICAL} with {len(TEMPERATURES)} points.')
 
-    sweep_params = [(T, args.size, args.steps, args.eq_steps, args.interval) for T in TEMPERATURES]
+    sweep_params = [
+        (
+            float(T), args.size, args.steps, args.eq_steps, args.interval,
+            derive_point_seed(temperature_index=i, seed_index=args.seed),
+        )
+        for i, T in enumerate(TEMPERATURES)
+    ]
     results: list[tuple[float, float]] = parallel_sweep(
         worker_func=get_correlation_length, params=sweep_params
     )
@@ -154,6 +169,7 @@ def main() -> None:
         temperatures=temps,
         xi=xis,
         T_c=TC_THEORETICAL,
+        seed_index=args.seed,
         L=args.size,
         steps=args.steps,
         eq_steps=args.eq_steps,

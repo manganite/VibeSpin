@@ -18,7 +18,7 @@ from typing import Any
 import numpy as np
 
 from models.ising_model import IsingSimulation
-from utils.equilibration import convergence_equilibrate
+from utils.equilibration import prepare_equilibrated_simulation
 from utils.exceptions import ZeroVarianceAutocorrelationError
 from utils.statistics import (
     DEFAULT_CONFIDENCE_LEVEL,
@@ -54,17 +54,15 @@ def _measure_tau_point(
         ``wall_time``.
     """
     size_idx, seed_idx, update, L, eq_probe_steps, eq_max_steps, meas_steps, seed = params
-    sim_r = IsingSimulation(size=L, temp=TC_ISING, update=update, init_state='random', seed=seed)
-    sim_o = IsingSimulation(size=L, temp=TC_ISING, update=update, init_state='ordered', seed=seed)
-
-    # Thorough equilibration at Tc via two-start convergence
-    convergence_equilibrate(
-        sim_random=sim_r, sim_ordered=sim_o,
-        chunk_size=eq_probe_steps, max_steps=eq_max_steps,
+    # Thorough equilibration at Tc via two-start convergence; the ordered start
+    # is measured if the random start never joined it.
+    sim, _ = prepare_equilibrated_simulation(
+        model_cls=IsingSimulation, model_kwargs={}, size=L, temp=TC_ISING, seed=seed,
+        chunk_size=eq_probe_steps, max_steps=eq_max_steps, update=update,
     )
 
     t0 = time.perf_counter()
-    mags, _ = sim_r.run(n_steps=meas_steps)
+    mags, _ = sim.run(n_steps=meas_steps)
     wall_time = time.perf_counter() - t0
 
     mags_arr = np.array(mags)

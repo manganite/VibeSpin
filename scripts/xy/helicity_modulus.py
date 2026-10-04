@@ -11,19 +11,21 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 from models.xy_model import XYSimulation
-from utils.equilibration import convergence_equilibrate
+from utils.equilibration import prepare_equilibrated_simulation
 from utils.plotting import ensure_results_dir, save_plot
+from utils.sweep_helpers import derive_point_seed
 from utils.system import parallel_sweep, parse_args_compat, setup_logging
 
 
-def simulate_helicity(params: tuple[float, int, int, int, int]) -> float:
+def simulate_helicity(params: tuple[float, int, int, int, int, int]) -> float:
     """
     Run simulation for a single temperature and compute the helicity modulus.
 
     Parameters
     ----------
-    params : tuple[float, int, int, int, int]
-        Tuple of (T, L, eq_probe_steps, eq_max_steps, meas_steps).
+    params : tuple[float, int, int, int, int, int]
+        Tuple of (T, L, eq_probe_steps, eq_max_steps, meas_steps, seed). The
+        seed belongs to the random start; the ordered start derives its own.
 
     Returns
     -------
@@ -35,23 +37,25 @@ def simulate_helicity(params: tuple[float, int, int, int, int]) -> float:
     ValueError
         If ``T`` is less than or equal to 0.
     """
-    T, L, eq_probe_steps, eq_max_steps, meas_steps = params
+    T, L, eq_probe_steps, eq_max_steps, meas_steps, seed = params
     if T <= 0.0:
         raise ValueError(f'Temperature must be positive to compute helicity modulus, got {T}')
 
-    sim_r = XYSimulation(size=L, temp=T, init_state='random')
-    sim_o = XYSimulation(size=L, temp=T, init_state='ordered')
-    convergence_equilibrate(
-        sim_random=sim_r, sim_ordered=sim_o,
-        chunk_size=eq_probe_steps, max_steps=eq_max_steps,
+    # The XY model has no metastable domain states, but its random start can
+    # relax for thousands of sweeps near T_BKT; the stuck detector would end
+    # such runs early, so the pair runs until it converges. If it never does,
+    # the ordered start is measured.
+    sim, _ = prepare_equilibrated_simulation(
+        model_cls=XYSimulation, model_kwargs={}, size=L, temp=T, seed=seed,
+        chunk_size=eq_probe_steps, max_steps=eq_max_steps, detect_stuck=False,
     )
 
     cos_sums: np.ndarray = np.empty(meas_steps)
     sin_sums: np.ndarray = np.empty(meas_steps)
 
     for k in range(meas_steps):
-        sim_r.step()
-        cos_sums[k], sin_sums[k] = sim_r.get_helicity_data()
+        sim.step()
+        cos_sums[k], sin_sums[k] = sim.get_helicity_data()
 
     # Formula: Upsilon = (1/L^2) * (<Sum cos> - (1/T) * <(Sum sin)^2>)
     avg_cos: float = float(np.mean(cos_sums))
@@ -79,6 +83,10 @@ def main() -> None:
     parser.add_argument('--t-min', type=float, default=0.1, help='Minimum temperature')
     parser.add_argument('--t-max', type=float, default=1.5, help='Maximum temperature')
     parser.add_argument('--t-points', type=int, default=30, help='Number of temperature points')
+    parser.add_argument(
+        '--seed', type=int, default=0,
+        help='Replica index selecting a reproducible seed per temperature (default: 0)',
+    )
     parser.add_argument('--output-dir', type=str, default='results/xy', help='Output directory')
     parser.add_argument('--log-file', type=str, default=None, help='Optional log file path')
     parser.add_argument('--verbose', action='store_true', help='Enable verbose logging')
@@ -96,8 +104,11 @@ def main() -> None:
     logger.info(f'Range: [{args.t_min}, {args.t_max}] with {args.t_points} points.')
 
     sweep_params = [
-        (T, args.size, args.eq_probe_steps, args.eq_max_steps, args.meas_steps)
-        for T in temperatures
+        (
+            float(T), args.size, args.eq_probe_steps, args.eq_max_steps, args.meas_steps,
+            derive_point_seed(temperature_index=i, seed_index=args.seed),
+        )
+        for i, T in enumerate(temperatures)
     ]
     upsilons: list[float] = parallel_sweep(worker_func=simulate_helicity, params=sweep_params)
 
@@ -129,6 +140,7 @@ def main() -> None:
         eq_probe_steps=args.eq_probe_steps,
         eq_max_steps=args.eq_max_steps,
         meas_steps=args.meas_steps,
+        seed_index=args.seed,
     )
     logger.info(f'Data saved to {npz_path}')
 

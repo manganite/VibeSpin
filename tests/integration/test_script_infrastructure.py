@@ -313,7 +313,7 @@ class TestTemperatureSweepWorkerPayloads:
             temperature_index=0,
             seed_index=0,
             eq_probe_steps=100,
-            eq_max_steps=1000,
+            eq_max_steps=5000,  # independent starts need >1000 sweeps at T_BKT
             eq_qs_sigma_threshold=0.05,
             eq_qs_min_steps=1500,
             qs_allow_stuck=False,
@@ -341,7 +341,7 @@ class TestTemperatureSweepWorkerPayloads:
             temperature_index=0,
             seed_index=0,
             eq_probe_steps=100,
-            eq_max_steps=1000,
+            eq_max_steps=5000,  # independent starts need >1000 sweeps here
             eq_qs_sigma_threshold=0.05,
             eq_qs_min_steps=1500,
             qs_allow_stuck=False,
@@ -1307,3 +1307,167 @@ class TestClockModelChoice:
         with pytest.raises(_Stop):
             clock_corr.main()
         assert {p.model_cls for p in captured} == {DiscreteClockSimulation}
+
+
+class TestTwoStartMeasurementPolicy:
+    """Workers must measure the start that two-start equilibration certified.
+
+    After a stuck exit the random start sits on a metastable plateau; the
+    notebooks and several scripts used to measure it anyway, which produced
+    the unphysical low-temperature curves found in the audit.
+    """
+
+    @staticmethod
+    def _point(*, qs_allow_stuck: bool) -> Any:
+        return ThermoPoint(
+            temperature=0.5, size=8, meas_steps=20, eq_probe_steps=50, eq_max_steps=200,
+            eq_qs_sigma_threshold=0.05, eq_qs_min_steps=50,
+            qs_allow_stuck=qs_allow_stuck, prefer_ordered_start=qs_allow_stuck,
+            temperature_index=0, seed_index=0, seed=3,
+            model_cls=IsingSimulation, model_kwargs={},
+            confidence=0.68, derived_method='blocking', bootstrap_resamples=0,
+        )
+
+    def test_accepted_stuck_state_is_measured_on_ordered_start(
+        self, monkeypatch: pytest.MonkeyPatch,
+    ) -> None:
+        """An accepted stuck state yields the ordered start's statistics."""
+        from utils import sweep_helpers
+        from utils.equilibration import TwoStartOutcome
+
+        measured: list[str] = []
+        real_run = IsingSimulation.run
+
+        def _tagging_run(self: Any, *, n_steps: int) -> Any:
+            measured.append(self.init_state)
+            return real_run(self, n_steps=n_steps)
+
+        monkeypatch.setattr(
+            sweep_helpers, 'convergence_equilibrate_two_start',
+            lambda **kwargs: TwoStartOutcome(total_steps=100, converged=False, stuck=True),
+        )
+        monkeypatch.setattr(IsingSimulation, 'run', _tagging_run)
+        raw = sweep_helpers.simulate_at_temperature(self._point(qs_allow_stuck=True))
+        assert raw.equilibrated_flag == 1.0
+        assert measured == ['ordered']
+
+        measured.clear()
+        raw = sweep_helpers.simulate_at_temperature(self._point(qs_allow_stuck=False))
+        assert raw.equilibrated_flag == 0.0
+        assert measured == []
+
+    def test_sweep_starts_use_independent_seeds(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        """The ordered start of a sweep point must not reuse the random start's seed."""
+        from utils import sweep_helpers
+        from utils.equilibration import TwoStartOutcome
+
+        seeds: dict[str, Any] = {}
+        real_init = IsingSimulation.__init__
+
+        def _recording_init(self: Any, **kwargs: Any) -> None:
+            seeds[kwargs['init_state']] = kwargs['seed']
+            real_init(self, **kwargs)
+
+        monkeypatch.setattr(IsingSimulation, '__init__', _recording_init)
+        monkeypatch.setattr(
+            sweep_helpers, 'convergence_equilibrate_two_start',
+            lambda **kwargs: TwoStartOutcome(total_steps=100, converged=True, stuck=False),
+        )
+        sweep_helpers.simulate_at_temperature(self._point(qs_allow_stuck=False))
+        assert seeds['random'] == 3
+        assert seeds['ordered'] != seeds['random']
+
+    def test_stuck_detection_only_where_accepted(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        """Sweep points that cannot accept a stuck state must not exit on one."""
+        from utils import sweep_helpers
+        from utils.equilibration import TwoStartOutcome
+
+        flags: list[bool] = []
+
+        def _fake(**kwargs: Any) -> Any:
+            flags.append(kwargs['detect_stuck'])
+            return TwoStartOutcome(total_steps=100, converged=True, stuck=False)
+
+        monkeypatch.setattr(sweep_helpers, 'convergence_equilibrate_two_start', _fake)
+        sweep_helpers.simulate_at_temperature(self._point(qs_allow_stuck=False))
+        sweep_helpers.simulate_at_temperature(self._point(qs_allow_stuck=True))
+        assert flags == [False, True]
+
+
+class TestWolffEfficiencyBudget:
+    """Wolff must be measured in sweep-equivalents, not raw cluster flips."""
+
+    def test_high_temperature_wolff_samples_span_a_sweep(self) -> None:
+        """In the paramagnet a sample spans many small clusters, and both
+        algorithms agree on chi within noise."""
+        from utils.efficiency_runner import EfficiencyPoint, measure_efficiency_point
+
+        record = measure_efficiency_point(EfficiencyPoint(
+            temp_idx=0, seed_idx=0, temperature=4.0, size=16,
+            eq_probe_steps=100, eq_max_steps=2000, meas_steps=400,
+            model_cls=IsingSimulation, model_kwargs={},
+        ))
+        assert record['wolff_flips_per_sample'] > 5
+        assert record['converged_metro'] == 1.0
+        assert record['converged_wolff'] == 1.0
+        # Same model, same temperature: susceptibilities agree.
+        assert record['chi_wolff'] == pytest.approx(record['chi_metro'], rel=0.35)
+        # tau_wolff stays in cluster flips: at least one sample spacing apart
+        # from zero, i.e. comparable to the flips per sample.
+        assert record['tau_wolff'] >= 0.4 * record['wolff_flips_per_sample']
+
+
+class TestCoarseningAnalysisTiming:
+    """Coarsening traces must be measured at the recorded time."""
+
+    def test_measurement_happens_at_recorded_step(
+        self, monkeypatch: pytest.MonkeyPatch,
+    ) -> None:
+        """The correlation function is taken at sim.steps == t for every t."""
+        import logging
+
+        import scripts.ising.coarsening_analysis as coarsening
+
+        seen: list[int] = []
+        real = IsingSimulation.calculate_correlation_function
+
+        def _spy(self: Any) -> Any:
+            seen.append(self.steps)
+            return real(self)
+
+        monkeypatch.setattr(IsingSimulation, 'calculate_correlation_function', _spy)
+        times, _ = coarsening._run_coarsening_traces(
+            size=8, temp=1.0, n_steps=20, sample_interval=5, n_seeds=1,
+            base_seed=1, logger=logging.getLogger('test'),
+        )
+        assert list(times) == seen == [5, 10, 15, 20]
+
+    def test_xi_eq_is_a_correlation_length_not_the_box(self) -> None:
+        """Below T_c the connected xi_eq is short, not the r[-1] fallback."""
+        import logging
+
+        import scripts.ising.coarsening_analysis as coarsening
+
+        xi = coarsening._measure_xi_eq(
+            size=16, temp=0.5 * coarsening.TC_ISING, seed=5, eq_probe=50, eq_max=1000,
+            meas_steps=200, meas_interval=10, logger=logging.getLogger('test'),
+        )
+        assert 0.0 < xi < 2.0
+
+
+class TestXYScriptSeeding:
+    """The helicity and BKT workers are reproducible for a given seed."""
+
+    @pytest.mark.parametrize(
+        'module_name, worker_name',
+        [
+            ('scripts.xy.helicity_modulus', 'simulate_helicity'),
+            ('scripts.xy.bkt_transition', 'simulate_bkt_point'),
+        ],
+    )
+    def test_worker_reproducible(self, module_name: str, worker_name: str) -> None:
+        import importlib
+
+        worker = getattr(importlib.import_module(module_name), worker_name)
+        params = (1.2, 8, 100, 2000, 50, 1234)
+        assert worker(params) == worker(params)

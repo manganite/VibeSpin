@@ -12,7 +12,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 from models.clock_model import ClockSimulation, DiscreteClockSimulation
-from utils.equilibration import convergence_equilibrate
+from utils.equilibration import prepare_equilibrated_simulation
 from utils.observables import calculate_thermodynamics
 from utils.system import parse_args_compat, setup_logging
 
@@ -52,9 +52,9 @@ def sweep_model(
     meas_steps : int
         Measurement steps per point.
     base_seed : int
-        Base RNG seed; each temperature point uses
+        Base RNG seed; each temperature point seeds its random start with
         ``base_seed + point_index`` so points are reproducible yet
-        distinct.
+        distinct, and its ordered start with a derived partner seed.
     extra_kwargs : dict
         Extra constructor arguments (e.g. ``{'A': aniso}``).
 
@@ -70,14 +70,14 @@ def sweep_model(
 
     for t_idx, T in enumerate(temperatures):
         seed = base_seed + t_idx
-        sim_r = model_cls(size=L, temp=T, q=q, init_state='random', seed=seed, **extra_kwargs)
-        sim_o = model_cls(size=L, temp=T, q=q, init_state='ordered', seed=seed, **extra_kwargs)
-        convergence_equilibrate(
-            sim_random=sim_r, sim_ordered=sim_o,
-            chunk_size=eq_probe_steps, max_steps=eq_max_steps,
+        # Measure the random start only if it joined the ordered one; a start
+        # stranded in a domain-wall state would bias |M| and chi.
+        sim, _ = prepare_equilibrated_simulation(
+            model_cls=model_cls, model_kwargs={'q': q, **extra_kwargs}, size=L,
+            temp=float(T), seed=seed, chunk_size=eq_probe_steps, max_steps=eq_max_steps,
         )
 
-        mags, engs = sim_r.run(n_steps=meas_steps)
+        mags, engs = sim.run(n_steps=meas_steps)
         avg_m, avg_e, susc, spec_h = calculate_thermodynamics(
             mags=np.array(mags), engs=np.array(engs), T=T, L=L,
         )

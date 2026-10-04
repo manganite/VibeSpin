@@ -9,7 +9,11 @@ from typing import Any, NamedTuple, Protocol
 import numpy as np
 from scipy.integrate import cumulative_trapezoid
 
-from utils.equilibration import convergence_equilibrate_with_status
+from utils.equilibration import (
+    convergence_equilibrate_two_start,
+    ordered_start_seed,
+    select_measurement_simulation,
+)
 
 
 class _Sim(Protocol):
@@ -266,7 +270,8 @@ def simulate_equilibrium_correlation(
     temp : float
         Temperature for the measurement.
     seed : int
-        Random seed used for both start states.
+        Random seed of the random start; the ordered start uses
+        ``ordered_start_seed(seed=seed)``.
     eq_probe : int
         Chunk size for convergence equilibration probes.
     eq_max : int
@@ -292,15 +297,17 @@ def simulate_equilibrium_correlation(
         **model_kwargs,
     )
     sim_o = model_cls(
-        size=size, temp=temp, update='checkerboard', init_state='ordered', seed=seed,
-        **model_kwargs,
+        size=size, temp=temp, update='checkerboard', init_state='ordered',
+        seed=ordered_start_seed(seed=seed), **model_kwargs,
     )
-    _, converged = convergence_equilibrate_with_status(
+    outcome = convergence_equilibrate_two_start(
         sim_random=sim_r, sim_ordered=sim_o, chunk_size=eq_probe, max_steps=eq_max,
     )
     # Fall back to ordered-start simulation when random-start is stuck.
-    sim_meas = sim_r if converged else sim_o
-    if not converged and logger is not None:
+    sim_meas = select_measurement_simulation(
+        outcome=outcome, sim_random=sim_r, sim_ordered=sim_o,
+    )
+    if not outcome.converged and logger is not None:
         logger.info(f'T={temp:.3f}: convergence not reached, falling back to ordered start')
     if logger is not None:
         logger.debug(f'Measuring correlations at T={temp:.3f}...')
@@ -330,7 +337,8 @@ class CorrelationPoint(NamedTuple):
     size : int
         Linear lattice size L.
     seed : int
-        Random seed used for both start states.
+        Random seed of the random start; the ordered start uses
+        ``ordered_start_seed(seed=seed)``.
     eq_probe : int
         Chunk size for convergence equilibration probes.
     eq_max : int
@@ -632,6 +640,64 @@ def correlation_length_1e(*, r: np.ndarray, G: np.ndarray) -> float:
     r0, r1 = float(r[idx - 1]), float(r[idx])
     g0, g1 = float(G[idx - 1]), float(G[idx])
     return r0 + (inv_e - g0) * (r1 - r0) / (g1 - g0)
+
+
+def connected_correlation_length(
+    *, sim: _Sim, meas_steps: int, sample_interval: int
+) -> float:
+    """
+    Measure the equilibrium correlation length from the connected correlation.
+
+    The simulation is advanced ``meas_steps`` sweeps, and every
+    ``sample_interval`` sweeps the lattice-axis pair correlation of the spin
+    field is accumulated after subtracting the configuration's mean spin.
+    The 1/e crossing of the averaged, normalised function is returned.
+    Subtracting the mean matters below the ordering temperature: the
+    disconnected function plateaus at m^2 and never falls below 1/e, so a
+    1/e criterion applied to it returns the largest distance available
+    instead of a correlation length.
+
+    Parameters
+    ----------
+    sim : _Sim
+        Equilibrated simulation; it is advanced in place.
+    meas_steps : int
+        Number of sweeps to run.
+    sample_interval : int
+        Sweeps between two samples.
+
+    Returns
+    -------
+    float
+        Connected correlation length in lattice units, or NaN if the averaged
+        function never drops below 1/e within half the lattice.
+
+    Raises
+    ------
+    ValueError
+        If no sample falls inside ``meas_steps``.
+    """
+    if sample_interval < 1 or meas_steps < sample_interval:
+        raise ValueError(
+            f'meas_steps={meas_steps} yields no sample at interval {sample_interval}.'
+        )
+    G_sum: np.ndarray | None = None
+    r_vals = np.empty(0)
+    n_samples = 0
+    for step in range(1, meas_steps + 1):
+        sim.step()
+        if step % sample_interval == 0:
+            field = np.asarray(sim.get_spin_field(), dtype=float)
+            mean = field.mean(axis=(0, 1))
+            r_vals, G = pair_correlation_x(spins=field - mean)
+            G_sum = G if G_sum is None else G_sum + G
+            n_samples += 1
+    if G_sum is None:
+        raise RuntimeError('No correlation sample was accumulated despite a valid interval.')
+    G_avg = G_sum / n_samples
+    if G_avg[0] == 0.0:
+        return float('nan')
+    return correlation_length_1e(r=r_vals, G=G_avg / G_avg[0])
 
 
 def compute_kinetics_metrics(*, sim: _Sim) -> dict[str, float]:
