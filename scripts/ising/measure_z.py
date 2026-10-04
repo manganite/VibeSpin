@@ -203,6 +203,10 @@ def main() -> None:
         tau_wolff_ci_high=wolff_summary['ci_high'],
         uncertainty_method=UNCERTAINTY_METHOD_REPLICATE,
         confidence_level=DEFAULT_CONFIDENCE_LEVEL,
+        bootstrap_resamples=0,
+        nan_or_undefined_count=int(
+            np.isnan(tau_metro_samples).sum() + np.isnan(tau_wolff_samples).sum()
+        ),
     )
     logger.info(f'Data saved to {npz_path}')
 

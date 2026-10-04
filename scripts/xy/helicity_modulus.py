@@ -13,11 +13,16 @@ import numpy as np
 from models.xy_model import XYSimulation
 from utils.equilibration import prepare_equilibrated_simulation
 from utils.plotting import ensure_results_dir, save_plot
-from utils.sweep_helpers import derive_point_seed
+from utils.statistics import (
+    DEFAULT_CONFIDENCE_LEVEL,
+    UNCERTAINTY_METHOD_BLOCKING,
+    summarize_primary_observable,
+)
+from utils.sweep_helpers import build_single_run_schema, derive_point_seed
 from utils.system import parallel_sweep, parse_args_compat, setup_logging
 
 
-def simulate_helicity(params: tuple[float, int, int, int, int, int]) -> float:
+def simulate_helicity(params: tuple[float, int, int, int, int, int]) -> dict[str, float]:
     """
     Run simulation for a single temperature and compute the helicity modulus.
 
@@ -29,8 +34,12 @@ def simulate_helicity(params: tuple[float, int, int, int, int, int]) -> float:
 
     Returns
     -------
-    float
-        Helicity modulus (Upsilon) for this temperature.
+    dict[str, float]
+        Blocking summary of the helicity modulus (``value``, ``err``,
+        ``ci_low``, ``ci_high``, ``tau_int``, ``n_eff``, ``samples``).
+        Upsilon is the mean of the per-sweep quantity
+        ``(Sum cos - (Sum sin)^2 / T) / L^2``, so its error follows from
+        blocking that series directly.
 
     Raises
     ------
@@ -57,12 +66,12 @@ def simulate_helicity(params: tuple[float, int, int, int, int, int]) -> float:
         sim.step()
         cos_sums[k], sin_sums[k] = sim.get_helicity_data()
 
-    # Formula: Upsilon = (1/L^2) * (<Sum cos> - (1/T) * <(Sum sin)^2>)
-    avg_cos: float = float(np.mean(cos_sums))
-    avg_sq_sin: float = float(np.mean(sin_sums**2))
-
-    upsilon: float = (avg_cos - (1.0 / T) * avg_sq_sin) / (L**2)
-    return upsilon
+    # Upsilon = (1/L^2) * (<Sum cos> - (1/T) * <(Sum sin)^2>) is linear in the
+    # two averages, so it is the mean of the per-sweep combination below.
+    per_sweep = (cos_sums - sin_sums**2 / T) / (L**2)
+    return summarize_primary_observable(
+        time_series=per_sweep, confidence=DEFAULT_CONFIDENCE_LEVEL,
+    )
 
 
 def main() -> None:
@@ -110,11 +119,18 @@ def main() -> None:
         )
         for i, T in enumerate(temperatures)
     ]
-    upsilons: list[float] = parallel_sweep(worker_func=simulate_helicity, params=sweep_params)
+    summaries: list[dict[str, float]] = parallel_sweep(
+        worker_func=simulate_helicity, params=sweep_params,
+    )
+    upsilons = np.array([s['value'] for s in summaries])
+    upsilon_err = np.array([s['err'] for s in summaries])
 
     # Plotting
     plt.figure(figsize=(10, 6))
-    plt.plot(temperatures, upsilons, 'o-', label=r'Helicity Modulus $\Upsilon$')
+    plt.errorbar(
+        temperatures, upsilons, yerr=upsilon_err, fmt='o-', capsize=2,
+        label=r'Helicity Modulus $\Upsilon$',
+    )
 
     # Plot the universal jump line: 2/pi * T
     t_line: np.ndarray = np.linspace(args.t_min, args.t_max, 100)
@@ -125,7 +141,8 @@ def main() -> None:
     plt.title('BKT Transition: Superfluid Stiffness')
     plt.grid(True)
     plt.legend()
-    plt.ylim(bottom=0)
+    # Above T_BKT the estimator scatters around zero and can go negative.
+    plt.ylim(bottom=min(0.0, float(np.nanmin(upsilons)) - 0.03))
 
     output_dir: str = ensure_results_dir(directory=args.output_dir)
     save_plot(filename='helicity_modulus.png', directory=output_dir)
@@ -135,7 +152,12 @@ def main() -> None:
     np.savez_compressed(
         npz_path,
         temperatures=temperatures,
-        helicity_modulus=np.array(upsilons),
+        helicity_modulus=upsilons,
+        **build_single_run_schema(
+            prefix='helicity_modulus', summaries=summaries,
+            uncertainty_method=UNCERTAINTY_METHOD_BLOCKING,
+            confidence=DEFAULT_CONFIDENCE_LEVEL,
+        ),
         L=args.size,
         eq_probe_steps=args.eq_probe_steps,
         eq_max_steps=args.eq_max_steps,
