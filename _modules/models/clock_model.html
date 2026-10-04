@@ -106,7 +106,6 @@
 <span class="kn">from</span><span class="w"> </span><span class="nn">__future__</span><span class="w"> </span><span class="kn">import</span> <span class="n">annotations</span>
 
 <span class="kn">import</span><span class="w"> </span><span class="nn">os</span>
-<span class="kn">import</span><span class="w"> </span><span class="nn">warnings</span>
 
 <span class="kn">import</span><span class="w"> </span><span class="nn">matplotlib.pyplot</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">plt</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
@@ -468,7 +467,7 @@
 <span class="sd">            ``&#39;random&#39;`` (random sequential Metropolis, physical</span>
 <span class="sd">            stochastic dynamics for kinetics studies), or</span>
 <span class="sd">            ``&#39;wolff&#39;`` (Wolff-Evertz cluster algorithm using the exchange</span>
-<span class="sd">            term J; detailed balance holds exactly only when A=0).</span>
+<span class="sd">            term J; only valid for A=0, where the model reduces to XY).</span>
 <span class="sd">        init_state : str</span>
 <span class="sd">            Initial spin configuration: ``&#39;random&#39;`` (default) or ``&#39;ordered&#39;``.</span>
 <span class="sd">        parallel : bool</span>
@@ -482,7 +481,8 @@
 <span class="sd">        Raises</span>
 <span class="sd">        ------</span>
 <span class="sd">        ValueError</span>
-<span class="sd">            If ``q`` is less than 2 or update scheme is unknown.</span>
+<span class="sd">            If ``q`` is less than 2, the update scheme is unknown, ``J`` is</span>
+<span class="sd">            negative, or ``update=&#39;wolff&#39;`` is combined with ``A != 0``.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">size</span><span class="o">=</span><span class="n">size</span><span class="p">,</span> <span class="n">temp</span><span class="o">=</span><span class="n">temp</span><span class="p">,</span> <span class="n">init_state</span><span class="o">=</span><span class="n">init_state</span><span class="p">,</span> <span class="n">seed</span><span class="o">=</span><span class="n">seed</span><span class="p">)</span>
         <span class="k">if</span> <span class="n">q</span> <span class="o">&lt;</span> <span class="mi">2</span><span class="p">:</span>
@@ -491,16 +491,16 @@
             <span class="n">valid_opts</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_VALID_UPDATES</span><span class="p">)</span>
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Unknown update scheme </span><span class="si">{</span><span class="n">update</span><span class="si">!r}</span><span class="s1">. Valid options: </span><span class="si">{</span><span class="n">valid_opts</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
         <span class="k">if</span> <span class="n">update</span> <span class="o">==</span> <span class="s1">&#39;wolff&#39;</span> <span class="ow">and</span> <span class="n">A</span> <span class="o">!=</span> <span class="mf">0.0</span><span class="p">:</span>
-            <span class="c1"># The Wolff-Evertz reflection ignores the anisotropy term, so the</span>
-            <span class="c1"># sampled distribution is exactly Boltzmann only for A = 0.</span>
-            <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span>
-                <span class="sa">f</span><span class="s1">&#39;ClockSimulation with update=</span><span class="se">\&#39;</span><span class="s1">wolff</span><span class="se">\&#39;</span><span class="s1"> ignores the anisotropy &#39;</span>
-                <span class="sa">f</span><span class="s1">&#39;term (A=</span><span class="si">{</span><span class="n">A</span><span class="si">}</span><span class="s1">); detailed balance holds exactly only for A=0. &#39;</span>
-                <span class="sa">f</span><span class="s1">&#39;Set A=0.0 for exchange-only studies or use a local update &#39;</span>
-                <span class="sa">f</span><span class="s1">&#39;scheme for anisotropic sampling.&#39;</span><span class="p">,</span>
-                <span class="ne">UserWarning</span><span class="p">,</span>
-                <span class="n">stacklevel</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span>
+            <span class="c1"># The Wolff-Evertz reflection sees only the exchange term, so the</span>
+            <span class="c1"># chain samples the anisotropic Boltzmann weight only for A = 0;</span>
+            <span class="c1"># with A != 0 it would silently sample the XY model instead.</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;ClockSimulation with update=&#39;wolff&#39; requires A=0.0 (got A=</span><span class="si">{</span><span class="n">A</span><span class="si">}</span><span class="s2">): &quot;</span>
+                <span class="sa">f</span><span class="s1">&#39;the cluster reflection ignores the anisotropy term and violates &#39;</span>
+                <span class="sa">f</span><span class="s1">&#39;detailed balance otherwise. Use a local update scheme, or &#39;</span>
+                <span class="sa">f</span><span class="s2">&quot;DiscreteClockSimulation with update=&#39;wolff&#39;.&quot;</span>
             <span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_validate_coupling</span><span class="p">(</span><span class="n">J</span><span class="o">=</span><span class="n">J</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">J</span> <span class="o">=</span> <span class="n">J</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">A</span> <span class="o">=</span> <span class="n">A</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">q</span> <span class="o">=</span> <span class="n">q</span>
@@ -860,6 +860,162 @@
 
 
 
+<div class="viewcode-block" id="discrete_clock_wolff_step_numba">
+<a class="viewcode-back" href="../../api/vibespin.models.html#models.clock_model.discrete_clock_wolff_step_numba">[docs]</a>
+<span class="nd">@njit</span><span class="p">(</span><span class="n">cache</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">fastmath</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">discrete_clock_wolff_step_numba</span><span class="p">(</span>
+    <span class="o">*</span><span class="p">,</span>
+    <span class="n">spins</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
+    <span class="n">beta</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
+    <span class="n">J</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
+    <span class="n">q</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+    <span class="n">sigma_table</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
+    <span class="n">idx_next</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
+    <span class="n">idx_prev</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
+    <span class="n">in_cluster</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
+    <span class="n">stack</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
+    <span class="n">cluster_spins</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Perform one Wolff cluster reflection on the discrete clock lattice.</span>
+
+<span class="sd">    The reflection axis is drawn uniformly from the q mirror axes of the</span>
+<span class="sd">    regular q-gon, at angles ``phi_m = pi * m / q``.  Reflecting the angle</span>
+<span class="sd">    ``theta_s = 2 pi s / q`` about ``phi_m`` gives ``2 phi_m - theta_s``, which</span>
+<span class="sd">    is again an allowed state, ``s&#39; = (m - s) mod q``.  The update therefore</span>
+<span class="sd">    never leaves the discrete state space, and because every state ``s&#39;`` is</span>
+<span class="sd">    reachable from ``s`` with a single-site cluster, the chain is ergodic.</span>
+
+<span class="sd">    Bonds follow the Wolff-Evertz rule: with ``sigma_i`` the component of spin</span>
+<span class="sd">    ``i`` perpendicular to the mirror axis, a bond to a neighbour is activated</span>
+<span class="sd">    with probability ``1 - exp(-2 beta J sigma_i sigma_j)`` when</span>
+<span class="sd">    ``sigma_i sigma_j &gt; 0`` and never otherwise.  Each reflection is an</span>
+<span class="sd">    involution chosen with the same probability in both directions, so</span>
+<span class="sd">    detailed balance holds for the full discrete Hamiltonian.</span>
+
+<span class="sd">    One call constitutes one cluster flip, not one lattice sweep.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    spins : np.ndarray</span>
+<span class="sd">        (N, N) array of integer spin states in {0, ..., q-1}.</span>
+<span class="sd">    beta : float</span>
+<span class="sd">        Inverse temperature 1/kT.</span>
+<span class="sd">    J : float</span>
+<span class="sd">        Coupling constant.</span>
+<span class="sd">    q : int</span>
+<span class="sd">        Number of clock states.</span>
+<span class="sd">    sigma_table : np.ndarray</span>
+<span class="sd">        Length-2q table with ``sigma_table[k] = sin(pi k / q)``, exactly</span>
+<span class="sd">        antisymmetric under ``k -&gt; 2q - k``. The perpendicular projection of</span>
+<span class="sd">        state ``s`` for mirror axis ``m`` is ``sigma_table[(2 s - m) mod 2q]``.</span>
+<span class="sd">    idx_next : np.ndarray</span>
+<span class="sd">        Pre-calculated next-neighbor indices (PBC).</span>
+<span class="sd">    idx_prev : np.ndarray</span>
+<span class="sd">        Pre-calculated previous-neighbor indices (PBC).</span>
+<span class="sd">    in_cluster : np.ndarray</span>
+<span class="sd">        Pre-allocated (N, N) boolean array for cluster membership mask.</span>
+<span class="sd">    stack : np.ndarray</span>
+<span class="sd">        Pre-allocated (N*N) int64 array for DFS stack.</span>
+<span class="sd">    cluster_spins : np.ndarray</span>
+<span class="sd">        Pre-allocated (N*N) int64 array to track cluster elements.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    spins</span>
+<span class="sd">        Updated spins array.</span>
+<span class="sd">    cluster_size</span>
+<span class="sd">        Number of spins reflected in this step.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># The caller hands in an all-False in_cluster mask; the reflection loop</span>
+    <span class="c1"># below clears every entry it set, so the buffer stays reusable.</span>
+    <span class="n">N</span> <span class="o">=</span> <span class="n">spins</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+    <span class="n">two_q</span> <span class="o">=</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">q</span>
+
+    <span class="c1"># Mirror axis index; 2*s - m + 2q is non-negative for s, m in [0, q).</span>
+    <span class="n">m</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">randint</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">q</span><span class="p">)</span>
+    <span class="n">offset</span> <span class="o">=</span> <span class="n">two_q</span> <span class="o">-</span> <span class="n">m</span>
+
+    <span class="n">si</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">randint</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">N</span><span class="p">)</span>
+    <span class="n">sj</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">randint</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">N</span><span class="p">)</span>
+
+    <span class="n">seed_flat</span> <span class="o">=</span> <span class="n">si</span> <span class="o">*</span> <span class="n">N</span> <span class="o">+</span> <span class="n">sj</span>
+    <span class="n">in_cluster</span><span class="p">[</span><span class="n">si</span><span class="p">,</span> <span class="n">sj</span><span class="p">]</span> <span class="o">=</span> <span class="kc">True</span>
+    <span class="n">stack</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="n">seed_flat</span>
+    <span class="n">stack_top</span> <span class="o">=</span> <span class="mi">1</span>
+
+    <span class="n">cluster_spins</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="n">seed_flat</span>
+    <span class="n">cluster_size</span> <span class="o">=</span> <span class="mi">1</span>
+
+    <span class="k">while</span> <span class="n">stack_top</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="n">stack_top</span> <span class="o">-=</span> <span class="mi">1</span>
+        <span class="n">flat</span> <span class="o">=</span> <span class="n">stack</span><span class="p">[</span><span class="n">stack_top</span><span class="p">]</span>
+        <span class="n">ci</span> <span class="o">=</span> <span class="n">flat</span> <span class="o">//</span> <span class="n">N</span>
+        <span class="n">cj</span> <span class="o">=</span> <span class="n">flat</span> <span class="o">%</span> <span class="n">N</span>
+
+        <span class="n">sig_c</span> <span class="o">=</span> <span class="n">sigma_table</span><span class="p">[(</span><span class="mi">2</span> <span class="o">*</span> <span class="n">spins</span><span class="p">[</span><span class="n">ci</span><span class="p">,</span> <span class="n">cj</span><span class="p">]</span> <span class="o">+</span> <span class="n">offset</span><span class="p">)</span> <span class="o">%</span> <span class="n">two_q</span><span class="p">]</span>
+        <span class="n">inxt</span> <span class="o">=</span> <span class="n">idx_next</span><span class="p">[</span><span class="n">ci</span><span class="p">]</span>
+        <span class="n">iprv</span> <span class="o">=</span> <span class="n">idx_prev</span><span class="p">[</span><span class="n">ci</span><span class="p">]</span>
+        <span class="n">jnxt</span> <span class="o">=</span> <span class="n">idx_next</span><span class="p">[</span><span class="n">cj</span><span class="p">]</span>
+        <span class="n">jprv</span> <span class="o">=</span> <span class="n">idx_prev</span><span class="p">[</span><span class="n">cj</span><span class="p">]</span>
+
+        <span class="c1"># North</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">in_cluster</span><span class="p">[</span><span class="n">iprv</span><span class="p">,</span> <span class="n">cj</span><span class="p">]:</span>
+            <span class="n">prod</span> <span class="o">=</span> <span class="n">sig_c</span> <span class="o">*</span> <span class="n">sigma_table</span><span class="p">[(</span><span class="mi">2</span> <span class="o">*</span> <span class="n">spins</span><span class="p">[</span><span class="n">iprv</span><span class="p">,</span> <span class="n">cj</span><span class="p">]</span> <span class="o">+</span> <span class="n">offset</span><span class="p">)</span> <span class="o">%</span> <span class="n">two_q</span><span class="p">]</span>
+            <span class="k">if</span> <span class="n">prod</span> <span class="o">&gt;</span> <span class="mf">0.0</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">random</span><span class="p">()</span> <span class="o">&lt;</span> <span class="mf">1.0</span> <span class="o">-</span> <span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="o">-</span><span class="mf">2.0</span> <span class="o">*</span> <span class="n">beta</span> <span class="o">*</span> <span class="n">J</span> <span class="o">*</span> <span class="n">prod</span><span class="p">):</span>
+                    <span class="n">in_cluster</span><span class="p">[</span><span class="n">iprv</span><span class="p">,</span> <span class="n">cj</span><span class="p">]</span> <span class="o">=</span> <span class="kc">True</span>
+                    <span class="n">new_idx</span> <span class="o">=</span> <span class="n">iprv</span> <span class="o">*</span> <span class="n">N</span> <span class="o">+</span> <span class="n">cj</span>
+                    <span class="n">stack</span><span class="p">[</span><span class="n">stack_top</span><span class="p">]</span> <span class="o">=</span> <span class="n">new_idx</span>
+                    <span class="n">stack_top</span> <span class="o">+=</span> <span class="mi">1</span>
+                    <span class="n">cluster_spins</span><span class="p">[</span><span class="n">cluster_size</span><span class="p">]</span> <span class="o">=</span> <span class="n">new_idx</span>
+                    <span class="n">cluster_size</span> <span class="o">+=</span> <span class="mi">1</span>
+        <span class="c1"># South</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">in_cluster</span><span class="p">[</span><span class="n">inxt</span><span class="p">,</span> <span class="n">cj</span><span class="p">]:</span>
+            <span class="n">prod</span> <span class="o">=</span> <span class="n">sig_c</span> <span class="o">*</span> <span class="n">sigma_table</span><span class="p">[(</span><span class="mi">2</span> <span class="o">*</span> <span class="n">spins</span><span class="p">[</span><span class="n">inxt</span><span class="p">,</span> <span class="n">cj</span><span class="p">]</span> <span class="o">+</span> <span class="n">offset</span><span class="p">)</span> <span class="o">%</span> <span class="n">two_q</span><span class="p">]</span>
+            <span class="k">if</span> <span class="n">prod</span> <span class="o">&gt;</span> <span class="mf">0.0</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">random</span><span class="p">()</span> <span class="o">&lt;</span> <span class="mf">1.0</span> <span class="o">-</span> <span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="o">-</span><span class="mf">2.0</span> <span class="o">*</span> <span class="n">beta</span> <span class="o">*</span> <span class="n">J</span> <span class="o">*</span> <span class="n">prod</span><span class="p">):</span>
+                    <span class="n">in_cluster</span><span class="p">[</span><span class="n">inxt</span><span class="p">,</span> <span class="n">cj</span><span class="p">]</span> <span class="o">=</span> <span class="kc">True</span>
+                    <span class="n">new_idx</span> <span class="o">=</span> <span class="n">inxt</span> <span class="o">*</span> <span class="n">N</span> <span class="o">+</span> <span class="n">cj</span>
+                    <span class="n">stack</span><span class="p">[</span><span class="n">stack_top</span><span class="p">]</span> <span class="o">=</span> <span class="n">new_idx</span>
+                    <span class="n">stack_top</span> <span class="o">+=</span> <span class="mi">1</span>
+                    <span class="n">cluster_spins</span><span class="p">[</span><span class="n">cluster_size</span><span class="p">]</span> <span class="o">=</span> <span class="n">new_idx</span>
+                    <span class="n">cluster_size</span> <span class="o">+=</span> <span class="mi">1</span>
+        <span class="c1"># West</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">in_cluster</span><span class="p">[</span><span class="n">ci</span><span class="p">,</span> <span class="n">jprv</span><span class="p">]:</span>
+            <span class="n">prod</span> <span class="o">=</span> <span class="n">sig_c</span> <span class="o">*</span> <span class="n">sigma_table</span><span class="p">[(</span><span class="mi">2</span> <span class="o">*</span> <span class="n">spins</span><span class="p">[</span><span class="n">ci</span><span class="p">,</span> <span class="n">jprv</span><span class="p">]</span> <span class="o">+</span> <span class="n">offset</span><span class="p">)</span> <span class="o">%</span> <span class="n">two_q</span><span class="p">]</span>
+            <span class="k">if</span> <span class="n">prod</span> <span class="o">&gt;</span> <span class="mf">0.0</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">random</span><span class="p">()</span> <span class="o">&lt;</span> <span class="mf">1.0</span> <span class="o">-</span> <span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="o">-</span><span class="mf">2.0</span> <span class="o">*</span> <span class="n">beta</span> <span class="o">*</span> <span class="n">J</span> <span class="o">*</span> <span class="n">prod</span><span class="p">):</span>
+                    <span class="n">in_cluster</span><span class="p">[</span><span class="n">ci</span><span class="p">,</span> <span class="n">jprv</span><span class="p">]</span> <span class="o">=</span> <span class="kc">True</span>
+                    <span class="n">new_idx</span> <span class="o">=</span> <span class="n">ci</span> <span class="o">*</span> <span class="n">N</span> <span class="o">+</span> <span class="n">jprv</span>
+                    <span class="n">stack</span><span class="p">[</span><span class="n">stack_top</span><span class="p">]</span> <span class="o">=</span> <span class="n">new_idx</span>
+                    <span class="n">stack_top</span> <span class="o">+=</span> <span class="mi">1</span>
+                    <span class="n">cluster_spins</span><span class="p">[</span><span class="n">cluster_size</span><span class="p">]</span> <span class="o">=</span> <span class="n">new_idx</span>
+                    <span class="n">cluster_size</span> <span class="o">+=</span> <span class="mi">1</span>
+        <span class="c1"># East</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">in_cluster</span><span class="p">[</span><span class="n">ci</span><span class="p">,</span> <span class="n">jnxt</span><span class="p">]:</span>
+            <span class="n">prod</span> <span class="o">=</span> <span class="n">sig_c</span> <span class="o">*</span> <span class="n">sigma_table</span><span class="p">[(</span><span class="mi">2</span> <span class="o">*</span> <span class="n">spins</span><span class="p">[</span><span class="n">ci</span><span class="p">,</span> <span class="n">jnxt</span><span class="p">]</span> <span class="o">+</span> <span class="n">offset</span><span class="p">)</span> <span class="o">%</span> <span class="n">two_q</span><span class="p">]</span>
+            <span class="k">if</span> <span class="n">prod</span> <span class="o">&gt;</span> <span class="mf">0.0</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">random</span><span class="p">()</span> <span class="o">&lt;</span> <span class="mf">1.0</span> <span class="o">-</span> <span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="o">-</span><span class="mf">2.0</span> <span class="o">*</span> <span class="n">beta</span> <span class="o">*</span> <span class="n">J</span> <span class="o">*</span> <span class="n">prod</span><span class="p">):</span>
+                    <span class="n">in_cluster</span><span class="p">[</span><span class="n">ci</span><span class="p">,</span> <span class="n">jnxt</span><span class="p">]</span> <span class="o">=</span> <span class="kc">True</span>
+                    <span class="n">new_idx</span> <span class="o">=</span> <span class="n">ci</span> <span class="o">*</span> <span class="n">N</span> <span class="o">+</span> <span class="n">jnxt</span>
+                    <span class="n">stack</span><span class="p">[</span><span class="n">stack_top</span><span class="p">]</span> <span class="o">=</span> <span class="n">new_idx</span>
+                    <span class="n">stack_top</span> <span class="o">+=</span> <span class="mi">1</span>
+                    <span class="n">cluster_spins</span><span class="p">[</span><span class="n">cluster_size</span><span class="p">]</span> <span class="o">=</span> <span class="n">new_idx</span>
+                    <span class="n">cluster_size</span> <span class="o">+=</span> <span class="mi">1</span>
+
+    <span class="c1"># Reflect every cluster spin, s -&gt; (m - s) mod q, and reset the mask.</span>
+    <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">cluster_size</span><span class="p">):</span>
+        <span class="n">flat</span> <span class="o">=</span> <span class="n">cluster_spins</span><span class="p">[</span><span class="n">k</span><span class="p">]</span>
+        <span class="n">ci</span> <span class="o">=</span> <span class="n">flat</span> <span class="o">//</span> <span class="n">N</span>
+        <span class="n">cj</span> <span class="o">=</span> <span class="n">flat</span> <span class="o">%</span> <span class="n">N</span>
+        <span class="n">spins</span><span class="p">[</span><span class="n">ci</span><span class="p">,</span> <span class="n">cj</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="n">m</span> <span class="o">-</span> <span class="n">spins</span><span class="p">[</span><span class="n">ci</span><span class="p">,</span> <span class="n">cj</span><span class="p">]</span> <span class="o">+</span> <span class="n">q</span><span class="p">)</span> <span class="o">%</span> <span class="n">q</span>
+        <span class="n">in_cluster</span><span class="p">[</span><span class="n">ci</span><span class="p">,</span> <span class="n">cj</span><span class="p">]</span> <span class="o">=</span> <span class="kc">False</span>
+
+    <span class="k">return</span> <span class="n">spins</span><span class="p">,</span> <span class="n">cluster_size</span></div>
+
+
+
 <div class="viewcode-block" id="discrete_clock_energy_numba">
 <a class="viewcode-back" href="../../api/vibespin.models.html#models.clock_model.discrete_clock_energy_numba">[docs]</a>
 <span class="nd">@njit</span><span class="p">(</span><span class="n">cache</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">fastmath</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
@@ -922,7 +1078,7 @@
 <span class="sd">    and enforces the discrete symmetry exactly.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
-    <span class="n">_VALID_UPDATES</span><span class="p">:</span> <span class="nb">frozenset</span> <span class="o">=</span> <span class="nb">frozenset</span><span class="p">({</span><span class="s1">&#39;checkerboard&#39;</span><span class="p">,</span> <span class="s1">&#39;random&#39;</span><span class="p">})</span>
+    <span class="n">_VALID_UPDATES</span><span class="p">:</span> <span class="nb">frozenset</span> <span class="o">=</span> <span class="nb">frozenset</span><span class="p">({</span><span class="s1">&#39;checkerboard&#39;</span><span class="p">,</span> <span class="s1">&#39;random&#39;</span><span class="p">,</span> <span class="s1">&#39;wolff&#39;</span><span class="p">})</span>
 
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
@@ -950,9 +1106,11 @@
 <span class="sd">        q : int</span>
 <span class="sd">            Number of clock states (default 6). Must be &gt;= 2.</span>
 <span class="sd">        update : str</span>
-<span class="sd">            Update scheme - ``&#39;checkerboard&#39;`` (default, faster) or</span>
+<span class="sd">            Update scheme - ``&#39;checkerboard&#39;`` (default, faster),</span>
 <span class="sd">            ``&#39;random&#39;`` (random sequential Metropolis, more physical</span>
-<span class="sd">            stochastic dynamics for kinetics studies).</span>
+<span class="sd">            stochastic dynamics for kinetics studies), or ``&#39;wolff&#39;``</span>
+<span class="sd">            (Wolff cluster reflections about the q mirror axes; one step is</span>
+<span class="sd">            one cluster flip).</span>
 <span class="sd">        init_state : str</span>
 <span class="sd">            Initial spin configuration: ``&#39;random&#39;`` (default) or ``&#39;ordered&#39;``.</span>
 <span class="sd">        parallel : bool</span>
@@ -966,7 +1124,8 @@
 <span class="sd">        Raises</span>
 <span class="sd">        ------</span>
 <span class="sd">        ValueError</span>
-<span class="sd">            If ``q`` is less than 2 or update scheme is unknown.</span>
+<span class="sd">            If ``q`` is less than 2, the update scheme is unknown, or ``J`` is</span>
+<span class="sd">            negative.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">size</span><span class="o">=</span><span class="n">size</span><span class="p">,</span> <span class="n">temp</span><span class="o">=</span><span class="n">temp</span><span class="p">,</span> <span class="n">init_state</span><span class="o">=</span><span class="n">init_state</span><span class="p">,</span> <span class="n">seed</span><span class="o">=</span><span class="n">seed</span><span class="p">)</span>
         <span class="k">if</span> <span class="n">q</span> <span class="o">&lt;</span> <span class="mi">2</span><span class="p">:</span>
@@ -974,6 +1133,7 @@
         <span class="k">if</span> <span class="n">update</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_VALID_UPDATES</span><span class="p">:</span>
             <span class="n">valid_opts</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_VALID_UPDATES</span><span class="p">)</span>
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Unknown update scheme </span><span class="si">{</span><span class="n">update</span><span class="si">!r}</span><span class="s1">. Valid options: </span><span class="si">{</span><span class="n">valid_opts</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_validate_coupling</span><span class="p">(</span><span class="n">J</span><span class="o">=</span><span class="n">J</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">J</span> <span class="o">=</span> <span class="n">J</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">q</span> <span class="o">=</span> <span class="n">q</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">update</span> <span class="o">=</span> <span class="n">update</span>
@@ -984,6 +1144,14 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">cos_table</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">angles</span><span class="p">)</span>  <span class="c1"># cos(2*pi*d/q)  for dE calculation</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_cos_angles</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">angles</span><span class="p">)</span>  <span class="c1"># per-state cos for observables</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_sin_angles</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">angles</span><span class="p">)</span>  <span class="c1"># per-state sin for observables</span>
+        <span class="c1"># Perpendicular projections for the Wolff reflection, sin(pi k / q)</span>
+        <span class="c1"># for k in [0, 2q). Mirroring the upper half enforces the exact</span>
+        <span class="c1"># antisymmetry sigma[2q - k] = -sigma[k] that detailed balance relies</span>
+        <span class="c1"># on, independent of floating-point rounding in np.sin.</span>
+        <span class="n">half</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">pi</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="n">q</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span> <span class="o">/</span> <span class="n">q</span><span class="p">)</span>
+        <span class="n">half</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="mf">0.0</span>
+        <span class="n">half</span><span class="p">[</span><span class="n">q</span><span class="p">]</span> <span class="o">=</span> <span class="mf">0.0</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_wolff_sigma_table</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">concatenate</span><span class="p">([</span><span class="n">half</span><span class="p">[:</span><span class="n">q</span><span class="p">],</span> <span class="o">-</span><span class="n">half</span><span class="p">[</span><span class="n">q</span><span class="p">:</span><span class="mi">0</span><span class="p">:</span><span class="o">-</span><span class="mi">1</span><span class="p">]])</span>
 
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">init_state</span> <span class="o">==</span> <span class="s1">&#39;ordered&#39;</span><span class="p">:</span>
             <span class="c1"># Initialize ordered discrete spins (state 0)</span>
@@ -1008,6 +1176,19 @@
                     <span class="n">cos_table</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">cos_table</span><span class="p">,</span>
                     <span class="n">idx_next</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">idx_next</span><span class="p">,</span>
                     <span class="n">idx_prev</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">idx_prev</span><span class="p">,</span>
+                <span class="p">)</span>
+            <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">update</span> <span class="o">==</span> <span class="s1">&#39;wolff&#39;</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">spins</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">last_cluster_size</span> <span class="o">=</span> <span class="n">discrete_clock_wolff_step_numba</span><span class="p">(</span>
+                    <span class="n">spins</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">spins</span><span class="p">,</span>
+                    <span class="n">beta</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">beta</span><span class="p">,</span>
+                    <span class="n">J</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">J</span><span class="p">,</span>
+                    <span class="n">q</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">q</span><span class="p">,</span>
+                    <span class="n">sigma_table</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_wolff_sigma_table</span><span class="p">,</span>
+                    <span class="n">idx_next</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">idx_next</span><span class="p">,</span>
+                    <span class="n">idx_prev</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">idx_prev</span><span class="p">,</span>
+                    <span class="n">in_cluster</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_wolff_cluster_mask</span><span class="p">,</span>
+                    <span class="n">stack</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_wolff_stack</span><span class="p">,</span>
+                    <span class="n">cluster_spins</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_wolff_cluster_spins</span><span class="p">,</span>
                 <span class="p">)</span>
             <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">parallel</span><span class="p">:</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">spins</span> <span class="o">=</span> <span class="n">discrete_clock_step_parallel_numba</span><span class="p">(</span>
@@ -1059,6 +1240,29 @@
         <span class="n">sx</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_cos_angles</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">spins</span><span class="p">]</span>
         <span class="n">sy</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_sin_angles</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">spins</span><span class="p">]</span>
         <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">stack</span><span class="p">([</span><span class="n">sx</span><span class="p">,</span> <span class="n">sy</span><span class="p">],</span> <span class="n">axis</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span>
+
+<div class="viewcode-block" id="DiscreteClockSimulation.get_spin_field">
+<a class="viewcode-back" href="../../api/vibespin.models.html#models.clock_model.DiscreteClockSimulation.get_spin_field">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_spin_field</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Return the spins as ``(L, L, 2)`` unit vectors.</span>
+
+<span class="sd">        The integer state indices are an internal encoding; analysis helpers</span>
+<span class="sd">        need the planar vectors they represent.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        np.ndarray</span>
+<span class="sd">            Unit-vector field of shape ``(L, L, 2)``.</span>
+
+<span class="sd">        Raises</span>
+<span class="sd">        ------</span>
+<span class="sd">        RuntimeError</span>
+<span class="sd">            If the lattice has not been initialised.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">spins</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s1">&#39;Simulation lattice is uninitialized (spins is None).&#39;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_spins_as_vectors</span><span class="p">()</span></div>
+
 
     <span class="k">def</span><span class="w"> </span><span class="nf">_calculate_vorticity</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Calculate the vorticity (winding number) of each plaquette.&quot;&quot;&quot;</span>
@@ -1118,19 +1322,40 @@
         <span class="n">choices</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;checkerboard&#39;</span><span class="p">,</span> <span class="s1">&#39;random&#39;</span><span class="p">,</span> <span class="s1">&#39;wolff&#39;</span><span class="p">],</span>
         <span class="n">help</span><span class="o">=</span><span class="s1">&#39;Update scheme (default: checkerboard)&#39;</span><span class="p">,</span>
     <span class="p">)</span>
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span>
+        <span class="s1">&#39;--continuous&#39;</span><span class="p">,</span> <span class="n">action</span><span class="o">=</span><span class="s1">&#39;store_true&#39;</span><span class="p">,</span>
+        <span class="n">help</span><span class="o">=</span><span class="s1">&#39;Continuous planar spins with anisotropy -A cos(q theta) instead of &#39;</span>
+             <span class="s1">&#39;the discrete model (default: discrete)&#39;</span><span class="p">,</span>
+    <span class="p">)</span>
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span>
+        <span class="s1">&#39;--aniso&#39;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">float</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+        <span class="n">help</span><span class="o">=</span><span class="s1">&#39;Anisotropy A of the continuous model (default 1.0); requires --continuous&#39;</span><span class="p">,</span>
+    <span class="p">)</span>
     <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;--verbose&#39;</span><span class="p">,</span> <span class="n">action</span><span class="o">=</span><span class="s1">&#39;store_true&#39;</span><span class="p">,</span> <span class="n">help</span><span class="o">=</span><span class="s1">&#39;Enable verbose logging&#39;</span><span class="p">)</span>
     <span class="n">args</span> <span class="o">=</span> <span class="n">parser</span><span class="o">.</span><span class="n">parse_args</span><span class="p">()</span>
+    <span class="k">if</span> <span class="n">args</span><span class="o">.</span><span class="n">aniso</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">args</span><span class="o">.</span><span class="n">continuous</span><span class="p">:</span>
+        <span class="n">parser</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="s1">&#39;--aniso applies only to the continuous model; add --continuous&#39;</span><span class="p">)</span>
 
     <span class="n">log_level</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">DEBUG</span> <span class="k">if</span> <span class="n">args</span><span class="o">.</span><span class="n">verbose</span> <span class="k">else</span> <span class="n">logging</span><span class="o">.</span><span class="n">INFO</span>
     <span class="n">logger</span> <span class="o">=</span> <span class="n">setup_logging</span><span class="p">(</span><span class="n">level</span><span class="o">=</span><span class="n">log_level</span><span class="p">)</span>
 
+    <span class="n">sim</span><span class="p">:</span> <span class="n">ClockSimulation</span> <span class="o">|</span> <span class="n">DiscreteClockSimulation</span>
+    <span class="k">if</span> <span class="n">args</span><span class="o">.</span><span class="n">continuous</span><span class="p">:</span>
+        <span class="n">aniso</span> <span class="o">=</span> <span class="mf">1.0</span> <span class="k">if</span> <span class="n">args</span><span class="o">.</span><span class="n">aniso</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">args</span><span class="o">.</span><span class="n">aniso</span>
+        <span class="n">variant</span> <span class="o">=</span> <span class="sa">f</span><span class="s1">&#39;continuous, A=</span><span class="si">{</span><span class="n">aniso</span><span class="si">}</span><span class="s1">&#39;</span>
+        <span class="n">sim</span> <span class="o">=</span> <span class="n">ClockSimulation</span><span class="p">(</span>
+            <span class="n">size</span><span class="o">=</span><span class="n">args</span><span class="o">.</span><span class="n">size</span><span class="p">,</span> <span class="n">temp</span><span class="o">=</span><span class="n">args</span><span class="o">.</span><span class="n">temp</span><span class="p">,</span> <span class="n">q</span><span class="o">=</span><span class="n">args</span><span class="o">.</span><span class="n">q</span><span class="p">,</span> <span class="n">A</span><span class="o">=</span><span class="n">aniso</span><span class="p">,</span> <span class="n">seed</span><span class="o">=</span><span class="n">args</span><span class="o">.</span><span class="n">seed</span><span class="p">,</span>
+            <span class="n">parallel</span><span class="o">=</span><span class="n">args</span><span class="o">.</span><span class="n">parallel</span><span class="p">,</span> <span class="n">update</span><span class="o">=</span><span class="n">args</span><span class="o">.</span><span class="n">update</span><span class="p">,</span>
+        <span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">variant</span> <span class="o">=</span> <span class="s1">&#39;discrete&#39;</span>
+        <span class="n">sim</span> <span class="o">=</span> <span class="n">DiscreteClockSimulation</span><span class="p">(</span>
+            <span class="n">size</span><span class="o">=</span><span class="n">args</span><span class="o">.</span><span class="n">size</span><span class="p">,</span> <span class="n">temp</span><span class="o">=</span><span class="n">args</span><span class="o">.</span><span class="n">temp</span><span class="p">,</span> <span class="n">q</span><span class="o">=</span><span class="n">args</span><span class="o">.</span><span class="n">q</span><span class="p">,</span> <span class="n">seed</span><span class="o">=</span><span class="n">args</span><span class="o">.</span><span class="n">seed</span><span class="p">,</span>
+            <span class="n">parallel</span><span class="o">=</span><span class="n">args</span><span class="o">.</span><span class="n">parallel</span><span class="p">,</span> <span class="n">update</span><span class="o">=</span><span class="n">args</span><span class="o">.</span><span class="n">update</span><span class="p">,</span>
+        <span class="p">)</span>
     <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
-        <span class="sa">f</span><span class="s1">&#39;Initializing </span><span class="si">{</span><span class="n">args</span><span class="o">.</span><span class="n">q</span><span class="si">}</span><span class="s1">-state Clock Model (L=</span><span class="si">{</span><span class="n">args</span><span class="o">.</span><span class="n">size</span><span class="si">}</span><span class="s1">, T=</span><span class="si">{</span><span class="n">args</span><span class="o">.</span><span class="n">temp</span><span class="si">}</span><span class="s1">, &#39;</span>
-        <span class="sa">f</span><span class="s1">&#39;update=</span><span class="si">{</span><span class="n">args</span><span class="o">.</span><span class="n">update</span><span class="si">}</span><span class="s1">, parallel=</span><span class="si">{</span><span class="n">args</span><span class="o">.</span><span class="n">parallel</span><span class="si">}</span><span class="s1">)...&#39;</span>
-    <span class="p">)</span>
-    <span class="n">sim</span> <span class="o">=</span> <span class="n">ClockSimulation</span><span class="p">(</span>
-        <span class="n">size</span><span class="o">=</span><span class="n">args</span><span class="o">.</span><span class="n">size</span><span class="p">,</span> <span class="n">temp</span><span class="o">=</span><span class="n">args</span><span class="o">.</span><span class="n">temp</span><span class="p">,</span> <span class="n">q</span><span class="o">=</span><span class="n">args</span><span class="o">.</span><span class="n">q</span><span class="p">,</span> <span class="n">seed</span><span class="o">=</span><span class="n">args</span><span class="o">.</span><span class="n">seed</span><span class="p">,</span> <span class="n">parallel</span><span class="o">=</span><span class="n">args</span><span class="o">.</span><span class="n">parallel</span><span class="p">,</span>
-        <span class="n">update</span><span class="o">=</span><span class="n">args</span><span class="o">.</span><span class="n">update</span>
+        <span class="sa">f</span><span class="s1">&#39;Initialized </span><span class="si">{</span><span class="n">args</span><span class="o">.</span><span class="n">q</span><span class="si">}</span><span class="s1">-state Clock Model (</span><span class="si">{</span><span class="n">variant</span><span class="si">}</span><span class="s1">, L=</span><span class="si">{</span><span class="n">args</span><span class="o">.</span><span class="n">size</span><span class="si">}</span><span class="s1">, &#39;</span>
+        <span class="sa">f</span><span class="s1">&#39;T=</span><span class="si">{</span><span class="n">args</span><span class="o">.</span><span class="n">temp</span><span class="si">}</span><span class="s1">, update=</span><span class="si">{</span><span class="n">args</span><span class="o">.</span><span class="n">update</span><span class="si">}</span><span class="s1">, parallel=</span><span class="si">{</span><span class="n">args</span><span class="o">.</span><span class="n">parallel</span><span class="si">}</span><span class="s1">)&#39;</span>
     <span class="p">)</span>
 
     <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Running for </span><span class="si">{</span><span class="n">args</span><span class="o">.</span><span class="n">steps</span><span class="si">}</span><span class="s1"> steps...&#39;</span><span class="p">)</span>
@@ -1142,7 +1367,8 @@
 
     <span class="c1"># Final Phase Configuration</span>
     <span class="k">if</span> <span class="n">sim</span><span class="o">.</span><span class="n">spins</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-        <span class="n">angles</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arctan2</span><span class="p">(</span><span class="n">sim</span><span class="o">.</span><span class="n">spins</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="mi">1</span><span class="p">],</span> <span class="n">sim</span><span class="o">.</span><span class="n">spins</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="mi">0</span><span class="p">])</span>
+        <span class="n">field</span> <span class="o">=</span> <span class="n">sim</span><span class="o">.</span><span class="n">get_spin_field</span><span class="p">()</span>
+        <span class="n">angles</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arctan2</span><span class="p">(</span><span class="n">field</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="mi">1</span><span class="p">],</span> <span class="n">field</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="mi">0</span><span class="p">])</span>
         <span class="n">im1</span> <span class="o">=</span> <span class="n">ax1</span><span class="o">.</span><span class="n">imshow</span><span class="p">(</span><span class="n">angles</span><span class="p">,</span> <span class="n">cmap</span><span class="o">=</span><span class="s1">&#39;hsv&#39;</span><span class="p">,</span> <span class="n">interpolation</span><span class="o">=</span><span class="s1">&#39;none&#39;</span><span class="p">,</span> <span class="n">vmin</span><span class="o">=-</span><span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="p">,</span> <span class="n">vmax</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="p">)</span>
         <span class="n">ax1</span><span class="o">.</span><span class="n">set_title</span><span class="p">(</span><span class="s1">&#39;Final Spin Phase&#39;</span><span class="p">)</span>
         <span class="n">ax1</span><span class="o">.</span><span class="n">axis</span><span class="p">(</span><span class="s1">&#39;off&#39;</span><span class="p">)</span>

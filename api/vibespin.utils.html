@@ -126,13 +126,18 @@ worker, the figure, and the argument surface live here and each model script
 supplies only its own physics.</p>
 <p>Comparing raw autocorrelation times across the two algorithms would be
 meaningless, because one Wolff step touches a cluster and one Metropolis sweep
-touches the whole lattice.  The work-normalised time multiplies the Wolff
-autocorrelation time by the mean cluster fraction, putting both on a
-lattice-sweep footing; the independent-samples-per-second figure sidesteps the
-question entirely by measuring against the clock.</p>
+touches the whole lattice.  The Wolff run therefore records one sample every
+<code class="docutils literal notranslate"><span class="pre">round(L^2</span> <span class="pre">/</span> <span class="pre">&lt;C&gt;)</span></code> cluster flips, roughly one lattice sweep of work, so that
+both algorithms receive the same measurement budget in sweep units; giving
+both the same number of raw steps would leave Wolff with a few sweeps of work
+in the paramagnet, where clusters hold a handful of spins.  <code class="docutils literal notranslate"><span class="pre">tau_wolff</span></code> is
+stored in cluster flips as before, and the work-normalised time multiplies it
+by the mean cluster fraction, putting both algorithms on a lattice-sweep
+footing; the independent-samples-per-second figure sidesteps the question
+entirely by measuring against the clock.</p>
 <dl class="py class">
 <dt class="sig sig-object py" id="utils.efficiency_runner.EfficiencyPoint">
-<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">utils.efficiency_runner.</span></span><span class="sig-name descname"><span class="pre">EfficiencyPoint</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">temp_idx</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">seed_idx</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">temperature</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">size</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">eq_probe_steps</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">eq_max_steps</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">meas_steps</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">model_cls</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">type</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">model_kwargs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/utils/efficiency_runner.html#EfficiencyPoint"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#utils.efficiency_runner.EfficiencyPoint" title="Link to this definition"></a></dt>
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">utils.efficiency_runner.</span></span><span class="sig-name descname"><span class="pre">EfficiencyPoint</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">temp_idx</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">seed_idx</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">temperature</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">size</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">eq_probe_steps</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">eq_max_steps</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">meas_steps</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">model_cls</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">type</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">model_kwargs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">detect_stuck</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/utils/efficiency_runner.html#EfficiencyPoint"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#utils.efficiency_runner.EfficiencyPoint" title="Link to this definition"></a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">NamedTuple</span></code></p>
 <p>Typed worker payload for one (temperature, seed) efficiency measurement.</p>
 <dl class="field-list simple">
@@ -149,9 +154,18 @@ question entirely by measuring against the clock.</p>
 qualified name so that it survives the multiprocessing pickle.</p></li>
 <li><p><strong>model_kwargs</strong> (<em>dict</em><em>[</em><em>str</em><em>, </em><em>Any</em><em>]</em>) – Extra constructor arguments beyond size, temperature, update, start,
 and seed.</p></li>
+<li><p><strong>detect_stuck</strong> (<em>bool</em>) – Enable quasi-steady stuck detection for both equilibrations; set only
+below the ordering temperature of a model with metastable domain
+states (default False).</p></li>
 </ul>
 </dd>
 </dl>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="utils.efficiency_runner.EfficiencyPoint.detect_stuck">
+<span class="sig-name descname"><span class="pre">detect_stuck</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">bool</span></span><a class="headerlink" href="#utils.efficiency_runner.EfficiencyPoint.detect_stuck" title="Link to this definition"></a></dt>
+<dd><p>Alias for field number 9</p>
+</dd></dl>
+
 <dl class="py attribute">
 <dt class="sig sig-object py" id="utils.efficiency_runner.EfficiencyPoint.eq_max_steps">
 <span class="sig-name descname"><span class="pre">eq_max_steps</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">int</span></span><a class="headerlink" href="#utils.efficiency_runner.EfficiencyPoint.eq_max_steps" title="Link to this definition"></a></dt>
@@ -236,14 +250,18 @@ and seed.</p></li>
 <span class="sig-prename descclassname"><span class="pre">utils.efficiency_runner.</span></span><span class="sig-name descname"><span class="pre">measure_efficiency_point</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">point</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#utils.efficiency_runner.EfficiencyPoint" title="utils.efficiency_runner.EfficiencyPoint"><span class="pre">EfficiencyPoint</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">float</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="../_modules/utils/efficiency_runner.html#measure_efficiency_point"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#utils.efficiency_runner.measure_efficiency_point" title="Link to this definition"></a></dt>
 <dd><p>Measure local-update and cluster-update efficiency at one grid point.</p>
 <p>Both algorithms start from their own independently equilibrated state, so
-that neither inherits the other’s correlations, and each is timed over the
-same number of its own steps.</p>
+that neither inherits the other’s correlations. Metropolis records one
+sample per sweep; Wolff records one sample every <code class="docutils literal notranslate"><span class="pre">round(L^2</span> <span class="pre">/</span> <span class="pre">&lt;C&gt;)</span></code>
+cluster flips, so both receive the same budget in sweep units.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><p><strong>point</strong> (<a class="reference internal" href="#utils.efficiency_runner.EfficiencyPoint" title="utils.efficiency_runner.EfficiencyPoint"><em>EfficiencyPoint</em></a>) – Payload describing the measurement.</p>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
-<dd class="field-even"><p>Grid indices, temperature, and the seven measured quantities.</p>
+<dd class="field-even"><p>Grid indices, temperature, the measured quantities, and the
+<code class="docutils literal notranslate"><span class="pre">converged_metro</span></code> and <code class="docutils literal notranslate"><span class="pre">converged_wolff</span></code> flags. An algorithm whose
+two starts did not converge within <code class="docutils literal notranslate"><span class="pre">eq_max_steps</span></code> is not measured,
+and its quantities are NaN.</p>
 </dd>
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
 <dd class="field-odd"><p>dict[str, float]</p>
@@ -279,7 +297,7 @@ label, or None to omit them.</p></li>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="utils.efficiency_runner.run_wolff_efficiency">
-<span class="sig-prename descclassname"><span class="pre">utils.efficiency_runner.</span></span><span class="sig-name descname"><span class="pre">run_wolff_efficiency</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">args</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Namespace</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">model_cls</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">type</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">model_kwargs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">model_label</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">transitions</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">float</span><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="../_modules/utils/efficiency_runner.html#run_wolff_efficiency"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#utils.efficiency_runner.run_wolff_efficiency" title="Link to this definition"></a></dt>
+<span class="sig-prename descclassname"><span class="pre">utils.efficiency_runner.</span></span><span class="sig-name descname"><span class="pre">run_wolff_efficiency</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">args</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Namespace</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">model_cls</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">type</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">model_kwargs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">model_label</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">transitions</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">float</span><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">stuck_below</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="../_modules/utils/efficiency_runner.html#run_wolff_efficiency"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#utils.efficiency_runner.run_wolff_efficiency" title="Link to this definition"></a></dt>
 <dd><p>Run the efficiency comparison and write its NPZ file and figure.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
@@ -292,6 +310,9 @@ and seed.</p></li>
 <li><p><strong>model_label</strong> (<em>str</em>) – Model name for the figure title and the NPZ metadata.</p></li>
 <li><p><strong>transitions</strong> (<em>dict</em><em>[</em><em>str</em><em>, </em><em>float</em><em>] or </em><em>None</em>) – Temperatures to mark in every panel, keyed by legend label, or None to
 omit the markers.  The first by label is drawn dashed, the rest dotted.</p></li>
+<li><p><strong>stuck_below</strong> (<em>float</em><em> or </em><em>None</em>) – Temperature below which stuck detection is enabled, i.e. the ordering
+temperature of a model with metastable domain states. None disables
+stuck detection everywhere.</p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
@@ -313,6 +334,67 @@ helpers that support them.  These algorithms were previously split between
 <code class="docutils literal notranslate"><span class="pre">utils.system</span></code> (equilibrate functions) and <code class="docutils literal notranslate"><span class="pre">utils.analysis</span></code>
 (relaxation diagnostic helpers), which required a lazy cross-import to avoid
 circular dependencies.  Unifying them here eliminates that workaround.</p>
+<dl class="py data">
+<dt class="sig sig-object py" id="utils.equilibration.ORDERED_START_SEED_OFFSET">
+<span class="sig-prename descclassname"><span class="pre">utils.equilibration.</span></span><span class="sig-name descname"><span class="pre">ORDERED_START_SEED_OFFSET</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">500</span></span><a class="headerlink" href="#utils.equilibration.ORDERED_START_SEED_OFFSET" title="Link to this definition"></a></dt>
+<dd><p>Offset between the seed of a random start and that of its ordered partner.
+The per-sweep RNG streams depend only on (seed, step), so two starts built
+with one seed draw identical random numbers and their traces become
+correlated, which weakens the cross-band test that assumes independent
+runs. The offset sits inside the 1000-seed block that <code class="docutils literal notranslate"><span class="pre">derive_point_seed</span></code>
+reserves for one replica, clear of the small <code class="docutils literal notranslate"><span class="pre">seed</span> <span class="pre">+</span> <span class="pre">1</span></code> and <code class="docutils literal notranslate"><span class="pre">seed</span> <span class="pre">+</span> <span class="pre">2</span></code>
+sub-streams callers derive.</p>
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="utils.equilibration.TwoStartOutcome">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">utils.equilibration.</span></span><span class="sig-name descname"><span class="pre">TwoStartOutcome</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">total_steps</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">converged</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">stuck</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/utils/equilibration.html#TwoStartOutcome"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#utils.equilibration.TwoStartOutcome" title="Link to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">NamedTuple</span></code></p>
+<p>Result of a two-start equilibration.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>total_steps</strong> (<em>int</em>) – MC steps run by each of the two simulations.</p></li>
+<li><p><strong>converged</strong> (<em>bool</em>) – Whether the mutual cross-band criterion was met, i.e. both starts
+reached the same stationary state.</p></li>
+<li><p><strong>stuck</strong> (<em>bool</em>) – Whether the run stopped on a quasi-steady stuck state: the ordered
+start had settled while the random start stayed stranded on a
+metastable plateau. Only the ordered start is then a valid
+measurement source.</p></li>
+</ul>
+</dd>
+</dl>
+<dl class="py property">
+<dt class="sig sig-object py" id="utils.equilibration.TwoStartOutcome.certified">
+<span class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">certified</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">bool</span></span><a class="headerlink" href="#utils.equilibration.TwoStartOutcome.certified" title="Link to this definition"></a></dt>
+<dd><p>Whether a measurement on this pair is valid.</p>
+<p>True after convergence or after a stuck exit. A stuck exit can only
+occur where the caller enabled <code class="docutils literal notranslate"><span class="pre">detect_stuck</span></code>, which callers do only
+where a stuck state is accepted. A run that reached <code class="docutils literal notranslate"><span class="pre">max_steps</span></code> is
+not certified: neither start is known to have relaxed, and callers
+store NaN for the point instead of measuring it.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="utils.equilibration.TwoStartOutcome.converged">
+<span class="sig-name descname"><span class="pre">converged</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">bool</span></span><a class="headerlink" href="#utils.equilibration.TwoStartOutcome.converged" title="Link to this definition"></a></dt>
+<dd><p>Alias for field number 1</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="utils.equilibration.TwoStartOutcome.stuck">
+<span class="sig-name descname"><span class="pre">stuck</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">bool</span></span><a class="headerlink" href="#utils.equilibration.TwoStartOutcome.stuck" title="Link to this definition"></a></dt>
+<dd><p>Alias for field number 2</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="utils.equilibration.TwoStartOutcome.total_steps">
+<span class="sig-name descname"><span class="pre">total_steps</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">int</span></span><a class="headerlink" href="#utils.equilibration.TwoStartOutcome.total_steps" title="Link to this definition"></a></dt>
+<dd><p>Alias for field number 0</p>
+</dd></dl>
+
+</dd></dl>
+
 <dl class="py function">
 <dt class="sig sig-object py" id="utils.equilibration.adaptive_equilibrate">
 <span class="sig-prename descclassname"><span class="pre">utils.equilibration.</span></span><span class="sig-name descname"><span class="pre">adaptive_equilibrate</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">sim</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">_Sim</span></span></em>, <em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">min_steps</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">probe_steps</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">500</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">factor</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">50.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">max_steps</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">200000</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">int</span></span></span><a class="reference internal" href="../_modules/utils/equilibration.html#adaptive_equilibrate"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#utils.equilibration.adaptive_equilibrate" title="Link to this definition"></a></dt>
@@ -385,6 +467,46 @@ dwell_window, min_fraction_inside, sigma_floor, etc.).</p></li>
 </dd></dl>
 
 <dl class="py function">
+<dt class="sig sig-object py" id="utils.equilibration.convergence_equilibrate_two_start">
+<span class="sig-prename descclassname"><span class="pre">utils.equilibration.</span></span><span class="sig-name descname"><span class="pre">convergence_equilibrate_two_start</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">sim_random</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">_Sim</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sim_ordered</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">_Sim</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">chunk_size</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">500</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">max_steps</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">200000</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">qs_sigma_threshold</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.05</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">qs_min_steps</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">1500</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">detect_stuck</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Any</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="#utils.equilibration.TwoStartOutcome" title="utils.equilibration.TwoStartOutcome"><span class="pre">TwoStartOutcome</span></a></span></span><a class="reference internal" href="../_modules/utils/equilibration.html#convergence_equilibrate_two_start"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#utils.equilibration.convergence_equilibrate_two_start" title="Link to this definition"></a></dt>
+<dd><p>Equilibrate a random-start and an ordered-start simulation side by side.</p>
+<p>The two runs advance in chunks until their smoothed magnetization traces
+pass the mutual cross-band criterion of
+<code class="docutils literal notranslate"><span class="pre">estimate_relaxation_time_two_start</span></code>, until the quasi-steady stuck
+detector fires, or until <code class="docutils literal notranslate"><span class="pre">max_steps</span></code> is reached. Unlike
+<code class="docutils literal notranslate"><span class="pre">convergence_equilibrate_with_status</span></code> the result keeps a stuck exit
+apart from genuine convergence, so callers can measure on the start that
+is actually valid (see <code class="docutils literal notranslate"><span class="pre">select_measurement_simulation</span></code>).</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>sim_random</strong> (<em>_Sim</em>) – Simulation instance started from a random state.</p></li>
+<li><p><strong>sim_ordered</strong> (<em>_Sim</em>) – Simulation instance started from an ordered state. It should carry a
+different seed from <code class="docutils literal notranslate"><span class="pre">sim_random</span></code> (see <code class="docutils literal notranslate"><span class="pre">ordered_start_seed</span></code>).</p></li>
+<li><p><strong>chunk_size</strong> (<em>int</em>) – Number of steps to run between convergence checks.</p></li>
+<li><p><strong>max_steps</strong> (<em>int</em>) – Hard cap on total steps.</p></li>
+<li><p><strong>qs_sigma_threshold</strong> (<em>float</em>) – Tail-std threshold used to detect a quasi-steady stuck state.</p></li>
+<li><p><strong>qs_min_steps</strong> (<em>int</em>) – Minimum accumulated steps before stuck detection may fire.</p></li>
+<li><p><strong>detect_stuck</strong> (<em>bool</em>) – Whether a quasi-steady stuck state ends the run early (default False).
+The detector cannot tell a stranded random start from one that is
+still relaxing slowly, which is common near a transition and for the
+XY model below T_BKT, so it is opt-in: enable it only in the ordered
+phase of a model with metastable domain states, where measuring the
+ordered start after a stuck exit is valid.</p></li>
+<li><p><strong>**kwargs</strong> (<em>Any</em>) – Passed to <code class="docutils literal notranslate"><span class="pre">estimate_relaxation_time_two_start</span></code> (k, smooth_window,
+dwell_window, min_fraction_inside, sigma_floor, etc.).</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Steps run, convergence flag, and stuck flag. At most one flag is set.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference internal" href="#utils.equilibration.TwoStartOutcome" title="utils.equilibration.TwoStartOutcome">TwoStartOutcome</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
 <dt class="sig sig-object py" id="utils.equilibration.convergence_equilibrate_with_status">
 <span class="sig-prename descclassname"><span class="pre">utils.equilibration.</span></span><span class="sig-name descname"><span class="pre">convergence_equilibrate_with_status</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">sim_random</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">_Sim</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sim_ordered</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">_Sim</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">chunk_size</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">500</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">max_steps</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">200000</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">qs_sigma_threshold</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.05</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">qs_min_steps</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">1500</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">qs_allow_stuck</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Any</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">bool</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="../_modules/utils/equilibration.html#convergence_equilibrate_with_status"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#utils.equilibration.convergence_equilibrate_with_status" title="Link to this definition"></a></dt>
 <dd><p>Equilibrate two simulations and report whether convergence was reached.</p>
@@ -393,6 +515,11 @@ mutual cross-band criterion: each smoothed trajectory must enter and sustain
 a band defined by the other trajectory’s tail statistics.  A sigma floor
 prevents false positives when one trace is nearly flat.  This variant returns
 both the total number of MC steps executed and a boolean convergence flag.</p>
+<p>The boolean cannot tell an accepted stuck state from genuine convergence;
+after an accepted stuck state only the ordered start is a valid
+measurement source. Callers that measure should use
+<code class="docutils literal notranslate"><span class="pre">convergence_equilibrate_two_start</span></code> with
+<code class="docutils literal notranslate"><span class="pre">select_measurement_simulation</span></code> instead.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
@@ -463,6 +590,89 @@ length) if no convergence is detected, or <code class="docutils literal notransl
 </dd>
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
 <dd class="field-odd"><p>int</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="utils.equilibration.ordered_start_seed">
+<span class="sig-prename descclassname"><span class="pre">utils.equilibration.</span></span><span class="sig-name descname"><span class="pre">ordered_start_seed</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">seed</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">int</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span></span><a class="reference internal" href="../_modules/utils/equilibration.html#ordered_start_seed"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#utils.equilibration.ordered_start_seed" title="Link to this definition"></a></dt>
+<dd><p>Return the seed for the ordered-start partner of a seeded random start.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>seed</strong> (<em>int</em><em> or </em><em>None</em>) – Seed of the random-start simulation. <code class="docutils literal notranslate"><span class="pre">None</span></code> (unseeded) is passed
+through unchanged.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><code class="docutils literal notranslate"><span class="pre">seed</span> <span class="pre">+</span> <span class="pre">ORDERED_START_SEED_OFFSET</span></code>, or <code class="docutils literal notranslate"><span class="pre">None</span></code> for an unseeded run.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>int or None</p>
+</dd>
+<dt class="field-even">Raises<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>ValueError</strong> – If the partner seed would leave the 32-bit generator range.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="utils.equilibration.prepare_equilibrated_simulation">
+<span class="sig-prename descclassname"><span class="pre">utils.equilibration.</span></span><span class="sig-name descname"><span class="pre">prepare_equilibrated_simulation</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">model_cls</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">type</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">model_kwargs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">size</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">temp</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">seed</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">chunk_size</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">max_steps</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">update</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'checkerboard'</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Any</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">Any</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference internal" href="#utils.equilibration.TwoStartOutcome" title="utils.equilibration.TwoStartOutcome"><span class="pre">TwoStartOutcome</span></a><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="../_modules/utils/equilibration.html#prepare_equilibrated_simulation"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#utils.equilibration.prepare_equilibrated_simulation" title="Link to this definition"></a></dt>
+<dd><p>Build a two-start pair, equilibrate it, and return the start to measure.</p>
+<p>The random start receives <code class="docutils literal notranslate"><span class="pre">seed</span></code> and the ordered start
+<code class="docutils literal notranslate"><span class="pre">ordered_start_seed(seed=seed)</span></code>, so the two runs draw independent random
+numbers. After equilibration the random start is returned when the pair
+converged, and the ordered start otherwise (see
+<code class="docutils literal notranslate"><span class="pre">select_measurement_simulation</span></code>). When the run hit <code class="docutils literal notranslate"><span class="pre">max_steps</span></code>,
+<code class="docutils literal notranslate"><span class="pre">outcome.certified</span></code> is False and the caller should record NaN for the
+point rather than measure the returned simulation.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>model_cls</strong> (<em>type</em>) – Simulation class to instantiate.</p></li>
+<li><p><strong>model_kwargs</strong> (<em>dict</em><em>[</em><em>str</em><em>, </em><em>Any</em><em>]</em>) – Constructor arguments beyond size, temperature, update, start, and seed.</p></li>
+<li><p><strong>size</strong> (<em>int</em>) – Linear lattice size L.</p></li>
+<li><p><strong>temp</strong> (<em>float</em>) – Simulation temperature T.</p></li>
+<li><p><strong>seed</strong> (<em>int</em><em> or </em><em>None</em>) – Seed of the random start; <code class="docutils literal notranslate"><span class="pre">None</span></code> leaves both starts unseeded.</p></li>
+<li><p><strong>chunk_size</strong> (<em>int</em>) – Steps between convergence checks.</p></li>
+<li><p><strong>max_steps</strong> (<em>int</em>) – Hard cap on equilibration steps.</p></li>
+<li><p><strong>update</strong> (<em>str</em>) – Update scheme for both starts (default <code class="docutils literal notranslate"><span class="pre">'checkerboard'</span></code>).</p></li>
+<li><p><strong>**kwargs</strong> (<em>Any</em>) – Passed to <code class="docutils literal notranslate"><span class="pre">convergence_equilibrate_two_start</span></code>, for example
+<code class="docutils literal notranslate"><span class="pre">detect_stuck=True</span></code> in the ordered phase of a model with metastable
+domain states.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>The simulation to measure and the equilibration outcome.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>tuple[Any, <a class="reference internal" href="#utils.equilibration.TwoStartOutcome" title="utils.equilibration.TwoStartOutcome">TwoStartOutcome</a>]</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="utils.equilibration.select_measurement_simulation">
+<span class="sig-prename descclassname"><span class="pre">utils.equilibration.</span></span><span class="sig-name descname"><span class="pre">select_measurement_simulation</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">outcome</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#utils.equilibration.TwoStartOutcome" title="utils.equilibration.TwoStartOutcome"><span class="pre">TwoStartOutcome</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">sim_random</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">SimT</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sim_ordered</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">SimT</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">SimT</span></span></span><a class="reference internal" href="../_modules/utils/equilibration.html#select_measurement_simulation"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#utils.equilibration.select_measurement_simulation" title="Link to this definition"></a></dt>
+<dd><p>Choose which start of an equilibrated pair to measure.</p>
+<p>The random start is used only when the two starts converged to the same
+state. After a stuck exit the random start sits on a metastable plateau,
+so the ordered start is returned. After hitting the step cap the ordered
+start is returned as well, but neither start is certified
+(<code class="docutils literal notranslate"><span class="pre">outcome.certified</span></code> is False) and callers must not measure it.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>outcome</strong> (<a class="reference internal" href="#utils.equilibration.TwoStartOutcome" title="utils.equilibration.TwoStartOutcome"><em>TwoStartOutcome</em></a>) – Result of <code class="docutils literal notranslate"><span class="pre">convergence_equilibrate_two_start</span></code>.</p></li>
+<li><p><strong>sim_random</strong> (<em>simulation</em>) – Random-start simulation.</p></li>
+<li><p><strong>sim_ordered</strong> (<em>simulation</em>) – Ordered-start simulation.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><code class="docutils literal notranslate"><span class="pre">sim_random</span></code> if the pair converged, otherwise <code class="docutils literal notranslate"><span class="pre">sim_ordered</span></code>.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>simulation</p>
 </dd>
 </dl>
 </dd></dl>
@@ -605,7 +815,7 @@ single-trajectory behavior).</p></li>
 <p>Physics-related utility functions for calculating thermodynamic observables and correlations.</p>
 <dl class="py class">
 <dt class="sig sig-object py" id="utils.observables.CorrelationPoint">
-<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">utils.observables.</span></span><span class="sig-name descname"><span class="pre">CorrelationPoint</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">label</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">temperature</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">model_cls</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">type</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">model_kwargs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">size</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">seed</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">eq_probe</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">eq_max</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">meas_steps</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">interval</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/utils/observables.html#CorrelationPoint"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#utils.observables.CorrelationPoint" title="Link to this definition"></a></dt>
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">utils.observables.</span></span><span class="sig-name descname"><span class="pre">CorrelationPoint</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">label</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">temperature</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">model_cls</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">type</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">model_kwargs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">size</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">seed</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">eq_probe</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">eq_max</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">meas_steps</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">interval</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">detect_stuck</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/utils/observables.html#CorrelationPoint"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#utils.observables.CorrelationPoint" title="Link to this definition"></a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">NamedTuple</span></code></p>
 <p>Typed worker payload for one temperature of a correlation comparison.</p>
 <dl class="field-list simple">
@@ -620,14 +830,22 @@ qualified name so that it survives the multiprocessing pickle.</p></li>
 <li><p><strong>model_kwargs</strong> (<em>dict</em><em>[</em><em>str</em><em>, </em><em>Any</em><em>]</em>) – Extra constructor arguments beyond size, temperature, update, start,
 and seed.</p></li>
 <li><p><strong>size</strong> (<em>int</em>) – Linear lattice size L.</p></li>
-<li><p><strong>seed</strong> (<em>int</em>) – Random seed used for both start states.</p></li>
+<li><p><strong>seed</strong> (<em>int</em>) – Random seed of the random start; the ordered start uses
+<code class="docutils literal notranslate"><span class="pre">ordered_start_seed(seed=seed)</span></code>.</p></li>
 <li><p><strong>eq_probe</strong> (<em>int</em>) – Chunk size for convergence equilibration probes.</p></li>
 <li><p><strong>eq_max</strong> (<em>int</em>) – Maximum equilibration steps.</p></li>
 <li><p><strong>meas_steps</strong> (<em>int</em>) – Measurement steps after equilibration.</p></li>
 <li><p><strong>interval</strong> (<em>int</em>) – Spacing between correlation samples during measurement.</p></li>
+<li><p><strong>detect_stuck</strong> (<em>bool</em>) – Forwarded to <code class="docutils literal notranslate"><span class="pre">simulate_equilibrium_correlation</span></code> (default False).</p></li>
 </ul>
 </dd>
 </dl>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="utils.observables.CorrelationPoint.detect_stuck">
+<span class="sig-name descname"><span class="pre">detect_stuck</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">bool</span></span><a class="headerlink" href="#utils.observables.CorrelationPoint.detect_stuck" title="Link to this definition"></a></dt>
+<dd><p>Alias for field number 10</p>
+</dd></dl>
+
 <dl class="py attribute">
 <dt class="sig sig-object py" id="utils.observables.CorrelationPoint.eq_max">
 <span class="sig-name descname"><span class="pre">eq_max</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">int</span></span><a class="headerlink" href="#utils.observables.CorrelationPoint.eq_max" title="Link to this definition"></a></dt>
@@ -760,6 +978,39 @@ unsorted order of <code class="docutils literal notranslate"><span class="pre">t
 </dd>
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
 <dd class="field-odd"><p>dict[str, float]</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="utils.observables.connected_correlation_length">
+<span class="sig-prename descclassname"><span class="pre">utils.observables.</span></span><span class="sig-name descname"><span class="pre">connected_correlation_length</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">sim</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">_Sim</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">meas_steps</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sample_interval</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">float</span></span></span><a class="reference internal" href="../_modules/utils/observables.html#connected_correlation_length"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#utils.observables.connected_correlation_length" title="Link to this definition"></a></dt>
+<dd><p>Measure the equilibrium correlation length from the connected correlation.</p>
+<p>The simulation is advanced <code class="docutils literal notranslate"><span class="pre">meas_steps</span></code> sweeps, and every
+<code class="docutils literal notranslate"><span class="pre">sample_interval</span></code> sweeps the lattice-axis pair correlation of the spin
+field is accumulated after subtracting the configuration’s mean spin.
+The 1/e crossing of the averaged, normalised function is returned.
+Subtracting the mean matters below the ordering temperature: the
+disconnected function plateaus at m^2 and never falls below 1/e, so a
+1/e criterion applied to it returns the largest distance available
+instead of a correlation length.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>sim</strong> (<em>_Sim</em>) – Equilibrated simulation; it is advanced in place.</p></li>
+<li><p><strong>meas_steps</strong> (<em>int</em>) – Number of sweeps to run.</p></li>
+<li><p><strong>sample_interval</strong> (<em>int</em>) – Sweeps between two samples.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Connected correlation length in lattice units, or NaN if the averaged
+function never drops below 1/e within half the lattice.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>float</p>
+</dd>
+<dt class="field-even">Raises<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>ValueError</strong> – If no sample falls inside <code class="docutils literal notranslate"><span class="pre">meas_steps</span></code>.</p>
 </dd>
 </dl>
 </dd></dl>
@@ -910,7 +1161,8 @@ payload across processes.</p>
 <dd class="field-odd"><p><strong>point</strong> (<a class="reference internal" href="#utils.observables.CorrelationPoint" title="utils.observables.CorrelationPoint"><em>CorrelationPoint</em></a>) – Payload describing the measurement.</p>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
-<dd class="field-even"><p>The point’s label, the radial distances, and the averaged G(r).</p>
+<dd class="field-even"><p>The point’s label, the radial distances, and the averaged G(r), which
+is all NaN when the two starts did not converge within <code class="docutils literal notranslate"><span class="pre">eq_max</span></code>.</p>
 </dd>
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
 <dd class="field-odd"><p>tuple[str, numpy.ndarray, numpy.ndarray]</p>
@@ -961,13 +1213,13 @@ then averages within each annular bin.</p>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="utils.observables.simulate_equilibrium_correlation">
-<span class="sig-prename descclassname"><span class="pre">utils.observables.</span></span><span class="sig-name descname"><span class="pre">simulate_equilibrium_correlation</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">model_cls</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">type</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">model_kwargs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">size</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">temp</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">seed</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">eq_probe</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">eq_max</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">meas_steps</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">interval</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">logger</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Logger</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">ndarray</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">ndarray</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="../_modules/utils/observables.html#simulate_equilibrium_correlation"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#utils.observables.simulate_equilibrium_correlation" title="Link to this definition"></a></dt>
+<span class="sig-prename descclassname"><span class="pre">utils.observables.</span></span><span class="sig-name descname"><span class="pre">simulate_equilibrium_correlation</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">model_cls</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">type</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">model_kwargs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">size</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">temp</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">seed</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">eq_probe</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">eq_max</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">meas_steps</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">interval</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">logger</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Logger</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">detect_stuck</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">ndarray</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">ndarray</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="../_modules/utils/observables.html#simulate_equilibrium_correlation"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#utils.observables.simulate_equilibrium_correlation" title="Link to this definition"></a></dt>
 <dd><p>Equilibrate a model and measure its averaged correlation function.</p>
 <p>Runs two-start convergence equilibration (random start vs. ordered start,
 checkerboard updates) to avoid initialization bias, then averages the
 correlation function over <code class="docutils literal notranslate"><span class="pre">meas_steps</span></code> Monte Carlo steps, sampling every
 <code class="docutils literal notranslate"><span class="pre">interval</span></code> steps. When convergence is not reached within <code class="docutils literal notranslate"><span class="pre">eq_max</span></code>
-steps, measurement falls back to the ordered-start simulation.</p>
+steps, the point is not measured and G(r) is returned as NaN.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
@@ -977,18 +1229,24 @@ constructor beyond <code class="docutils literal notranslate"><span class="pre">
 and <code class="docutils literal notranslate"><span class="pre">seed</span></code> (e.g. <code class="docutils literal notranslate"><span class="pre">{'q':</span> <span class="pre">6}</span></code> for the clock model).</p></li>
 <li><p><strong>size</strong> (<em>int</em>) – Linear lattice size L.</p></li>
 <li><p><strong>temp</strong> (<em>float</em>) – Temperature for the measurement.</p></li>
-<li><p><strong>seed</strong> (<em>int</em>) – Random seed used for both start states.</p></li>
+<li><p><strong>seed</strong> (<em>int</em>) – Random seed of the random start; the ordered start uses
+<code class="docutils literal notranslate"><span class="pre">ordered_start_seed(seed=seed)</span></code>.</p></li>
 <li><p><strong>eq_probe</strong> (<em>int</em>) – Chunk size for convergence equilibration probes.</p></li>
 <li><p><strong>eq_max</strong> (<em>int</em>) – Maximum equilibration steps.</p></li>
 <li><p><strong>meas_steps</strong> (<em>int</em>) – Measurement steps after equilibration.</p></li>
 <li><p><strong>interval</strong> (<em>int</em>) – Spacing between correlation samples during measurement.</p></li>
 <li><p><strong>logger</strong> (<em>logging.Logger</em><em> | </em><em>None</em>) – Optional logger for progress and fallback messages.</p></li>
+<li><p><strong>detect_stuck</strong> (<em>bool</em>) – Enable quasi-steady stuck detection, so that a random start stranded
+in a domain state ends the run and the ordered start is measured.
+Set it only in the ordered phase of a model with metastable domain
+states (default False).</p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
 <dd class="field-even"><p><ul class="simple">
 <li><p><strong>r</strong> (<em>np.ndarray</em>) – Radial distances.</p></li>
-<li><p><strong>G_r_avg</strong> (<em>np.ndarray</em>) – Averaged correlation values G(r).</p></li>
+<li><p><strong>G_r_avg</strong> (<em>np.ndarray</em>) – Averaged correlation values G(r), all NaN when the two starts did not
+converge within <code class="docutils literal notranslate"><span class="pre">eq_max</span></code> steps.</p></li>
 </ul>
 </p>
 </dd>
@@ -1423,9 +1681,32 @@ shape <code class="docutils literal notranslate"><span class="pre">(n_points,</s
 <dl class="py function">
 <dt class="sig sig-object py" id="utils.statistics.summarize_seed_ensemble">
 <span class="sig-prename descclassname"><span class="pre">utils.statistics.</span></span><span class="sig-name descname"><span class="pre">summarize_seed_ensemble</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">values</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">within_seed_errors</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">confidence</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.68</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">float</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="../_modules/utils/statistics.html#summarize_seed_ensemble"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#utils.statistics.summarize_seed_ensemble" title="Link to this definition"></a></dt>
-<dd><p>Aggregate per-seed estimates into one mean with hierarchical uncertainty.</p>
-<p>The total variance combines between-seed and within-seed components:
-Var(mean) = Var_between / n_seeds + mean(Var_within) / n_seeds.</p>
+<dd><p>Aggregate per-seed estimates into one mean with its standard error.</p>
+<p>With two or more finite seeds the error is the standard error of the seed
+mean, <code class="docutils literal notranslate"><span class="pre">sqrt(Var_between</span> <span class="pre">/</span> <span class="pre">n_seeds)</span></code>, with a Student-t interval on
+<code class="docutils literal notranslate"><span class="pre">n_seeds</span> <span class="pre">-</span> <span class="pre">1</span></code> degrees of freedom. The spread of independent seed
+estimates already contains each seed’s own statistical noise, so adding
+the within-seed variance again would count it twice (for independent
+seeds the reported error was too large by a factor near sqrt(2)). With a
+single seed the within-seed error is the only information and is used
+directly. Both components are still reported for diagnostics.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>values</strong> (<em>np.ndarray</em>) – Per-seed point estimates.</p></li>
+<li><p><strong>within_seed_errors</strong> (<em>np.ndarray</em>) – Per-seed standard errors from blocking.</p></li>
+<li><p><strong>confidence</strong> (<em>float</em>) – Two-sided confidence level for the CI bounds.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><code class="docutils literal notranslate"><span class="pre">value</span></code>, <code class="docutils literal notranslate"><span class="pre">err</span></code>, <code class="docutils literal notranslate"><span class="pre">ci_low</span></code>, <code class="docutils literal notranslate"><span class="pre">ci_high</span></code>,
+<code class="docutils literal notranslate"><span class="pre">between_seed_component</span></code>, <code class="docutils literal notranslate"><span class="pre">within_seed_component</span></code>, <code class="docutils literal notranslate"><span class="pre">samples</span></code>,
+and <code class="docutils literal notranslate"><span class="pre">nan_or_undefined_count</span></code>.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>dict[str, float]</p>
+</dd>
+</dl>
 </dd></dl>
 
 </section>
@@ -1558,16 +1839,22 @@ Metropolis and Wolff streams that <code class="docutils literal notranslate"><sp
 <li><p><strong>temperature</strong> (<em>float</em>) – Simulation temperature T.</p></li>
 <li><p><strong>size</strong> (<em>int</em>) – Linear lattice dimension L.</p></li>
 <li><p><strong>meas_steps</strong> (<em>int</em>) – Number of Monte Carlo sweeps to record after equilibration.</p></li>
-<li><p><strong>eq_probe_steps</strong> (<em>int</em>) – Chunk size passed to <code class="docutils literal notranslate"><span class="pre">convergence_equilibrate_with_status</span></code>.</p></li>
+<li><p><strong>eq_probe_steps</strong> (<em>int</em>) – Chunk size passed to <code class="docutils literal notranslate"><span class="pre">convergence_equilibrate_two_start</span></code>.</p></li>
 <li><p><strong>eq_max_steps</strong> (<em>int</em>) – Hard cap on total equilibration steps.</p></li>
 <li><p><strong>eq_qs_sigma_threshold</strong> (<em>float</em>) – Tail-std threshold for quasi-steady stuck-state detection.</p></li>
 <li><p><strong>eq_qs_min_steps</strong> (<em>int</em>) – Minimum steps before stuck detection is allowed to fire.</p></li>
-<li><p><strong>qs_allow_stuck</strong> (<em>bool</em>) – If True, a quasi-steady stuck state counts as convergence (Ising low-T).</p></li>
-<li><p><strong>prefer_ordered_start</strong> (<em>bool</em>) – If True, switch to the ordered-start simulation when its magnetisation
-substantially exceeds the random-start value.  Appropriate for Ising below T_c.</p></li>
+<li><p><strong>qs_allow_stuck</strong> (<em>bool</em>) – If True, stuck detection is active and a quasi-steady stuck state
+counts as convergence, measured on the ordered start (Ising and the
+discrete clock model at low T). If False, stuck detection is off and
+the pair runs until it converges or reaches <code class="docutils literal notranslate"><span class="pre">eq_max_steps</span></code>.</p></li>
+<li><p><strong>prefer_ordered_start</strong> (<em>bool</em>) – Retained for payload compatibility; it no longer changes the result.
+The ordered start is measured whenever the random start was stranded
+in an accepted stuck state, and the former magnetisation-gap
+heuristic this flag controlled is removed.</p></li>
 <li><p><strong>temperature_index</strong> (<em>int</em>) – Index of this temperature in the sweep’s temperature array.</p></li>
 <li><p><strong>seed_index</strong> (<em>int</em>) – Replica index within the multi-seed ensemble for this temperature.</p></li>
-<li><p><strong>seed</strong> (<em>int</em>) – RNG seed for both the random- and ordered-start simulations.</p></li>
+<li><p><strong>seed</strong> (<em>int</em>) – RNG seed of the random-start simulation; the ordered start uses
+<code class="docutils literal notranslate"><span class="pre">ordered_start_seed(seed=seed)</span></code> so the two runs are independent.</p></li>
 <li><p><strong>model_cls</strong> (<em>type</em>) – Simulation class to instantiate (e.g. <code class="docutils literal notranslate"><span class="pre">IsingSimulation</span></code>). Must be
 importable by its qualified name so it survives multiprocessing pickle.</p></li>
 <li><p><strong>model_kwargs</strong> (<em>dict</em><em>[</em><em>str</em><em>, </em><em>Any</em><em>]</em>) – Extra keyword arguments forwarded to the model constructor beyond
@@ -1713,7 +2000,7 @@ unstable.</p></li>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="utils.sweep_helpers.build_uncertainty_bundle">
-<span class="sig-prename descclassname"><span class="pre">utils.sweep_helpers.</span></span><span class="sig-name descname"><span class="pre">build_uncertainty_bundle</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">values_by_seed</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">errors_by_seed</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tau_by_seed</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_eff_by_seed</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">confidence</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">ndarray</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="../_modules/utils/sweep_helpers.html#build_uncertainty_bundle"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#utils.sweep_helpers.build_uncertainty_bundle" title="Link to this definition"></a></dt>
+<span class="sig-prename descclassname"><span class="pre">utils.sweep_helpers.</span></span><span class="sig-name descname"><span class="pre">build_uncertainty_bundle</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">values_by_seed</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">errors_by_seed</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tau_by_seed</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_eff_by_seed</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">confidence</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ci_low_by_seed</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ci_high_by_seed</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">ndarray</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="../_modules/utils/sweep_helpers.html#build_uncertainty_bundle"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#utils.sweep_helpers.build_uncertainty_bundle" title="Link to this definition"></a></dt>
 <dd><p>Aggregate per-seed results for one observable across a temperature axis.</p>
 <p>For multi-seed sweeps, applies hierarchical seed-ensemble aggregation via
 <code class="docutils literal notranslate"><span class="pre">summarize_seed_ensemble</span></code>.  Falls back to direct single-seed blocking
@@ -1726,6 +2013,16 @@ results when only one seed is available.</p>
 <li><p><strong>tau_by_seed</strong> (<em>np.ndarray</em>) – Shape <code class="docutils literal notranslate"><span class="pre">(n_temps,</span> <span class="pre">n_seeds)</span></code>.  Per-seed integrated autocorrelation times.</p></li>
 <li><p><strong>n_eff_by_seed</strong> (<em>np.ndarray</em>) – Shape <code class="docutils literal notranslate"><span class="pre">(n_temps,</span> <span class="pre">n_seeds)</span></code>.  Per-seed effective sample sizes.</p></li>
 <li><p><strong>confidence</strong> (<em>float</em>) – Two-sided confidence level for the returned CI bounds.</p></li>
+<li><p><strong>ci_low_by_seed</strong> (<em>np.ndarray</em><em> or </em><em>None</em>) – Shape <code class="docutils literal notranslate"><span class="pre">(n_temps,</span> <span class="pre">n_seeds)</span></code>. Per-seed interval bounds from the
+summarizers. Used for single-seed sweeps and for temperatures where
+only one seed has a finite value, whose intervals then keep the
+Student-t width of the blocking estimate; without them the bounds
+are a Gaussian multiple of the error.</p></li>
+<li><p><strong>ci_high_by_seed</strong> (<em>np.ndarray</em><em> or </em><em>None</em>) – Shape <code class="docutils literal notranslate"><span class="pre">(n_temps,</span> <span class="pre">n_seeds)</span></code>. Per-seed interval bounds from the
+summarizers. Used for single-seed sweeps and for temperatures where
+only one seed has a finite value, whose intervals then keep the
+Student-t width of the blocking estimate; without them the bounds
+are a Gaussian multiple of the error.</p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
@@ -1807,10 +2104,12 @@ runs a different stream from its Metropolis runs (default 0).</p></li>
 <dt class="sig sig-object py" id="utils.sweep_helpers.simulate_at_temperature">
 <span class="sig-prename descclassname"><span class="pre">utils.sweep_helpers.</span></span><span class="sig-name descname"><span class="pre">simulate_at_temperature</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">point</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#utils.sweep_helpers.ThermoPoint" title="utils.sweep_helpers.ThermoPoint"><span class="pre">ThermoPoint</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="#utils.sweep_helpers.RawThermoData" title="utils.sweep_helpers.RawThermoData"><span class="pre">RawThermoData</span></a></span></span><a class="reference internal" href="../_modules/utils/sweep_helpers.html#simulate_at_temperature"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#utils.sweep_helpers.simulate_at_temperature" title="Link to this definition"></a></dt>
 <dd><p>Run equilibration and measurement for one (temperature, seed) point.</p>
-<p>Creates a random-start and an ordered-start simulation with the same seed,
-runs two-start convergence equilibration, then records <code class="docutils literal notranslate"><span class="pre">meas_steps</span></code> sweeps
-on the active simulation.  Returns raw magnetisation and energy time series
-for downstream statistical processing.</p>
+<p>Creates a random-start and an ordered-start simulation with independent
+seeds, runs two-start convergence equilibration, then records
+<code class="docutils literal notranslate"><span class="pre">meas_steps</span></code> sweeps on the start that is valid: the random start after
+genuine convergence, the ordered start after an accepted stuck state.
+Returns raw magnetisation and energy time series for downstream
+statistical processing.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><p><strong>point</strong> (<a class="reference internal" href="#utils.sweep_helpers.ThermoPoint" title="utils.sweep_helpers.ThermoPoint"><em>ThermoPoint</em></a>) – Fully configured worker payload.</p>
@@ -2019,6 +2318,55 @@ the canonical access path.</p>
 <p>Base class for mathematically undefined or failed analysis results.</p>
 </dd></dl>
 
+<dl class="py class">
+<dt class="sig sig-object py">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">utils.</span></span><span class="sig-name descname"><span class="pre">TwoStartOutcome</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">total_steps</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">converged</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">stuck</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/utils/equilibration.html#TwoStartOutcome"><span class="viewcode-link"><span class="pre">[source]</span></span></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">NamedTuple</span></code></p>
+<p>Result of a two-start equilibration.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>total_steps</strong> (<em>int</em>) – MC steps run by each of the two simulations.</p></li>
+<li><p><strong>converged</strong> (<em>bool</em>) – Whether the mutual cross-band criterion was met, i.e. both starts
+reached the same stationary state.</p></li>
+<li><p><strong>stuck</strong> (<em>bool</em>) – Whether the run stopped on a quasi-steady stuck state: the ordered
+start had settled while the random start stayed stranded on a
+metastable plateau. Only the ordered start is then a valid
+measurement source.</p></li>
+</ul>
+</dd>
+</dl>
+<dl class="py property">
+<dt class="sig sig-object py">
+<span class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">certified</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">bool</span></span></dt>
+<dd><p>Whether a measurement on this pair is valid.</p>
+<p>True after convergence or after a stuck exit. A stuck exit can only
+occur where the caller enabled <code class="docutils literal notranslate"><span class="pre">detect_stuck</span></code>, which callers do only
+where a stuck state is accepted. A run that reached <code class="docutils literal notranslate"><span class="pre">max_steps</span></code> is
+not certified: neither start is known to have relaxed, and callers
+store NaN for the point instead of measuring it.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py">
+<span class="sig-name descname"><span class="pre">converged</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">bool</span></span></dt>
+<dd><p>Alias for field number 1</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py">
+<span class="sig-name descname"><span class="pre">stuck</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">bool</span></span></dt>
+<dd><p>Alias for field number 2</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py">
+<span class="sig-name descname"><span class="pre">total_steps</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">int</span></span></dt>
+<dd><p>Alias for field number 0</p>
+</dd></dl>
+
+</dd></dl>
+
 <dl class="py exception">
 <dt class="sig sig-object py">
 <span class="property"><span class="k"><span class="pre">exception</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">utils.</span></span><span class="sig-name descname"><span class="pre">VibeSpinError</span></span><a class="reference internal" href="../_modules/utils/exceptions.html#VibeSpinError"><span class="viewcode-link"><span class="pre">[source]</span></span></a></dt>
@@ -2189,6 +2537,39 @@ unsorted order of <code class="docutils literal notranslate"><span class="pre">t
 
 <dl class="py function">
 <dt class="sig sig-object py">
+<span class="sig-prename descclassname"><span class="pre">utils.</span></span><span class="sig-name descname"><span class="pre">connected_correlation_length</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">sim</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">_Sim</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">meas_steps</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sample_interval</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">float</span></span></span><a class="reference internal" href="../_modules/utils/observables.html#connected_correlation_length"><span class="viewcode-link"><span class="pre">[source]</span></span></a></dt>
+<dd><p>Measure the equilibrium correlation length from the connected correlation.</p>
+<p>The simulation is advanced <code class="docutils literal notranslate"><span class="pre">meas_steps</span></code> sweeps, and every
+<code class="docutils literal notranslate"><span class="pre">sample_interval</span></code> sweeps the lattice-axis pair correlation of the spin
+field is accumulated after subtracting the configuration’s mean spin.
+The 1/e crossing of the averaged, normalised function is returned.
+Subtracting the mean matters below the ordering temperature: the
+disconnected function plateaus at m^2 and never falls below 1/e, so a
+1/e criterion applied to it returns the largest distance available
+instead of a correlation length.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>sim</strong> (<em>_Sim</em>) – Equilibrated simulation; it is advanced in place.</p></li>
+<li><p><strong>meas_steps</strong> (<em>int</em>) – Number of sweeps to run.</p></li>
+<li><p><strong>sample_interval</strong> (<em>int</em>) – Sweeps between two samples.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Connected correlation length in lattice units, or NaN if the averaged
+function never drops below 1/e within half the lattice.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>float</p>
+</dd>
+<dt class="field-even">Raises<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>ValueError</strong> – If no sample falls inside <code class="docutils literal notranslate"><span class="pre">meas_steps</span></code>.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py">
 <span class="sig-prename descclassname"><span class="pre">utils.</span></span><span class="sig-name descname"><span class="pre">convergence_equilibrate</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">sim_random</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">_Sim</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sim_ordered</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">_Sim</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">chunk_size</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">500</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">max_steps</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">200000</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">qs_sigma_threshold</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.05</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">qs_min_steps</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">1500</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Any</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">int</span></span></span><a class="reference internal" href="../_modules/utils/equilibration.html#convergence_equilibrate"><span class="viewcode-link"><span class="pre">[source]</span></span></a></dt>
 <dd><p>Equilibrate two simulations (random- and ordered-start) until they converge.</p>
 <p>Uses <code class="docutils literal notranslate"><span class="pre">estimate_relaxation_time_two_start</span></code> to detect convergence via the
@@ -2224,6 +2605,46 @@ dwell_window, min_fraction_inside, sigma_floor, etc.).</p></li>
 
 <dl class="py function">
 <dt class="sig sig-object py">
+<span class="sig-prename descclassname"><span class="pre">utils.</span></span><span class="sig-name descname"><span class="pre">convergence_equilibrate_two_start</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">sim_random</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">_Sim</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sim_ordered</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">_Sim</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">chunk_size</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">500</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">max_steps</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">200000</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">qs_sigma_threshold</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.05</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">qs_min_steps</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">1500</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">detect_stuck</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Any</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="#utils.equilibration.TwoStartOutcome" title="utils.equilibration.TwoStartOutcome"><span class="pre">TwoStartOutcome</span></a></span></span><a class="reference internal" href="../_modules/utils/equilibration.html#convergence_equilibrate_two_start"><span class="viewcode-link"><span class="pre">[source]</span></span></a></dt>
+<dd><p>Equilibrate a random-start and an ordered-start simulation side by side.</p>
+<p>The two runs advance in chunks until their smoothed magnetization traces
+pass the mutual cross-band criterion of
+<code class="docutils literal notranslate"><span class="pre">estimate_relaxation_time_two_start</span></code>, until the quasi-steady stuck
+detector fires, or until <code class="docutils literal notranslate"><span class="pre">max_steps</span></code> is reached. Unlike
+<code class="docutils literal notranslate"><span class="pre">convergence_equilibrate_with_status</span></code> the result keeps a stuck exit
+apart from genuine convergence, so callers can measure on the start that
+is actually valid (see <code class="docutils literal notranslate"><span class="pre">select_measurement_simulation</span></code>).</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>sim_random</strong> (<em>_Sim</em>) – Simulation instance started from a random state.</p></li>
+<li><p><strong>sim_ordered</strong> (<em>_Sim</em>) – Simulation instance started from an ordered state. It should carry a
+different seed from <code class="docutils literal notranslate"><span class="pre">sim_random</span></code> (see <code class="docutils literal notranslate"><span class="pre">ordered_start_seed</span></code>).</p></li>
+<li><p><strong>chunk_size</strong> (<em>int</em>) – Number of steps to run between convergence checks.</p></li>
+<li><p><strong>max_steps</strong> (<em>int</em>) – Hard cap on total steps.</p></li>
+<li><p><strong>qs_sigma_threshold</strong> (<em>float</em>) – Tail-std threshold used to detect a quasi-steady stuck state.</p></li>
+<li><p><strong>qs_min_steps</strong> (<em>int</em>) – Minimum accumulated steps before stuck detection may fire.</p></li>
+<li><p><strong>detect_stuck</strong> (<em>bool</em>) – Whether a quasi-steady stuck state ends the run early (default False).
+The detector cannot tell a stranded random start from one that is
+still relaxing slowly, which is common near a transition and for the
+XY model below T_BKT, so it is opt-in: enable it only in the ordered
+phase of a model with metastable domain states, where measuring the
+ordered start after a stuck exit is valid.</p></li>
+<li><p><strong>**kwargs</strong> (<em>Any</em>) – Passed to <code class="docutils literal notranslate"><span class="pre">estimate_relaxation_time_two_start</span></code> (k, smooth_window,
+dwell_window, min_fraction_inside, sigma_floor, etc.).</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Steps run, convergence flag, and stuck flag. At most one flag is set.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference internal" href="#utils.equilibration.TwoStartOutcome" title="utils.equilibration.TwoStartOutcome">TwoStartOutcome</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py">
 <span class="sig-prename descclassname"><span class="pre">utils.</span></span><span class="sig-name descname"><span class="pre">convergence_equilibrate_with_status</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">sim_random</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">_Sim</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sim_ordered</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">_Sim</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">chunk_size</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">500</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">max_steps</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">200000</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">qs_sigma_threshold</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.05</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">qs_min_steps</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">1500</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">qs_allow_stuck</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Any</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">bool</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="../_modules/utils/equilibration.html#convergence_equilibrate_with_status"><span class="viewcode-link"><span class="pre">[source]</span></span></a></dt>
 <dd><p>Equilibrate two simulations and report whether convergence was reached.</p>
 <p>Uses <code class="docutils literal notranslate"><span class="pre">estimate_relaxation_time_two_start</span></code> to detect convergence via the
@@ -2231,6 +2652,11 @@ mutual cross-band criterion: each smoothed trajectory must enter and sustain
 a band defined by the other trajectory’s tail statistics.  A sigma floor
 prevents false positives when one trace is nearly flat.  This variant returns
 both the total number of MC steps executed and a boolean convergence flag.</p>
+<p>The boolean cannot tell an accepted stuck state from genuine convergence;
+after an accepted stuck state only the ordered start is a valid
+measurement source. Callers that measure should use
+<code class="docutils literal notranslate"><span class="pre">convergence_equilibrate_two_start</span></code> with
+<code class="docutils literal notranslate"><span class="pre">select_measurement_simulation</span></code> instead.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
@@ -2453,6 +2879,27 @@ derived summarizers instead of recomputing the FFT per summarizer.</p>
 
 <dl class="py function">
 <dt class="sig sig-object py">
+<span class="sig-prename descclassname"><span class="pre">utils.</span></span><span class="sig-name descname"><span class="pre">ordered_start_seed</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">seed</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">int</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span></span><a class="reference internal" href="../_modules/utils/equilibration.html#ordered_start_seed"><span class="viewcode-link"><span class="pre">[source]</span></span></a></dt>
+<dd><p>Return the seed for the ordered-start partner of a seeded random start.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>seed</strong> (<em>int</em><em> or </em><em>None</em>) – Seed of the random-start simulation. <code class="docutils literal notranslate"><span class="pre">None</span></code> (unseeded) is passed
+through unchanged.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><code class="docutils literal notranslate"><span class="pre">seed</span> <span class="pre">+</span> <span class="pre">ORDERED_START_SEED_OFFSET</span></code>, or <code class="docutils literal notranslate"><span class="pre">None</span></code> for an unseeded run.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>int or None</p>
+</dd>
+<dt class="field-even">Raises<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>ValueError</strong> – If the partner seed would leave the 32-bit generator range.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py">
 <span class="sig-prename descclassname"><span class="pre">utils.</span></span><span class="sig-name descname"><span class="pre">pair_correlation_x</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">spins</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">ndarray</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">ndarray</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="../_modules/utils/observables.html#pair_correlation_x"><span class="viewcode-link"><span class="pre">[source]</span></span></a></dt>
 <dd><p>Compute the real-space spin-spin pair correlation G(r) along x.</p>
 <p>Uses the Wiener-Khinchin theorem: the autocorrelation of each row is the
@@ -2525,6 +2972,42 @@ positive values are used in the fit.</p></li>
 
 <dl class="py function">
 <dt class="sig sig-object py">
+<span class="sig-prename descclassname"><span class="pre">utils.</span></span><span class="sig-name descname"><span class="pre">prepare_equilibrated_simulation</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">model_cls</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">type</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">model_kwargs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">size</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">temp</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">seed</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">chunk_size</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">max_steps</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">update</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'checkerboard'</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Any</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">Any</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference internal" href="#utils.equilibration.TwoStartOutcome" title="utils.equilibration.TwoStartOutcome"><span class="pre">TwoStartOutcome</span></a><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="../_modules/utils/equilibration.html#prepare_equilibrated_simulation"><span class="viewcode-link"><span class="pre">[source]</span></span></a></dt>
+<dd><p>Build a two-start pair, equilibrate it, and return the start to measure.</p>
+<p>The random start receives <code class="docutils literal notranslate"><span class="pre">seed</span></code> and the ordered start
+<code class="docutils literal notranslate"><span class="pre">ordered_start_seed(seed=seed)</span></code>, so the two runs draw independent random
+numbers. After equilibration the random start is returned when the pair
+converged, and the ordered start otherwise (see
+<code class="docutils literal notranslate"><span class="pre">select_measurement_simulation</span></code>). When the run hit <code class="docutils literal notranslate"><span class="pre">max_steps</span></code>,
+<code class="docutils literal notranslate"><span class="pre">outcome.certified</span></code> is False and the caller should record NaN for the
+point rather than measure the returned simulation.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>model_cls</strong> (<em>type</em>) – Simulation class to instantiate.</p></li>
+<li><p><strong>model_kwargs</strong> (<em>dict</em><em>[</em><em>str</em><em>, </em><em>Any</em><em>]</em>) – Constructor arguments beyond size, temperature, update, start, and seed.</p></li>
+<li><p><strong>size</strong> (<em>int</em>) – Linear lattice size L.</p></li>
+<li><p><strong>temp</strong> (<em>float</em>) – Simulation temperature T.</p></li>
+<li><p><strong>seed</strong> (<em>int</em><em> or </em><em>None</em>) – Seed of the random start; <code class="docutils literal notranslate"><span class="pre">None</span></code> leaves both starts unseeded.</p></li>
+<li><p><strong>chunk_size</strong> (<em>int</em>) – Steps between convergence checks.</p></li>
+<li><p><strong>max_steps</strong> (<em>int</em>) – Hard cap on equilibration steps.</p></li>
+<li><p><strong>update</strong> (<em>str</em>) – Update scheme for both starts (default <code class="docutils literal notranslate"><span class="pre">'checkerboard'</span></code>).</p></li>
+<li><p><strong>**kwargs</strong> (<em>Any</em>) – Passed to <code class="docutils literal notranslate"><span class="pre">convergence_equilibrate_two_start</span></code>, for example
+<code class="docutils literal notranslate"><span class="pre">detect_stuck=True</span></code> in the ordered phase of a model with metastable
+domain states.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>The simulation to measure and the equilibration outcome.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>tuple[Any, <a class="reference internal" href="#utils.equilibration.TwoStartOutcome" title="utils.equilibration.TwoStartOutcome">TwoStartOutcome</a>]</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py">
 <span class="sig-prename descclassname"><span class="pre">utils.</span></span><span class="sig-name descname"><span class="pre">radial_average_sk</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">spins</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">ndarray</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">ndarray</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="../_modules/utils/observables.html#radial_average_sk"><span class="viewcode-link"><span class="pre">[source]</span></span></a></dt>
 <dd><p>Compute the circularly averaged structure factor <span class="math notranslate nohighlight">\(S(|k|)\)</span>.</p>
 <p>Bins <span class="math notranslate nohighlight">\(S(k)\)</span> by integer pixel radius from the DC centre of the shifted FFT,
@@ -2539,6 +3022,32 @@ then averages within each annular bin.</p>
 <li><p><strong>S_radial</strong> (<em>np.ndarray</em>) – Mean S(k) value for each annular bin.</p></li>
 </ul>
 </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py">
+<span class="sig-prename descclassname"><span class="pre">utils.</span></span><span class="sig-name descname"><span class="pre">select_measurement_simulation</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">outcome</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#utils.equilibration.TwoStartOutcome" title="utils.equilibration.TwoStartOutcome"><span class="pre">TwoStartOutcome</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">sim_random</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">SimT</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sim_ordered</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">SimT</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">SimT</span></span></span><a class="reference internal" href="../_modules/utils/equilibration.html#select_measurement_simulation"><span class="viewcode-link"><span class="pre">[source]</span></span></a></dt>
+<dd><p>Choose which start of an equilibrated pair to measure.</p>
+<p>The random start is used only when the two starts converged to the same
+state. After a stuck exit the random start sits on a metastable plateau,
+so the ordered start is returned. After hitting the step cap the ordered
+start is returned as well, but neither start is certified
+(<code class="docutils literal notranslate"><span class="pre">outcome.certified</span></code> is False) and callers must not measure it.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>outcome</strong> (<a class="reference internal" href="#utils.equilibration.TwoStartOutcome" title="utils.equilibration.TwoStartOutcome"><em>TwoStartOutcome</em></a>) – Result of <code class="docutils literal notranslate"><span class="pre">convergence_equilibrate_two_start</span></code>.</p></li>
+<li><p><strong>sim_random</strong> (<em>simulation</em>) – Random-start simulation.</p></li>
+<li><p><strong>sim_ordered</strong> (<em>simulation</em>) – Ordered-start simulation.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><code class="docutils literal notranslate"><span class="pre">sim_random</span></code> if the pair converged, otherwise <code class="docutils literal notranslate"><span class="pre">sim_ordered</span></code>.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>simulation</p>
 </dd>
 </dl>
 </dd></dl>
@@ -2565,13 +3074,13 @@ then averages within each annular bin.</p>
 
 <dl class="py function">
 <dt class="sig sig-object py">
-<span class="sig-prename descclassname"><span class="pre">utils.</span></span><span class="sig-name descname"><span class="pre">simulate_equilibrium_correlation</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">model_cls</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">type</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">model_kwargs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">size</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">temp</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">seed</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">eq_probe</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">eq_max</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">meas_steps</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">interval</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">logger</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Logger</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">ndarray</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">ndarray</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="../_modules/utils/observables.html#simulate_equilibrium_correlation"><span class="viewcode-link"><span class="pre">[source]</span></span></a></dt>
+<span class="sig-prename descclassname"><span class="pre">utils.</span></span><span class="sig-name descname"><span class="pre">simulate_equilibrium_correlation</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">model_cls</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">type</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">model_kwargs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">size</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">temp</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">seed</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">eq_probe</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">eq_max</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">meas_steps</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">interval</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">logger</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Logger</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">detect_stuck</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">ndarray</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">ndarray</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="../_modules/utils/observables.html#simulate_equilibrium_correlation"><span class="viewcode-link"><span class="pre">[source]</span></span></a></dt>
 <dd><p>Equilibrate a model and measure its averaged correlation function.</p>
 <p>Runs two-start convergence equilibration (random start vs. ordered start,
 checkerboard updates) to avoid initialization bias, then averages the
 correlation function over <code class="docutils literal notranslate"><span class="pre">meas_steps</span></code> Monte Carlo steps, sampling every
 <code class="docutils literal notranslate"><span class="pre">interval</span></code> steps. When convergence is not reached within <code class="docutils literal notranslate"><span class="pre">eq_max</span></code>
-steps, measurement falls back to the ordered-start simulation.</p>
+steps, the point is not measured and G(r) is returned as NaN.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
@@ -2581,18 +3090,24 @@ constructor beyond <code class="docutils literal notranslate"><span class="pre">
 and <code class="docutils literal notranslate"><span class="pre">seed</span></code> (e.g. <code class="docutils literal notranslate"><span class="pre">{'q':</span> <span class="pre">6}</span></code> for the clock model).</p></li>
 <li><p><strong>size</strong> (<em>int</em>) – Linear lattice size L.</p></li>
 <li><p><strong>temp</strong> (<em>float</em>) – Temperature for the measurement.</p></li>
-<li><p><strong>seed</strong> (<em>int</em>) – Random seed used for both start states.</p></li>
+<li><p><strong>seed</strong> (<em>int</em>) – Random seed of the random start; the ordered start uses
+<code class="docutils literal notranslate"><span class="pre">ordered_start_seed(seed=seed)</span></code>.</p></li>
 <li><p><strong>eq_probe</strong> (<em>int</em>) – Chunk size for convergence equilibration probes.</p></li>
 <li><p><strong>eq_max</strong> (<em>int</em>) – Maximum equilibration steps.</p></li>
 <li><p><strong>meas_steps</strong> (<em>int</em>) – Measurement steps after equilibration.</p></li>
 <li><p><strong>interval</strong> (<em>int</em>) – Spacing between correlation samples during measurement.</p></li>
 <li><p><strong>logger</strong> (<em>logging.Logger</em><em> | </em><em>None</em>) – Optional logger for progress and fallback messages.</p></li>
+<li><p><strong>detect_stuck</strong> (<em>bool</em>) – Enable quasi-steady stuck detection, so that a random start stranded
+in a domain state ends the run and the ordered start is measured.
+Set it only in the ordered phase of a model with metastable domain
+states (default False).</p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
 <dd class="field-even"><p><ul class="simple">
 <li><p><strong>r</strong> (<em>np.ndarray</em>) – Radial distances.</p></li>
-<li><p><strong>G_r_avg</strong> (<em>np.ndarray</em>) – Averaged correlation values G(r).</p></li>
+<li><p><strong>G_r_avg</strong> (<em>np.ndarray</em>) – Averaged correlation values G(r), all NaN when the two starts did not
+converge within <code class="docutils literal notranslate"><span class="pre">eq_max</span></code> steps.</p></li>
 </ul>
 </p>
 </dd>
@@ -2723,9 +3238,32 @@ shape <code class="docutils literal notranslate"><span class="pre">(n_points,</s
 <dl class="py function">
 <dt class="sig sig-object py">
 <span class="sig-prename descclassname"><span class="pre">utils.</span></span><span class="sig-name descname"><span class="pre">summarize_seed_ensemble</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">values</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">within_seed_errors</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">confidence</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.68</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">float</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="../_modules/utils/statistics.html#summarize_seed_ensemble"><span class="viewcode-link"><span class="pre">[source]</span></span></a></dt>
-<dd><p>Aggregate per-seed estimates into one mean with hierarchical uncertainty.</p>
-<p>The total variance combines between-seed and within-seed components:
-Var(mean) = Var_between / n_seeds + mean(Var_within) / n_seeds.</p>
+<dd><p>Aggregate per-seed estimates into one mean with its standard error.</p>
+<p>With two or more finite seeds the error is the standard error of the seed
+mean, <code class="docutils literal notranslate"><span class="pre">sqrt(Var_between</span> <span class="pre">/</span> <span class="pre">n_seeds)</span></code>, with a Student-t interval on
+<code class="docutils literal notranslate"><span class="pre">n_seeds</span> <span class="pre">-</span> <span class="pre">1</span></code> degrees of freedom. The spread of independent seed
+estimates already contains each seed’s own statistical noise, so adding
+the within-seed variance again would count it twice (for independent
+seeds the reported error was too large by a factor near sqrt(2)). With a
+single seed the within-seed error is the only information and is used
+directly. Both components are still reported for diagnostics.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>values</strong> (<em>np.ndarray</em>) – Per-seed point estimates.</p></li>
+<li><p><strong>within_seed_errors</strong> (<em>np.ndarray</em>) – Per-seed standard errors from blocking.</p></li>
+<li><p><strong>confidence</strong> (<em>float</em>) – Two-sided confidence level for the CI bounds.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><code class="docutils literal notranslate"><span class="pre">value</span></code>, <code class="docutils literal notranslate"><span class="pre">err</span></code>, <code class="docutils literal notranslate"><span class="pre">ci_low</span></code>, <code class="docutils literal notranslate"><span class="pre">ci_high</span></code>,
+<code class="docutils literal notranslate"><span class="pre">between_seed_component</span></code>, <code class="docutils literal notranslate"><span class="pre">within_seed_component</span></code>, <code class="docutils literal notranslate"><span class="pre">samples</span></code>,
+and <code class="docutils literal notranslate"><span class="pre">nan_or_undefined_count</span></code>.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>dict[str, float]</p>
+</dd>
+</dl>
 </dd></dl>
 
 <dl class="py function">

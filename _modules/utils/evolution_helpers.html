@@ -179,7 +179,9 @@
                 <span class="sa">f</span><span class="s1">&#39;Simulation lattice is uninitialized (spins is None) at step </span><span class="si">{</span><span class="n">target</span><span class="si">}</span><span class="s1">; &#39;</span>
                 <span class="s1">&#39;cannot capture ordering-evolution snapshots.&#39;</span>
             <span class="p">)</span>
-        <span class="n">snapshots</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">sim</span><span class="o">.</span><span class="n">spins</span><span class="o">.</span><span class="n">copy</span><span class="p">())</span>
+        <span class="c1"># get_spin_field() decodes internal representations (discrete clock</span>
+        <span class="c1"># state indices) into the vectors the plot helper expects.</span>
+        <span class="n">snapshots</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">sim</span><span class="o">.</span><span class="n">get_spin_field</span><span class="p">(),</span> <span class="n">copy</span><span class="o">=</span><span class="kc">True</span><span class="p">))</span>
         <span class="n">snapshots_gr</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">sim</span><span class="o">.</span><span class="n">calculate_correlation_function</span><span class="p">())</span>
         <span class="k">if</span> <span class="n">capture_vorticity</span><span class="p">:</span>
             <span class="n">snapshots_vort</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">sim</span><span class="o">.</span><span class="n">calculate_vorticity</span><span class="p">())</span>

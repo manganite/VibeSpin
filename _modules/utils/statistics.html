@@ -101,6 +101,7 @@
 
 <span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">scipy.stats</span><span class="w"> </span><span class="kn">import</span> <span class="n">norm</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">scipy.stats</span><span class="w"> </span><span class="kn">import</span> <span class="n">t</span> <span class="k">as</span> <span class="n">student_t</span>
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">utils.exceptions</span><span class="w"> </span><span class="kn">import</span> <span class="n">ZeroVarianceAutocorrelationError</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">utils.observables</span><span class="w"> </span><span class="kn">import</span> <span class="n">calculate_entropy</span><span class="p">,</span> <span class="n">derived_thermo_estimate</span>
@@ -146,6 +147,23 @@
 <span class="k">def</span><span class="w"> </span><span class="nf">_z_multiplier</span><span class="p">(</span><span class="o">*</span><span class="p">,</span> <span class="n">confidence</span><span class="p">:</span> <span class="nb">float</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Return Gaussian z-score for two-sided confidence interval.&quot;&quot;&quot;</span>
     <span class="k">return</span> <span class="nb">float</span><span class="p">(</span><span class="n">norm</span><span class="o">.</span><span class="n">ppf</span><span class="p">(</span><span class="mf">0.5</span> <span class="o">+</span> <span class="mf">0.5</span> <span class="o">*</span> <span class="n">confidence</span><span class="p">))</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_t_multiplier</span><span class="p">(</span><span class="o">*</span><span class="p">,</span> <span class="n">confidence</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">n_estimates</span><span class="p">:</span> <span class="nb">float</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Return the Student-t quantile for an interval built from ``n_estimates`` values.</span>
+
+<span class="sd">    A standard error estimated from ``n`` block means or seed values carries</span>
+<span class="sd">    ``n - 1`` degrees of freedom. The blocking plateau often settles on a</span>
+<span class="sd">    handful of large blocks for strongly correlated series, and a Gaussian</span>
+<span class="sd">    multiplier then undercovers: on AR(1) series with tau_int between 1 and</span>
+<span class="sd">    100 and 2 000 to 20 000 samples, the nominal 68 % interval covered 54 to</span>
+<span class="sd">    69 % of runs with z and 64 to 71 % with t. Falls back to the Gaussian</span>
+<span class="sd">    value when fewer than two estimates are available.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">dof</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">n_estimates</span><span class="p">)</span> <span class="o">-</span> <span class="mf">1.0</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">np</span><span class="o">.</span><span class="n">isfinite</span><span class="p">(</span><span class="n">dof</span><span class="p">)</span> <span class="ow">or</span> <span class="n">dof</span> <span class="o">&lt;</span> <span class="mf">1.0</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">_z_multiplier</span><span class="p">(</span><span class="n">confidence</span><span class="o">=</span><span class="n">confidence</span><span class="p">)</span>
+    <span class="k">return</span> <span class="nb">float</span><span class="p">(</span><span class="n">student_t</span><span class="o">.</span><span class="n">ppf</span><span class="p">(</span><span class="mf">0.5</span> <span class="o">+</span> <span class="mf">0.5</span> <span class="o">*</span> <span class="n">confidence</span><span class="p">,</span> <span class="n">dof</span><span class="p">))</span>
 
 
 <span class="k">def</span><span class="w"> </span><span class="nf">_blocking_block_sizes</span><span class="p">(</span><span class="o">*</span><span class="p">,</span> <span class="n">n</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">min_block_size</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">max_block_size</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="nb">int</span><span class="p">]:</span>
@@ -210,8 +228,13 @@
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Propagate pointwise specific-heat errors into entropy uncertainty.</span>
 
-<span class="sd">    Uses independent-error propagation through the trapezoidal integration used</span>
-<span class="sd">    in :func:`calculate_entropy` for S(T).</span>
+<span class="sd">    Propagates independent per-temperature errors through the trapezoidal</span>
+<span class="sd">    integration of :func:`calculate_entropy`. Each interior point enters the</span>
+<span class="sd">    two trapezoids it bounds, so its weight in S(T_j) is half the sum of the</span>
+<span class="sd">    adjacent spacings and its variance enters once with that weight squared.</span>
+<span class="sd">    Summing the two trapezoid variances separately would drop the covariance</span>
+<span class="sd">    between neighbouring segments and underestimate the error (about 0.73 of</span>
+<span class="sd">    the Monte Carlo value on a uniform grid).</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="n">t</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">temperatures</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">)</span>
     <span class="n">cv_err</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">specific_heat_err</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">)</span>
@@ -228,21 +251,22 @@
     <span class="n">cv_err_sorted</span> <span class="o">=</span> <span class="n">cv_err</span><span class="p">[</span><span class="n">sort_idx</span><span class="p">]</span>
     <span class="n">sigma_f</span> <span class="o">=</span> <span class="n">cv_err_sorted</span> <span class="o">/</span> <span class="n">t_sorted</span>
     <span class="n">dt</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">diff</span><span class="p">(</span><span class="n">t_sorted</span><span class="p">)</span>
-    <span class="n">seg_var</span> <span class="o">=</span> <span class="mf">0.25</span> <span class="o">*</span> <span class="p">(</span><span class="n">dt</span> <span class="o">*</span> <span class="n">dt</span><span class="p">)</span> <span class="o">*</span> <span class="p">(</span><span class="n">sigma_f</span><span class="p">[:</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">*</span> <span class="n">sigma_f</span><span class="p">[:</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">+</span> <span class="n">sigma_f</span><span class="p">[</span><span class="mi">1</span><span class="p">:]</span> <span class="o">*</span> <span class="n">sigma_f</span><span class="p">[</span><span class="mi">1</span><span class="p">:])</span>
 
-    <span class="c1"># Tail sums of the segment variances: var_sorted[i] = sum(seg_var[i:]).</span>
-    <span class="c1"># The reversed cumulative sum accumulates from the high-temperature anchor</span>
-    <span class="c1"># downward, exactly like the previous explicit loop. A non-finite segment</span>
-    <span class="c1"># poisons its own point and every lower-temperature point (whose tail sum</span>
-    <span class="c1"># would include it), while higher-temperature points stay exact because</span>
-    <span class="c1"># their tail sums never touch it.</span>
+    <span class="c1"># S(T_j) = s_ref - sum_{i &gt;= j} dt_i (f_i + f_{i+1}) / 2, so point k</span>
+    <span class="c1"># carries weight dt_{k-1}/2 (if k &gt; j) + dt_k/2 (if k &lt; n-1) in S(T_j).</span>
+    <span class="c1"># Only points above T_j contribute; the anchor point T_max has no error.</span>
     <span class="n">n_t</span> <span class="o">=</span> <span class="n">t_sorted</span><span class="o">.</span><span class="n">size</span>
     <span class="n">var_sorted</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">n_t</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">)</span>
-    <span class="k">if</span> <span class="n">n_t</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
-        <span class="n">var_sorted</span><span class="p">[:</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">cumsum</span><span class="p">(</span><span class="n">seg_var</span><span class="p">[::</span><span class="o">-</span><span class="mi">1</span><span class="p">])[::</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
-        <span class="n">nonfinite</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="o">~</span><span class="n">np</span><span class="o">.</span><span class="n">isfinite</span><span class="p">(</span><span class="n">seg_var</span><span class="p">))[</span><span class="mi">0</span><span class="p">]</span>
-        <span class="k">if</span> <span class="n">nonfinite</span><span class="o">.</span><span class="n">size</span><span class="p">:</span>
-            <span class="n">var_sorted</span><span class="p">[:</span> <span class="nb">int</span><span class="p">(</span><span class="n">nonfinite</span><span class="o">.</span><span class="n">max</span><span class="p">())</span> <span class="o">+</span> <span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">nan</span>
+    <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n_t</span> <span class="o">-</span> <span class="mi">1</span><span class="p">):</span>
+        <span class="n">k</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="n">j</span><span class="p">,</span> <span class="n">n_t</span><span class="p">)</span>
+        <span class="n">weights</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">k</span><span class="o">.</span><span class="n">size</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">)</span>
+        <span class="n">weights</span><span class="p">[</span><span class="mi">1</span><span class="p">:]</span> <span class="o">+=</span> <span class="mf">0.5</span> <span class="o">*</span> <span class="n">dt</span><span class="p">[</span><span class="n">j</span><span class="p">:]</span>
+        <span class="n">weights</span><span class="p">[:</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">+=</span> <span class="mf">0.5</span> <span class="o">*</span> <span class="n">dt</span><span class="p">[</span><span class="n">j</span><span class="p">:]</span>
+        <span class="n">contrib</span> <span class="o">=</span> <span class="n">weights</span> <span class="o">*</span> <span class="n">sigma_f</span><span class="p">[</span><span class="n">j</span><span class="p">:]</span>
+        <span class="c1"># A non-finite error poisons every entropy value whose integral it</span>
+        <span class="c1"># enters; higher-temperature points stay exact.</span>
+        <span class="n">var_sorted</span><span class="p">[</span><span class="n">j</span><span class="p">]</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">contrib</span> <span class="o">*</span> <span class="n">contrib</span><span class="p">))</span> <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">all</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">isfinite</span><span class="p">(</span><span class="n">contrib</span><span class="p">))</span> \
+            <span class="k">else</span> <span class="nb">float</span><span class="p">(</span><span class="s1">&#39;nan&#39;</span><span class="p">)</span>
 
     <span class="n">err_sorted</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">var_sorted</span><span class="p">)</span>
     <span class="n">err</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">empty_like</span><span class="p">(</span><span class="n">err_sorted</span><span class="p">)</span>
@@ -625,9 +649,11 @@
     <span class="n">std</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">std</span><span class="p">(</span><span class="n">arr</span><span class="p">,</span> <span class="n">ddof</span><span class="o">=</span><span class="mi">1</span><span class="p">))</span>
     <span class="n">naive_stderr</span> <span class="o">=</span> <span class="n">std</span> <span class="o">/</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">arr</span><span class="o">.</span><span class="n">size</span><span class="p">)</span>
     <span class="k">if</span> <span class="n">std</span> <span class="o">==</span> <span class="mf">0.0</span><span class="p">:</span>
+        <span class="c1"># A constant window carries no information about its own fluctuations:</span>
+        <span class="c1"># the error is undefined, not zero (zero-variance policy, AGENTS.md 8).</span>
         <span class="k">return</span> <span class="p">{</span>
-            <span class="s1">&#39;stderr&#39;</span><span class="p">:</span> <span class="mf">0.0</span><span class="p">,</span>
-            <span class="s1">&#39;stderr_naive&#39;</span><span class="p">:</span> <span class="mf">0.0</span><span class="p">,</span>
+            <span class="s1">&#39;stderr&#39;</span><span class="p">:</span> <span class="nb">float</span><span class="p">(</span><span class="s1">&#39;nan&#39;</span><span class="p">),</span>
+            <span class="s1">&#39;stderr_naive&#39;</span><span class="p">:</span> <span class="nb">float</span><span class="p">(</span><span class="s1">&#39;nan&#39;</span><span class="p">),</span>
             <span class="s1">&#39;block_size&#39;</span><span class="p">:</span> <span class="nb">float</span><span class="p">(</span><span class="n">min_block_size</span><span class="p">),</span>
             <span class="s1">&#39;n_blocks&#39;</span><span class="p">:</span> <span class="nb">float</span><span class="p">(</span><span class="n">arr</span><span class="o">.</span><span class="n">size</span> <span class="o">//</span> <span class="n">min_block_size</span><span class="p">),</span>
             <span class="s1">&#39;tau_int_from_blocking&#39;</span><span class="p">:</span> <span class="nb">float</span><span class="p">(</span><span class="s1">&#39;nan&#39;</span><span class="p">),</span>
@@ -732,7 +758,7 @@
     <span class="n">value</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">arr</span><span class="p">))</span>
     <span class="n">block</span> <span class="o">=</span> <span class="n">blocking</span> <span class="k">if</span> <span class="n">blocking</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">blocking_error</span><span class="p">(</span><span class="n">time_series</span><span class="o">=</span><span class="n">arr</span><span class="p">)</span>
     <span class="n">err</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">block</span><span class="p">[</span><span class="s1">&#39;stderr&#39;</span><span class="p">])</span>
-    <span class="n">z</span> <span class="o">=</span> <span class="n">_z_multiplier</span><span class="p">(</span><span class="n">confidence</span><span class="o">=</span><span class="n">confidence</span><span class="p">)</span>
+    <span class="n">z</span> <span class="o">=</span> <span class="n">_t_multiplier</span><span class="p">(</span><span class="n">confidence</span><span class="o">=</span><span class="n">confidence</span><span class="p">,</span> <span class="n">n_estimates</span><span class="o">=</span><span class="nb">float</span><span class="p">(</span><span class="n">block</span><span class="p">[</span><span class="s1">&#39;n_blocks&#39;</span><span class="p">]))</span>
 
     <span class="k">if</span> <span class="n">tau_int</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
         <span class="n">tau_int</span> <span class="o">=</span> <span class="n">estimate_tau_int_or_nan</span><span class="p">(</span><span class="n">time_series</span><span class="o">=</span><span class="n">arr</span><span class="p">)</span>
@@ -837,6 +863,15 @@
     <span class="k">else</span><span class="p">:</span>
         <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;observable must be one of &#39;chi&#39; or &#39;cv&#39;, got </span><span class="si">{</span><span class="n">observable</span><span class="si">!r}</span><span class="s2">&quot;</span><span class="p">)</span>
 
+    <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">isnan</span><span class="p">(</span><span class="n">base</span><span class="p">)</span><span class="o">.</span><span class="n">any</span><span class="p">():</span>
+        <span class="c1"># Same contract as blocking_error: a NaN-poisoned series yields NaN</span>
+        <span class="c1"># fields instead of a crash on the NaN block size.</span>
+        <span class="n">nan</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="s1">&#39;nan&#39;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="p">{</span>
+            <span class="s1">&#39;value&#39;</span><span class="p">:</span> <span class="n">nan</span><span class="p">,</span> <span class="s1">&#39;err&#39;</span><span class="p">:</span> <span class="n">nan</span><span class="p">,</span> <span class="s1">&#39;ci_low&#39;</span><span class="p">:</span> <span class="n">nan</span><span class="p">,</span> <span class="s1">&#39;ci_high&#39;</span><span class="p">:</span> <span class="n">nan</span><span class="p">,</span>
+            <span class="s1">&#39;tau_int&#39;</span><span class="p">:</span> <span class="n">nan</span><span class="p">,</span> <span class="s1">&#39;n_eff&#39;</span><span class="p">:</span> <span class="n">nan</span><span class="p">,</span> <span class="s1">&#39;samples&#39;</span><span class="p">:</span> <span class="nb">float</span><span class="p">(</span><span class="n">base</span><span class="o">.</span><span class="n">size</span><span class="p">),</span>
+        <span class="p">}</span>
+
     <span class="n">value</span> <span class="o">=</span> <span class="n">_derived_point_estimate</span><span class="p">(</span>
         <span class="n">series</span><span class="o">=</span><span class="n">base</span><span class="p">,</span>
         <span class="n">temperature</span><span class="o">=</span><span class="n">temperature</span><span class="p">,</span>
@@ -844,11 +879,13 @@
         <span class="n">observable</span><span class="o">=</span><span class="n">observable</span><span class="p">,</span>
     <span class="p">)</span>
     <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">std</span><span class="p">(</span><span class="n">base</span><span class="p">,</span> <span class="n">ddof</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span> <span class="o">==</span> <span class="mf">0.0</span><span class="p">:</span>
+        <span class="c1"># Zero variance: the fluctuation estimate is exactly zero, but its</span>
+        <span class="c1"># uncertainty is undefined and stored as NaN (AGENTS.md section 8).</span>
         <span class="k">return</span> <span class="p">{</span>
             <span class="s1">&#39;value&#39;</span><span class="p">:</span> <span class="n">value</span><span class="p">,</span>
-            <span class="s1">&#39;err&#39;</span><span class="p">:</span> <span class="mf">0.0</span><span class="p">,</span>
-            <span class="s1">&#39;ci_low&#39;</span><span class="p">:</span> <span class="n">value</span><span class="p">,</span>
-            <span class="s1">&#39;ci_high&#39;</span><span class="p">:</span> <span class="n">value</span><span class="p">,</span>
+            <span class="s1">&#39;err&#39;</span><span class="p">:</span> <span class="nb">float</span><span class="p">(</span><span class="s1">&#39;nan&#39;</span><span class="p">),</span>
+            <span class="s1">&#39;ci_low&#39;</span><span class="p">:</span> <span class="nb">float</span><span class="p">(</span><span class="s1">&#39;nan&#39;</span><span class="p">),</span>
+            <span class="s1">&#39;ci_high&#39;</span><span class="p">:</span> <span class="nb">float</span><span class="p">(</span><span class="s1">&#39;nan&#39;</span><span class="p">),</span>
             <span class="s1">&#39;tau_int&#39;</span><span class="p">:</span> <span class="nb">float</span><span class="p">(</span><span class="s1">&#39;nan&#39;</span><span class="p">),</span>
             <span class="s1">&#39;n_eff&#39;</span><span class="p">:</span> <span class="nb">float</span><span class="p">(</span><span class="s1">&#39;nan&#39;</span><span class="p">),</span>
             <span class="s1">&#39;samples&#39;</span><span class="p">:</span> <span class="nb">float</span><span class="p">(</span><span class="n">base</span><span class="o">.</span><span class="n">size</span><span class="p">),</span>
@@ -881,7 +918,7 @@
         <span class="n">ci_high</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="s1">&#39;nan&#39;</span><span class="p">)</span>
     <span class="k">elif</span> <span class="n">method</span> <span class="o">==</span> <span class="n">UNCERTAINTY_METHOD_BLOCKING</span><span class="p">:</span>
         <span class="n">err</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">std</span><span class="p">(</span><span class="n">per_block</span><span class="p">,</span> <span class="n">ddof</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span> <span class="o">/</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">n_blocks</span><span class="p">))</span>
-        <span class="n">z</span> <span class="o">=</span> <span class="n">_z_multiplier</span><span class="p">(</span><span class="n">confidence</span><span class="o">=</span><span class="n">confidence</span><span class="p">)</span>
+        <span class="n">z</span> <span class="o">=</span> <span class="n">_t_multiplier</span><span class="p">(</span><span class="n">confidence</span><span class="o">=</span><span class="n">confidence</span><span class="p">,</span> <span class="n">n_estimates</span><span class="o">=</span><span class="nb">float</span><span class="p">(</span><span class="n">n_blocks</span><span class="p">))</span>
         <span class="n">ci_low</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">value</span> <span class="o">-</span> <span class="n">z</span> <span class="o">*</span> <span class="n">err</span><span class="p">)</span>
         <span class="n">ci_high</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">value</span> <span class="o">+</span> <span class="n">z</span> <span class="o">*</span> <span class="n">err</span><span class="p">)</span>
     <span class="k">else</span><span class="p">:</span>
@@ -892,9 +929,15 @@
         <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">bootstrap_resamples</span><span class="p">):</span>
             <span class="n">sample</span> <span class="o">=</span> <span class="n">rng</span><span class="o">.</span><span class="n">choice</span><span class="p">(</span><span class="n">per_block</span><span class="p">,</span> <span class="n">size</span><span class="o">=</span><span class="n">n_blocks</span><span class="p">,</span> <span class="n">replace</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
             <span class="n">boot</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">sample</span><span class="p">))</span>
+        <span class="c1"># Each block estimate measures the variance about its own block mean</span>
+        <span class="c1"># and is biased low, so the bootstrap distribution is centred on a</span>
+        <span class="c1"># biased mean. Its quantiles are therefore taken relative to the</span>
+        <span class="c1"># bootstrap mean and placed around the full-series estimate (basic</span>
+        <span class="c1"># bootstrap); raw quantiles could exclude the point estimate.</span>
         <span class="n">alpha</span> <span class="o">=</span> <span class="mf">0.5</span> <span class="o">*</span> <span class="p">(</span><span class="mf">1.0</span> <span class="o">-</span> <span class="n">confidence</span><span class="p">)</span>
-        <span class="n">ci_low</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">quantile</span><span class="p">(</span><span class="n">boot</span><span class="p">,</span> <span class="n">alpha</span><span class="p">))</span>
-        <span class="n">ci_high</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">quantile</span><span class="p">(</span><span class="n">boot</span><span class="p">,</span> <span class="mf">1.0</span> <span class="o">-</span> <span class="n">alpha</span><span class="p">))</span>
+        <span class="n">offsets</span> <span class="o">=</span> <span class="n">boot</span> <span class="o">-</span> <span class="nb">float</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">boot</span><span class="p">))</span>
+        <span class="n">ci_low</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">value</span> <span class="o">+</span> <span class="n">np</span><span class="o">.</span><span class="n">quantile</span><span class="p">(</span><span class="n">offsets</span><span class="p">,</span> <span class="n">alpha</span><span class="p">))</span>
+        <span class="n">ci_high</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">value</span> <span class="o">+</span> <span class="n">np</span><span class="o">.</span><span class="n">quantile</span><span class="p">(</span><span class="n">offsets</span><span class="p">,</span> <span class="mf">1.0</span> <span class="o">-</span> <span class="n">alpha</span><span class="p">))</span>
         <span class="n">err</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">std</span><span class="p">(</span><span class="n">boot</span><span class="p">,</span> <span class="n">ddof</span><span class="o">=</span><span class="mi">1</span><span class="p">))</span>
 
     <span class="k">if</span> <span class="n">tau_int</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
@@ -982,10 +1025,32 @@
     <span class="n">within_seed_errors</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
     <span class="n">confidence</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="n">DEFAULT_CONFIDENCE_LEVEL</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">float</span><span class="p">]:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Aggregate per-seed estimates into one mean with hierarchical uncertainty.</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Aggregate per-seed estimates into one mean with its standard error.</span>
 
-<span class="sd">    The total variance combines between-seed and within-seed components:</span>
-<span class="sd">    Var(mean) = Var_between / n_seeds + mean(Var_within) / n_seeds.</span>
+<span class="sd">    With two or more finite seeds the error is the standard error of the seed</span>
+<span class="sd">    mean, ``sqrt(Var_between / n_seeds)``, with a Student-t interval on</span>
+<span class="sd">    ``n_seeds - 1`` degrees of freedom. The spread of independent seed</span>
+<span class="sd">    estimates already contains each seed&#39;s own statistical noise, so adding</span>
+<span class="sd">    the within-seed variance again would count it twice (for independent</span>
+<span class="sd">    seeds the reported error was too large by a factor near sqrt(2)). With a</span>
+<span class="sd">    single seed the within-seed error is the only information and is used</span>
+<span class="sd">    directly. Both components are still reported for diagnostics.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    values : np.ndarray</span>
+<span class="sd">        Per-seed point estimates.</span>
+<span class="sd">    within_seed_errors : np.ndarray</span>
+<span class="sd">        Per-seed standard errors from blocking.</span>
+<span class="sd">    confidence : float</span>
+<span class="sd">        Two-sided confidence level for the CI bounds.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    dict[str, float]</span>
+<span class="sd">        ``value``, ``err``, ``ci_low``, ``ci_high``,</span>
+<span class="sd">        ``between_seed_component``, ``within_seed_component``, ``samples``,</span>
+<span class="sd">        and ``nan_or_undefined_count``.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="n">_validate_confidence</span><span class="p">(</span><span class="n">confidence</span><span class="o">=</span><span class="n">confidence</span><span class="p">)</span>
     <span class="n">values_arr</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">values</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">)</span>
@@ -1029,8 +1094,14 @@
     <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">any</span><span class="p">(</span><span class="n">finite_errs</span><span class="p">):</span>
         <span class="n">within_component</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">e</span><span class="p">[</span><span class="n">finite_errs</span><span class="p">]</span> <span class="o">**</span> <span class="mi">2</span><span class="p">)</span> <span class="o">/</span> <span class="n">n</span><span class="p">)</span>
 
-    <span class="n">total_err</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="nb">max</span><span class="p">(</span><span class="mf">0.0</span><span class="p">,</span> <span class="n">between_component</span> <span class="o">+</span> <span class="n">within_component</span><span class="p">)))</span>
-    <span class="n">z</span> <span class="o">=</span> <span class="n">_z_multiplier</span><span class="p">(</span><span class="n">confidence</span><span class="o">=</span><span class="n">confidence</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">n</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
+        <span class="n">total_err</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="nb">max</span><span class="p">(</span><span class="mf">0.0</span><span class="p">,</span> <span class="n">between_component</span><span class="p">)))</span>
+        <span class="n">z</span> <span class="o">=</span> <span class="n">_t_multiplier</span><span class="p">(</span><span class="n">confidence</span><span class="o">=</span><span class="n">confidence</span><span class="p">,</span> <span class="n">n_estimates</span><span class="o">=</span><span class="nb">float</span><span class="p">(</span><span class="n">n</span><span class="p">))</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">total_err</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="nb">float</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">within_component</span><span class="p">))</span> <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">any</span><span class="p">(</span><span class="n">finite_errs</span><span class="p">)</span> <span class="k">else</span> <span class="nb">float</span><span class="p">(</span><span class="s1">&#39;nan&#39;</span><span class="p">)</span>
+        <span class="p">)</span>
+        <span class="n">z</span> <span class="o">=</span> <span class="n">_z_multiplier</span><span class="p">(</span><span class="n">confidence</span><span class="o">=</span><span class="n">confidence</span><span class="p">)</span>
 
     <span class="k">return</span> <span class="p">{</span>
         <span class="s1">&#39;value&#39;</span><span class="p">:</span> <span class="n">value</span><span class="p">,</span>

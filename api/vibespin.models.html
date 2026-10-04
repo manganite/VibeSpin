@@ -146,6 +146,25 @@ The Hamiltonian is E = -J * sum_&lt;i,j&gt; cos(theta_i - theta_j).</p>
 an anisotropy term, this class represents spins as integers in {0, …, q-1}
 and enforces the discrete symmetry exactly.</p>
 <dl class="py method">
+<dt class="sig sig-object py" id="models.clock_model.DiscreteClockSimulation.get_spin_field">
+<span class="sig-name descname"><span class="pre">get_spin_field</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">ndarray</span></span></span><a class="reference internal" href="../_modules/models/clock_model.html#DiscreteClockSimulation.get_spin_field"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#models.clock_model.DiscreteClockSimulation.get_spin_field" title="Link to this definition"></a></dt>
+<dd><p>Return the spins as <code class="docutils literal notranslate"><span class="pre">(L,</span> <span class="pre">L,</span> <span class="pre">2)</span></code> unit vectors.</p>
+<p>The integer state indices are an internal encoding; analysis helpers
+need the planar vectors they represent.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Unit-vector field of shape <code class="docutils literal notranslate"><span class="pre">(L,</span> <span class="pre">L,</span> <span class="pre">2)</span></code>.</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>np.ndarray</p>
+</dd>
+<dt class="field-odd">Raises<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>RuntimeError</strong> – If the lattice has not been initialised.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
 <dt class="sig sig-object py" id="models.clock_model.DiscreteClockSimulation.step">
 <span class="sig-name descname"><span class="pre">step</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="../_modules/models/clock_model.html#DiscreteClockSimulation.step"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#models.clock_model.DiscreteClockSimulation.step" title="Link to this definition"></a></dt>
 <dd><p>Perform one Monte Carlo sweep using Numba.</p>
@@ -349,6 +368,50 @@ stochastic dynamics suitable for kinetics studies.</p>
 </dd>
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
 <dd class="field-odd"><p>np.ndarray</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="models.clock_model.discrete_clock_wolff_step_numba">
+<span class="sig-prename descclassname"><span class="pre">models.clock_model.</span></span><span class="sig-name descname"><span class="pre">discrete_clock_wolff_step_numba</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">spins</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">beta</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">J</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">q</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sigma_table</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">idx_next</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">idx_prev</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">in_cluster</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">stack</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cluster_spins</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">tuple</span></span></span><a class="reference internal" href="../_modules/models/clock_model.html#discrete_clock_wolff_step_numba"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#models.clock_model.discrete_clock_wolff_step_numba" title="Link to this definition"></a></dt>
+<dd><p>Perform one Wolff cluster reflection on the discrete clock lattice.</p>
+<p>The reflection axis is drawn uniformly from the q mirror axes of the
+regular q-gon, at angles <code class="docutils literal notranslate"><span class="pre">phi_m</span> <span class="pre">=</span> <span class="pre">pi</span> <span class="pre">*</span> <span class="pre">m</span> <span class="pre">/</span> <span class="pre">q</span></code>.  Reflecting the angle
+<code class="docutils literal notranslate"><span class="pre">theta_s</span> <span class="pre">=</span> <span class="pre">2</span> <span class="pre">pi</span> <span class="pre">s</span> <span class="pre">/</span> <span class="pre">q</span></code> about <code class="docutils literal notranslate"><span class="pre">phi_m</span></code> gives <code class="docutils literal notranslate"><span class="pre">2</span> <span class="pre">phi_m</span> <span class="pre">-</span> <span class="pre">theta_s</span></code>, which
+is again an allowed state, <code class="docutils literal notranslate"><span class="pre">s'</span> <span class="pre">=</span> <span class="pre">(m</span> <span class="pre">-</span> <span class="pre">s)</span> <span class="pre">mod</span> <span class="pre">q</span></code>.  The update therefore
+never leaves the discrete state space, and because every state <code class="docutils literal notranslate"><span class="pre">s'</span></code> is
+reachable from <code class="docutils literal notranslate"><span class="pre">s</span></code> with a single-site cluster, the chain is ergodic.</p>
+<p>Bonds follow the Wolff-Evertz rule: with <code class="docutils literal notranslate"><span class="pre">sigma_i</span></code> the component of spin
+<code class="docutils literal notranslate"><span class="pre">i</span></code> perpendicular to the mirror axis, a bond to a neighbour is activated
+with probability <code class="docutils literal notranslate"><span class="pre">1</span> <span class="pre">-</span> <span class="pre">exp(-2</span> <span class="pre">beta</span> <span class="pre">J</span> <span class="pre">sigma_i</span> <span class="pre">sigma_j)</span></code> when
+<code class="docutils literal notranslate"><span class="pre">sigma_i</span> <span class="pre">sigma_j</span> <span class="pre">&gt;</span> <span class="pre">0</span></code> and never otherwise.  Each reflection is an
+involution chosen with the same probability in both directions, so
+detailed balance holds for the full discrete Hamiltonian.</p>
+<p>One call constitutes one cluster flip, not one lattice sweep.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>spins</strong> (<em>np.ndarray</em>) – (N, N) array of integer spin states in {0, …, q-1}.</p></li>
+<li><p><strong>beta</strong> (<em>float</em>) – Inverse temperature 1/kT.</p></li>
+<li><p><strong>J</strong> (<em>float</em>) – Coupling constant.</p></li>
+<li><p><strong>q</strong> (<em>int</em>) – Number of clock states.</p></li>
+<li><p><strong>sigma_table</strong> (<em>np.ndarray</em>) – Length-2q table with <code class="docutils literal notranslate"><span class="pre">sigma_table[k]</span> <span class="pre">=</span> <span class="pre">sin(pi</span> <span class="pre">k</span> <span class="pre">/</span> <span class="pre">q)</span></code>, exactly
+antisymmetric under <code class="docutils literal notranslate"><span class="pre">k</span> <span class="pre">-&gt;</span> <span class="pre">2q</span> <span class="pre">-</span> <span class="pre">k</span></code>. The perpendicular projection of
+state <code class="docutils literal notranslate"><span class="pre">s</span></code> for mirror axis <code class="docutils literal notranslate"><span class="pre">m</span></code> is <code class="docutils literal notranslate"><span class="pre">sigma_table[(2</span> <span class="pre">s</span> <span class="pre">-</span> <span class="pre">m)</span> <span class="pre">mod</span> <span class="pre">2q]</span></code>.</p></li>
+<li><p><strong>idx_next</strong> (<em>np.ndarray</em>) – Pre-calculated next-neighbor indices (PBC).</p></li>
+<li><p><strong>idx_prev</strong> (<em>np.ndarray</em>) – Pre-calculated previous-neighbor indices (PBC).</p></li>
+<li><p><strong>in_cluster</strong> (<em>np.ndarray</em>) – Pre-allocated (N, N) boolean array for cluster membership mask.</p></li>
+<li><p><strong>stack</strong> (<em>np.ndarray</em>) – Pre-allocated (N*N) int64 array for DFS stack.</p></li>
+<li><p><strong>cluster_spins</strong> (<em>np.ndarray</em>) – Pre-allocated (N*N) int64 array to track cluster elements.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><ul class="simple">
+<li><p><em>spins</em> – Updated spins array.</p></li>
+<li><p><em>cluster_size</em> – Number of spins reflected in this step.</p></li>
+</ul>
+</p>
 </dd>
 </dl>
 </dd></dl>
@@ -586,6 +649,28 @@ model-specific implementation.</p>
 </dd></dl>
 
 <dl class="py method">
+<dt class="sig sig-object py" id="models.simulation_base.MonteCarloSimulation.get_spin_field">
+<span class="sig-name descname"><span class="pre">get_spin_field</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">ndarray</span></span></span><a class="reference internal" href="../_modules/models/simulation_base.html#MonteCarloSimulation.get_spin_field"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#models.simulation_base.MonteCarloSimulation.get_spin_field" title="Link to this definition"></a></dt>
+<dd><p>Return the spin configuration in its physical representation.</p>
+<p>Scalar models return the <code class="docutils literal notranslate"><span class="pre">(L,</span> <span class="pre">L)</span></code> array of spins; vector models
+return <code class="docutils literal notranslate"><span class="pre">(L,</span> <span class="pre">L,</span> <span class="pre">2)</span></code> unit vectors. Models that store an internal
+encoding (the discrete clock model keeps integer state indices)
+override this method, so analysis helpers never misread state
+indices as scalar spin values.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Spin field suitable for structure-factor and correlation analysis.</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>np.ndarray</p>
+</dd>
+<dt class="field-odd">Raises<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>RuntimeError</strong> – If the lattice has not been initialised.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
 <dt class="sig sig-object py" id="models.simulation_base.MonteCarloSimulation.run">
 <span class="sig-name descname"><span class="pre">run</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_steps</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">ndarray</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">ndarray</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="../_modules/models/simulation_base.html#MonteCarloSimulation.run"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#models.simulation_base.MonteCarloSimulation.run" title="Link to this definition"></a></dt>
 <dd><p>Run the simulation and record magnetization and energy at each step.</p>
@@ -765,8 +850,8 @@ The reflection preserves unit length exactly.</p>
 this project shares this update unchanged.  Where the Hamiltonian adds a
 single-site term that breaks the reflection symmetry, such as the
 crystal-field anisotropy of the clock model, detailed balance then holds
-for the exchange part alone, and <code class="docutils literal notranslate"><span class="pre">ClockSimulation</span></code> warns when it is asked
-to combine this update with a non-zero anisotropy.</p>
+for the exchange part alone, so <code class="docutils literal notranslate"><span class="pre">ClockSimulation</span></code> rejects this update
+when combined with a non-zero anisotropy.</p>
 <p>One call constitutes one cluster sweep.  <code class="docutils literal notranslate"><span class="pre">parallel=True</span></code> is silently
 ignored.</p>
 <dl class="field-list simple">
@@ -935,6 +1020,25 @@ an anisotropy term, this class represents spins as integers in {0, …, q-1}
 and enforces the discrete symmetry exactly.</p>
 <dl class="py method">
 <dt class="sig sig-object py">
+<span class="sig-name descname"><span class="pre">get_spin_field</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">ndarray</span></span></span><a class="reference internal" href="../_modules/models/clock_model.html#DiscreteClockSimulation.get_spin_field"><span class="viewcode-link"><span class="pre">[source]</span></span></a></dt>
+<dd><p>Return the spins as <code class="docutils literal notranslate"><span class="pre">(L,</span> <span class="pre">L,</span> <span class="pre">2)</span></code> unit vectors.</p>
+<p>The integer state indices are an internal encoding; analysis helpers
+need the planar vectors they represent.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Unit-vector field of shape <code class="docutils literal notranslate"><span class="pre">(L,</span> <span class="pre">L,</span> <span class="pre">2)</span></code>.</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>np.ndarray</p>
+</dd>
+<dt class="field-odd">Raises<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>RuntimeError</strong> – If the lattice has not been initialised.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py">
 <span class="sig-name descname"><span class="pre">step</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="../_modules/models/clock_model.html#DiscreteClockSimulation.step"><span class="viewcode-link"><span class="pre">[source]</span></span></a></dt>
 <dd><p>Perform one Monte Carlo sweep using Numba.</p>
 </dd></dl>
@@ -1015,6 +1119,28 @@ model-specific implementation.</p>
 </dd>
 <dt class="field-even">Return type<span class="colon">:</span></dt>
 <dd class="field-even"><p>float</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py">
+<span class="sig-name descname"><span class="pre">get_spin_field</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">ndarray</span></span></span><a class="reference internal" href="../_modules/models/simulation_base.html#MonteCarloSimulation.get_spin_field"><span class="viewcode-link"><span class="pre">[source]</span></span></a></dt>
+<dd><p>Return the spin configuration in its physical representation.</p>
+<p>Scalar models return the <code class="docutils literal notranslate"><span class="pre">(L,</span> <span class="pre">L)</span></code> array of spins; vector models
+return <code class="docutils literal notranslate"><span class="pre">(L,</span> <span class="pre">L,</span> <span class="pre">2)</span></code> unit vectors. Models that store an internal
+encoding (the discrete clock model keeps integer state indices)
+override this method, so analysis helpers never misread state
+indices as scalar spin values.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Spin field suitable for structure-factor and correlation analysis.</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>np.ndarray</p>
+</dd>
+<dt class="field-odd">Raises<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>RuntimeError</strong> – If the lattice has not been initialised.</p>
 </dd>
 </dl>
 </dd></dl>

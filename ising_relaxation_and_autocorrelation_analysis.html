@@ -67,7 +67,7 @@
 <li class="toctree-l2"><a class="reference internal" href="#Magnetization-traces">Magnetization traces</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#Quantitative-relaxation-time-analysis-(multi-seed,-two-start)">Quantitative relaxation-time analysis (multi-seed, two-start)</a><ul>
 <li class="toctree-l3"><a class="reference internal" href="#Visual-Example-of-Convergence">Visual Example of Convergence</a></li>
-<li class="toctree-l3"><a class="reference internal" href="#Robustness-in-the-Ordered-Phase:-Quasi-Steady-Stuck-Detection">Robustness in the Ordered Phase: Quasi-Steady Stuck Detection</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#Trapping-in-the-Ordered-Phase:-Quasi-Steady-Stuck-Detection">Trapping in the Ordered Phase: Quasi-Steady Stuck Detection</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#Why-the-ordered-start-fallback-is-set-for-Ising-and-not-for-the-vector-models">Why the ordered-start fallback is set for Ising and not for the vector models</a></li>
 </ul>
 </li>
@@ -76,6 +76,7 @@
 <li class="toctree-l2"><a class="reference internal" href="#Interpretation">Interpretation</a><ul>
 <li class="toctree-l3"><a class="reference internal" href="#Raw-step-counts-(two-start-\hat{\tau}_\text{relax})">Raw step counts (two-start <span class="math notranslate nohighlight">\(\hat{\tau}_\text{relax}\)</span>)</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#Work-normalised-view">Work-normalised view</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#id1">Integrated autocorrelation time</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#Comparing-\hat{\tau}_\text{relax}-and-\tau_\text{int}">Comparing <span class="math notranslate nohighlight">\(\hat{\tau}_\text{relax}\)</span> and <span class="math notranslate nohighlight">\(\tau_\text{int}\)</span></a></li>
 </ul>
 </li>
@@ -121,7 +122,8 @@
 <h1>Ising Model: Relaxation to Equilibrium<a class="headerlink" href="#Ising-Model:-Relaxation-to-Equilibrium" title="Link to this heading"></a></h1>
 <p>When a Monte Carlo simulation starts from an arbitrary (e.g. random) configuration, the system is far from its thermal equilibrium state. During the initial <strong>relaxation</strong> (or <em>thermalization</em>) transient, observables drift systematically as the Markov chain moves toward the stationary distribution. Only after the chain has forgotten its starting point, once the <strong>relaxation time</strong> <span class="math notranslate nohighlight">\(\tau_\text{relax}\)</span> has elapsed, do the samples represent genuine thermal fluctuations that can be used for
 measurement.</p>
-<p>This notebook quantifies relaxation to equilibrium for the 2D Ising model by comparing three update schemes. Random-site Metropolis proposes one randomly chosen spin per step. Checkerboard Metropolis sweeps sites in a fixed pattern instead, which removes the cost of drawing a random site. The Wolff cluster update flips a whole correlated cluster in one move and thereby cuts autocorrelation near <span class="math notranslate nohighlight">\(T_c\)</span> by orders of magnitude.</p>
+<p>This notebook quantifies relaxation to equilibrium for the 2D Ising model by comparing three update schemes. One step of random-site Metropolis <a class="reference internal" href="#Bibliography"><span class="std std-ref">[2]</span></a> is one sweep: <span class="math notranslate nohighlight">\(L^2\)</span> single-spin flip attempts at randomly chosen sites. One step of checkerboard Metropolis is also one sweep, but the sites are visited sublattice by sublattice in a fixed pattern, which removes the cost of drawing random sites and allows vectorised updates. One step of the Wolff cluster update
+<a class="reference internal" href="#Bibliography"><span class="std std-ref">[3]</span></a> is a single cluster flip, which near <span class="math notranslate nohighlight">\(T_c\)</span> cuts the equilibrium autocorrelation time by about two orders of magnitude at the lattice size used here.</p>
 <p>All three algorithms start from the same deliberately unfavorable initial condition: a fully random spin configuration with no warm-up. The analysis covers four temperature slices: deep in the ordered phase (<span class="math notranslate nohighlight">\(0.5\,T_c \approx 1.13\)</span>), just below <span class="math notranslate nohighlight">\(T_c\)</span>, at the Onsager critical point <span class="math notranslate nohighlight">\(T_c = 2/\ln(1 + \sqrt{2}) \approx 2.269\)</span> <a class="reference internal" href="#Bibliography"><span class="std std-ref">[1]</span></a>, and above <span class="math notranslate nohighlight">\(T_c\)</span>. The critical point is where critical slowing down makes relaxation slowest and the contrast between algorithms
 most pronounced.</p>
 <p>The notebook has four parts. It opens with the <span class="math notranslate nohighlight">\(|M|\)</span> trajectories themselves, which make the transient and its temperature dependence immediately visible. A threshold-crossing estimator on two-start convergence then extracts <span class="math notranslate nohighlight">\(\hat{\tau}_\text{relax}\)</span>, the time the chain needs to forget its initial condition. The integrated autocorrelation time <span class="math notranslate nohighlight">\(\tau_\text{int}\)</span> follows, measuring equilibrium memory and setting the effective sample size once the chain is stationary. The closing
@@ -180,7 +182,8 @@ L = 64, base N_STEPS = 1000, seeds = 10
 </div>
 <section id="Load-or-compute-trajectories">
 <h2>Load or compute trajectories<a class="headerlink" href="#Load-or-compute-trajectories" title="Link to this heading"></a></h2>
-<p>If a cached trajectory file exists in <code class="docutils literal notranslate"><span class="pre">../results/ising/ising_autocorrelation_analysis.npz</span></code>, the notebook reuses it directly. Otherwise it runs the four temperature slices inline and saves the resulting <span class="math notranslate nohighlight">\(|M|\)</span> time series for later reads. This keeps the notebook self-contained even though there is no separate batch script for this specific figure yet.</p>
+<p>If a cached trajectory file exists at <code class="docutils literal notranslate"><span class="pre">../results/ising/ising_autocorrelation_multiseed_analysis.npz</span></code>, the notebook reuses it directly. Otherwise it runs the four temperature slices inline (10 seeds, a random and an ordered start per seed, <span class="math notranslate nohighlight">\(L = 64\)</span>) and saves the resulting <span class="math notranslate nohighlight">\(|M|\)</span> time series and Wolff cluster sizes for later reads. The outputs stored with this notebook come from such an inline run. This keeps the notebook self-contained even though there is no separate batch script
+for this specific figure yet.</p>
 <div class="nbinput docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[2]:
 </pre></div>
@@ -283,7 +286,9 @@ Saved cached trajectories to ../results/ising/ising_autocorrelation_multiseed_an
 </section>
 <section id="Magnetization-traces">
 <h2>Magnetization traces<a class="headerlink" href="#Magnetization-traces" title="Link to this heading"></a></h2>
-<p>Each panel shows the absolute magnetization <span class="math notranslate nohighlight">\(|M|\)</span> over the first 1,000 updates after a random start. The comparison is deliberately qualitative: below <span class="math notranslate nohighlight">\(T_c\)</span> the system should lock into an ordered state, near <span class="math notranslate nohighlight">\(T_c\)</span> the trajectories should remain noisy for much longer, and above <span class="math notranslate nohighlight">\(T_c\)</span> they should fluctuate around a small mean.</p>
+<p>Each panel shows the absolute magnetization <span class="math notranslate nohighlight">\(|M|\)</span> of seed 0 over the first 1,000 steps after a random start, where a step is one sweep for the two Metropolis variants and one cluster flip for Wolff. The comparison is qualitative: below <span class="math notranslate nohighlight">\(T_c\)</span> the system should lock into an ordered state, near <span class="math notranslate nohighlight">\(T_c\)</span> the trajectories should remain noisy for much longer, and above <span class="math notranslate nohighlight">\(T_c\)</span> they should fluctuate around a small mean.</p>
+<p>In the stored run, checkerboard Metropolis and Wolff reach saturation within about 30 to 170 steps at both temperatures below <span class="math notranslate nohighlight">\(T_c\)</span>. Random-site Metropolis orders far more slowly from the same start: deep below <span class="math notranslate nohighlight">\(T_c\)</span> its trace climbs almost linearly and reaches <span class="math notranslate nohighlight">\(|M| \approx 1\)</span> only after about 800 sweeps, and at <span class="math notranslate nohighlight">\(0.8\,T_c\)</span> it is still near 0.8 after 1,000 sweeps. The checkerboard transient is a property of the update order, not of physical coarsening kinetics, for which
+only random-site selection is valid. At <span class="math notranslate nohighlight">\(T_c\)</span> all three traces wander over a wide range of <span class="math notranslate nohighlight">\(|M|\)</span>, and above <span class="math notranslate nohighlight">\(T_c\)</span> they stay below about 0.25.</p>
 <div class="nbinput docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[3]:
 </pre></div>
@@ -334,9 +339,11 @@ Saved cached trajectories to ../results/ising/ising_autocorrelation_multiseed_an
 <li><p>Define <span class="math notranslate nohighlight">\(\hat{\tau}_\text{relax}\)</span> as the first time where the random-start trace lies within <span class="math notranslate nohighlight">\(\pm k\)</span> standard deviations of the ordered-start tail mean and the ordered-start trace simultaneously lies within <span class="math notranslate nohighlight">\(\pm k\)</span> standard deviations of the random-start tail mean, sustained over a dwell window. A sigma floor prevents band collapse for near-flat traces.</p></li>
 </ol>
 <p>This mutual cross-band test is the operational definition of thermalization: neither trace can be declared equilibrated until it has entered the statistical range of the other.</p>
+<p>Two properties of the estimator matter when reading the numbers. The returned time is the raw-trace position of the first smoothed point from which the dwell condition holds, and a smoothed point exists only once a full window of raw steps is available, so the smallest possible value is 59 steps for the 60-step window used here; estimates close to that value say only that relaxation took at most about 60 steps. When the two traces never meet within the run, the estimator returns the run length
+(1,000 steps, or 4,000 for the local updates at <span class="math notranslate nohighlight">\(T_c\)</span>). Such a value is censored: it is a lower bound on the relaxation time, not a measurement, and the tables below mark it with “≥” and count the censored seeds.</p>
 <section id="Visual-Example-of-Convergence">
 <h3>Visual Example of Convergence<a class="headerlink" href="#Visual-Example-of-Convergence" title="Link to this heading"></a></h3>
-<p>Here is a visual demonstration of the two-start relaxation process for a single configuration at the critical point <span class="math notranslate nohighlight">\(T \approx T_c\)</span> using random updates. This combination represents a worst-case scenario where critical slowing down and the inefficiency of random-site selection create a long relaxation transient.</p>
+<p>The figure below applies the two-start test to seed 0 at <span class="math notranslate nohighlight">\(T_c\)</span> with random-site updates over the full 4,000-sweep run. This is the slowest combination in the study, because critical slowing down acts on top of the slow local dynamics.</p>
 <div class="nbinput docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[4]:
 </pre></div>
@@ -440,8 +447,9 @@ Saved cached trajectories to ../results/ising/ising_autocorrelation_multiseed_an
 <img alt="_images/ising_relaxation_and_autocorrelation_analysis_8_0.png" src="_images/ising_relaxation_and_autocorrelation_analysis_8_0.png" />
 </div>
 </div>
-<p>The plot shows how the random (hot) start and the ordered (cold) start converge onto the same thermal average. The orange band marks the region that the random-start trace must enter (centred on the ordered-start tail mean); the blue band marks the region the ordered-start trace must enter (centred on the random-start tail mean). The green dashed line marks <span class="math notranslate nohighlight">\(\hat{\tau}_\text{relax}\)</span>, the first step at which both conditions are jointly satisfied and sustained. This is when the system’s
-kinetic memory of its initial state has decayed.</p>
+<p>The plot shows how the random (hot) start and the ordered (cold) start converge onto the same thermal average. The orange band marks the region that the random-start trace must enter (centred on the ordered-start tail mean); the blue band marks the region the ordered-start trace must enter (centred on the random-start tail mean). The green dotted line marks <span class="math notranslate nohighlight">\(\hat{\tau}_\text{relax}\)</span>, the first step at which both conditions are jointly satisfied and sustained, here about 475 sweeps. By this
+criterion the memory of the initial state has decayed at that point.</p>
+<p>The example also shows how coarse the criterion is at <span class="math notranslate nohighlight">\(T_c\)</span>. The two tail means differ (0.624 and 0.490) because the random-start trace drops to about 0.2 near sweep 3,000, a single slow excursion that one 4,000-sweep trajectory cannot average out. The bands are correspondingly wide, so the test detects the end of the gross transient rather than a precise equilibration time.</p>
 <div class="nbinput docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[5]:
 </pre></div>
@@ -468,10 +476,22 @@ kinetic memory of its initial state has decayed.</p>
                 <span class="n">min_fraction_inside</span><span class="o">=</span><span class="n">MIN_FRACTION_INSIDE</span><span class="p">,</span>
                 <span class="n">sigma_floor</span><span class="o">=</span><span class="n">SIGMA_FLOOR</span><span class="p">)</span>
 
-<span class="c1"># Robust central tendency and uncertainty across seeds</span>
+<span class="c1"># Median and 16-84% band across seeds</span>
 <span class="n">median_tau</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">median</span><span class="p">(</span><span class="n">tau_samples</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
 <span class="n">p16_tau</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">percentile</span><span class="p">(</span><span class="n">tau_samples</span><span class="p">,</span> <span class="mi">16</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
 <span class="n">p84_tau</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">percentile</span><span class="p">(</span><span class="n">tau_samples</span><span class="p">,</span> <span class="mi">84</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
+
+<span class="c1"># The estimator returns the run length when the two traces never meet, so a</span>
+<span class="c1"># value at the run length is censored: a lower bound, not a measurement.</span>
+<span class="n">run_length</span> <span class="o">=</span> <span class="n">steps_used</span><span class="p">[:,</span> <span class="p">:,</span> <span class="p">:,</span> <span class="mi">0</span><span class="p">]</span>
+<span class="n">censored</span> <span class="o">=</span> <span class="n">tau_samples</span> <span class="o">&gt;=</span> <span class="n">run_length</span>
+<span class="n">n_censored</span> <span class="o">=</span> <span class="n">censored</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_fmt_tau</span><span class="p">(</span><span class="n">value</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">cap</span><span class="p">:</span> <span class="nb">float</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Format a relaxation time, prefixing values at the run length with &#39;≥&#39;.&quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="s1">&#39;≥&#39;</span><span class="w"> </span><span class="k">if</span><span class="w"> </span><span class="n">value</span><span class="w"> </span><span class="o">&gt;=</span><span class="w"> </span><span class="n">cap</span><span class="w"> </span><span class="k">else</span><span class="w"> </span><span class="s1">&#39; &#39;</span><span class="si">}{</span><span class="n">value</span><span class="si">:</span><span class="s2">.0f</span><span class="si">}</span><span class="s2">&quot;</span>
+
 
 <span class="c1"># --- Table printout ---</span>
 <span class="n">col_w</span> <span class="o">=</span> <span class="mi">34</span>
@@ -481,19 +501,26 @@ kinetic memory of its initial state has decayed.</p>
 <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">label</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">TEMP_LABELS</span><span class="p">):</span>
     <span class="n">entries</span> <span class="o">=</span> <span class="p">[]</span>
     <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">UPDATES</span><span class="p">)):</span>
-        <span class="n">med</span> <span class="o">=</span> <span class="n">median_tau</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="n">j</span><span class="p">]</span>
-        <span class="n">lo</span> <span class="o">=</span> <span class="n">p16_tau</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="n">j</span><span class="p">]</span>
-        <span class="n">hi</span> <span class="o">=</span> <span class="n">p84_tau</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="n">j</span><span class="p">]</span>
-        <span class="n">entries</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">med</span><span class="si">:</span><span class="s2">5.0f</span><span class="si">}</span><span class="s2"> [</span><span class="si">{</span><span class="n">lo</span><span class="si">:</span><span class="s2">4.0f</span><span class="si">}</span><span class="s2">, </span><span class="si">{</span><span class="n">hi</span><span class="si">:</span><span class="s2">4.0f</span><span class="si">}</span><span class="s2">]&quot;</span><span class="p">)</span>
+        <span class="n">cap</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">run_length</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="n">j</span><span class="p">,</span> <span class="mi">0</span><span class="p">])</span>
+        <span class="n">med</span> <span class="o">=</span> <span class="n">_fmt_tau</span><span class="p">(</span><span class="n">median_tau</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="n">j</span><span class="p">],</span> <span class="n">cap</span><span class="p">)</span>
+        <span class="n">lo</span> <span class="o">=</span> <span class="n">_fmt_tau</span><span class="p">(</span><span class="n">p16_tau</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="n">j</span><span class="p">],</span> <span class="n">cap</span><span class="p">)</span>
+        <span class="n">hi</span> <span class="o">=</span> <span class="n">_fmt_tau</span><span class="p">(</span><span class="n">p84_tau</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="n">j</span><span class="p">],</span> <span class="n">cap</span><span class="p">)</span>
+        <span class="n">entries</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">med</span><span class="si">:</span><span class="s2">&gt;6</span><span class="si">}</span><span class="s2"> [</span><span class="si">{</span><span class="n">lo</span><span class="si">:</span><span class="s2">&gt;5</span><span class="si">}</span><span class="s2">, </span><span class="si">{</span><span class="n">hi</span><span class="si">:</span><span class="s2">&gt;5</span><span class="si">}</span><span class="s2">]&quot;</span><span class="p">)</span>
     <span class="n">row</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">label</span><span class="si">:</span><span class="s2">&lt;18</span><span class="si">}</span><span class="s2">&quot;</span> <span class="o">+</span> <span class="s1">&#39;&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">e</span><span class="si">:</span><span class="s2">&gt;</span><span class="si">{</span><span class="n">col_w</span><span class="si">}}</span><span class="s2">&quot;</span> <span class="k">for</span> <span class="n">e</span> <span class="ow">in</span> <span class="n">entries</span><span class="p">)</span>
     <span class="nb">print</span><span class="p">(</span><span class="n">row</span><span class="p">)</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="s1">&#39;</span><span class="se">\n</span><span class="s1">Seeds with no crossing within the run (value = run length, a lower bound):&#39;</span><span class="p">)</span>
+<span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">label</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">TEMP_LABELS</span><span class="p">):</span>
+    <span class="n">counts</span> <span class="o">=</span> <span class="s1">&#39;&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">n_censored</span><span class="p">[</span><span class="n">i</span><span class="p">,</span><span class="w"> </span><span class="n">j</span><span class="p">]</span><span class="si">}</span><span class="s1">/</span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">SEEDS</span><span class="p">)</span><span class="si">}</span><span class="s1">&#39;</span><span class="si">:</span><span class="s2">&gt;</span><span class="si">{</span><span class="n">col_w</span><span class="si">}}</span><span class="s2">&quot;</span> <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">UPDATES</span><span class="p">)))</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">label</span><span class="si">:</span><span class="s2">&lt;18</span><span class="si">}</span><span class="s2">&quot;</span> <span class="o">+</span> <span class="n">counts</span><span class="p">)</span>
 
 <span class="nb">print</span><span class="p">(</span>
     <span class="sa">f</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">(seeds = </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">SEEDS</span><span class="p">)</span><span class="si">}</span><span class="s2">, k = </span><span class="si">{</span><span class="n">TOLERANCE_K</span><span class="si">}</span><span class="s2">, smooth = </span><span class="si">{</span><span class="n">SMOOTH_WINDOW</span><span class="si">}</span><span class="s2">, &quot;</span>
     <span class="sa">f</span><span class="s2">&quot;dwell = </span><span class="si">{</span><span class="n">DWELL_WINDOW</span><span class="si">}</span><span class="s2">, min_fraction_inside = </span><span class="si">{</span><span class="n">MIN_FRACTION_INSIDE</span><span class="si">:</span><span class="s2">.2f</span><span class="si">}</span><span class="s2">, &quot;</span>
     <span class="sa">f</span><span class="s2">&quot;sigma_floor = </span><span class="si">{</span><span class="n">SIGMA_FLOOR</span><span class="si">:</span><span class="s2">.2f</span><span class="si">}</span><span class="s2">, L = </span><span class="si">{</span><span class="n">L</span><span class="si">}</span><span class="s2">)&quot;</span>
 <span class="p">)</span>
-<span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Each entry is median [16th, 84th percentile] over seeds.&#39;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Each entry is median [16th, 84th percentile] over seeds; &quot;≥&quot; marks a value at the run length.&#39;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;The smallest value the estimator can return is SMOOTH_WINDOW - 1 = </span><span class="si">{</span><span class="n">SMOOTH_WINDOW</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="mi">1</span><span class="si">}</span><span class="s1"> steps.&#39;</span><span class="p">)</span>
 <span class="nb">print</span><span class="p">(</span>
     <span class="sa">f</span><span class="s2">&quot;Note: at T_c, local updates run for </span><span class="si">{</span><span class="n">max_steps</span><span class="si">}</span><span class="s2"> steps &quot;</span>
     <span class="sa">f</span><span class="s2">&quot;(N_STEPS </span><span class="se">\u00d7</span><span class="s2"> MAX_STEPS_FACTOR = </span><span class="si">{</span><span class="n">N_STEPS</span><span class="si">}</span><span class="s2"> </span><span class="se">\u00d7</span><span class="s2"> </span><span class="si">{</span><span class="n">MAX_STEPS_FACTOR</span><span class="si">}</span><span class="s2">); &quot;</span>
@@ -538,13 +565,20 @@ kinetic memory of its initial state has decayed.</p>
 <div class="highlight"><pre>
 Temperature                   Random-site Metropolis           Checkerboard Metropolis                     Wolff cluster
 ------------------------------------------------------------------------------------------------------------------------
-Deep below $T_c$                    744 [ 620, 1000]                   90 [  83,  333]                   74 [  67,   81]
-Below $T_c$                        1000 [ 676, 1000]                  180 [ 158,  212]                  121 [ 112,  141]
-At $T_c$                           1259 [ 539, 4000]                  401 [ 188, 1147]                  529 [ 439,  765]
-Above $T_c$                         313 [ 178,  570]                   92 [  59,  123]                  334 [ 243,  539]
+Deep below $T_c$                  744 [  620, ≥1000]                 90 [   83,   333]                 74 [   67,    81]
+Below $T_c$                     ≥1000 [  676, ≥1000]                180 [  158,   212]                121 [  112,   141]
+At $T_c$                         1259 [  539, ≥4000]                401 [  188,  1147]                529 [  439,   765]
+Above $T_c$                       313 [  178,   570]                 92 [   59,   123]                334 [  243,   539]
+
+Seeds with no crossing within the run (value = run length, a lower bound):
+Deep below $T_c$                                4/10                              1/10                              0/10
+Below $T_c$                                     6/10                              1/10                              0/10
+At $T_c$                                        3/10                              0/10                              0/10
+Above $T_c$                                     1/10                              0/10                              1/10
 
 (seeds = 10, k = 1.0, smooth = 60, dwell = 60, min_fraction_inside = 0.85, sigma_floor = 0.02, L = 64)
-Each entry is median [16th, 84th percentile] over seeds.
+Each entry is median [16th, 84th percentile] over seeds; &#34;≥&#34; marks a value at the run length.
+The smallest value the estimator can return is SMOOTH_WINDOW - 1 = 59 steps.
 Note: at T_c, local updates run for 4000 steps (N_STEPS × MAX_STEPS_FACTOR = 1000 × 4); Wolff and off-critical runs use N_STEPS.
 </pre></div></div>
 </div>
@@ -556,17 +590,18 @@ Note: at T_c, local updates run for 4000 steps (N_STEPS × MAX_STEPS_FACTOR = 10
 </div>
 </div>
 </section>
-<section id="Robustness-in-the-Ordered-Phase:-Quasi-Steady-Stuck-Detection">
-<h3>Robustness in the Ordered Phase: Quasi-Steady Stuck Detection<a class="headerlink" href="#Robustness-in-the-Ordered-Phase:-Quasi-Steady-Stuck-Detection" title="Link to this heading"></a></h3>
+<section id="Trapping-in-the-Ordered-Phase:-Quasi-Steady-Stuck-Detection">
+<h3>Trapping in the Ordered Phase: Quasi-Steady Stuck Detection<a class="headerlink" href="#Trapping-in-the-Ordered-Phase:-Quasi-Steady-Stuck-Detection" title="Link to this heading"></a></h3>
 <p>In the deep ordered phase (<span class="math notranslate nohighlight">\(T &lt; T_c\)</span>), the simple mutual cross-band criterion used above can sometimes fail to signal convergence within a reasonable time. This occurs because a random initial state often nucleates multiple domains of opposite spin that become topologically trapped. These “stuck” states form a long-lived metastable plateau with <span class="math notranslate nohighlight">\(\lvert M \rvert &lt; 1\)</span> and very low variance, making them appear “quasi-steady” even though they have not reached the global minimum.</p>
 <p>To handle this physical reality efficiently, VibeSpin’s production equilibration routine (<code class="docutils literal notranslate"><span class="pre">convergence_equilibrate_with_status</span></code>) implements <strong>Quasi-Steady Stuck Detection</strong>. If the system detects that the ordered-start trace has settled into a stable ground state (<span class="math notranslate nohighlight">\(\lvert M \rvert \approx 1\)</span> with low variance) while the random-start trace remains stranded in a lower-magnetization plateau, it declares the equilibration complete. In these cases, the engine automatically falls back to using
 the stable ordered-start simulation for all subsequent thermodynamic measurements. This ensures that the simulation provides physically correct equilibrium results without wasting thousands of MC steps waiting for a random start to overcome a massive free-energy barrier.</p>
 </section>
 <section id="Why-the-ordered-start-fallback-is-set-for-Ising-and-not-for-the-vector-models">
 <h3>Why the ordered-start fallback is set for Ising and not for the vector models<a class="headerlink" href="#Why-the-ordered-start-fallback-is-set-for-Ising-and-not-for-the-vector-models" title="Link to this heading"></a></h3>
-<p>The fallback described above is not switched on everywhere. <code class="docutils literal notranslate"><span class="pre">scripts/ising/temperature_sweep.py</span></code> passes <code class="docutils literal notranslate"><span class="pre">ordered_start_below=T_c</span></code> to the shared sweep runner, while the XY and clock sweeps leave it unset, so a random start there is never replaced by the ordered one. That asymmetry looks arbitrary until the trapping mechanism is stated precisely.</p>
+<p>The fallback described above is not switched on everywhere. <code class="docutils literal notranslate"><span class="pre">scripts/ising/temperature_sweep.py</span></code> passes <code class="docutils literal notranslate"><span class="pre">ordered_start_below=T_c</span></code> to the shared sweep runner, and <code class="docutils literal notranslate"><span class="pre">scripts/clock/temperature_sweep.py</span></code> does the same for the discrete clock model (its default) below the lowest transition, while the XY sweep and the continuous clock sweep leave it unset, so a random start there is never replaced by the ordered one. That asymmetry looks arbitrary until the trapping mechanism is stated precisely.</p>
 <p>A stranded state is a domain wall that wraps the periodic lattice. For Ising the wall separates <span class="math notranslate nohighlight">\(+1\)</span> from <span class="math notranslate nohighlight">\(-1\)</span> and cannot be removed continuously: every intermediate configuration costs energy, so escaping requires nucleating a kink, an activated process whose rate falls off as <span class="math notranslate nohighlight">\(\exp(-4J/T)\)</span>. Deep in the ordered phase that is effectively never, which is what makes the state metastable rather than merely slow.</p>
-<p>The XY model has no such barrier. Its order parameter is a continuous angle, so a wall can unwind by rotating spins through intermediate directions at no topological cost, and the random start always finds the same plateau as the ordered one, given enough steps.</p>
+<p>The XY model has no such barrier for a local wall. Its order parameter is a continuous angle, so a wall can unwind by rotating spins through intermediate directions, and a random start usually finds the same plateau as the ordered one, given enough steps. The exception is a twisted state, in which the angle winds by a multiple of <span class="math notranslate nohighlight">\(2\pi\)</span> around a periodic direction of the torus. That winding is a topological property: smooth rotations cannot remove it, and removing it requires a
+vortex-antivortex pair to form and travel across the lattice, an activated process. A random start that freezes into such a state can therefore stay stranded for a long time at low temperature, so the XY model is not free of trapping in principle, only free of the domain-wall trapping described above.</p>
 <p>The clock model sits on both sides of that line, and which side depends on the representation. <code class="docutils literal notranslate"><span class="pre">ClockSimulation</span></code> with <span class="math notranslate nohighlight">\(A = 0\)</span> is the XY Hamiltonian exactly, since <span class="math notranslate nohighlight">\(q\)</span> enters only through the anisotropy term, so it behaves like XY; <code class="docutils literal notranslate"><span class="pre">DiscreteClockSimulation</span></code> restricts the spins to <span class="math notranslate nohighlight">\(q\)</span> discrete directions and therefore traps like Ising. The measurement below includes it precisely because it separates the symmetry of the order parameter from the name of the model.</p>
 <div class="nbinput docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[6]:
@@ -663,11 +698,11 @@ Discrete clock $q=6$                1.000          0.875       0.594      5/8
 </div>
 </div>
 <p>The three panels separate cleanly. For Ising and the discrete clock model the random starts split into two groups: some reach the ordered plateau and the rest settle onto a lower one and stay there for the whole budget. For XY every random start ends on the same plateau as the ordered start, and the only difference between the two curves is how long the approach takes.</p>
-<p>The split is the signature the production stuck detector looks for. It fires when the ordered-start trace is cleanly ordered with low variance while the random-start trace is stranded on a plateau below it, and the sweep then measures on the ordered start. Where no split exists, as in the XY panel, the same rule would be actively harmful: it would swap in a differently equilibrated run for no reason. Leaving <code class="docutils literal notranslate"><span class="pre">ordered_start_below</span></code> unset for the continuous models is therefore not an oversight
-but the correct reading of their symmetry, and the higher <code class="docutils literal notranslate"><span class="pre">--eq-max-steps</span></code> default they carry (200 000 against Ising’s 20 000) addresses what is genuinely slow about them, which is the approach rather than a barrier.</p>
-<p>Two things about the numbers. The stranded fractions come from eight seeds at <span class="math notranslate nohighlight">\(L = 32\)</span>, so they say which mechanism is present, not how often it occurs. And the effect is strongly temperature-dependent: repeating this at <span class="math notranslate nohighlight">\(T = 0.35\,T_c\)</span> instead of <span class="math notranslate nohighlight">\(T = 0.10\)</span> leaves no Ising seed stranded within the same budget, because the escape rate <span class="math notranslate nohighlight">\(\exp(-4J/T)\)</span> has risen by orders of magnitude. That is why the fallback is tied to a temperature threshold rather than switched on
-unconditionally.</p>
-<p>One consequence is worth stating plainly, since it is not currently acted on: the clock sweep run with <code class="docutils literal notranslate"><span class="pre">--discrete</span></code> would trap in exactly the way the Ising sweep does, and it does not enable the ordered-start fallback. The default clock sweep is continuous and unaffected, so nothing here is wrong today, but a discrete sweep deep in the ordered phase would inherit the problem this section diagnoses.</p>
+<p>The split is the signature the production stuck detector looks for. It fires when the ordered-start trace is cleanly ordered with low variance while the random-start trace is stranded on a plateau below it, and the sweep then measures on the ordered start. Where no split exists, as in the XY panel, the rule has nothing to correct. Leaving <code class="docutils literal notranslate"><span class="pre">ordered_start_below</span></code> unset for XY follows from its symmetry, and the higher <code class="docutils literal notranslate"><span class="pre">--eq-max-steps</span></code> default of the XY sweep (200 000 against Ising’s 20 000)
+addresses what is slow there, which is the approach rather than a barrier. None of the eight XY seeds here ends in a twisted state, so this run does not probe that exception.</p>
+<p>Two things about the numbers. The stranded fractions come from eight seeds at <span class="math notranslate nohighlight">\(L = 32\)</span>, so they say which mechanism is present, not how often it occurs. And the effect is strongly temperature-dependent: a separate run with the same seeds, size and budget at <span class="math notranslate nohighlight">\(T = 0.35\,T_c\)</span> instead of <span class="math notranslate nohighlight">\(T = 0.10\)</span> (not shown) leaves no Ising seed stranded, because the escape rate <span class="math notranslate nohighlight">\(\exp(-4J/T)\)</span> has risen by orders of magnitude. That is why the fallback is tied to a temperature threshold
+rather than switched on unconditionally.</p>
+<p>The clock sweep now runs the discrete model by default, and that model traps exactly as the right panel shows. The sweep therefore passes <code class="docutils literal notranslate"><span class="pre">ordered_start_below</span></code> for <span class="math notranslate nohighlight">\(q = 2\)</span>, 3, 4 and 6, using the exact transition temperatures for <span class="math notranslate nohighlight">\(q \le 4\)</span> and the approximate lower transition <span class="math notranslate nohighlight">\(T_1 \approx 0.68\)</span> for <span class="math notranslate nohighlight">\(q = 6\)</span>. Other values of <span class="math notranslate nohighlight">\(q\)</span> have no threshold and run without the fallback, and the continuous model selected with <code class="docutils literal notranslate"><span class="pre">--continuous</span></code> leaves it unset, as XY does.</p>
 </section>
 </section>
 <section id="Work-normalised-relaxation-time">
@@ -691,7 +726,7 @@ unconditionally.</p>
 <p>A common convention is to express time in units of “one <span class="math notranslate nohighlight">\(L^2\)</span> flip-attempt sweep”. Under this convention:</p>
 <div class="math notranslate nohighlight">
 \[\hat{\tau}^\text{norm}_\text{local} = \hat{\tau}_\text{steps} \qquad \hat{\tau}^\text{norm}_\text{Wolff} = \hat{\tau}_\text{steps} \times \frac{\langle C \rangle}{L^2}\]</div>
-<p><span class="math notranslate nohighlight">\(\langle C \rangle\)</span> is now taken directly from the <strong>per-step cluster sizes</strong> recorded by <code class="docutils literal notranslate"><span class="pre">run_with_cluster_sizes()</span></code> and stored in the cache, with no proxy estimator in between, so the below-<span class="math notranslate nohighlight">\(T_c\)</span> values are reliable for the first time.</p>
+<p><span class="math notranslate nohighlight">\(\langle C \rangle\)</span> is taken directly from the <strong>per-step cluster sizes</strong> recorded by <code class="docutils literal notranslate"><span class="pre">run_with_cluster_sizes()</span></code> and stored in the cache, averaged over the second half of each random-start Wolff run. That is the equilibrium cluster size. During the transient from a random start below <span class="math notranslate nohighlight">\(T_c\)</span> the clusters are confined to the growing domains and are smaller, so the normalised Wolff relaxation times below <span class="math notranslate nohighlight">\(T_c\)</span> overstate the work actually spent.</p>
 <div class="nbinput docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[7]:
 </pre></div>
@@ -744,10 +779,11 @@ unconditionally.</p>
 <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">label</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">TEMP_LABELS</span><span class="p">):</span>
     <span class="n">entries</span> <span class="o">=</span> <span class="p">[]</span>
     <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">UPDATES</span><span class="p">)):</span>
-        <span class="n">med</span> <span class="o">=</span> <span class="n">median_tau_norm</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="n">j</span><span class="p">]</span>
-        <span class="n">lo</span>  <span class="o">=</span> <span class="n">p16_tau_norm</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="n">j</span><span class="p">]</span>
-        <span class="n">hi</span>  <span class="o">=</span> <span class="n">p84_tau_norm</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="n">j</span><span class="p">]</span>
-        <span class="n">entries</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">med</span><span class="si">:</span><span class="s1">5.0f</span><span class="si">}</span><span class="s1"> [</span><span class="si">{</span><span class="n">lo</span><span class="si">:</span><span class="s1">4.0f</span><span class="si">}</span><span class="s1">, </span><span class="si">{</span><span class="n">hi</span><span class="si">:</span><span class="s1">4.0f</span><span class="si">}</span><span class="s1">]&#39;</span><span class="p">)</span>
+        <span class="n">cap</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">run_length</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="n">j</span><span class="p">,</span> <span class="mi">0</span><span class="p">])</span> <span class="o">*</span> <span class="n">work_factor</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="n">j</span><span class="p">]</span>
+        <span class="n">med</span> <span class="o">=</span> <span class="n">_fmt_tau</span><span class="p">(</span><span class="n">median_tau_norm</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="n">j</span><span class="p">],</span> <span class="n">cap</span><span class="p">)</span>
+        <span class="n">lo</span>  <span class="o">=</span> <span class="n">_fmt_tau</span><span class="p">(</span><span class="n">p16_tau_norm</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="n">j</span><span class="p">],</span> <span class="n">cap</span><span class="p">)</span>
+        <span class="n">hi</span>  <span class="o">=</span> <span class="n">_fmt_tau</span><span class="p">(</span><span class="n">p84_tau_norm</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="n">j</span><span class="p">],</span> <span class="n">cap</span><span class="p">)</span>
+        <span class="n">entries</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">med</span><span class="si">:</span><span class="s1">&gt;6</span><span class="si">}</span><span class="s1"> [</span><span class="si">{</span><span class="n">lo</span><span class="si">:</span><span class="s1">&gt;5</span><span class="si">}</span><span class="s1">, </span><span class="si">{</span><span class="n">hi</span><span class="si">:</span><span class="s1">&gt;5</span><span class="si">}</span><span class="s1">]&#39;</span><span class="p">)</span>
     <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">label</span><span class="si">:</span><span class="s1">&lt;18</span><span class="si">}</span><span class="s1">&#39;</span> <span class="o">+</span> <span class="s1">&#39;&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">e</span><span class="si">:</span><span class="s1">&gt;</span><span class="si">{</span><span class="n">col_w</span><span class="si">}}</span><span class="s1">&#39;</span> <span class="k">for</span> <span class="n">e</span> <span class="ow">in</span> <span class="n">entries</span><span class="p">))</span>
 <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;</span><span class="se">\n</span><span class="s1">(units: equivalent L²=</span><span class="si">{</span><span class="n">L2</span><span class="si">}</span><span class="s1"> flip-attempt sweeps  |  L = </span><span class="si">{</span><span class="n">L</span><span class="si">}</span><span class="s1">  |  seeds = </span><span class="si">{</span><span class="n">n_seed</span><span class="si">}</span><span class="s1">)&#39;</span><span class="p">)</span>
 
@@ -802,10 +838,10 @@ Exact mean Wolff cluster size &lt;C&gt; per temperature (from recorded step data
 Work-normalised relaxation time (in L² sweep equivalents):
 Temperature                   Random-site Metropolis           Checkerboard Metropolis                     Wolff cluster
 ------------------------------------------------------------------------------------------------------------------------
-Deep below $T_c$                    744 [ 620, 1000]                   90 [  83,  333]                   73 [  66,   81]
-Below $T_c$                        1000 [ 676, 1000]                  180 [ 158,  212]                  110 [ 102,  128]
-At $T_c$                           1259 [ 539, 4000]                  401 [ 188, 1147]                  203 [ 169,  294]
-Above $T_c$                         313 [ 178,  570]                   92 [  59,  123]                    2 [   1,    3]
+Deep below $T_c$                  744 [  620, ≥1000]                 90 [   83,   333]                 73 [   66,    81]
+Below $T_c$                     ≥1000 [  676, ≥1000]                180 [  158,   212]                110 [  102,   128]
+At $T_c$                         1259 [  539, ≥4000]                401 [  188,  1147]                203 [  169,   294]
+Above $T_c$                       313 [  178,   570]                 92 [   59,   123]                  2 [    1,     3]
 
 (units: equivalent L²=4096 flip-attempt sweeps  |  L = 64  |  seeds = 10)
 </pre></div></div>
@@ -832,7 +868,9 @@ Above $T_c$                         313 [ 178,  570]                   92 [  59,
 \[\sigma_{\bar{A}}^2 \approx \frac{2\,\tau_\text{int}\,\text{Var}(A)}{N}.\]</div>
 <p>In other words, <span class="math notranslate nohighlight">\(N / (2\tau_\text{int})\)</span> is the <strong>effective number of independent samples</strong>, so <span class="math notranslate nohighlight">\(\tau_\text{int}\)</span> directly controls the cost of any equilibrium measurement.</p>
 <p>The upper limit <span class="math notranslate nohighlight">\(W\)</span> uses the <strong>Madras–Sokal automatic window</strong> <a class="reference internal" href="#Bibliography"><span class="std std-ref">[4]</span></a> <a class="reference internal" href="#Bibliography"><span class="std std-ref">[5]</span></a>: increase <span class="math notranslate nohighlight">\(W\)</span> one step at a time and stop as soon as <span class="math notranslate nohighlight">\(W \geq c\,\tau_\text{int}(W)\)</span>, with <span class="math notranslate nohighlight">\(c = 5\)</span>. This cuts off the noisy tail of <span class="math notranslate nohighlight">\(\rho\)</span> before it inflates the estimate.</p>
-<p>The burn-in discarded here equals <span class="math notranslate nohighlight">\(\hat{\tau}_\text{relax}\)</span> from the two-start analysis, with each of the 10 seeds using its own per-seed estimate. Note that the existing trajectories were designed for the thermalization study (1 000–4 000 steps); below <span class="math notranslate nohighlight">\(T_c\)</span> for local updates the post-burn-in window is short (~400 steps), so those <span class="math notranslate nohighlight">\(\tau_\text{int}\)</span> estimates carry larger uncertainty than the others.</p>
+<p>The burn-in discarded here equals <span class="math notranslate nohighlight">\(\hat{\tau}_\text{relax}\)</span> from the two-start analysis, with each of the 10 seeds using its own per-seed estimate. The trajectories were designed for the thermalization study (1,000 to 4,000 steps), which limits this measurement in three ways. A seed whose <span class="math notranslate nohighlight">\(\hat{\tau}_\text{relax}\)</span> is censored has no post-burn-in data and returns NaN; the median then uses the remaining seeds, so it is biased toward the faster-relaxing ones, and the table below prints
+how many seeds are left. Where data remain for random-site Metropolis below <span class="math notranslate nohighlight">\(T_c\)</span>, the post-burn-in window is only about 300 to 350 sweeps. Finally, the lag sum is capped at 400 steps (and at a quarter of the post-burn-in length), so for <span class="math notranslate nohighlight">\(\tau_\text{int}\)</span> above about 80 steps the condition <span class="math notranslate nohighlight">\(W \geq 5\,\tau_\text{int}\)</span> is never reached and the estimate is a truncated sum that underestimates <span class="math notranslate nohighlight">\(\tau_\text{int}\)</span>.</p>
+<p>A post-burn-in trace with zero variance has no defined autocorrelation time. Following the project’s zero-variance policy, the helper returns NaN for it rather than a number, and the printed note reports such seeds separately from the censored ones.</p>
 <div class="nbinput docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[8]:
 </pre></div>
@@ -873,13 +911,17 @@ Above $T_c$                         313 [ 178,  570]                   92 [  59,
             <span class="n">window_constant</span><span class="o">=</span><span class="nb">float</span><span class="p">(</span><span class="n">c</span><span class="p">),</span>
         <span class="p">)</span>
     <span class="k">except</span> <span class="n">ZeroVarianceAutocorrelationError</span><span class="p">:</span>
-        <span class="k">return</span> <span class="mf">0.5</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mf">1.0</span><span class="p">])</span>
+        <span class="c1"># A frozen trace has no defined autocorrelation time; report NaN, as</span>
+        <span class="c1"># the docstring says and the project&#39;s zero-variance policy requires.</span>
+        <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">nan</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mf">1.0</span><span class="p">])</span>
     <span class="k">return</span> <span class="nb">float</span><span class="p">(</span><span class="n">tau_int</span><span class="p">),</span> <span class="nb">len</span><span class="p">(</span><span class="n">C_t</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span><span class="p">,</span> <span class="n">C_t</span>
 
 
 <span class="c1"># --- Compute τ_int per (temperature, update, seed) ---</span>
 <span class="n">tau_int_samples</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">full</span><span class="p">((</span><span class="n">n_temp</span><span class="p">,</span> <span class="n">n_upd</span><span class="p">,</span> <span class="n">n_seed</span><span class="p">),</span> <span class="n">np</span><span class="o">.</span><span class="n">nan</span><span class="p">)</span>
 <span class="n">acorr_rho_rep</span>   <span class="o">=</span> <span class="p">{}</span>   <span class="c1"># representative ρ curve per (i, j) for plotting (seed 0)</span>
+<span class="n">n_nan_short</span> <span class="o">=</span> <span class="mi">0</span>        <span class="c1"># burn-in leaves fewer than 5 post-burn-in steps</span>
+<span class="n">n_nan_flat</span>  <span class="o">=</span> <span class="mi">0</span>        <span class="c1"># post-burn-in trace has zero variance</span>
 
 <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n_temp</span><span class="p">):</span>
     <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n_upd</span><span class="p">):</span>
@@ -888,6 +930,11 @@ Above $T_c$                         313 [ 178,  570]                   92 [  59,
             <span class="n">trace</span>   <span class="o">=</span> <span class="n">magnetization_traces_full</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="n">j</span><span class="p">,</span> <span class="n">s_idx</span><span class="p">,</span> <span class="mi">0</span><span class="p">]</span>
             <span class="n">ti</span><span class="p">,</span> <span class="n">_w</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">_notebook_autocorr</span><span class="p">(</span><span class="n">trace</span><span class="p">,</span> <span class="n">burn_in</span><span class="p">)</span>
             <span class="n">tau_int_samples</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="n">j</span><span class="p">,</span> <span class="n">s_idx</span><span class="p">]</span> <span class="o">=</span> <span class="n">ti</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">np</span><span class="o">.</span><span class="n">isfinite</span><span class="p">(</span><span class="n">ti</span><span class="p">):</span>
+                <span class="k">if</span> <span class="n">burn_in</span> <span class="o">&gt;=</span> <span class="nb">int</span><span class="p">(</span><span class="n">steps_used</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="n">j</span><span class="p">,</span> <span class="n">s_idx</span><span class="p">,</span> <span class="mi">0</span><span class="p">])</span> <span class="o">-</span> <span class="mi">4</span><span class="p">:</span>
+                    <span class="n">n_nan_short</span> <span class="o">+=</span> <span class="mi">1</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">n_nan_flat</span> <span class="o">+=</span> <span class="mi">1</span>
         <span class="c1"># representative curve: seed 0</span>
         <span class="n">burn0</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">tau_samples</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="n">j</span><span class="p">,</span> <span class="mi">0</span><span class="p">])</span>
         <span class="n">_</span><span class="p">,</span> <span class="n">_</span><span class="p">,</span> <span class="n">rho0</span> <span class="o">=</span> <span class="n">_notebook_autocorr</span><span class="p">(</span><span class="n">magnetization_traces_full</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="n">j</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">],</span> <span class="n">burn0</span><span class="p">)</span>
@@ -920,9 +967,16 @@ Above $T_c$                         313 [ 178,  570]                   92 [  59,
 
 <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;</span><span class="se">\n</span><span class="s1">(Madras–Sokal window c = </span><span class="si">{</span><span class="n">ACORR_C</span><span class="si">}</span><span class="s1">, max-lag cap = </span><span class="si">{</span><span class="n">ACORR_MAX_LAG</span><span class="si">}</span><span class="s1">, seeds = </span><span class="si">{</span><span class="n">n_seed</span><span class="si">}</span><span class="s1">)&#39;</span><span class="p">)</span>
 <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Burn-in per seed = per-seed τ_relax from the two-start test.&#39;</span><span class="p">)</span>
-<span class="n">n_nan</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">isnan</span><span class="p">(</span><span class="n">tau_int_samples</span><span class="p">)</span><span class="o">.</span><span class="n">sum</span><span class="p">())</span>
-<span class="k">if</span> <span class="n">n_nan</span><span class="p">:</span>
-    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Note: </span><span class="si">{</span><span class="n">n_nan</span><span class="si">}</span><span class="s1"> seed(s) returned NaN (post-burn-in trace too short); excluded from median.&#39;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Seeds with a finite τ_int per entry:&#39;</span><span class="p">)</span>
+<span class="n">n_finite</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">isfinite</span><span class="p">(</span><span class="n">tau_int_samples</span><span class="p">)</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
+<span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">label</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">TEMP_LABELS</span><span class="p">):</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">label</span><span class="si">:</span><span class="s1">&lt;18</span><span class="si">}</span><span class="s1">&#39;</span> <span class="o">+</span> <span class="s1">&#39;&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">n_finite</span><span class="p">[</span><span class="n">i</span><span class="p">,</span><span class="w"> </span><span class="n">j</span><span class="p">]</span><span class="si">}</span><span class="s1">/</span><span class="si">{</span><span class="n">n_seed</span><span class="si">}</span><span class="s1">&#39;</span><span class="si">:</span><span class="s2">&gt;</span><span class="si">{</span><span class="n">col_w</span><span class="si">}}</span><span class="s2">&quot;</span> <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n_upd</span><span class="p">)))</span>
+<span class="k">if</span> <span class="n">n_nan_short</span><span class="p">:</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Note: </span><span class="si">{</span><span class="n">n_nan_short</span><span class="si">}</span><span class="s1"> seed(s) returned NaN because the burn-in reaches the end of the run &#39;</span>
+          <span class="s1">&#39;(censored τ_relax); excluded from the median.&#39;</span><span class="p">)</span>
+<span class="k">if</span> <span class="n">n_nan_flat</span><span class="p">:</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Note: </span><span class="si">{</span><span class="n">n_nan_flat</span><span class="si">}</span><span class="s1"> seed(s) returned NaN because the post-burn-in trace has zero variance; &#39;</span>
+          <span class="s1">&#39;excluded from the median.&#39;</span><span class="p">)</span>
 
 <span class="c1"># --- Plot 1: ρ(τ) for each temperature (one panel per T, all algorithms) ---</span>
 <span class="n">PLOT_LAGS</span> <span class="o">=</span> <span class="mi">100</span>
@@ -998,7 +1052,12 @@ Above $T_c$                         9.0 [ 6.3, 13.8]                  3.2 [ 2.8,
 
 (Madras–Sokal window c = 5, max-lag cap = 400, seeds = 10)
 Burn-in per seed = per-seed τ_relax from the two-start test.
-Note: 17 seed(s) returned NaN (post-burn-in trace too short); excluded from median.
+Seeds with a finite τ_int per entry:
+Deep below $T_c$                                6/10                              9/10                             10/10
+Below $T_c$                                     4/10                              9/10                             10/10
+At $T_c$                                        7/10                             10/10                             10/10
+Above $T_c$                                     9/10                             10/10                              9/10
+Note: 17 seed(s) returned NaN because the burn-in reaches the end of the run (censored τ_relax); excluded from the median.
 </pre></div></div>
 </div>
 <div class="nboutput docutils container">
@@ -1018,71 +1077,78 @@ Note: 17 seed(s) returned NaN (post-burn-in trace too short); excluded from medi
 </section>
 <section id="Interpretation">
 <h2>Interpretation<a class="headerlink" href="#Interpretation" title="Link to this heading"></a></h2>
-<p>The plots tell a coherent physical story across two complementary metrics.</p>
+<p>The two metrics answer different questions, and the stored run (<span class="math notranslate nohighlight">\(L = 64\)</span>, 10 seeds) shows both their physics and the limits of the estimators.</p>
 <section id="Raw-step-counts-(two-start-\hat{\tau}_\text{relax})">
 <h3>Raw step counts (two-start <span class="math notranslate nohighlight">\(\hat{\tau}_\text{relax}\)</span>)<a class="headerlink" href="#Raw-step-counts-(two-start-\hat{\tau}_\text{relax})" title="Link to this heading"></a></h3>
-<p>At <span class="math notranslate nohighlight">\(0.5\,T_c\)</span> (deep below <span class="math notranslate nohighlight">\(T_c\)</span>) local updates are effectively stalled: a random start nucleates competing domains that become pinned, so the two-start estimator returns NaN for most seeds within the 1,000-step budget (the bar-chart entries for local updates at that temperature are absent for this reason). Wolff, whose clusters span the entire lattice at this temperature, crosses the free-energy barrier in a single step and converges immediately. Moving up to <span class="math notranslate nohighlight">\(0.8\,T_c\)</span>, local
-updates (random-site and checkerboard Metropolis) are <em>slow below :math:`T_c`</em> (~600 and ~344 steps) because individual spin flips must nucleate and grow an ordered domain against thermal noise, which is a diffusive process. At <span class="math notranslate nohighlight">\(T_c\)</span> they remain slow for the same reason: the correlation length diverges, so the same domain-growth bottleneck occurs on every length scale simultaneously (<strong>critical slowing down</strong>, <span class="math notranslate nohighlight">\(z \approx 2\)</span> for local dynamics). Above <span class="math notranslate nohighlight">\(T_c\)</span> they recover quickly
-(~150–200 steps) because the disordered phase has short-range correlations only.</p>
-<p>Wolff, measured in raw steps, looks faster below <span class="math notranslate nohighlight">\(T_c\)</span> (150 steps) and comparable above (163 steps), but this comparison is misleading, for the reason given below.</p>
+<p>Deep below <span class="math notranslate nohighlight">\(T_c\)</span> (<span class="math notranslate nohighlight">\(0.5\,T_c \approx 1.13\)</span>), random-site Metropolis needs a median of 744 sweeps, and 4 of 10 seeds show no crossing within the 1,000-sweep run, so the upper end of the band is only a lower bound (≥1000). A random start orders by domain coarsening, and with local single-spin moves the last domain walls take hundreds of sweeps to disappear on a <span class="math notranslate nohighlight">\(64 \times 64\)</span> lattice. Checkerboard Metropolis (median 90 steps, one censored seed) and Wolff (74 steps, range 64 to 86
+across seeds) sit just above the 59-step floor set by the smoothing window, so the estimator resolves only that both relax within roughly 60 to 90 steps.</p>
+<p>At <span class="math notranslate nohighlight">\(0.8\,T_c\)</span> random-site Metropolis fails to converge for 6 of 10 seeds, so its median is censored and the only statement the data support is <span class="math notranslate nohighlight">\(\hat{\tau}_\text{relax} \geq 1000\)</span> sweeps. Checkerboard needs 180 steps [158, 212] with one censored seed, and Wolff 121 cluster flips [112, 141].</p>
+<p>At <span class="math notranslate nohighlight">\(T_c\)</span> the local updates were given 4,000 sweeps. Random-site Metropolis reaches a median of 1,259 sweeps with 3 censored seeds (upper band ≥4000), checkerboard 401 [188, 1147], and Wolff 529 cluster flips [439, 765] within its 1,000-step run. This is critical slowing down: the correlation length is limited only by <span class="math notranslate nohighlight">\(L\)</span>, and local dynamics relax a mode of size <span class="math notranslate nohighlight">\(\xi\)</span> in a time growing as <span class="math notranslate nohighlight">\(\xi^z\)</span> with <span class="math notranslate nohighlight">\(z \approx 2.17\)</span> <a class="reference internal" href="#Bibliography"><span class="std std-ref">[6]</span></a>.</p>
+<p>Above <span class="math notranslate nohighlight">\(T_c\)</span> (<span class="math notranslate nohighlight">\(1.2\,T_c \approx 2.72\)</span>) the estimates are 313 sweeps [178, 570] for random-site, 92 [59, 123] for checkerboard with three seeds at the 59-step floor, and 334 cluster flips [243, 539] for Wolff; random-site and Wolff each have one censored seed. These values say more about the criterion than about the transient. In the disordered phase the random start is already close to equilibrium, and the ordered start is expected to lose its magnetization within a few multiples of
+<span class="math notranslate nohighlight">\(\tau_\text{int}\)</span>, which is 9 sweeps for random-site Metropolis (see below). The hundreds of steps reported reflect how long two independently fluctuating traces with small mean take to stay inside each other’s <span class="math notranslate nohighlight">\(1\sigma\)</span> band for most of a 60-step dwell window. Wolff’s large raw count has an additional, physical cause: a cluster holds only about 20 spins here, so some 200 cluster flips are needed just to touch every spin once.</p>
 </section>
 <section id="Work-normalised-view">
 <h3>Work-normalised view<a class="headerlink" href="#Work-normalised-view" title="Link to this heading"></a></h3>
-<p>Converting to <span class="math notranslate nohighlight">\(L^2\)</span>-sweep equivalents (multiplying Wolff steps by <span class="math notranslate nohighlight">\(\langle C \rangle / L^2\)</span>) reveals the true picture:</p>
+<p>Converting to <span class="math notranslate nohighlight">\(L^2\)</span>-sweep equivalents (multiplying Wolff steps by <span class="math notranslate nohighlight">\(\langle C \rangle / L^2\)</span>) gives the medians below; local updates are unchanged because their step is already one sweep.</p>
 <table class="docutils align-default">
 <thead>
 <tr class="row-odd"><th class="head"><p>Temperature</p></th>
 <th class="head"><p><span class="math notranslate nohighlight">\(\langle C \rangle\)</span></p></th>
 <th class="head"><p><span class="math notranslate nohighlight">\(\langle C \rangle / L^2\)</span></p></th>
 <th class="head"><p>Wolff (norm.)</p></th>
-<th class="head"><p>Random (norm.)</p></th>
-<th class="head"><p>Speed-up</p></th>
+<th class="head"><p>Checkerboard</p></th>
+<th class="head"><p>Random-site</p></th>
 </tr>
 </thead>
 <tbody>
 <tr class="row-even"><td><p>Deep below <span class="math notranslate nohighlight">\(T_c\)</span></p></td>
-<td><p><span class="math notranslate nohighlight">\(\approx L^2\)</span></p></td>
-<td><p><span class="math notranslate nohighlight">\(\approx 1.00\)</span></p></td>
-<td><p><strong>:math:`approx 1`</strong> sweep</p></td>
-<td><p>n/a (trapped)</p></td>
-<td><p>n/a</p></td>
+<td><p>4 075 spins</p></td>
+<td><p>0.995</p></td>
+<td><p>73</p></td>
+<td><p>90</p></td>
+<td><p>744 (4/10 censored)</p></td>
 </tr>
 <tr class="row-odd"><td><p>Below <span class="math notranslate nohighlight">\(T_c\)</span></p></td>
-<td><p>3 714 spins</p></td>
-<td><p>0.91</p></td>
-<td><p><strong>136</strong> sweeps</p></td>
-<td><p>597 sweeps</p></td>
-<td><p>~4 ×</p></td>
+<td><p>3 718 spins</p></td>
+<td><p>0.908</p></td>
+<td><p>110</p></td>
+<td><p>180</p></td>
+<td><p>≥1000 (6/10 censored)</p></td>
 </tr>
 <tr class="row-even"><td><p>At <span class="math notranslate nohighlight">\(T_c\)</span></p></td>
-<td><p>1 593 spins</p></td>
-<td><p>0.39</p></td>
-<td><p><strong>196</strong> sweeps</p></td>
-<td><p>568 sweeps</p></td>
-<td><p>~3 ×</p></td>
+<td><p>1 574 spins</p></td>
+<td><p>0.384</p></td>
+<td><p>203</p></td>
+<td><p>401</p></td>
+<td><p>1 259 (3/10 censored)</p></td>
 </tr>
 <tr class="row-odd"><td><p>Above <span class="math notranslate nohighlight">\(T_c\)</span></p></td>
 <td><p>20 spins</p></td>
 <td><p>0.005</p></td>
-<td><p><strong>~1</strong> sweep</p></td>
-<td><p>153 sweeps</p></td>
-<td><p><strong>~190 ×</strong></p></td>
+<td><p>2</p></td>
+<td><p>92</p></td>
+<td><p>313</p></td>
 </tr>
 </tbody>
 </table>
-<p><strong>Deep below :math:`T_c`</strong> (<span class="math notranslate nohighlight">\(0.5\,T_c \approx 1.13\)</span>): At this temperature the Onsager magnetization is essentially unity. Wolff clusters are system-spanning, so one flip inverts the entire lattice and the normalised relaxation time is effectively 1 sweep. Local updates face an enormous free-energy barrier between the <span class="math notranslate nohighlight">\(\pm M\)</span> wells; competing domains nucleated by the random start become pinned, and the two-start estimator returns NaN for most seeds within the 1,000-step budget. The
-missing bar-chart entries for local updates at this temperature are a physical result, not a numerical failure.</p>
-<p><strong>Below :math:`T_c`</strong>: Wolff clusters are nearly system-spanning (<span class="math notranslate nohighlight">\(\langle C \rangle / L^2 \approx 0.91\)</span>). Each step flips almost the whole lattice, so only a handful of flips is needed to reach equilibrium. Even after normalisation it is ~4 × faster than random: it tunnels the free-energy barrier between the <span class="math notranslate nohighlight">\(+M\)</span> and <span class="math notranslate nohighlight">\(-M\)</span> wells in one step, whereas local updates must diffuse across it.</p>
-<p><strong>At :math:`T_c`</strong>: Clusters cover ~39% of the lattice. The normalised relaxation time (≈196) is noticeably smaller than local updates (≈340–570), confirming that Wolff retains a polynomial advantage. Dynamic scaling predicts <span class="math notranslate nohighlight">\(z_\text{Wolff} \approx 0.25\)</span> versus <span class="math notranslate nohighlight">\(z_\text{local} \approx 2.2\)</span>, consistent with a growing advantage at larger <span class="math notranslate nohighlight">\(L\)</span>.</p>
-<p><strong>Above :math:`T_c`</strong>: Clusters are tiny, only about 20 spins out of 4 096. The system decorrelates in ~1 normalised sweep because each step is a cheap, precisely targeted flip. Local algorithms also relax quickly above <span class="math notranslate nohighlight">\(T_c\)</span>, but Wolff’s targeted nature makes it ~190 × more efficient per spin touched.</p>
+<p>Below <span class="math notranslate nohighlight">\(T_c\)</span> Wolff clusters cover nearly the whole lattice in equilibrium, so the normalisation changes little, and as noted above it overstates Wolff’s work during the transient. Deep below <span class="math notranslate nohighlight">\(T_c\)</span> Wolff and checkerboard are indistinguishable within the resolution of the estimator, and both are an order of magnitude faster than random-site Metropolis. At <span class="math notranslate nohighlight">\(0.8\,T_c\)</span> Wolff (110) is faster than checkerboard (180) by less than a factor of two, and faster than random-site by at least
+a factor of nine.</p>
+<p>At <span class="math notranslate nohighlight">\(T_c\)</span> clusters cover 38% of the lattice. In sweep equivalents Wolff relaxes in 203 sweeps against 401 for checkerboard and 1,259 for random-site, factors of about 2 and 6 at <span class="math notranslate nohighlight">\(L = 64\)</span>. Because the Wolff exponent (<span class="math notranslate nohighlight">\(z^{\mathrm{sw}} \approx 0.25\)</span>, see the <a class="reference internal" href="dynamic_critical_exponents.html"><span class="doc">Dynamic Critical Exponents</span></a> notebook) is much smaller than the local one, this advantage should grow with <span class="math notranslate nohighlight">\(L\)</span>; a single lattice size cannot show that.</p>
+<p>Above <span class="math notranslate nohighlight">\(T_c\)</span> the normalised Wolff value is about 2 sweeps [1, 3]. The comparison with the local updates is not a meaningful speed-up ratio, because, as discussed above, their values are dominated by the resolution of the criterion.</p>
+</section>
+<section id="id1">
+<h3>Integrated autocorrelation time<a class="headerlink" href="#id1" title="Link to this heading"></a></h3>
+<p>The <span class="math notranslate nohighlight">\(\tau_\text{int}\)</span> table gives a cleaner comparison of equilibrium efficiency. Deep below <span class="math notranslate nohighlight">\(T_c\)</span> every algorithm decorrelates <span class="math notranslate nohighlight">\(|M|\)</span> within about one step (1.2 from 6 seeds for random-site, 0.6 and 0.5); 0.5 is the value for uncorrelated samples, so checkerboard and Wolff produce essentially independent measurements of <span class="math notranslate nohighlight">\(|M|\)</span> every step once the lattice is ordered. At <span class="math notranslate nohighlight">\(0.8\,T_c\)</span> the values are 3.0 [2.4, 12.7] for random-site, from only 4 seeds with windows of about
+300 sweeps, 1.2 for checkerboard and 0.7 for Wolff.</p>
+<p>At <span class="math notranslate nohighlight">\(T_c\)</span> the difference is large. Random-site Metropolis gives 169.6 sweeps [95.4, 243.3] from 7 seeds and checkerboard 95.7 [30.7, 183.4], while Wolff gives 3.3 cluster flips [2.5, 4.0], about 1.3 sweeps after normalisation. For most local seeds <span class="math notranslate nohighlight">\(\tau_\text{int}\)</span> exceeds 80 steps, so their lag sums are truncated at 400 and underestimate <span class="math notranslate nohighlight">\(\tau_\text{int}\)</span>; the seed-0 autocorrelation functions are still at 0.93 and 0.68 at lag 100. The true gap is therefore probably larger than
+the factor of roughly 70 to 130 shown here. Above <span class="math notranslate nohighlight">\(T_c\)</span> the values are 9.0 sweeps for random-site, 3.2 for checkerboard and 11.5 cluster flips for Wolff, about 0.06 sweeps after normalisation (0.1 after rounding in the bar chart).</p>
 </section>
 <section id="Comparing-\hat{\tau}_\text{relax}-and-\tau_\text{int}">
 <h3>Comparing <span class="math notranslate nohighlight">\(\hat{\tau}_\text{relax}\)</span> and <span class="math notranslate nohighlight">\(\tau_\text{int}\)</span><a class="headerlink" href="#Comparing-\hat{\tau}_\text{relax}-and-\tau_\text{int}" title="Link to this heading"></a></h3>
-<p>The two metrics probe different aspects of the same slow modes:</p>
 <p>The relaxation time <span class="math notranslate nohighlight">\(\hat{\tau}_\text{relax}\)</span> asks how long the chain takes to forget its initial condition, which is a non-equilibrium, transient question. The integrated time <span class="math notranslate nohighlight">\(\tau_\text{int}\)</span> asks how quickly equilibrium memory fades, which is a property of the stationary distribution alone.</p>
-<p>Because both are controlled by the slowest eigenvalue of the Markov operator, they are of the same order of magnitude. However they are not identical: <span class="math notranslate nohighlight">\(\hat{\tau}_\text{relax}\)</span> depends on how far the initial state is from equilibrium and which modes are excited, while <span class="math notranslate nohighlight">\(\tau_\text{int}\)</span> reflects a weighted sum over all slow modes relative to fluctuation amplitude. In practice <span class="math notranslate nohighlight">\(\tau_\text{int}\)</span> is usually somewhat smaller because the dominant non-equilibrium mode (e.g. the global
-magnetisation drift below <span class="math notranslate nohighlight">\(T_c\)</span>) decays faster than the local fluctuation modes that dominate <span class="math notranslate nohighlight">\(\tau_\text{int}\)</span>. The two-start estimator is the right tool for deciding when to <em>start</em> collecting data; <span class="math notranslate nohighlight">\(\tau_\text{int}\)</span> is the right tool for deciding how much data you actually need to reach a target statistical precision.</p>
-<p>The key lesson across both panels is to <strong>never compare algorithm step counts directly, but to normalise by the work actually done</strong>.</p>
+<p>The data show that the two need not be of the same order. Below <span class="math notranslate nohighlight">\(T_c\)</span> the transient from a random start is domain coarsening, which takes hundreds of sweeps with local moves, whereas equilibrium fluctuations of <span class="math notranslate nohighlight">\(|M|\)</span> in the ordered phase are local spin flips that decorrelate within a few sweeps (median <span class="math notranslate nohighlight">\(\tau_\text{int}\)</span> of at most 3 steps). At <span class="math notranslate nohighlight">\(T_c\)</span> the two are closer, because both are controlled by the slow, system-size modes of critical fluctuations. Above <span class="math notranslate nohighlight">\(T_c\)</span>
+the estimated <span class="math notranslate nohighlight">\(\hat{\tau}_\text{relax}\)</span> exceeds <span class="math notranslate nohighlight">\(\tau_\text{int}\)</span> mainly because of the resolution of the criterion. The two-start estimator is the right tool for deciding when to <em>start</em> collecting data; <span class="math notranslate nohighlight">\(\tau_\text{int}\)</span> is the right tool for deciding how much data is needed to reach a target statistical precision.</p>
+<p>Across both metrics, step counts of different algorithms can be compared only after normalising by the work done per step.</p>
 </section>
 </section>
 <section id="Bibliography">
@@ -1092,6 +1158,7 @@ magnetisation drift below <span class="math notranslate nohighlight">\(T_c\)</sp
 <p><a class="reference internal" href="#Bibliography"><span class="std std-ref">[3]</span></a> U. Wolff, “Collective Monte Carlo Updating for Spin Systems,” <em>Physical Review Letters</em>, vol. 62, no. 4, pp. 361–364, 1989. <a class="reference external" href="https://journals.aps.org/prl/abstract/10.1103/PhysRevLett.62.361">APS Open Access</a></p>
 <p><a class="reference internal" href="#Bibliography"><span class="std std-ref">[4]</span></a> M. E. J. Newman and G. T. Barkema, “Monte Carlo Methods in Statistical Physics,” Oxford University Press, 1999. <a class="reference external" href="https://arxiv.org/abs/0905.1629">Lecture Notes Summary (H. G. Katzgraber)</a></p>
 <p><a class="reference internal" href="#Bibliography"><span class="std std-ref">[5]</span></a> A. D. Sokal, “Monte Carlo Methods in Statistical Mechanics: Foundations and New Algorithms,” lecture notes (1989), published in <em>Functional Integration: Basics and Applications</em> (C. DeWitt-Morette, P. Cartier, A. Folacci, eds.), Springer, 1997, pp. 131–192. Standard reference for the integrated autocorrelation time and the automatic windowing estimator. <a class="reference external" href="https://link.springer.com/chapter/10.1007/978-1-4899-0319-8_6">Springer Link</a></p>
+<p><a class="reference internal" href="#Bibliography"><span class="std std-ref">[6]</span></a> M. P. Nightingale and H. W. J. Blöte, “Dynamic Exponent of the Two-Dimensional Ising Model and Monte Carlo Computation of the Subdominant Eigenvalue of the Stochastic Matrix,” <em>Physical Review Letters</em>, vol. 76, p. 4548, 1996. Gives <span class="math notranslate nohighlight">\(z = 2.1665(12)\)</span> for single-spin-flip dynamics with random site selection. <a class="reference external" href="https://arxiv.org/abs/cond-mat/9601059">arXiv:cond-mat/9601059</a></p>
 </section>
 </section>
 

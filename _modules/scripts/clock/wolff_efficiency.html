@@ -101,11 +101,12 @@
 <span class="sd">phase and the upper one out of the quasi-ordered phase into the disordered</span>
 <span class="sd">one.</span>
 
-<span class="sd">The comparison runs at zero anisotropy, because the Wolff-Evertz bond</span>
-<span class="sd">construction sees only the exchange term: with a non-zero crystal field the</span>
-<span class="sd">cluster update no longer satisfies detailed balance for the full Hamiltonian,</span>
-<span class="sd">so an efficiency comparison against a local update that does would be</span>
-<span class="sd">comparing two different models rather than two algorithms.</span>
+<span class="sd">The comparison runs on the discrete clock model. Its Wolff update reflects</span>
+<span class="sd">clusters about the q mirror axes of the clock, which maps allowed states onto</span>
+<span class="sd">allowed states and satisfies detailed balance for the full discrete</span>
+<span class="sd">Hamiltonian, so both algorithms sample the same model.  The continuous</span>
+<span class="sd">``ClockSimulation`` cannot serve here: its cluster update ignores the</span>
+<span class="sd">anisotropy and is only valid at A = 0, where the model is plain XY.</span>
 
 <span class="sd">Results are saved to ``results/clock/wolff_efficiency.npz`` for notebook re-use</span>
 <span class="sd">and ``results/clock/wolff_efficiency.png`` as a four-panel figure.</span>
@@ -114,7 +115,8 @@
 
 <span class="kn">import</span><span class="w"> </span><span class="nn">argparse</span>
 
-<span class="kn">from</span><span class="w"> </span><span class="nn">models.clock_model</span><span class="w"> </span><span class="kn">import</span> <span class="n">ClockSimulation</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">models.clock_model</span><span class="w"> </span><span class="kn">import</span> <span class="n">DiscreteClockSimulation</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">scripts.clock._model_choice</span><span class="w"> </span><span class="kn">import</span> <span class="n">ORDERED_BELOW_DISCRETE</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">utils.efficiency_runner</span><span class="w"> </span><span class="kn">import</span> <span class="n">add_wolff_efficiency_arguments</span><span class="p">,</span> <span class="n">run_wolff_efficiency</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">utils.system</span><span class="w"> </span><span class="kn">import</span> <span class="n">parse_args_compat</span>
 
@@ -146,10 +148,11 @@
 
     <span class="n">run_wolff_efficiency</span><span class="p">(</span>
         <span class="n">args</span><span class="o">=</span><span class="n">args</span><span class="p">,</span>
-        <span class="n">model_cls</span><span class="o">=</span><span class="n">ClockSimulation</span><span class="p">,</span>
-        <span class="n">model_kwargs</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;q&#39;</span><span class="p">:</span> <span class="n">args</span><span class="o">.</span><span class="n">q</span><span class="p">,</span> <span class="s1">&#39;A&#39;</span><span class="p">:</span> <span class="mf">0.0</span><span class="p">},</span>
+        <span class="n">model_cls</span><span class="o">=</span><span class="n">DiscreteClockSimulation</span><span class="p">,</span>
+        <span class="n">model_kwargs</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;q&#39;</span><span class="p">:</span> <span class="n">args</span><span class="o">.</span><span class="n">q</span><span class="p">},</span>
         <span class="n">model_label</span><span class="o">=</span><span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">args</span><span class="o">.</span><span class="n">q</span><span class="si">}</span><span class="s1">-state Clock Model&#39;</span><span class="p">,</span>
         <span class="n">transitions</span><span class="o">=</span><span class="n">transitions</span><span class="p">,</span>
+        <span class="n">stuck_below</span><span class="o">=</span><span class="n">ORDERED_BELOW_DISCRETE</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">args</span><span class="o">.</span><span class="n">q</span><span class="p">),</span>
     <span class="p">)</span></div>
 
 

@@ -118,6 +118,7 @@
     <span class="n">DEFAULT_CONFIDENCE_LEVEL</span><span class="p">,</span>
     <span class="n">UNCERTAINTY_METHOD_BLOCKING</span><span class="p">,</span>
     <span class="n">UNCERTAINTY_METHOD_BOOTSTRAP</span><span class="p">,</span>
+    <span class="n">summarize_asymmetric_replicate_uncertainty</span><span class="p">,</span>
     <span class="n">summarize_entropy_observable</span><span class="p">,</span>
 <span class="p">)</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">utils.sweep_helpers</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
@@ -506,6 +507,8 @@
             <span class="n">tau_by_seed</span><span class="o">=</span><span class="n">extract_grid</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s1">_tau_int&#39;</span><span class="p">),</span>
             <span class="n">n_eff_by_seed</span><span class="o">=</span><span class="n">extract_grid</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s1">_n_eff&#39;</span><span class="p">),</span>
             <span class="n">confidence</span><span class="o">=</span><span class="nb">float</span><span class="p">(</span><span class="n">args</span><span class="o">.</span><span class="n">confidence_level</span><span class="p">),</span>
+            <span class="n">ci_low_by_seed</span><span class="o">=</span><span class="n">extract_grid</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s1">_ci_low&#39;</span><span class="p">),</span>
+            <span class="n">ci_high_by_seed</span><span class="o">=</span><span class="n">extract_grid</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s1">_ci_high&#39;</span><span class="p">),</span>
         <span class="p">)</span>
         <span class="k">for</span> <span class="n">name</span> <span class="ow">in</span> <span class="n">_BUNDLED_OBSERVABLES</span>
     <span class="p">}</span>
@@ -521,10 +524,23 @@
         <span class="n">bootstrap_resamples</span><span class="o">=</span><span class="nb">int</span><span class="p">(</span><span class="n">args</span><span class="o">.</span><span class="n">entropy_bootstrap_resamples</span><span class="p">),</span>
     <span class="p">)</span>
 
+    <span class="c1"># Interval for tau_int itself, from its spread across seed replicas. The</span>
+    <span class="c1"># flag used to compare the confidence interval of &lt;|m|&gt; with tau_int,</span>
+    <span class="c1"># two quantities in different units; a single seed has no tau interval.</span>
+    <span class="n">tau_grid</span> <span class="o">=</span> <span class="n">extract_grid</span><span class="p">(</span><span class="s1">&#39;avg_m_tau_int&#39;</span><span class="p">)</span>
+    <span class="n">tau_summaries</span> <span class="o">=</span> <span class="p">[</span>
+        <span class="n">summarize_asymmetric_replicate_uncertainty</span><span class="p">(</span>
+            <span class="n">samples</span><span class="o">=</span><span class="n">row</span><span class="p">,</span> <span class="n">confidence</span><span class="o">=</span><span class="nb">float</span><span class="p">(</span><span class="n">args</span><span class="o">.</span><span class="n">confidence_level</span><span class="p">),</span>
+        <span class="p">)</span>
+        <span class="k">for</span> <span class="n">row</span> <span class="ow">in</span> <span class="n">tau_grid</span>
+    <span class="p">]</span>
+    <span class="n">tau_int_ci_low</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">summ</span><span class="p">[</span><span class="s1">&#39;ci_low&#39;</span><span class="p">]</span> <span class="k">for</span> <span class="n">summ</span> <span class="ow">in</span> <span class="n">tau_summaries</span><span class="p">])</span>
+    <span class="n">tau_int_ci_high</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">summ</span><span class="p">[</span><span class="s1">&#39;ci_high&#39;</span><span class="p">]</span> <span class="k">for</span> <span class="n">summ</span> <span class="ow">in</span> <span class="n">tau_summaries</span><span class="p">])</span>
+
     <span class="n">quality</span> <span class="o">=</span> <span class="n">build_quality_flags</span><span class="p">(</span>
         <span class="n">tau_int</span><span class="o">=</span><span class="n">mag_bundle</span><span class="p">[</span><span class="s1">&#39;tau_int&#39;</span><span class="p">],</span>
-        <span class="n">ci_low</span><span class="o">=</span><span class="n">mag_bundle</span><span class="p">[</span><span class="s1">&#39;ci_low&#39;</span><span class="p">],</span>
-        <span class="n">ci_high</span><span class="o">=</span><span class="n">mag_bundle</span><span class="p">[</span><span class="s1">&#39;ci_high&#39;</span><span class="p">],</span>
+        <span class="n">ci_low</span><span class="o">=</span><span class="n">tau_int_ci_low</span><span class="p">,</span>
+        <span class="n">ci_high</span><span class="o">=</span><span class="n">tau_int_ci_high</span><span class="p">,</span>
         <span class="n">n_eff</span><span class="o">=</span><span class="n">mag_bundle</span><span class="p">[</span><span class="s1">&#39;n_eff&#39;</span><span class="p">],</span>
         <span class="n">min_effective_samples</span><span class="o">=</span><span class="nb">float</span><span class="p">(</span><span class="n">args</span><span class="o">.</span><span class="n">min_effective_samples</span><span class="p">),</span>
         <span class="n">max_tau_relative_width</span><span class="o">=</span><span class="nb">float</span><span class="p">(</span><span class="n">args</span><span class="o">.</span><span class="n">max_tau_relative_width</span><span class="p">),</span>
@@ -550,6 +566,8 @@
         <span class="n">spec_h</span><span class="o">=</span><span class="n">spec_h_bundle</span><span class="p">[</span><span class="s1">&#39;value&#39;</span><span class="p">],</span>
         <span class="n">entropy</span><span class="o">=</span><span class="n">entropy_res</span><span class="p">[</span><span class="s1">&#39;value&#39;</span><span class="p">],</span>
         <span class="n">tau_int</span><span class="o">=</span><span class="n">mag_bundle</span><span class="p">[</span><span class="s1">&#39;tau_int&#39;</span><span class="p">],</span>
+        <span class="n">tau_int_ci_low</span><span class="o">=</span><span class="n">tau_int_ci_low</span><span class="p">,</span>
+        <span class="n">tau_int_ci_high</span><span class="o">=</span><span class="n">tau_int_ci_high</span><span class="p">,</span>
         <span class="c1"># Full uncertainty schema.</span>
         <span class="o">**</span><span class="n">cast</span><span class="p">(</span><span class="n">Any</span><span class="p">,</span> <span class="p">{</span>
             <span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s1">_</span><span class="si">{</span><span class="n">k</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">:</span> <span class="n">v</span>

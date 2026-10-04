@@ -105,7 +105,7 @@
 <span class="kn">from</span><span class="w"> </span><span class="nn">__future__</span><span class="w"> </span><span class="kn">import</span> <span class="n">annotations</span>
 
 <span class="kn">import</span><span class="w"> </span><span class="nn">logging</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Protocol</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">NamedTuple</span><span class="p">,</span> <span class="n">Protocol</span>
 
 <span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
 
@@ -124,6 +124,121 @@
     <span class="k">def</span><span class="w"> </span><span class="nf">equilibrate</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">n_steps</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span> <span class="o">...</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">run</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">n_steps</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">]:</span> <span class="o">...</span>
+
+
+<span class="c1">#: Offset between the seed of a random start and that of its ordered partner.</span>
+<span class="c1">#: The per-sweep RNG streams depend only on (seed, step), so two starts built</span>
+<span class="c1">#: with one seed draw identical random numbers and their traces become</span>
+<span class="c1">#: correlated, which weakens the cross-band test that assumes independent</span>
+<span class="c1">#: runs. The offset sits inside the 1000-seed block that ``derive_point_seed``</span>
+<span class="c1">#: reserves for one replica, clear of the small ``seed + 1`` and ``seed + 2``</span>
+<span class="c1">#: sub-streams callers derive.</span>
+<span class="n">ORDERED_START_SEED_OFFSET</span> <span class="o">=</span> <span class="mi">500</span>
+
+<span class="n">_MAX_SEED</span> <span class="o">=</span> <span class="mi">2</span><span class="o">**</span><span class="mi">32</span> <span class="o">-</span> <span class="mi">1</span>
+
+
+<div class="viewcode-block" id="ordered_start_seed">
+<a class="viewcode-back" href="../../api/vibespin.utils.html#utils.equilibration.ordered_start_seed">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">ordered_start_seed</span><span class="p">(</span><span class="o">*</span><span class="p">,</span> <span class="n">seed</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span> <span class="o">|</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Return the seed for the ordered-start partner of a seeded random start.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    seed : int or None</span>
+<span class="sd">        Seed of the random-start simulation. ``None`` (unseeded) is passed</span>
+<span class="sd">        through unchanged.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    int or None</span>
+<span class="sd">        ``seed + ORDERED_START_SEED_OFFSET``, or ``None`` for an unseeded run.</span>
+
+<span class="sd">    Raises</span>
+<span class="sd">    ------</span>
+<span class="sd">    ValueError</span>
+<span class="sd">        If the partner seed would leave the 32-bit generator range.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">seed</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">return</span> <span class="kc">None</span>
+    <span class="n">partner</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">seed</span><span class="p">)</span> <span class="o">+</span> <span class="n">ORDERED_START_SEED_OFFSET</span>
+    <span class="k">if</span> <span class="n">partner</span> <span class="o">&gt;</span> <span class="n">_MAX_SEED</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+            <span class="sa">f</span><span class="s1">&#39;seed </span><span class="si">{</span><span class="n">seed</span><span class="si">}</span><span class="s1"> leaves no room for its ordered-start partner &#39;</span>
+            <span class="sa">f</span><span class="s1">&#39;(seed + </span><span class="si">{</span><span class="n">ORDERED_START_SEED_OFFSET</span><span class="si">}</span><span class="s1"> exceeds </span><span class="si">{</span><span class="n">_MAX_SEED</span><span class="si">}</span><span class="s1">).&#39;</span>
+        <span class="p">)</span>
+    <span class="k">return</span> <span class="n">partner</span></div>
+
+
+
+<div class="viewcode-block" id="TwoStartOutcome">
+<a class="viewcode-back" href="../../api/vibespin.utils.html#utils.equilibration.TwoStartOutcome">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">TwoStartOutcome</span><span class="p">(</span><span class="n">NamedTuple</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Result of a two-start equilibration.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    total_steps : int</span>
+<span class="sd">        MC steps run by each of the two simulations.</span>
+<span class="sd">    converged : bool</span>
+<span class="sd">        Whether the mutual cross-band criterion was met, i.e. both starts</span>
+<span class="sd">        reached the same stationary state.</span>
+<span class="sd">    stuck : bool</span>
+<span class="sd">        Whether the run stopped on a quasi-steady stuck state: the ordered</span>
+<span class="sd">        start had settled while the random start stayed stranded on a</span>
+<span class="sd">        metastable plateau. Only the ordered start is then a valid</span>
+<span class="sd">        measurement source.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">total_steps</span><span class="p">:</span> <span class="nb">int</span>
+    <span class="n">converged</span><span class="p">:</span> <span class="nb">bool</span>
+    <span class="n">stuck</span><span class="p">:</span> <span class="nb">bool</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">certified</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Whether a measurement on this pair is valid.</span>
+
+<span class="sd">        True after convergence or after a stuck exit. A stuck exit can only</span>
+<span class="sd">        occur where the caller enabled ``detect_stuck``, which callers do only</span>
+<span class="sd">        where a stuck state is accepted. A run that reached ``max_steps`` is</span>
+<span class="sd">        not certified: neither start is known to have relaxed, and callers</span>
+<span class="sd">        store NaN for the point instead of measuring it.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">converged</span> <span class="ow">or</span> <span class="bp">self</span><span class="o">.</span><span class="n">stuck</span></div>
+
+
+
+<div class="viewcode-block" id="select_measurement_simulation">
+<a class="viewcode-back" href="../../api/vibespin.utils.html#utils.equilibration.select_measurement_simulation">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">select_measurement_simulation</span><span class="p">[</span><span class="n">SimT</span><span class="p">](</span>
+    <span class="o">*</span><span class="p">,</span> <span class="n">outcome</span><span class="p">:</span> <span class="n">TwoStartOutcome</span><span class="p">,</span> <span class="n">sim_random</span><span class="p">:</span> <span class="n">SimT</span><span class="p">,</span> <span class="n">sim_ordered</span><span class="p">:</span> <span class="n">SimT</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">SimT</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Choose which start of an equilibrated pair to measure.</span>
+
+<span class="sd">    The random start is used only when the two starts converged to the same</span>
+<span class="sd">    state. After a stuck exit the random start sits on a metastable plateau,</span>
+<span class="sd">    so the ordered start is returned. After hitting the step cap the ordered</span>
+<span class="sd">    start is returned as well, but neither start is certified</span>
+<span class="sd">    (``outcome.certified`` is False) and callers must not measure it.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    outcome : TwoStartOutcome</span>
+<span class="sd">        Result of ``convergence_equilibrate_two_start``.</span>
+<span class="sd">    sim_random : simulation</span>
+<span class="sd">        Random-start simulation.</span>
+<span class="sd">    sim_ordered : simulation</span>
+<span class="sd">        Ordered-start simulation.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    simulation</span>
+<span class="sd">        ``sim_random`` if the pair converged, otherwise ``sim_ordered``.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="n">sim_random</span> <span class="k">if</span> <span class="n">outcome</span><span class="o">.</span><span class="n">converged</span> <span class="k">else</span> <span class="n">sim_ordered</span></div>
+
 
 
 <span class="c1"># ---------------------------------------------------------------------------</span>
@@ -522,9 +637,9 @@
 
 
 
-<div class="viewcode-block" id="convergence_equilibrate_with_status">
-<a class="viewcode-back" href="../../api/vibespin.utils.html#utils.equilibration.convergence_equilibrate_with_status">[docs]</a>
-<span class="k">def</span><span class="w"> </span><span class="nf">convergence_equilibrate_with_status</span><span class="p">(</span>
+<div class="viewcode-block" id="convergence_equilibrate_two_start">
+<a class="viewcode-back" href="../../api/vibespin.utils.html#utils.equilibration.convergence_equilibrate_two_start">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">convergence_equilibrate_two_start</span><span class="p">(</span>
     <span class="o">*</span><span class="p">,</span>
     <span class="n">sim_random</span><span class="p">:</span> <span class="n">_Sim</span><span class="p">,</span>
     <span class="n">sim_ordered</span><span class="p">:</span> <span class="n">_Sim</span><span class="p">,</span>
@@ -532,51 +647,51 @@
     <span class="n">max_steps</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">200_000</span><span class="p">,</span>
     <span class="n">qs_sigma_threshold</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.05</span><span class="p">,</span>
     <span class="n">qs_min_steps</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">1500</span><span class="p">,</span>
-    <span class="n">qs_allow_stuck</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+    <span class="n">detect_stuck</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
     <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span>
-<span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">bool</span><span class="p">]:</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">TwoStartOutcome</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    Equilibrate two simulations and report whether convergence was reached.</span>
+<span class="sd">    Equilibrate a random-start and an ordered-start simulation side by side.</span>
 
-<span class="sd">    Uses ``estimate_relaxation_time_two_start`` to detect convergence via the</span>
-<span class="sd">    mutual cross-band criterion: each smoothed trajectory must enter and sustain</span>
-<span class="sd">    a band defined by the other trajectory&#39;s tail statistics.  A sigma floor</span>
-<span class="sd">    prevents false positives when one trace is nearly flat.  This variant returns</span>
-<span class="sd">    both the total number of MC steps executed and a boolean convergence flag.</span>
+<span class="sd">    The two runs advance in chunks until their smoothed magnetization traces</span>
+<span class="sd">    pass the mutual cross-band criterion of</span>
+<span class="sd">    ``estimate_relaxation_time_two_start``, until the quasi-steady stuck</span>
+<span class="sd">    detector fires, or until ``max_steps`` is reached. Unlike</span>
+<span class="sd">    ``convergence_equilibrate_with_status`` the result keeps a stuck exit</span>
+<span class="sd">    apart from genuine convergence, so callers can measure on the start that</span>
+<span class="sd">    is actually valid (see ``select_measurement_simulation``).</span>
 
 <span class="sd">    Parameters</span>
 <span class="sd">    ----------</span>
 <span class="sd">    sim_random : _Sim</span>
 <span class="sd">        Simulation instance started from a random state.</span>
 <span class="sd">    sim_ordered : _Sim</span>
-<span class="sd">        Simulation instance started from an ordered state.</span>
+<span class="sd">        Simulation instance started from an ordered state. It should carry a</span>
+<span class="sd">        different seed from ``sim_random`` (see ``ordered_start_seed``).</span>
 <span class="sd">    chunk_size : int</span>
 <span class="sd">        Number of steps to run between convergence checks.</span>
 <span class="sd">    max_steps : int</span>
 <span class="sd">        Hard cap on total steps.</span>
 <span class="sd">    qs_sigma_threshold : float</span>
-<span class="sd">        Tail-std threshold used to detect a quasi-steady,</span>
-<span class="sd">        non-converged stuck state and exit early.</span>
+<span class="sd">        Tail-std threshold used to detect a quasi-steady stuck state.</span>
 <span class="sd">    qs_min_steps : int</span>
-<span class="sd">        Minimum accumulated steps before stuck detection is allowed</span>
-<span class="sd">        to fire.  Ensures tail statistics are computed from enough data to be</span>
-<span class="sd">        reliable, preventing false positives when traces have not yet had time</span>
-<span class="sd">        to settle.</span>
-<span class="sd">    qs_allow_stuck : bool</span>
-<span class="sd">        If True, detecting a quasi-steady stuck state (where the</span>
-<span class="sd">        ordered trace is stable but the random trace is stranded) is treated</span>
-<span class="sd">        as a successful equilibration. Useful for Ising sweeps where</span>
-<span class="sd">        random-start domain-wall trapping is physically expected.</span>
+<span class="sd">        Minimum accumulated steps before stuck detection may fire.</span>
+<span class="sd">    detect_stuck : bool</span>
+<span class="sd">        Whether a quasi-steady stuck state ends the run early (default False).</span>
+<span class="sd">        The detector cannot tell a stranded random start from one that is</span>
+<span class="sd">        still relaxing slowly, which is common near a transition and for the</span>
+<span class="sd">        XY model below T_BKT, so it is opt-in: enable it only in the ordered</span>
+<span class="sd">        phase of a model with metastable domain states, where measuring the</span>
+<span class="sd">        ordered start after a stuck exit is valid.</span>
 <span class="sd">    **kwargs : Any</span>
 <span class="sd">        Passed to ``estimate_relaxation_time_two_start`` (k, smooth_window,</span>
 <span class="sd">        dwell_window, min_fraction_inside, sigma_floor, etc.).</span>
 
 <span class="sd">    Returns</span>
 <span class="sd">    -------</span>
-<span class="sd">    tuple[int, bool]</span>
-<span class="sd">        Tuple ``(total_steps, converged)``.</span>
+<span class="sd">    TwoStartOutcome</span>
+<span class="sd">        Steps run, convergence flag, and stuck flag. At most one flag is set.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
-    <span class="n">logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="s1">&#39;vibespin&#39;</span><span class="p">)</span>
     <span class="n">mags_r</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">full</span><span class="p">(</span><span class="n">max_steps</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">nan</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">float</span><span class="p">)</span>
     <span class="n">mags_o</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">full</span><span class="p">(</span><span class="n">max_steps</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">nan</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">float</span><span class="p">)</span>
     <span class="n">total</span> <span class="o">=</span> <span class="mi">0</span>
@@ -619,9 +734,9 @@
             <span class="c1"># If estimate_relaxation_time_two_start returns a value &lt; total,</span>
             <span class="c1"># it means convergence was detected at some point in the past.</span>
             <span class="k">if</span> <span class="n">tau</span> <span class="o">&lt;</span> <span class="n">total</span><span class="p">:</span>
-                <span class="k">return</span> <span class="n">total</span><span class="p">,</span> <span class="kc">True</span>
+                <span class="k">return</span> <span class="n">TwoStartOutcome</span><span class="p">(</span><span class="n">total_steps</span><span class="o">=</span><span class="n">total</span><span class="p">,</span> <span class="n">converged</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">stuck</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
 
-            <span class="k">if</span> <span class="n">total</span> <span class="o">&gt;=</span> <span class="n">qs_min_steps</span> <span class="ow">and</span> <span class="n">_detect_quasi_steady_stuck</span><span class="p">(</span>
+            <span class="k">if</span> <span class="n">detect_stuck</span> <span class="ow">and</span> <span class="n">total</span> <span class="o">&gt;=</span> <span class="n">qs_min_steps</span> <span class="ow">and</span> <span class="n">_detect_quasi_steady_stuck</span><span class="p">(</span>
                 <span class="n">trace_random</span><span class="o">=</span><span class="n">trace_r</span><span class="p">,</span>
                 <span class="n">trace_ordered</span><span class="o">=</span><span class="n">trace_o</span><span class="p">,</span>
                 <span class="n">k</span><span class="o">=</span><span class="nb">float</span><span class="p">(</span><span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;k&#39;</span><span class="p">,</span> <span class="n">_TWO_START_DEFAULT_K</span><span class="p">)),</span>
@@ -631,24 +746,189 @@
                 <span class="n">lattice_size</span><span class="o">=</span><span class="nb">getattr</span><span class="p">(</span><span class="n">sim_random</span><span class="p">,</span> <span class="s1">&#39;size&#39;</span><span class="p">,</span> <span class="kc">None</span><span class="p">),</span>
                 <span class="n">skip_validation</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
             <span class="p">):</span>
-                <span class="k">if</span> <span class="n">qs_allow_stuck</span><span class="p">:</span>
-                    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
-                        <span class="s1">&#39;convergence_equilibrate: detected stable quasi-steady stuck state; &#39;</span>
-                        <span class="s1">&#39;stopping early and accepting ordered start.&#39;</span>
-                    <span class="p">)</span>
-                    <span class="k">return</span> <span class="n">total</span><span class="p">,</span> <span class="kc">True</span>
+                <span class="k">return</span> <span class="n">TwoStartOutcome</span><span class="p">(</span><span class="n">total_steps</span><span class="o">=</span><span class="n">total</span><span class="p">,</span> <span class="n">converged</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">stuck</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 
-                <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span>
-                    <span class="s1">&#39;convergence_equilibrate: detected quasi-steady stuck state &#39;</span>
-                    <span class="sa">f</span><span class="s1">&#39;before max_steps=</span><span class="si">{</span><span class="n">max_steps</span><span class="si">}</span><span class="s1">; stopping early without convergence.&#39;</span>
-                <span class="p">)</span>
-                <span class="k">return</span> <span class="n">total</span><span class="p">,</span> <span class="kc">False</span>
+    <span class="k">return</span> <span class="n">TwoStartOutcome</span><span class="p">(</span><span class="n">total_steps</span><span class="o">=</span><span class="n">total</span><span class="p">,</span> <span class="n">converged</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">stuck</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span></div>
 
-    <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span>
-        <span class="sa">f</span><span class="s1">&#39;convergence_equilibrate: reached max_steps=</span><span class="si">{</span><span class="n">max_steps</span><span class="si">}</span><span class="s1"> without convergence; &#39;</span>
-        <span class="s1">&#39;proceeding anyway.&#39;</span>
+
+
+<div class="viewcode-block" id="convergence_equilibrate_with_status">
+<a class="viewcode-back" href="../../api/vibespin.utils.html#utils.equilibration.convergence_equilibrate_with_status">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">convergence_equilibrate_with_status</span><span class="p">(</span>
+    <span class="o">*</span><span class="p">,</span>
+    <span class="n">sim_random</span><span class="p">:</span> <span class="n">_Sim</span><span class="p">,</span>
+    <span class="n">sim_ordered</span><span class="p">:</span> <span class="n">_Sim</span><span class="p">,</span>
+    <span class="n">chunk_size</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">500</span><span class="p">,</span>
+    <span class="n">max_steps</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">200_000</span><span class="p">,</span>
+    <span class="n">qs_sigma_threshold</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.05</span><span class="p">,</span>
+    <span class="n">qs_min_steps</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">1500</span><span class="p">,</span>
+    <span class="n">qs_allow_stuck</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+    <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">bool</span><span class="p">]:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Equilibrate two simulations and report whether convergence was reached.</span>
+
+<span class="sd">    Uses ``estimate_relaxation_time_two_start`` to detect convergence via the</span>
+<span class="sd">    mutual cross-band criterion: each smoothed trajectory must enter and sustain</span>
+<span class="sd">    a band defined by the other trajectory&#39;s tail statistics.  A sigma floor</span>
+<span class="sd">    prevents false positives when one trace is nearly flat.  This variant returns</span>
+<span class="sd">    both the total number of MC steps executed and a boolean convergence flag.</span>
+
+<span class="sd">    The boolean cannot tell an accepted stuck state from genuine convergence;</span>
+<span class="sd">    after an accepted stuck state only the ordered start is a valid</span>
+<span class="sd">    measurement source. Callers that measure should use</span>
+<span class="sd">    ``convergence_equilibrate_two_start`` with</span>
+<span class="sd">    ``select_measurement_simulation`` instead.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    sim_random : _Sim</span>
+<span class="sd">        Simulation instance started from a random state.</span>
+<span class="sd">    sim_ordered : _Sim</span>
+<span class="sd">        Simulation instance started from an ordered state.</span>
+<span class="sd">    chunk_size : int</span>
+<span class="sd">        Number of steps to run between convergence checks.</span>
+<span class="sd">    max_steps : int</span>
+<span class="sd">        Hard cap on total steps.</span>
+<span class="sd">    qs_sigma_threshold : float</span>
+<span class="sd">        Tail-std threshold used to detect a quasi-steady,</span>
+<span class="sd">        non-converged stuck state and exit early.</span>
+<span class="sd">    qs_min_steps : int</span>
+<span class="sd">        Minimum accumulated steps before stuck detection is allowed</span>
+<span class="sd">        to fire.  Ensures tail statistics are computed from enough data to be</span>
+<span class="sd">        reliable, preventing false positives when traces have not yet had time</span>
+<span class="sd">        to settle.</span>
+<span class="sd">    qs_allow_stuck : bool</span>
+<span class="sd">        If True, detecting a quasi-steady stuck state (where the</span>
+<span class="sd">        ordered trace is stable but the random trace is stranded) is treated</span>
+<span class="sd">        as a successful equilibration. Useful for Ising sweeps where</span>
+<span class="sd">        random-start domain-wall trapping is physically expected.</span>
+<span class="sd">    **kwargs : Any</span>
+<span class="sd">        Passed to ``estimate_relaxation_time_two_start`` (k, smooth_window,</span>
+<span class="sd">        dwell_window, min_fraction_inside, sigma_floor, etc.).</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    tuple[int, bool]</span>
+<span class="sd">        Tuple ``(total_steps, converged)``.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># The legacy wrapper keeps its historical behaviour of stopping on a</span>
+    <span class="c1"># stuck state unless the caller passes detect_stuck explicitly.</span>
+    <span class="n">kwargs</span><span class="o">.</span><span class="n">setdefault</span><span class="p">(</span><span class="s1">&#39;detect_stuck&#39;</span><span class="p">,</span> <span class="kc">True</span><span class="p">)</span>
+    <span class="n">outcome</span> <span class="o">=</span> <span class="n">convergence_equilibrate_two_start</span><span class="p">(</span>
+        <span class="n">sim_random</span><span class="o">=</span><span class="n">sim_random</span><span class="p">,</span>
+        <span class="n">sim_ordered</span><span class="o">=</span><span class="n">sim_ordered</span><span class="p">,</span>
+        <span class="n">chunk_size</span><span class="o">=</span><span class="n">chunk_size</span><span class="p">,</span>
+        <span class="n">max_steps</span><span class="o">=</span><span class="n">max_steps</span><span class="p">,</span>
+        <span class="n">qs_sigma_threshold</span><span class="o">=</span><span class="n">qs_sigma_threshold</span><span class="p">,</span>
+        <span class="n">qs_min_steps</span><span class="o">=</span><span class="n">qs_min_steps</span><span class="p">,</span>
+        <span class="o">**</span><span class="n">kwargs</span><span class="p">,</span>
     <span class="p">)</span>
-    <span class="k">return</span> <span class="n">total</span><span class="p">,</span> <span class="kc">False</span></div>
+    <span class="n">_log_two_start_outcome</span><span class="p">(</span><span class="n">outcome</span><span class="o">=</span><span class="n">outcome</span><span class="p">,</span> <span class="n">max_steps</span><span class="o">=</span><span class="n">max_steps</span><span class="p">,</span> <span class="n">qs_allow_stuck</span><span class="o">=</span><span class="n">qs_allow_stuck</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">outcome</span><span class="o">.</span><span class="n">stuck</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">outcome</span><span class="o">.</span><span class="n">total_steps</span><span class="p">,</span> <span class="n">qs_allow_stuck</span>
+    <span class="k">return</span> <span class="n">outcome</span><span class="o">.</span><span class="n">total_steps</span><span class="p">,</span> <span class="n">outcome</span><span class="o">.</span><span class="n">converged</span></div>
+
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_log_two_start_outcome</span><span class="p">(</span>
+    <span class="o">*</span><span class="p">,</span> <span class="n">outcome</span><span class="p">:</span> <span class="n">TwoStartOutcome</span><span class="p">,</span> <span class="n">max_steps</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">qs_allow_stuck</span><span class="p">:</span> <span class="nb">bool</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Log a stuck or capped two-start equilibration in the established wording.&quot;&quot;&quot;</span>
+    <span class="n">logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="s1">&#39;vibespin&#39;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">outcome</span><span class="o">.</span><span class="n">stuck</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">qs_allow_stuck</span><span class="p">:</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
+                <span class="s1">&#39;convergence_equilibrate: detected stable quasi-steady stuck state; &#39;</span>
+                <span class="s1">&#39;stopping early and accepting ordered start.&#39;</span>
+            <span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span>
+                <span class="s1">&#39;convergence_equilibrate: detected quasi-steady stuck state &#39;</span>
+                <span class="sa">f</span><span class="s1">&#39;before max_steps=</span><span class="si">{</span><span class="n">max_steps</span><span class="si">}</span><span class="s1">; stopping early without convergence.&#39;</span>
+            <span class="p">)</span>
+    <span class="k">elif</span> <span class="ow">not</span> <span class="n">outcome</span><span class="o">.</span><span class="n">converged</span><span class="p">:</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span>
+            <span class="sa">f</span><span class="s1">&#39;convergence_equilibrate: reached max_steps=</span><span class="si">{</span><span class="n">max_steps</span><span class="si">}</span><span class="s1"> without convergence; &#39;</span>
+            <span class="s1">&#39;proceeding anyway.&#39;</span>
+        <span class="p">)</span>
+
+
+<div class="viewcode-block" id="prepare_equilibrated_simulation">
+<a class="viewcode-back" href="../../api/vibespin.utils.html#utils.equilibration.prepare_equilibrated_simulation">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">prepare_equilibrated_simulation</span><span class="p">(</span>
+    <span class="o">*</span><span class="p">,</span>
+    <span class="n">model_cls</span><span class="p">:</span> <span class="nb">type</span><span class="p">,</span>
+    <span class="n">model_kwargs</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">],</span>
+    <span class="n">size</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+    <span class="n">temp</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
+    <span class="n">seed</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">chunk_size</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+    <span class="n">max_steps</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+    <span class="n">update</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">&#39;checkerboard&#39;</span><span class="p">,</span>
+    <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="n">Any</span><span class="p">,</span> <span class="n">TwoStartOutcome</span><span class="p">]:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Build a two-start pair, equilibrate it, and return the start to measure.</span>
+
+<span class="sd">    The random start receives ``seed`` and the ordered start</span>
+<span class="sd">    ``ordered_start_seed(seed=seed)``, so the two runs draw independent random</span>
+<span class="sd">    numbers. After equilibration the random start is returned when the pair</span>
+<span class="sd">    converged, and the ordered start otherwise (see</span>
+<span class="sd">    ``select_measurement_simulation``). When the run hit ``max_steps``,</span>
+<span class="sd">    ``outcome.certified`` is False and the caller should record NaN for the</span>
+<span class="sd">    point rather than measure the returned simulation.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    model_cls : type</span>
+<span class="sd">        Simulation class to instantiate.</span>
+<span class="sd">    model_kwargs : dict[str, Any]</span>
+<span class="sd">        Constructor arguments beyond size, temperature, update, start, and seed.</span>
+<span class="sd">    size : int</span>
+<span class="sd">        Linear lattice size L.</span>
+<span class="sd">    temp : float</span>
+<span class="sd">        Simulation temperature T.</span>
+<span class="sd">    seed : int or None</span>
+<span class="sd">        Seed of the random start; ``None`` leaves both starts unseeded.</span>
+<span class="sd">    chunk_size : int</span>
+<span class="sd">        Steps between convergence checks.</span>
+<span class="sd">    max_steps : int</span>
+<span class="sd">        Hard cap on equilibration steps.</span>
+<span class="sd">    update : str</span>
+<span class="sd">        Update scheme for both starts (default ``&#39;checkerboard&#39;``).</span>
+<span class="sd">    **kwargs : Any</span>
+<span class="sd">        Passed to ``convergence_equilibrate_two_start``, for example</span>
+<span class="sd">        ``detect_stuck=True`` in the ordered phase of a model with metastable</span>
+<span class="sd">        domain states.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    tuple[Any, TwoStartOutcome]</span>
+<span class="sd">        The simulation to measure and the equilibration outcome.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">common</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="n">size</span><span class="o">=</span><span class="n">size</span><span class="p">,</span> <span class="n">temp</span><span class="o">=</span><span class="n">temp</span><span class="p">,</span> <span class="n">update</span><span class="o">=</span><span class="n">update</span><span class="p">,</span> <span class="o">**</span><span class="n">model_kwargs</span><span class="p">)</span>
+    <span class="n">sim_random</span> <span class="o">=</span> <span class="n">model_cls</span><span class="p">(</span><span class="n">init_state</span><span class="o">=</span><span class="s1">&#39;random&#39;</span><span class="p">,</span> <span class="n">seed</span><span class="o">=</span><span class="n">seed</span><span class="p">,</span> <span class="o">**</span><span class="n">common</span><span class="p">)</span>
+    <span class="n">sim_ordered</span> <span class="o">=</span> <span class="n">model_cls</span><span class="p">(</span><span class="n">init_state</span><span class="o">=</span><span class="s1">&#39;ordered&#39;</span><span class="p">,</span> <span class="n">seed</span><span class="o">=</span><span class="n">ordered_start_seed</span><span class="p">(</span><span class="n">seed</span><span class="o">=</span><span class="n">seed</span><span class="p">),</span> <span class="o">**</span><span class="n">common</span><span class="p">)</span>
+    <span class="n">outcome</span> <span class="o">=</span> <span class="n">convergence_equilibrate_two_start</span><span class="p">(</span>
+        <span class="n">sim_random</span><span class="o">=</span><span class="n">sim_random</span><span class="p">,</span>
+        <span class="n">sim_ordered</span><span class="o">=</span><span class="n">sim_ordered</span><span class="p">,</span>
+        <span class="n">chunk_size</span><span class="o">=</span><span class="n">chunk_size</span><span class="p">,</span>
+        <span class="n">max_steps</span><span class="o">=</span><span class="n">max_steps</span><span class="p">,</span>
+        <span class="o">**</span><span class="n">kwargs</span><span class="p">,</span>
+    <span class="p">)</span>
+    <span class="n">logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="s1">&#39;vibespin&#39;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">outcome</span><span class="o">.</span><span class="n">stuck</span><span class="p">:</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;T=</span><span class="si">{</span><span class="n">temp</span><span class="si">:</span><span class="s1">.4f</span><span class="si">}</span><span class="s1">, L=</span><span class="si">{</span><span class="n">size</span><span class="si">}</span><span class="s1">: random start stranded; measuring the ordered start.&#39;</span><span class="p">)</span>
+    <span class="k">elif</span> <span class="ow">not</span> <span class="n">outcome</span><span class="o">.</span><span class="n">converged</span><span class="p">:</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span>
+            <span class="sa">f</span><span class="s1">&#39;T=</span><span class="si">{</span><span class="n">temp</span><span class="si">:</span><span class="s1">.4f</span><span class="si">}</span><span class="s1">, L=</span><span class="si">{</span><span class="n">size</span><span class="si">}</span><span class="s1">: no convergence in </span><span class="si">{</span><span class="n">max_steps</span><span class="si">}</span><span class="s1"> steps; &#39;</span>
+            <span class="s1">&#39;the point is not certified and is stored as NaN.&#39;</span>
+        <span class="p">)</span>
+    <span class="n">sim</span> <span class="o">=</span> <span class="n">select_measurement_simulation</span><span class="p">(</span>
+        <span class="n">outcome</span><span class="o">=</span><span class="n">outcome</span><span class="p">,</span> <span class="n">sim_random</span><span class="o">=</span><span class="n">sim_random</span><span class="p">,</span> <span class="n">sim_ordered</span><span class="o">=</span><span class="n">sim_ordered</span><span class="p">,</span>
+    <span class="p">)</span>
+    <span class="k">return</span> <span class="n">sim</span><span class="p">,</span> <span class="n">outcome</span></div>
 
 </pre></div>
 

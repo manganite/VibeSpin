@@ -106,39 +106,46 @@
 <span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">models.xy_model</span><span class="w"> </span><span class="kn">import</span> <span class="n">XYSimulation</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">utils.equilibration</span><span class="w"> </span><span class="kn">import</span> <span class="n">convergence_equilibrate</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">utils.equilibration</span><span class="w"> </span><span class="kn">import</span> <span class="n">prepare_equilibrated_simulation</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">utils.plotting</span><span class="w"> </span><span class="kn">import</span> <span class="n">ensure_results_dir</span><span class="p">,</span> <span class="n">save_plot</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">utils.sweep_helpers</span><span class="w"> </span><span class="kn">import</span> <span class="n">derive_point_seed</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">utils.system</span><span class="w"> </span><span class="kn">import</span> <span class="n">parallel_sweep</span><span class="p">,</span> <span class="n">parse_args_compat</span><span class="p">,</span> <span class="n">setup_logging</span>
 
 
 <div class="viewcode-block" id="simulate_bkt_point">
 <a class="viewcode-back" href="../../../api/vibespin.scripts.xy.html#scripts.xy.bkt_transition.simulate_bkt_point">[docs]</a>
-<span class="k">def</span><span class="w"> </span><span class="nf">simulate_bkt_point</span><span class="p">(</span><span class="n">params</span><span class="p">:</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">float</span><span class="p">,</span> <span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">simulate_bkt_point</span><span class="p">(</span><span class="n">params</span><span class="p">:</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">float</span><span class="p">,</span> <span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Worker function to simulate a single temperature and measure average vortex density.</span>
 
 <span class="sd">    Parameters</span>
 <span class="sd">    ----------</span>
-<span class="sd">    params : tuple[float, int, int, int, int]</span>
-<span class="sd">        Tuple of (T, L, eq_probe_steps, eq_max_steps, meas_steps).</span>
+<span class="sd">    params : tuple[float, int, int, int, int, int]</span>
+<span class="sd">        Tuple of (T, L, eq_probe_steps, eq_max_steps, meas_steps, seed). The</span>
+<span class="sd">        seed belongs to the random start; the ordered start derives its own.</span>
 
 <span class="sd">    Returns</span>
 <span class="sd">    -------</span>
 <span class="sd">    float</span>
-<span class="sd">        Average vortex density n_v.</span>
+<span class="sd">        Average vortex density n_v, or NaN when the two starts did not</span>
+<span class="sd">        converge within ``eq_max_steps``.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
-    <span class="n">T</span><span class="p">,</span> <span class="n">L</span><span class="p">,</span> <span class="n">eq_probe_steps</span><span class="p">,</span> <span class="n">eq_max_steps</span><span class="p">,</span> <span class="n">meas_steps</span> <span class="o">=</span> <span class="n">params</span>
-    <span class="n">sim_r</span> <span class="o">=</span> <span class="n">XYSimulation</span><span class="p">(</span><span class="n">size</span><span class="o">=</span><span class="n">L</span><span class="p">,</span> <span class="n">temp</span><span class="o">=</span><span class="n">T</span><span class="p">,</span> <span class="n">init_state</span><span class="o">=</span><span class="s1">&#39;random&#39;</span><span class="p">)</span>
-    <span class="n">sim_o</span> <span class="o">=</span> <span class="n">XYSimulation</span><span class="p">(</span><span class="n">size</span><span class="o">=</span><span class="n">L</span><span class="p">,</span> <span class="n">temp</span><span class="o">=</span><span class="n">T</span><span class="p">,</span> <span class="n">init_state</span><span class="o">=</span><span class="s1">&#39;ordered&#39;</span><span class="p">)</span>
-    <span class="n">convergence_equilibrate</span><span class="p">(</span>
-        <span class="n">sim_random</span><span class="o">=</span><span class="n">sim_r</span><span class="p">,</span> <span class="n">sim_ordered</span><span class="o">=</span><span class="n">sim_o</span><span class="p">,</span>
-        <span class="n">chunk_size</span><span class="o">=</span><span class="n">eq_probe_steps</span><span class="p">,</span> <span class="n">max_steps</span><span class="o">=</span><span class="n">eq_max_steps</span><span class="p">,</span>
+    <span class="n">T</span><span class="p">,</span> <span class="n">L</span><span class="p">,</span> <span class="n">eq_probe_steps</span><span class="p">,</span> <span class="n">eq_max_steps</span><span class="p">,</span> <span class="n">meas_steps</span><span class="p">,</span> <span class="n">seed</span> <span class="o">=</span> <span class="n">params</span>
+    <span class="c1"># The XY model has no metastable domain states, but its random start can</span>
+    <span class="c1"># relax for thousands of sweeps near T_BKT; the stuck detector would end</span>
+    <span class="c1"># such runs early, so the pair runs until it converges. If it never does,</span>
+    <span class="c1"># the point is not certified and is stored as NaN.</span>
+    <span class="n">sim</span><span class="p">,</span> <span class="n">outcome</span> <span class="o">=</span> <span class="n">prepare_equilibrated_simulation</span><span class="p">(</span>
+        <span class="n">model_cls</span><span class="o">=</span><span class="n">XYSimulation</span><span class="p">,</span> <span class="n">model_kwargs</span><span class="o">=</span><span class="p">{},</span> <span class="n">size</span><span class="o">=</span><span class="n">L</span><span class="p">,</span> <span class="n">temp</span><span class="o">=</span><span class="n">T</span><span class="p">,</span> <span class="n">seed</span><span class="o">=</span><span class="n">seed</span><span class="p">,</span>
+        <span class="n">chunk_size</span><span class="o">=</span><span class="n">eq_probe_steps</span><span class="p">,</span> <span class="n">max_steps</span><span class="o">=</span><span class="n">eq_max_steps</span><span class="p">,</span> <span class="n">detect_stuck</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
     <span class="p">)</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">outcome</span><span class="o">.</span><span class="n">certified</span><span class="p">:</span>
+        <span class="k">return</span> <span class="nb">float</span><span class="p">(</span><span class="s1">&#39;nan&#39;</span><span class="p">)</span>
 
     <span class="n">densities</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">empty</span><span class="p">(</span><span class="n">meas_steps</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">)</span>
     <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">meas_steps</span><span class="p">):</span>
-        <span class="n">sim_r</span><span class="o">.</span><span class="n">step</span><span class="p">()</span>
-        <span class="n">densities</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="o">=</span> <span class="n">sim_r</span><span class="o">.</span><span class="n">get_vortex_density</span><span class="p">()</span>
+        <span class="n">sim</span><span class="o">.</span><span class="n">step</span><span class="p">()</span>
+        <span class="n">densities</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="o">=</span> <span class="n">sim</span><span class="o">.</span><span class="n">get_vortex_density</span><span class="p">()</span>
 
     <span class="k">return</span> <span class="nb">float</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">densities</span><span class="p">))</span></div>
 
@@ -162,6 +169,10 @@
     <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;--t-min&#39;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">float</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="mf">0.5</span><span class="p">,</span> <span class="n">help</span><span class="o">=</span><span class="s1">&#39;Minimum temperature&#39;</span><span class="p">)</span>
     <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;--t-max&#39;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">float</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="mf">1.5</span><span class="p">,</span> <span class="n">help</span><span class="o">=</span><span class="s1">&#39;Maximum temperature&#39;</span><span class="p">)</span>
     <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;--t-points&#39;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">int</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="mi">21</span><span class="p">,</span> <span class="n">help</span><span class="o">=</span><span class="s1">&#39;Number of temperature points&#39;</span><span class="p">)</span>
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span>
+        <span class="s1">&#39;--seed&#39;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">int</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
+        <span class="n">help</span><span class="o">=</span><span class="s1">&#39;Replica index selecting a reproducible seed per temperature (default: 0)&#39;</span><span class="p">,</span>
+    <span class="p">)</span>
     <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;--output-dir&#39;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">str</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="s1">&#39;results/xy&#39;</span><span class="p">,</span> <span class="n">help</span><span class="o">=</span><span class="s1">&#39;Output directory&#39;</span><span class="p">)</span>
     <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;--log-file&#39;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">str</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">help</span><span class="o">=</span><span class="s1">&#39;Optional log file path&#39;</span><span class="p">)</span>
     <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;--verbose&#39;</span><span class="p">,</span> <span class="n">action</span><span class="o">=</span><span class="s1">&#39;store_true&#39;</span><span class="p">,</span> <span class="n">help</span><span class="o">=</span><span class="s1">&#39;Enable verbose logging&#39;</span><span class="p">)</span>
@@ -180,8 +191,11 @@
     <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Range: [</span><span class="si">{</span><span class="n">args</span><span class="o">.</span><span class="n">t_min</span><span class="si">}</span><span class="s1">, </span><span class="si">{</span><span class="n">args</span><span class="o">.</span><span class="n">t_max</span><span class="si">}</span><span class="s1">] with </span><span class="si">{</span><span class="n">args</span><span class="o">.</span><span class="n">t_points</span><span class="si">}</span><span class="s1"> points.&#39;</span><span class="p">)</span>
 
     <span class="n">sweep_params</span> <span class="o">=</span> <span class="p">[</span>
-        <span class="p">(</span><span class="n">T</span><span class="p">,</span> <span class="n">args</span><span class="o">.</span><span class="n">size</span><span class="p">,</span> <span class="n">args</span><span class="o">.</span><span class="n">eq_probe_steps</span><span class="p">,</span> <span class="n">args</span><span class="o">.</span><span class="n">eq_max_steps</span><span class="p">,</span> <span class="n">args</span><span class="o">.</span><span class="n">meas_steps</span><span class="p">)</span>
-        <span class="k">for</span> <span class="n">T</span> <span class="ow">in</span> <span class="n">temperatures</span>
+        <span class="p">(</span>
+            <span class="nb">float</span><span class="p">(</span><span class="n">T</span><span class="p">),</span> <span class="n">args</span><span class="o">.</span><span class="n">size</span><span class="p">,</span> <span class="n">args</span><span class="o">.</span><span class="n">eq_probe_steps</span><span class="p">,</span> <span class="n">args</span><span class="o">.</span><span class="n">eq_max_steps</span><span class="p">,</span> <span class="n">args</span><span class="o">.</span><span class="n">meas_steps</span><span class="p">,</span>
+            <span class="n">derive_point_seed</span><span class="p">(</span><span class="n">temperature_index</span><span class="o">=</span><span class="n">i</span><span class="p">,</span> <span class="n">seed_index</span><span class="o">=</span><span class="n">args</span><span class="o">.</span><span class="n">seed</span><span class="p">),</span>
+        <span class="p">)</span>
+        <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">T</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">temperatures</span><span class="p">)</span>
     <span class="p">]</span>
     <span class="n">vortex_densities</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span> <span class="o">=</span> <span class="n">parallel_sweep</span><span class="p">(</span>
         <span class="n">worker_func</span><span class="o">=</span><span class="n">simulate_bkt_point</span><span class="p">,</span> <span class="n">params</span><span class="o">=</span><span class="n">sweep_params</span>
@@ -213,11 +227,15 @@
         <span class="n">npz_path</span><span class="p">,</span>
         <span class="n">temperatures</span><span class="o">=</span><span class="n">temperatures</span><span class="p">,</span>
         <span class="n">vortex_densities</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">vortex_densities</span><span class="p">),</span>
+        <span class="c1"># The worker returns NaN only for points whose equilibration hit</span>
+        <span class="c1"># eq_max_steps without convergence.</span>
+        <span class="n">equilibrated</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">isfinite</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">vortex_densities</span><span class="p">)),</span>
         <span class="n">T_BKT_theoretical</span><span class="o">=</span><span class="n">T_BKT_THEORETICAL</span><span class="p">,</span>
         <span class="n">L</span><span class="o">=</span><span class="n">args</span><span class="o">.</span><span class="n">size</span><span class="p">,</span>
         <span class="n">eq_probe_steps</span><span class="o">=</span><span class="n">args</span><span class="o">.</span><span class="n">eq_probe_steps</span><span class="p">,</span>
         <span class="n">eq_max_steps</span><span class="o">=</span><span class="n">args</span><span class="o">.</span><span class="n">eq_max_steps</span><span class="p">,</span>
         <span class="n">meas_steps</span><span class="o">=</span><span class="n">args</span><span class="o">.</span><span class="n">meas_steps</span><span class="p">,</span>
+        <span class="n">seed_index</span><span class="o">=</span><span class="n">args</span><span class="o">.</span><span class="n">seed</span><span class="p">,</span>
     <span class="p">)</span>
     <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Data saved to </span><span class="si">{</span><span class="n">npz_path</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span></div>
 

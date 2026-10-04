@@ -97,12 +97,19 @@
 <span class="sd">Standardized temperature sweep for the 2D Clock model.</span>
 <span class="sd">Calculates magnetization, energy, susceptibility, and specific heat, and</span>
 <span class="sd">produces a thermodynamics figure plus a companion diagnostics figure.</span>
+
+<span class="sd">The sweep runs the discrete clock model by default; ``--continuous`` selects</span>
+<span class="sd">planar spins with the anisotropy ``-A cos(q theta)`` instead.</span>
 <span class="sd">&quot;&quot;&quot;</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">__future__</span><span class="w"> </span><span class="kn">import</span> <span class="n">annotations</span>
 
 <span class="kn">import</span><span class="w"> </span><span class="nn">argparse</span>
 
-<span class="kn">from</span><span class="w"> </span><span class="nn">models.clock_model</span><span class="w"> </span><span class="kn">import</span> <span class="n">ClockSimulation</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">scripts.clock._model_choice</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
+    <span class="n">ORDERED_BELOW_DISCRETE</span><span class="p">,</span>
+    <span class="n">add_clock_model_arguments</span><span class="p">,</span>
+    <span class="n">resolve_clock_model</span><span class="p">,</span>
+<span class="p">)</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">utils.sweep_runner</span><span class="w"> </span><span class="kn">import</span> <span class="n">add_temperature_sweep_arguments</span><span class="p">,</span> <span class="n">run_temperature_sweep</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">utils.system</span><span class="w"> </span><span class="kn">import</span> <span class="n">parse_args_compat</span>
 
@@ -110,6 +117,10 @@
 <span class="c1"># phase boundaries used by scripts/clock/correlation_comparison.py.</span>
 <span class="n">_T1_CLOCK6_APPROX</span> <span class="o">=</span> <span class="mf">0.68</span>
 <span class="n">_T2_CLOCK6_APPROX</span> <span class="o">=</span> <span class="mf">0.92</span>
+
+<span class="c1"># Anisotropy of the continuous model when --continuous is given without</span>
+<span class="c1"># --aniso; it matches the ClockSimulation constructor default.</span>
+<span class="n">_DEFAULT_CONTINUOUS_ANISO</span> <span class="o">=</span> <span class="mf">1.0</span>
 
 
 <div class="viewcode-block" id="main">
@@ -121,8 +132,7 @@
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="n">parser</span> <span class="o">=</span> <span class="n">argparse</span><span class="o">.</span><span class="n">ArgumentParser</span><span class="p">(</span><span class="n">description</span><span class="o">=</span><span class="s1">&#39;2D Clock Model Temperature Sweep&#39;</span><span class="p">)</span>
     <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;--q&#39;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">int</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="mi">6</span><span class="p">,</span> <span class="n">help</span><span class="o">=</span><span class="s1">&#39;Number of clock states&#39;</span><span class="p">)</span>
-    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;--aniso&#39;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">float</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="mf">0.0</span><span class="p">,</span> <span class="n">help</span><span class="o">=</span><span class="s1">&#39;Anisotropy parameter A&#39;</span><span class="p">)</span>
-    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;--discrete&#39;</span><span class="p">,</span> <span class="n">action</span><span class="o">=</span><span class="s1">&#39;store_true&#39;</span><span class="p">,</span> <span class="n">help</span><span class="o">=</span><span class="s1">&#39;Use discrete angle representation&#39;</span><span class="p">)</span>
+    <span class="n">add_clock_model_arguments</span><span class="p">(</span><span class="n">parser</span><span class="o">=</span><span class="n">parser</span><span class="p">,</span> <span class="n">default_aniso</span><span class="o">=</span><span class="n">_DEFAULT_CONTINUOUS_ANISO</span><span class="p">)</span>
     <span class="n">add_temperature_sweep_arguments</span><span class="p">(</span>
         <span class="n">parser</span><span class="o">=</span><span class="n">parser</span><span class="p">,</span>
         <span class="n">size</span><span class="o">=</span><span class="mi">48</span><span class="p">,</span>
@@ -142,20 +152,25 @@
     <span class="p">)</span>
     <span class="n">args</span> <span class="o">=</span> <span class="n">parse_args_compat</span><span class="p">(</span><span class="n">parser</span><span class="o">=</span><span class="n">parser</span><span class="p">)</span>
 
-    <span class="n">variant</span> <span class="o">=</span> <span class="s1">&#39;discrete&#39;</span> <span class="k">if</span> <span class="n">args</span><span class="o">.</span><span class="n">discrete</span> <span class="k">else</span> <span class="sa">f</span><span class="s1">&#39;continuous (A=</span><span class="si">{</span><span class="n">args</span><span class="o">.</span><span class="n">aniso</span><span class="si">}</span><span class="s1">)&#39;</span>
+    <span class="n">choice</span> <span class="o">=</span> <span class="n">resolve_clock_model</span><span class="p">(</span>
+        <span class="n">parser</span><span class="o">=</span><span class="n">parser</span><span class="p">,</span> <span class="n">args</span><span class="o">=</span><span class="n">args</span><span class="p">,</span> <span class="n">default_aniso</span><span class="o">=</span><span class="n">_DEFAULT_CONTINUOUS_ANISO</span><span class="p">,</span>
+    <span class="p">)</span>
+    <span class="n">variant</span> <span class="o">=</span> <span class="n">choice</span><span class="o">.</span><span class="n">variant</span>
 
-    <span class="c1"># Crossover overlay: the approximate T1/T2 values are specific to q=6, so</span>
-    <span class="c1"># the overlay is skipped for other q even under &#39;auto&#39;/&#39;theory&#39;.</span>
+    <span class="c1"># Crossover overlay: the approximate T1/T2 values belong to the discrete</span>
+    <span class="c1"># q=6 model, so the overlay is skipped for other q and for the continuous</span>
+    <span class="c1"># model, whose transition temperatures depend on A.</span>
     <span class="n">transitions</span> <span class="o">=</span> <span class="p">(</span>
         <span class="p">{</span><span class="s1">&#39;T1 (approx)&#39;</span><span class="p">:</span> <span class="n">_T1_CLOCK6_APPROX</span><span class="p">,</span> <span class="s1">&#39;T2 (approx)&#39;</span><span class="p">:</span> <span class="n">_T2_CLOCK6_APPROX</span><span class="p">}</span>
         <span class="k">if</span> <span class="n">args</span><span class="o">.</span><span class="n">transition_preset</span> <span class="ow">in</span> <span class="p">(</span><span class="s1">&#39;auto&#39;</span><span class="p">,</span> <span class="s1">&#39;theory&#39;</span><span class="p">)</span> <span class="ow">and</span> <span class="n">args</span><span class="o">.</span><span class="n">q</span> <span class="o">==</span> <span class="mi">6</span>
+        <span class="ow">and</span> <span class="n">choice</span><span class="o">.</span><span class="n">is_discrete</span>
         <span class="k">else</span> <span class="kc">None</span>
     <span class="p">)</span>
 
     <span class="n">run_temperature_sweep</span><span class="p">(</span>
         <span class="n">args</span><span class="o">=</span><span class="n">args</span><span class="p">,</span>
-        <span class="n">model_cls</span><span class="o">=</span><span class="n">ClockSimulation</span><span class="p">,</span>
-        <span class="n">model_kwargs</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;q&#39;</span><span class="p">:</span> <span class="n">args</span><span class="o">.</span><span class="n">q</span><span class="p">,</span> <span class="s1">&#39;A&#39;</span><span class="p">:</span> <span class="n">args</span><span class="o">.</span><span class="n">aniso</span><span class="p">},</span>
+        <span class="n">model_cls</span><span class="o">=</span><span class="n">choice</span><span class="o">.</span><span class="n">model_cls</span><span class="p">,</span>
+        <span class="n">model_kwargs</span><span class="o">=</span><span class="n">choice</span><span class="o">.</span><span class="n">model_kwargs</span><span class="p">,</span>
         <span class="n">model_label</span><span class="o">=</span><span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">args</span><span class="o">.</span><span class="n">q</span><span class="si">}</span><span class="s1">-state Clock&#39;</span><span class="p">,</span>
         <span class="n">plot_title</span><span class="o">=</span><span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">args</span><span class="o">.</span><span class="n">q</span><span class="si">}</span><span class="s1">-state Clock Temperature Sweep ($L=</span><span class="si">{</span><span class="n">args</span><span class="o">.</span><span class="n">size</span><span class="si">}</span><span class="s1">$)&#39;</span><span class="p">,</span>
         <span class="n">metadata_note</span><span class="o">=</span><span class="p">(</span>
@@ -163,8 +178,14 @@
         <span class="p">),</span>
         <span class="n">transition_temperatures</span><span class="o">=</span><span class="n">transitions</span><span class="p">,</span>
         <span class="n">variant_note</span><span class="o">=</span><span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">variant</span><span class="si">}</span><span class="s1">, &#39;</span><span class="p">,</span>
-        <span class="c1"># As for XY, no ordered-start preference: the intermediate phase of the</span>
-        <span class="c1"># clock model is quasi-ordered rather than ordered.</span>
+        <span class="c1"># The discrete model orders like Ising below its lowest transition, and</span>
+        <span class="c1"># random starts strand in domain-wall states there, so the ordered start</span>
+        <span class="c1"># replaces a stuck random start. The continuous model gets no such</span>
+        <span class="c1"># preference: its transition temperatures depend on A, and between T1</span>
+        <span class="c1"># and T2 the clock model is only quasi-ordered.</span>
+        <span class="n">ordered_start_below</span><span class="o">=</span><span class="p">(</span>
+            <span class="n">ORDERED_BELOW_DISCRETE</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">args</span><span class="o">.</span><span class="n">q</span><span class="p">)</span> <span class="k">if</span> <span class="n">choice</span><span class="o">.</span><span class="n">is_discrete</span> <span class="k">else</span> <span class="kc">None</span>
+        <span class="p">),</span>
     <span class="p">)</span></div>
 
 

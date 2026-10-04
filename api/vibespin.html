@@ -121,6 +121,7 @@
 </ul>
 </li>
 <li class="toctree-l3"><a class="reference internal" href="vibespin.models.html#models.clock_model.DiscreteClockSimulation"><code class="docutils literal notranslate"><span class="pre">DiscreteClockSimulation</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="vibespin.models.html#models.clock_model.DiscreteClockSimulation.get_spin_field"><code class="docutils literal notranslate"><span class="pre">DiscreteClockSimulation.get_spin_field()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="vibespin.models.html#models.clock_model.DiscreteClockSimulation.step"><code class="docutils literal notranslate"><span class="pre">DiscreteClockSimulation.step()</span></code></a></li>
 </ul>
 </li>
@@ -132,6 +133,7 @@
 <li class="toctree-l3"><a class="reference internal" href="vibespin.models.html#models.clock_model.discrete_clock_step_numba"><code class="docutils literal notranslate"><span class="pre">discrete_clock_step_numba()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="vibespin.models.html#models.clock_model.discrete_clock_step_parallel_numba"><code class="docutils literal notranslate"><span class="pre">discrete_clock_step_parallel_numba()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="vibespin.models.html#models.clock_model.discrete_clock_step_random_numba"><code class="docutils literal notranslate"><span class="pre">discrete_clock_step_random_numba()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="vibespin.models.html#models.clock_model.discrete_clock_wolff_step_numba"><code class="docutils literal notranslate"><span class="pre">discrete_clock_wolff_step_numba()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="vibespin.models.html#models.clock_model.main"><code class="docutils literal notranslate"><span class="pre">main()</span></code></a></li>
 </ul>
 </li>
@@ -154,6 +156,7 @@
 <li class="toctree-l4"><a class="reference internal" href="vibespin.models.html#models.simulation_base.MonteCarloSimulation.equilibrate"><code class="docutils literal notranslate"><span class="pre">MonteCarloSimulation.equilibrate()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="vibespin.models.html#models.simulation_base.MonteCarloSimulation.get_energy"><code class="docutils literal notranslate"><span class="pre">MonteCarloSimulation.get_energy()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="vibespin.models.html#models.simulation_base.MonteCarloSimulation.get_magnetization"><code class="docutils literal notranslate"><span class="pre">MonteCarloSimulation.get_magnetization()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="vibespin.models.html#models.simulation_base.MonteCarloSimulation.get_spin_field"><code class="docutils literal notranslate"><span class="pre">MonteCarloSimulation.get_spin_field()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="vibespin.models.html#models.simulation_base.MonteCarloSimulation.run"><code class="docutils literal notranslate"><span class="pre">MonteCarloSimulation.run()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="vibespin.models.html#models.simulation_base.MonteCarloSimulation.run_with_cluster_sizes"><code class="docutils literal notranslate"><span class="pre">MonteCarloSimulation.run_with_cluster_sizes()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="vibespin.models.html#models.simulation_base.MonteCarloSimulation.step"><code class="docutils literal notranslate"><span class="pre">MonteCarloSimulation.step()</span></code></a></li>
@@ -255,6 +258,7 @@
 <li class="toctree-l2"><a class="reference internal" href="vibespin.utils.html#submodules">Submodules</a></li>
 <li class="toctree-l2"><a class="reference internal" href="vibespin.utils.html#module-utils.efficiency_runner">utils.efficiency_runner module</a><ul>
 <li class="toctree-l3"><a class="reference internal" href="vibespin.utils.html#utils.efficiency_runner.EfficiencyPoint"><code class="docutils literal notranslate"><span class="pre">EfficiencyPoint</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="vibespin.utils.html#utils.efficiency_runner.EfficiencyPoint.detect_stuck"><code class="docutils literal notranslate"><span class="pre">EfficiencyPoint.detect_stuck</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="vibespin.utils.html#utils.efficiency_runner.EfficiencyPoint.eq_max_steps"><code class="docutils literal notranslate"><span class="pre">EfficiencyPoint.eq_max_steps</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="vibespin.utils.html#utils.efficiency_runner.EfficiencyPoint.eq_probe_steps"><code class="docutils literal notranslate"><span class="pre">EfficiencyPoint.eq_probe_steps</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="vibespin.utils.html#utils.efficiency_runner.EfficiencyPoint.meas_steps"><code class="docutils literal notranslate"><span class="pre">EfficiencyPoint.meas_steps</span></code></a></li>
@@ -273,10 +277,22 @@
 </ul>
 </li>
 <li class="toctree-l2"><a class="reference internal" href="vibespin.utils.html#module-utils.equilibration">utils.equilibration module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="vibespin.utils.html#utils.equilibration.ORDERED_START_SEED_OFFSET"><code class="docutils literal notranslate"><span class="pre">ORDERED_START_SEED_OFFSET</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="vibespin.utils.html#utils.equilibration.TwoStartOutcome"><code class="docutils literal notranslate"><span class="pre">TwoStartOutcome</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="vibespin.utils.html#utils.equilibration.TwoStartOutcome.certified"><code class="docutils literal notranslate"><span class="pre">TwoStartOutcome.certified</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="vibespin.utils.html#utils.equilibration.TwoStartOutcome.converged"><code class="docutils literal notranslate"><span class="pre">TwoStartOutcome.converged</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="vibespin.utils.html#utils.equilibration.TwoStartOutcome.stuck"><code class="docutils literal notranslate"><span class="pre">TwoStartOutcome.stuck</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="vibespin.utils.html#utils.equilibration.TwoStartOutcome.total_steps"><code class="docutils literal notranslate"><span class="pre">TwoStartOutcome.total_steps</span></code></a></li>
+</ul>
+</li>
 <li class="toctree-l3"><a class="reference internal" href="vibespin.utils.html#utils.equilibration.adaptive_equilibrate"><code class="docutils literal notranslate"><span class="pre">adaptive_equilibrate()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="vibespin.utils.html#utils.equilibration.convergence_equilibrate"><code class="docutils literal notranslate"><span class="pre">convergence_equilibrate()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="vibespin.utils.html#utils.equilibration.convergence_equilibrate_two_start"><code class="docutils literal notranslate"><span class="pre">convergence_equilibrate_two_start()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="vibespin.utils.html#utils.equilibration.convergence_equilibrate_with_status"><code class="docutils literal notranslate"><span class="pre">convergence_equilibrate_with_status()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="vibespin.utils.html#utils.equilibration.estimate_relaxation_time_two_start"><code class="docutils literal notranslate"><span class="pre">estimate_relaxation_time_two_start()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="vibespin.utils.html#utils.equilibration.ordered_start_seed"><code class="docutils literal notranslate"><span class="pre">ordered_start_seed()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="vibespin.utils.html#utils.equilibration.prepare_equilibrated_simulation"><code class="docutils literal notranslate"><span class="pre">prepare_equilibrated_simulation()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="vibespin.utils.html#utils.equilibration.select_measurement_simulation"><code class="docutils literal notranslate"><span class="pre">select_measurement_simulation()</span></code></a></li>
 </ul>
 </li>
 <li class="toctree-l2"><a class="reference internal" href="vibespin.utils.html#module-utils.evolution_helpers">utils.evolution_helpers module</a><ul>
@@ -296,6 +312,7 @@
 </li>
 <li class="toctree-l2"><a class="reference internal" href="vibespin.utils.html#module-utils.observables">utils.observables module</a><ul>
 <li class="toctree-l3"><a class="reference internal" href="vibespin.utils.html#utils.observables.CorrelationPoint"><code class="docutils literal notranslate"><span class="pre">CorrelationPoint</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="vibespin.utils.html#utils.observables.CorrelationPoint.detect_stuck"><code class="docutils literal notranslate"><span class="pre">CorrelationPoint.detect_stuck</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="vibespin.utils.html#utils.observables.CorrelationPoint.eq_max"><code class="docutils literal notranslate"><span class="pre">CorrelationPoint.eq_max</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="vibespin.utils.html#utils.observables.CorrelationPoint.eq_probe"><code class="docutils literal notranslate"><span class="pre">CorrelationPoint.eq_probe</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="vibespin.utils.html#utils.observables.CorrelationPoint.interval"><code class="docutils literal notranslate"><span class="pre">CorrelationPoint.interval</span></code></a></li>
@@ -311,6 +328,7 @@
 <li class="toctree-l3"><a class="reference internal" href="vibespin.utils.html#utils.observables.calculate_entropy"><code class="docutils literal notranslate"><span class="pre">calculate_entropy()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="vibespin.utils.html#utils.observables.calculate_thermodynamics"><code class="docutils literal notranslate"><span class="pre">calculate_thermodynamics()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="vibespin.utils.html#utils.observables.compute_kinetics_metrics"><code class="docutils literal notranslate"><span class="pre">compute_kinetics_metrics()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="vibespin.utils.html#utils.observables.connected_correlation_length"><code class="docutils literal notranslate"><span class="pre">connected_correlation_length()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="vibespin.utils.html#utils.observables.correlation_length_1e"><code class="docutils literal notranslate"><span class="pre">correlation_length_1e()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="vibespin.utils.html#utils.observables.derived_thermo_estimate"><code class="docutils literal notranslate"><span class="pre">derived_thermo_estimate()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="vibespin.utils.html#utils.observables.fit_correlation_exponent"><code class="docutils literal notranslate"><span class="pre">fit_correlation_exponent()</span></code></a></li>

@@ -104,7 +104,11 @@
 <span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">scipy.integrate</span><span class="w"> </span><span class="kn">import</span> <span class="n">cumulative_trapezoid</span>
 
-<span class="kn">from</span><span class="w"> </span><span class="nn">utils.equilibration</span><span class="w"> </span><span class="kn">import</span> <span class="n">convergence_equilibrate_with_status</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">utils.equilibration</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
+    <span class="n">convergence_equilibrate_two_start</span><span class="p">,</span>
+    <span class="n">ordered_start_seed</span><span class="p">,</span>
+    <span class="n">select_measurement_simulation</span><span class="p">,</span>
+<span class="p">)</span>
 
 
 <span class="k">class</span><span class="w"> </span><span class="nc">_Sim</span><span class="p">(</span><span class="n">Protocol</span><span class="p">):</span>
@@ -115,6 +119,8 @@
     <span class="k">def</span><span class="w"> </span><span class="nf">step</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span> <span class="o">...</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">calculate_correlation_function</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">]:</span> <span class="o">...</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_spin_field</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span> <span class="o">...</span>
 
 
 <div class="viewcode-block" id="derived_thermo_estimate">
@@ -350,6 +356,7 @@
     <span class="n">meas_steps</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
     <span class="n">interval</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
     <span class="n">logger</span><span class="p">:</span> <span class="n">logging</span><span class="o">.</span><span class="n">Logger</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">detect_stuck</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">]:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Equilibrate a model and measure its averaged correlation function.</span>
@@ -358,7 +365,7 @@
 <span class="sd">    checkerboard updates) to avoid initialization bias, then averages the</span>
 <span class="sd">    correlation function over ``meas_steps`` Monte Carlo steps, sampling every</span>
 <span class="sd">    ``interval`` steps. When convergence is not reached within ``eq_max``</span>
-<span class="sd">    steps, measurement falls back to the ordered-start simulation.</span>
+<span class="sd">    steps, the point is not measured and G(r) is returned as NaN.</span>
 
 <span class="sd">    Parameters</span>
 <span class="sd">    ----------</span>
@@ -373,7 +380,8 @@
 <span class="sd">    temp : float</span>
 <span class="sd">        Temperature for the measurement.</span>
 <span class="sd">    seed : int</span>
-<span class="sd">        Random seed used for both start states.</span>
+<span class="sd">        Random seed of the random start; the ordered start uses</span>
+<span class="sd">        ``ordered_start_seed(seed=seed)``.</span>
 <span class="sd">    eq_probe : int</span>
 <span class="sd">        Chunk size for convergence equilibration probes.</span>
 <span class="sd">    eq_max : int</span>
@@ -384,13 +392,19 @@
 <span class="sd">        Spacing between correlation samples during measurement.</span>
 <span class="sd">    logger : logging.Logger | None</span>
 <span class="sd">        Optional logger for progress and fallback messages.</span>
+<span class="sd">    detect_stuck : bool</span>
+<span class="sd">        Enable quasi-steady stuck detection, so that a random start stranded</span>
+<span class="sd">        in a domain state ends the run and the ordered start is measured.</span>
+<span class="sd">        Set it only in the ordered phase of a model with metastable domain</span>
+<span class="sd">        states (default False).</span>
 
 <span class="sd">    Returns</span>
 <span class="sd">    -------</span>
 <span class="sd">    r : np.ndarray</span>
 <span class="sd">        Radial distances.</span>
 <span class="sd">    G_r_avg : np.ndarray</span>
-<span class="sd">        Averaged correlation values G(r).</span>
+<span class="sd">        Averaged correlation values G(r), all NaN when the two starts did not</span>
+<span class="sd">        converge within ``eq_max`` steps.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="k">if</span> <span class="n">logger</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
         <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Equilibrating at T=</span><span class="si">{</span><span class="n">temp</span><span class="si">:</span><span class="s1">.3f</span><span class="si">}</span><span class="s1"> (L=</span><span class="si">{</span><span class="n">size</span><span class="si">}</span><span class="s1">, seed=</span><span class="si">{</span><span class="n">seed</span><span class="si">}</span><span class="s1">)...&#39;</span><span class="p">)</span>
@@ -399,16 +413,24 @@
         <span class="o">**</span><span class="n">model_kwargs</span><span class="p">,</span>
     <span class="p">)</span>
     <span class="n">sim_o</span> <span class="o">=</span> <span class="n">model_cls</span><span class="p">(</span>
-        <span class="n">size</span><span class="o">=</span><span class="n">size</span><span class="p">,</span> <span class="n">temp</span><span class="o">=</span><span class="n">temp</span><span class="p">,</span> <span class="n">update</span><span class="o">=</span><span class="s1">&#39;checkerboard&#39;</span><span class="p">,</span> <span class="n">init_state</span><span class="o">=</span><span class="s1">&#39;ordered&#39;</span><span class="p">,</span> <span class="n">seed</span><span class="o">=</span><span class="n">seed</span><span class="p">,</span>
-        <span class="o">**</span><span class="n">model_kwargs</span><span class="p">,</span>
+        <span class="n">size</span><span class="o">=</span><span class="n">size</span><span class="p">,</span> <span class="n">temp</span><span class="o">=</span><span class="n">temp</span><span class="p">,</span> <span class="n">update</span><span class="o">=</span><span class="s1">&#39;checkerboard&#39;</span><span class="p">,</span> <span class="n">init_state</span><span class="o">=</span><span class="s1">&#39;ordered&#39;</span><span class="p">,</span>
+        <span class="n">seed</span><span class="o">=</span><span class="n">ordered_start_seed</span><span class="p">(</span><span class="n">seed</span><span class="o">=</span><span class="n">seed</span><span class="p">),</span> <span class="o">**</span><span class="n">model_kwargs</span><span class="p">,</span>
     <span class="p">)</span>
-    <span class="n">_</span><span class="p">,</span> <span class="n">converged</span> <span class="o">=</span> <span class="n">convergence_equilibrate_with_status</span><span class="p">(</span>
+    <span class="n">outcome</span> <span class="o">=</span> <span class="n">convergence_equilibrate_two_start</span><span class="p">(</span>
         <span class="n">sim_random</span><span class="o">=</span><span class="n">sim_r</span><span class="p">,</span> <span class="n">sim_ordered</span><span class="o">=</span><span class="n">sim_o</span><span class="p">,</span> <span class="n">chunk_size</span><span class="o">=</span><span class="n">eq_probe</span><span class="p">,</span> <span class="n">max_steps</span><span class="o">=</span><span class="n">eq_max</span><span class="p">,</span>
+        <span class="n">detect_stuck</span><span class="o">=</span><span class="n">detect_stuck</span><span class="p">,</span>
     <span class="p">)</span>
-    <span class="c1"># Fall back to ordered-start simulation when random-start is stuck.</span>
-    <span class="n">sim_meas</span> <span class="o">=</span> <span class="n">sim_r</span> <span class="k">if</span> <span class="n">converged</span> <span class="k">else</span> <span class="n">sim_o</span>
-    <span class="k">if</span> <span class="ow">not</span> <span class="n">converged</span> <span class="ow">and</span> <span class="n">logger</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;T=</span><span class="si">{</span><span class="n">temp</span><span class="si">:</span><span class="s1">.3f</span><span class="si">}</span><span class="s1">: convergence not reached, falling back to ordered start&#39;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">outcome</span><span class="o">.</span><span class="n">certified</span><span class="p">:</span>
+        <span class="c1"># Neither start is known to have relaxed, so G(r) is not measured.</span>
+        <span class="k">if</span> <span class="n">logger</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s1">&#39;T=</span><span class="si">{</span><span class="n">temp</span><span class="si">:</span><span class="s1">.3f</span><span class="si">}</span><span class="s1">: no convergence in </span><span class="si">{</span><span class="n">eq_max</span><span class="si">}</span><span class="s1"> steps; storing NaN for G(r)&#39;</span>
+            <span class="p">)</span>
+        <span class="n">r</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">sim_r</span><span class="o">.</span><span class="n">calculate_correlation_function</span><span class="p">()</span>
+        <span class="k">return</span> <span class="n">r</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">full</span><span class="p">(</span><span class="n">r</span><span class="o">.</span><span class="n">shape</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">nan</span><span class="p">)</span>
+    <span class="n">sim_meas</span> <span class="o">=</span> <span class="n">select_measurement_simulation</span><span class="p">(</span>
+        <span class="n">outcome</span><span class="o">=</span><span class="n">outcome</span><span class="p">,</span> <span class="n">sim_random</span><span class="o">=</span><span class="n">sim_r</span><span class="p">,</span> <span class="n">sim_ordered</span><span class="o">=</span><span class="n">sim_o</span><span class="p">,</span>
+    <span class="p">)</span>
     <span class="k">if</span> <span class="n">logger</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
         <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Measuring correlations at T=</span><span class="si">{</span><span class="n">temp</span><span class="si">:</span><span class="s1">.3f</span><span class="si">}</span><span class="s1">...&#39;</span><span class="p">)</span>
     <span class="k">return</span> <span class="n">get_averaged_correlation</span><span class="p">(</span>
@@ -440,7 +462,8 @@
 <span class="sd">    size : int</span>
 <span class="sd">        Linear lattice size L.</span>
 <span class="sd">    seed : int</span>
-<span class="sd">        Random seed used for both start states.</span>
+<span class="sd">        Random seed of the random start; the ordered start uses</span>
+<span class="sd">        ``ordered_start_seed(seed=seed)``.</span>
 <span class="sd">    eq_probe : int</span>
 <span class="sd">        Chunk size for convergence equilibration probes.</span>
 <span class="sd">    eq_max : int</span>
@@ -449,6 +472,8 @@
 <span class="sd">        Measurement steps after equilibration.</span>
 <span class="sd">    interval : int</span>
 <span class="sd">        Spacing between correlation samples during measurement.</span>
+<span class="sd">    detect_stuck : bool</span>
+<span class="sd">        Forwarded to ``simulate_equilibrium_correlation`` (default False).</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
     <span class="n">label</span><span class="p">:</span> <span class="nb">str</span>
@@ -460,7 +485,8 @@
     <span class="n">eq_probe</span><span class="p">:</span> <span class="nb">int</span>
     <span class="n">eq_max</span><span class="p">:</span> <span class="nb">int</span>
     <span class="n">meas_steps</span><span class="p">:</span> <span class="nb">int</span>
-    <span class="n">interval</span><span class="p">:</span> <span class="nb">int</span></div>
+    <span class="n">interval</span><span class="p">:</span> <span class="nb">int</span>
+    <span class="n">detect_stuck</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span></div>
 
 
 
@@ -484,7 +510,8 @@
 <span class="sd">    Returns</span>
 <span class="sd">    -------</span>
 <span class="sd">    tuple[str, numpy.ndarray, numpy.ndarray]</span>
-<span class="sd">        The point&#39;s label, the radial distances, and the averaged G(r).</span>
+<span class="sd">        The point&#39;s label, the radial distances, and the averaged G(r), which</span>
+<span class="sd">        is all NaN when the two starts did not converge within ``eq_max``.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="n">logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="s1">&#39;vibespin&#39;</span><span class="p">)</span>
     <span class="n">r</span><span class="p">,</span> <span class="n">G</span> <span class="o">=</span> <span class="n">simulate_equilibrium_correlation</span><span class="p">(</span>
@@ -498,6 +525,7 @@
         <span class="n">meas_steps</span><span class="o">=</span><span class="n">point</span><span class="o">.</span><span class="n">meas_steps</span><span class="p">,</span>
         <span class="n">interval</span><span class="o">=</span><span class="n">point</span><span class="o">.</span><span class="n">interval</span><span class="p">,</span>
         <span class="n">logger</span><span class="o">=</span><span class="n">logger</span><span class="p">,</span>
+        <span class="n">detect_stuck</span><span class="o">=</span><span class="n">point</span><span class="o">.</span><span class="n">detect_stuck</span><span class="p">,</span>
     <span class="p">)</span>
     <span class="k">return</span> <span class="n">point</span><span class="o">.</span><span class="n">label</span><span class="p">,</span> <span class="n">r</span><span class="p">,</span> <span class="n">G</span></div>
 
@@ -763,6 +791,67 @@
 
 
 
+<div class="viewcode-block" id="connected_correlation_length">
+<a class="viewcode-back" href="../../api/vibespin.utils.html#utils.observables.connected_correlation_length">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">connected_correlation_length</span><span class="p">(</span>
+    <span class="o">*</span><span class="p">,</span> <span class="n">sim</span><span class="p">:</span> <span class="n">_Sim</span><span class="p">,</span> <span class="n">meas_steps</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">sample_interval</span><span class="p">:</span> <span class="nb">int</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Measure the equilibrium correlation length from the connected correlation.</span>
+
+<span class="sd">    The simulation is advanced ``meas_steps`` sweeps, and every</span>
+<span class="sd">    ``sample_interval`` sweeps the lattice-axis pair correlation of the spin</span>
+<span class="sd">    field is accumulated after subtracting the configuration&#39;s mean spin.</span>
+<span class="sd">    The 1/e crossing of the averaged, normalised function is returned.</span>
+<span class="sd">    Subtracting the mean matters below the ordering temperature: the</span>
+<span class="sd">    disconnected function plateaus at m^2 and never falls below 1/e, so a</span>
+<span class="sd">    1/e criterion applied to it returns the largest distance available</span>
+<span class="sd">    instead of a correlation length.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    sim : _Sim</span>
+<span class="sd">        Equilibrated simulation; it is advanced in place.</span>
+<span class="sd">    meas_steps : int</span>
+<span class="sd">        Number of sweeps to run.</span>
+<span class="sd">    sample_interval : int</span>
+<span class="sd">        Sweeps between two samples.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    float</span>
+<span class="sd">        Connected correlation length in lattice units, or NaN if the averaged</span>
+<span class="sd">        function never drops below 1/e within half the lattice.</span>
+
+<span class="sd">    Raises</span>
+<span class="sd">    ------</span>
+<span class="sd">    ValueError</span>
+<span class="sd">        If no sample falls inside ``meas_steps``.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">sample_interval</span> <span class="o">&lt;</span> <span class="mi">1</span> <span class="ow">or</span> <span class="n">meas_steps</span> <span class="o">&lt;</span> <span class="n">sample_interval</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+            <span class="sa">f</span><span class="s1">&#39;meas_steps=</span><span class="si">{</span><span class="n">meas_steps</span><span class="si">}</span><span class="s1"> yields no sample at interval </span><span class="si">{</span><span class="n">sample_interval</span><span class="si">}</span><span class="s1">.&#39;</span>
+        <span class="p">)</span>
+    <span class="n">G_sum</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">r_vals</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">empty</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+    <span class="n">n_samples</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="k">for</span> <span class="n">step</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">meas_steps</span> <span class="o">+</span> <span class="mi">1</span><span class="p">):</span>
+        <span class="n">sim</span><span class="o">.</span><span class="n">step</span><span class="p">()</span>
+        <span class="k">if</span> <span class="n">step</span> <span class="o">%</span> <span class="n">sample_interval</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">field</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">sim</span><span class="o">.</span><span class="n">get_spin_field</span><span class="p">(),</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">float</span><span class="p">)</span>
+            <span class="n">mean</span> <span class="o">=</span> <span class="n">field</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">))</span>
+            <span class="n">r_vals</span><span class="p">,</span> <span class="n">G</span> <span class="o">=</span> <span class="n">pair_correlation_x</span><span class="p">(</span><span class="n">spins</span><span class="o">=</span><span class="n">field</span> <span class="o">-</span> <span class="n">mean</span><span class="p">)</span>
+            <span class="n">G_sum</span> <span class="o">=</span> <span class="n">G</span> <span class="k">if</span> <span class="n">G_sum</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">G_sum</span> <span class="o">+</span> <span class="n">G</span>
+            <span class="n">n_samples</span> <span class="o">+=</span> <span class="mi">1</span>
+    <span class="k">if</span> <span class="n">G_sum</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s1">&#39;No correlation sample was accumulated despite a valid interval.&#39;</span><span class="p">)</span>
+    <span class="n">G_avg</span> <span class="o">=</span> <span class="n">G_sum</span> <span class="o">/</span> <span class="n">n_samples</span>
+    <span class="k">if</span> <span class="n">G_avg</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="mf">0.0</span><span class="p">:</span>
+        <span class="k">return</span> <span class="nb">float</span><span class="p">(</span><span class="s1">&#39;nan&#39;</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">correlation_length_1e</span><span class="p">(</span><span class="n">r</span><span class="o">=</span><span class="n">r_vals</span><span class="p">,</span> <span class="n">G</span><span class="o">=</span><span class="n">G_avg</span> <span class="o">/</span> <span class="n">G_avg</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span></div>
+
+
+
 <div class="viewcode-block" id="compute_kinetics_metrics">
 <a class="viewcode-back" href="../../api/vibespin.utils.html#utils.observables.compute_kinetics_metrics">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">compute_kinetics_metrics</span><span class="p">(</span><span class="o">*</span><span class="p">,</span> <span class="n">sim</span><span class="p">:</span> <span class="n">_Sim</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">float</span><span class="p">]:</span>
@@ -783,7 +872,8 @@
         <span class="k">return</span> <span class="p">{</span><span class="s1">&#39;R_sk&#39;</span><span class="p">:</span> <span class="mf">0.0</span><span class="p">,</span> <span class="s1">&#39;xi&#39;</span><span class="p">:</span> <span class="mf">0.0</span><span class="p">}</span>
 
     <span class="c1"># 1. R_sk from structure factor first moment</span>
-    <span class="n">kvals</span><span class="p">,</span> <span class="n">S_radial</span> <span class="o">=</span> <span class="n">radial_average_sk</span><span class="p">(</span><span class="n">spins</span><span class="o">=</span><span class="n">sim</span><span class="o">.</span><span class="n">spins</span><span class="p">)</span>
+    <span class="n">spin_field</span> <span class="o">=</span> <span class="n">sim</span><span class="o">.</span><span class="n">get_spin_field</span><span class="p">()</span>
+    <span class="n">kvals</span><span class="p">,</span> <span class="n">S_radial</span> <span class="o">=</span> <span class="n">radial_average_sk</span><span class="p">(</span><span class="n">spins</span><span class="o">=</span><span class="n">spin_field</span><span class="p">)</span>
     <span class="n">S_k</span> <span class="o">=</span> <span class="n">S_radial</span><span class="p">[</span><span class="mi">1</span><span class="p">:]</span>
     <span class="n">K_k</span> <span class="o">=</span> <span class="n">kvals</span><span class="p">[</span><span class="mi">1</span><span class="p">:]</span>
     <span class="n">denom</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">K_k</span> <span class="o">*</span> <span class="n">S_k</span><span class="p">))</span>
@@ -791,7 +881,7 @@
 
     <span class="c1"># 2. xi from G(r) 1/e decay; no crossing means the correlation extends</span>
     <span class="c1"># beyond the accessible range, so fall back to the largest distance.</span>
-    <span class="n">r_vals</span><span class="p">,</span> <span class="n">G</span> <span class="o">=</span> <span class="n">pair_correlation_x</span><span class="p">(</span><span class="n">spins</span><span class="o">=</span><span class="n">sim</span><span class="o">.</span><span class="n">spins</span><span class="p">)</span>
+    <span class="n">r_vals</span><span class="p">,</span> <span class="n">G</span> <span class="o">=</span> <span class="n">pair_correlation_x</span><span class="p">(</span><span class="n">spins</span><span class="o">=</span><span class="n">spin_field</span><span class="p">)</span>
     <span class="n">xi</span> <span class="o">=</span> <span class="n">correlation_length_1e</span><span class="p">(</span><span class="n">r</span><span class="o">=</span><span class="n">r_vals</span><span class="p">,</span> <span class="n">G</span><span class="o">=</span><span class="n">G</span><span class="p">)</span>
     <span class="k">if</span> <span class="ow">not</span> <span class="n">np</span><span class="o">.</span><span class="n">isfinite</span><span class="p">(</span><span class="n">xi</span><span class="p">):</span>
         <span class="n">xi</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">r_vals</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">])</span>

@@ -143,8 +143,56 @@
 
 
 <span class="nd">@njit</span><span class="p">(</span><span class="n">cache</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">fastmath</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">_wrap_bond_angle_numba</span><span class="p">(</span><span class="n">delta</span><span class="p">:</span> <span class="nb">float</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Wrap a bond angle difference into the half-open interval (-pi, pi].</span>
+
+<span class="sd">    The tie at exactly antiparallel neighbours is resolved to ``+pi``. A</span>
+<span class="sd">    tolerance absorbs the rounding of ``arctan2`` on discrete clock angles, so</span>
+<span class="sd">    a difference of pi is never split between ``+pi`` and ``-pi`` at random.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    delta : float</span>
+<span class="sd">        Raw angle difference in radians.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    float</span>
+<span class="sd">        Wrapped difference in (-pi, pi].</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">wrapped</span> <span class="o">=</span> <span class="p">(</span><span class="n">delta</span> <span class="o">+</span> <span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="p">)</span> <span class="o">%</span> <span class="p">(</span><span class="mf">2.0</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="p">)</span> <span class="o">-</span> <span class="n">np</span><span class="o">.</span><span class="n">pi</span>
+    <span class="k">if</span> <span class="n">wrapped</span> <span class="o">&lt;=</span> <span class="o">-</span><span class="n">np</span><span class="o">.</span><span class="n">pi</span> <span class="o">+</span> <span class="mf">1e-9</span><span class="p">:</span>
+        <span class="n">wrapped</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">pi</span>
+    <span class="k">return</span> <span class="n">wrapped</span>
+
+
+<span class="nd">@njit</span><span class="p">(</span><span class="n">cache</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">fastmath</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 <span class="k">def</span><span class="w"> </span><span class="nf">_calculate_vorticity_angles_numba</span><span class="p">(</span><span class="n">angles</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">idx_next</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Fast kernel to calculate vorticity from a 2D array of angles.&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Calculate the winding number of every plaquette from a 2D array of angles.</span>
+
+<span class="sd">    Each bond difference is wrapped once in its canonical lattice direction</span>
+<span class="sd">    (+x or +y) and negated when the plaquette loop traverses the bond</span>
+<span class="sd">    backwards. This keeps the bond contribution exactly antisymmetric, so the</span>
+<span class="sd">    winding numbers of the two plaquettes sharing a bond cancel and the total</span>
+<span class="sd">    vorticity on the torus is zero. Wrapping the backward differences</span>
+<span class="sd">    independently breaks this for antiparallel neighbours, which occur</span>
+<span class="sd">    routinely in the discrete clock model with even q: both directions then</span>
+<span class="sd">    wrap to the same value and bias the vorticity towards one sign.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    angles : np.ndarray</span>
+<span class="sd">        (N, N) array of spin angles in radians.</span>
+<span class="sd">    idx_next : np.ndarray</span>
+<span class="sd">        Pre-calculated next-neighbor indices.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    np.ndarray</span>
+<span class="sd">        (N, N) array of winding numbers.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
     <span class="n">N</span> <span class="o">=</span> <span class="n">angles</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
     <span class="n">vorticity</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="n">N</span><span class="p">,</span> <span class="n">N</span><span class="p">))</span>
     <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">N</span><span class="p">):</span>
@@ -157,10 +205,12 @@
             <span class="n">t3</span> <span class="o">=</span> <span class="n">angles</span><span class="p">[</span><span class="n">inxt</span><span class="p">,</span> <span class="n">jnxt</span><span class="p">]</span>
             <span class="n">t4</span> <span class="o">=</span> <span class="n">angles</span><span class="p">[</span><span class="n">inxt</span><span class="p">,</span> <span class="n">j</span><span class="p">]</span>
 
-            <span class="n">d1</span> <span class="o">=</span> <span class="p">(</span><span class="n">t2</span> <span class="o">-</span> <span class="n">t1</span> <span class="o">+</span> <span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="p">)</span> <span class="o">%</span> <span class="p">(</span><span class="mi">2</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="p">)</span> <span class="o">-</span> <span class="n">np</span><span class="o">.</span><span class="n">pi</span>
-            <span class="n">d2</span> <span class="o">=</span> <span class="p">(</span><span class="n">t3</span> <span class="o">-</span> <span class="n">t2</span> <span class="o">+</span> <span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="p">)</span> <span class="o">%</span> <span class="p">(</span><span class="mi">2</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="p">)</span> <span class="o">-</span> <span class="n">np</span><span class="o">.</span><span class="n">pi</span>
-            <span class="n">d3</span> <span class="o">=</span> <span class="p">(</span><span class="n">t4</span> <span class="o">-</span> <span class="n">t3</span> <span class="o">+</span> <span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="p">)</span> <span class="o">%</span> <span class="p">(</span><span class="mi">2</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="p">)</span> <span class="o">-</span> <span class="n">np</span><span class="o">.</span><span class="n">pi</span>
-            <span class="n">d4</span> <span class="o">=</span> <span class="p">(</span><span class="n">t1</span> <span class="o">-</span> <span class="n">t4</span> <span class="o">+</span> <span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="p">)</span> <span class="o">%</span> <span class="p">(</span><span class="mi">2</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="p">)</span> <span class="o">-</span> <span class="n">np</span><span class="o">.</span><span class="n">pi</span>
+            <span class="c1"># Loop (i,j) -&gt; (i,j+1) -&gt; (i+1,j+1) -&gt; (i+1,j) -&gt; (i,j); the last</span>
+            <span class="c1"># two legs run against the canonical bond direction.</span>
+            <span class="n">d1</span> <span class="o">=</span> <span class="n">_wrap_bond_angle_numba</span><span class="p">(</span><span class="n">t2</span> <span class="o">-</span> <span class="n">t1</span><span class="p">)</span>
+            <span class="n">d2</span> <span class="o">=</span> <span class="n">_wrap_bond_angle_numba</span><span class="p">(</span><span class="n">t3</span> <span class="o">-</span> <span class="n">t2</span><span class="p">)</span>
+            <span class="n">d3</span> <span class="o">=</span> <span class="o">-</span><span class="n">_wrap_bond_angle_numba</span><span class="p">(</span><span class="n">t3</span> <span class="o">-</span> <span class="n">t4</span><span class="p">)</span>
+            <span class="n">d4</span> <span class="o">=</span> <span class="o">-</span><span class="n">_wrap_bond_angle_numba</span><span class="p">(</span><span class="n">t4</span> <span class="o">-</span> <span class="n">t1</span><span class="p">)</span>
 
             <span class="n">vorticity</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="n">j</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">round</span><span class="p">((</span><span class="n">d1</span> <span class="o">+</span> <span class="n">d2</span> <span class="o">+</span> <span class="n">d3</span> <span class="o">+</span> <span class="n">d4</span><span class="p">)</span> <span class="o">/</span> <span class="p">(</span><span class="mi">2</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="p">))</span>
     <span class="k">return</span> <span class="n">vorticity</span>
@@ -289,8 +339,8 @@
 <span class="sd">    this project shares this update unchanged.  Where the Hamiltonian adds a</span>
 <span class="sd">    single-site term that breaks the reflection symmetry, such as the</span>
 <span class="sd">    crystal-field anisotropy of the clock model, detailed balance then holds</span>
-<span class="sd">    for the exchange part alone, and ``ClockSimulation`` warns when it is asked</span>
-<span class="sd">    to combine this update with a non-zero anisotropy.</span>
+<span class="sd">    for the exchange part alone, so ``ClockSimulation`` rejects this update</span>
+<span class="sd">    when combined with a non-zero anisotropy.</span>
 
 <span class="sd">    One call constitutes one cluster sweep.  ``parallel=True`` is silently</span>
 <span class="sd">    ignored.</span>
@@ -538,6 +588,31 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">_nr_pre</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">bincount</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_r_int_pre</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_r_range_pre</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="n">center</span><span class="p">)</span>
 
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_validate_coupling</span><span class="p">(</span><span class="o">*</span><span class="p">,</span> <span class="n">J</span><span class="p">:</span> <span class="nb">float</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Reject couplings the kernels cannot sample correctly.</span>
+
+<span class="sd">        The Metropolis acceptance tables and the Wolff bond probability</span>
+<span class="sd">        ``1 - exp(-2 beta J ...)`` are derived for ferromagnetic exchange.</span>
+<span class="sd">        With ``J &lt; 0`` the precomputed Boltzmann factors exceed one and the</span>
+<span class="sd">        cluster bond probability turns negative, so the chains would no longer</span>
+<span class="sd">        satisfy detailed balance.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        J : float</span>
+<span class="sd">            Exchange coupling constant.</span>
+
+<span class="sd">        Raises</span>
+<span class="sd">        ------</span>
+<span class="sd">        ValueError</span>
+<span class="sd">            If ``J`` is negative or not finite.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">np</span><span class="o">.</span><span class="n">isfinite</span><span class="p">(</span><span class="n">J</span><span class="p">)</span> <span class="ow">or</span> <span class="n">J</span> <span class="o">&lt;</span> <span class="mf">0.0</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s1">&#39;J must be a finite, non-negative (ferromagnetic) coupling, got </span><span class="si">{</span><span class="n">J</span><span class="si">}</span><span class="s1">&#39;</span>
+            <span class="p">)</span>
+
     <span class="k">def</span><span class="w"> </span><span class="nf">_reseed_numba_for_step</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Reseed Numba&#39;s RNG deterministically for the upcoming sweep.</span>
 
@@ -606,6 +681,32 @@
 
         <span class="n">center</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">size</span> <span class="o">//</span> <span class="mi">2</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_r_range_pre</span><span class="p">,</span> <span class="n">radial_profile</span><span class="p">[:</span><span class="n">center</span><span class="p">]</span>
+
+<div class="viewcode-block" id="MonteCarloSimulation.get_spin_field">
+<a class="viewcode-back" href="../../api/vibespin.models.html#models.simulation_base.MonteCarloSimulation.get_spin_field">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_spin_field</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Return the spin configuration in its physical representation.</span>
+
+<span class="sd">        Scalar models return the ``(L, L)`` array of spins; vector models</span>
+<span class="sd">        return ``(L, L, 2)`` unit vectors. Models that store an internal</span>
+<span class="sd">        encoding (the discrete clock model keeps integer state indices)</span>
+<span class="sd">        override this method, so analysis helpers never misread state</span>
+<span class="sd">        indices as scalar spin values.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        np.ndarray</span>
+<span class="sd">            Spin field suitable for structure-factor and correlation analysis.</span>
+
+<span class="sd">        Raises</span>
+<span class="sd">        ------</span>
+<span class="sd">        RuntimeError</span>
+<span class="sd">            If the lattice has not been initialised.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">spins</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s1">&#39;Simulation lattice is uninitialized (spins is None).&#39;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">spins</span></div>
+
 
 <div class="viewcode-block" id="MonteCarloSimulation.get_magnetization">
 <a class="viewcode-back" href="../../api/vibespin.models.html#models.simulation_base.MonteCarloSimulation.get_magnetization">[docs]</a>

@@ -98,7 +98,8 @@
 <span class="sd">Analyzes correlation behavior in ordered, quasi-ordered, and disordered phases.</span>
 
 <span class="sd">The q=6 clock model has two Kosterlitz-Thouless transitions at T1 ≈ 0.68</span>
-<span class="sd">and T2 ≈ 0.92 (José et al. 1977), yielding three distinct correlation regimes:</span>
+<span class="sd">and T2 ≈ 0.92 (Challa and Landau 1986; Tomita and Okabe 2002 obtain 0.7014</span>
+<span class="sd">and 0.9008), yielding three distinct correlation regimes:</span>
 <span class="sd">long-range order below T1, algebraic (quasi-long-range) order between T1 and T2,</span>
 <span class="sd">and exponential decay above T2.</span>
 <span class="sd">&quot;&quot;&quot;</span>
@@ -111,7 +112,7 @@
 <span class="kn">import</span><span class="w"> </span><span class="nn">matplotlib.pyplot</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">plt</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
 
-<span class="kn">from</span><span class="w"> </span><span class="nn">models.clock_model</span><span class="w"> </span><span class="kn">import</span> <span class="n">ClockSimulation</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">scripts.clock._model_choice</span><span class="w"> </span><span class="kn">import</span> <span class="n">add_clock_model_arguments</span><span class="p">,</span> <span class="n">resolve_clock_model</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">utils.observables</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
     <span class="n">CorrelationPoint</span><span class="p">,</span>
     <span class="n">fit_correlation_exponent</span><span class="p">,</span>
@@ -121,9 +122,15 @@
 <span class="kn">from</span><span class="w"> </span><span class="nn">utils.plotting</span><span class="w"> </span><span class="kn">import</span> <span class="n">ensure_results_dir</span><span class="p">,</span> <span class="n">save_plot</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">utils.system</span><span class="w"> </span><span class="kn">import</span> <span class="n">parallel_sweep</span><span class="p">,</span> <span class="n">parse_args_compat</span><span class="p">,</span> <span class="n">setup_logging</span>
 
-<span class="c1"># Approximate KT transition temperatures for q=6 (José et al. 1977).</span>
+<span class="c1"># Approximate transition temperatures of the discrete q=6 clock model</span>
+<span class="c1"># (Challa and Landau 1986, as quoted by Tomita and Okabe 2002).</span>
 <span class="n">T1_CLOCK6</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.68</span>
 <span class="n">T2_CLOCK6</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.92</span>
+
+<span class="c1"># Anisotropy of the continuous model when --continuous is given without</span>
+<span class="c1"># --aniso; it matches the ClockSimulation constructor default used before the</span>
+<span class="c1"># discrete model became the default.</span>
+<span class="n">_DEFAULT_CONTINUOUS_ANISO</span> <span class="o">=</span> <span class="mf">1.0</span>
 
 
 <div class="viewcode-block" id="main">
@@ -135,6 +142,7 @@
     <span class="p">)</span>
     <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;--size&#39;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">int</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="mi">128</span><span class="p">,</span> <span class="n">help</span><span class="o">=</span><span class="s1">&#39;Linear lattice size L&#39;</span><span class="p">)</span>
     <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;--q&#39;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">int</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="mi">6</span><span class="p">,</span> <span class="n">help</span><span class="o">=</span><span class="s1">&#39;Number of clock states&#39;</span><span class="p">)</span>
+    <span class="n">add_clock_model_arguments</span><span class="p">(</span><span class="n">parser</span><span class="o">=</span><span class="n">parser</span><span class="p">,</span> <span class="n">default_aniso</span><span class="o">=</span><span class="n">_DEFAULT_CONTINUOUS_ANISO</span><span class="p">)</span>
     <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;--steps&#39;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">int</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="mi">4000</span><span class="p">,</span> <span class="n">help</span><span class="o">=</span><span class="s1">&#39;Measurement steps&#39;</span><span class="p">)</span>
     <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;--eq-probe&#39;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">int</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="mi">200</span><span class="p">,</span> <span class="n">help</span><span class="o">=</span><span class="s1">&#39;Convergence probe chunk size&#39;</span><span class="p">)</span>
     <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;--eq-max&#39;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">int</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="mi">50000</span><span class="p">,</span> <span class="n">help</span><span class="o">=</span><span class="s1">&#39;Max equilibration steps&#39;</span><span class="p">)</span>
@@ -143,35 +151,74 @@
         <span class="s1">&#39;--seed&#39;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">int</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="mi">520</span><span class="p">,</span>
         <span class="n">help</span><span class="o">=</span><span class="s1">&#39;Random seed shared by all three temperature points&#39;</span><span class="p">,</span>
     <span class="p">)</span>
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span>
+        <span class="s1">&#39;--t-ordered&#39;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">float</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+        <span class="n">help</span><span class="o">=</span><span class="s1">&#39;Temperature below T1 (default 0.5, discrete q=6 only)&#39;</span><span class="p">,</span>
+    <span class="p">)</span>
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span>
+        <span class="s1">&#39;--t-quasi&#39;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">float</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+        <span class="n">help</span><span class="o">=</span><span class="s1">&#39;Temperature between T1 and T2 (default 0.8, discrete q=6 only)&#39;</span><span class="p">,</span>
+    <span class="p">)</span>
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span>
+        <span class="s1">&#39;--t-disordered&#39;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">float</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+        <span class="n">help</span><span class="o">=</span><span class="s1">&#39;Temperature above T2 (default 1.2, discrete q=6 only)&#39;</span><span class="p">,</span>
+    <span class="p">)</span>
     <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;--output-dir&#39;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">str</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="s1">&#39;results/clock&#39;</span><span class="p">,</span> <span class="n">help</span><span class="o">=</span><span class="s1">&#39;Output directory&#39;</span><span class="p">)</span>
     <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;--log-file&#39;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">str</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">help</span><span class="o">=</span><span class="s1">&#39;Optional log file path&#39;</span><span class="p">)</span>
     <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;--verbose&#39;</span><span class="p">,</span> <span class="n">action</span><span class="o">=</span><span class="s1">&#39;store_true&#39;</span><span class="p">,</span> <span class="n">help</span><span class="o">=</span><span class="s1">&#39;Enable verbose logging&#39;</span><span class="p">)</span>
 
     <span class="n">args</span> <span class="o">=</span> <span class="n">parse_args_compat</span><span class="p">(</span><span class="n">parser</span><span class="o">=</span><span class="n">parser</span><span class="p">)</span>
+    <span class="n">choice</span> <span class="o">=</span> <span class="n">resolve_clock_model</span><span class="p">(</span>
+        <span class="n">parser</span><span class="o">=</span><span class="n">parser</span><span class="p">,</span> <span class="n">args</span><span class="o">=</span><span class="n">args</span><span class="p">,</span> <span class="n">default_aniso</span><span class="o">=</span><span class="n">_DEFAULT_CONTINUOUS_ANISO</span><span class="p">,</span>
+    <span class="p">)</span>
+
+    <span class="c1"># Only q &gt;= 5 has the intermediate algebraic phase this comparison fits.</span>
+    <span class="k">if</span> <span class="n">args</span><span class="o">.</span><span class="n">q</span> <span class="o">&lt;</span> <span class="mi">5</span><span class="p">:</span>
+        <span class="n">parser</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;--q </span><span class="si">{</span><span class="n">args</span><span class="o">.</span><span class="n">q</span><span class="si">}</span><span class="s1"> has no quasi-ordered phase; use q &gt;= 5&#39;</span><span class="p">)</span>
+    <span class="c1"># The default temperatures bracket the transitions of the discrete q=6</span>
+    <span class="c1"># model only. T1 and T2 shift with q and, for the continuous model, with A,</span>
+    <span class="c1"># so other choices must name all three temperatures.</span>
+    <span class="n">default_model</span> <span class="o">=</span> <span class="n">choice</span><span class="o">.</span><span class="n">is_discrete</span> <span class="ow">and</span> <span class="n">args</span><span class="o">.</span><span class="n">q</span> <span class="o">==</span> <span class="mi">6</span>
+    <span class="n">phase_temps</span> <span class="o">=</span> <span class="p">(</span><span class="n">args</span><span class="o">.</span><span class="n">t_ordered</span><span class="p">,</span> <span class="n">args</span><span class="o">.</span><span class="n">t_quasi</span><span class="p">,</span> <span class="n">args</span><span class="o">.</span><span class="n">t_disordered</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">default_model</span><span class="p">:</span>
+        <span class="n">T_ORDERED</span><span class="p">,</span> <span class="n">T_QUASI</span><span class="p">,</span> <span class="n">T_DISORDERED</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="n">default</span> <span class="k">if</span> <span class="n">given</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="nb">float</span><span class="p">(</span><span class="n">given</span><span class="p">)</span>
+            <span class="k">for</span> <span class="n">given</span><span class="p">,</span> <span class="n">default</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">phase_temps</span><span class="p">,</span> <span class="p">(</span><span class="mf">0.5</span><span class="p">,</span> <span class="mf">0.8</span><span class="p">,</span> <span class="mf">1.2</span><span class="p">),</span> <span class="n">strict</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        <span class="p">)</span>
+    <span class="k">elif</span> <span class="nb">any</span><span class="p">(</span><span class="n">T</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">for</span> <span class="n">T</span> <span class="ow">in</span> <span class="n">phase_temps</span><span class="p">):</span>
+        <span class="n">parser</span><span class="o">.</span><span class="n">error</span><span class="p">(</span>
+            <span class="s1">&#39;The default temperatures apply to the discrete q=6 model only; &#39;</span>
+            <span class="s1">&#39;give --t-ordered, --t-quasi, and --t-disordered for this model&#39;</span>
+        <span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">T_ORDERED</span><span class="p">,</span> <span class="n">T_QUASI</span><span class="p">,</span> <span class="n">T_DISORDERED</span> <span class="o">=</span> <span class="p">(</span><span class="nb">float</span><span class="p">(</span><span class="n">T</span><span class="p">)</span> <span class="k">for</span> <span class="n">T</span> <span class="ow">in</span> <span class="n">phase_temps</span><span class="p">)</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">T_ORDERED</span> <span class="o">&lt;</span> <span class="n">T_QUASI</span> <span class="o">&lt;</span> <span class="n">T_DISORDERED</span><span class="p">:</span>
+        <span class="n">parser</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="s1">&#39;Temperatures must satisfy t-ordered &lt; t-quasi &lt; t-disordered&#39;</span><span class="p">)</span>
 
     <span class="n">log_level</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">DEBUG</span> <span class="k">if</span> <span class="n">args</span><span class="o">.</span><span class="n">verbose</span> <span class="k">else</span> <span class="n">logging</span><span class="o">.</span><span class="n">INFO</span>
     <span class="n">logger</span> <span class="o">=</span> <span class="n">setup_logging</span><span class="p">(</span><span class="n">level</span><span class="o">=</span><span class="n">log_level</span><span class="p">,</span> <span class="n">log_file</span><span class="o">=</span><span class="n">args</span><span class="o">.</span><span class="n">log_file</span><span class="p">)</span>
 
-    <span class="c1"># Three representative temperatures spanning the three phases.</span>
-    <span class="n">T_ORDERED</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.5</span>   <span class="c1"># T &lt; T1  (long-range order)</span>
-    <span class="n">T_QUASI</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.8</span>     <span class="c1"># T1 &lt; T &lt; T2  (algebraic quasi-order)</span>
-    <span class="n">T_DISORDERED</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">1.2</span>  <span class="c1"># T &gt; T2  (exponential decay)</span>
-
     <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
         <span class="sa">f</span><span class="s1">&#39;Starting clock correlation comparison &#39;</span>
-        <span class="sa">f</span><span class="s1">&#39;(q=</span><span class="si">{</span><span class="n">args</span><span class="o">.</span><span class="n">q</span><span class="si">}</span><span class="s1">, L=</span><span class="si">{</span><span class="n">args</span><span class="o">.</span><span class="n">size</span><span class="si">}</span><span class="s1">, steps=</span><span class="si">{</span><span class="n">args</span><span class="o">.</span><span class="n">steps</span><span class="si">}</span><span class="s1">)&#39;</span>
+        <span class="sa">f</span><span class="s1">&#39;(q=</span><span class="si">{</span><span class="n">args</span><span class="o">.</span><span class="n">q</span><span class="si">}</span><span class="s1">, </span><span class="si">{</span><span class="n">choice</span><span class="o">.</span><span class="n">variant</span><span class="si">}</span><span class="s1">, L=</span><span class="si">{</span><span class="n">args</span><span class="o">.</span><span class="n">size</span><span class="si">}</span><span class="s1">, steps=</span><span class="si">{</span><span class="n">args</span><span class="o">.</span><span class="n">steps</span><span class="si">}</span><span class="s1">)&#39;</span>
     <span class="p">)</span>
     <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
         <span class="sa">f</span><span class="s1">&#39;Temperatures: ordered=</span><span class="si">{</span><span class="n">T_ORDERED</span><span class="si">}</span><span class="s1">, quasi=</span><span class="si">{</span><span class="n">T_QUASI</span><span class="si">}</span><span class="s1">, disordered=</span><span class="si">{</span><span class="n">T_DISORDERED</span><span class="si">}</span><span class="s1">&#39;</span>
     <span class="p">)</span>
 
     <span class="n">common</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span>
-        <span class="n">model_cls</span><span class="o">=</span><span class="n">ClockSimulation</span><span class="p">,</span> <span class="n">model_kwargs</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;q&#39;</span><span class="p">:</span> <span class="n">args</span><span class="o">.</span><span class="n">q</span><span class="p">},</span> <span class="n">size</span><span class="o">=</span><span class="n">args</span><span class="o">.</span><span class="n">size</span><span class="p">,</span>
+        <span class="n">model_cls</span><span class="o">=</span><span class="n">choice</span><span class="o">.</span><span class="n">model_cls</span><span class="p">,</span> <span class="n">model_kwargs</span><span class="o">=</span><span class="n">choice</span><span class="o">.</span><span class="n">model_kwargs</span><span class="p">,</span> <span class="n">size</span><span class="o">=</span><span class="n">args</span><span class="o">.</span><span class="n">size</span><span class="p">,</span>
         <span class="n">seed</span><span class="o">=</span><span class="n">args</span><span class="o">.</span><span class="n">seed</span><span class="p">,</span> <span class="n">eq_probe</span><span class="o">=</span><span class="n">args</span><span class="o">.</span><span class="n">eq_probe</span><span class="p">,</span> <span class="n">eq_max</span><span class="o">=</span><span class="n">args</span><span class="o">.</span><span class="n">eq_max</span><span class="p">,</span>
         <span class="n">meas_steps</span><span class="o">=</span><span class="n">args</span><span class="o">.</span><span class="n">steps</span><span class="p">,</span> <span class="n">interval</span><span class="o">=</span><span class="n">args</span><span class="o">.</span><span class="n">interval</span><span class="p">,</span>
     <span class="p">)</span>
     <span class="n">points</span> <span class="o">=</span> <span class="p">[</span>
-        <span class="n">CorrelationPoint</span><span class="p">(</span><span class="n">label</span><span class="o">=</span><span class="n">label</span><span class="p">,</span> <span class="n">temperature</span><span class="o">=</span><span class="n">T</span><span class="p">,</span> <span class="o">**</span><span class="n">common</span><span class="p">)</span>
+        <span class="c1"># Below T1 a discrete random start can freeze into a domain state;</span>
+        <span class="c1"># stuck detection then ends the run and the ordered start is measured.</span>
+        <span class="c1"># The continuous model has no such accepted stuck state.</span>
+        <span class="n">CorrelationPoint</span><span class="p">(</span>
+            <span class="n">label</span><span class="o">=</span><span class="n">label</span><span class="p">,</span> <span class="n">temperature</span><span class="o">=</span><span class="n">T</span><span class="p">,</span>
+            <span class="n">detect_stuck</span><span class="o">=</span><span class="n">choice</span><span class="o">.</span><span class="n">is_discrete</span> <span class="ow">and</span> <span class="n">label</span> <span class="o">==</span> <span class="s1">&#39;ordered&#39;</span><span class="p">,</span> <span class="o">**</span><span class="n">common</span><span class="p">,</span>
+        <span class="p">)</span>
         <span class="k">for</span> <span class="n">label</span><span class="p">,</span> <span class="n">T</span> <span class="ow">in</span> <span class="p">(</span>
             <span class="p">(</span><span class="s1">&#39;ordered&#39;</span><span class="p">,</span> <span class="n">T_ORDERED</span><span class="p">),</span> <span class="p">(</span><span class="s1">&#39;quasi&#39;</span><span class="p">,</span> <span class="n">T_QUASI</span><span class="p">),</span> <span class="p">(</span><span class="s1">&#39;disordered&#39;</span><span class="p">,</span> <span class="n">T_DISORDERED</span><span class="p">),</span>
         <span class="p">)</span>
@@ -231,7 +278,10 @@
     <span class="n">ax2</span><span class="o">.</span><span class="n">legend</span><span class="p">()</span>
     <span class="n">ax2</span><span class="o">.</span><span class="n">grid</span><span class="p">(</span><span class="kc">True</span><span class="p">,</span> <span class="n">which</span><span class="o">=</span><span class="s1">&#39;both&#39;</span><span class="p">,</span> <span class="n">ls</span><span class="o">=</span><span class="s1">&#39;-&#39;</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.5</span><span class="p">)</span>
 
-    <span class="n">fig</span><span class="o">.</span><span class="n">suptitle</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">args</span><span class="o">.</span><span class="n">q</span><span class="si">}</span><span class="s1">-state Clock Model: Correlation Comparison (L=</span><span class="si">{</span><span class="n">args</span><span class="o">.</span><span class="n">size</span><span class="si">}</span><span class="s1">)&#39;</span><span class="p">)</span>
+    <span class="n">fig</span><span class="o">.</span><span class="n">suptitle</span><span class="p">(</span>
+        <span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">args</span><span class="o">.</span><span class="n">q</span><span class="si">}</span><span class="s1">-state Clock Model (</span><span class="si">{</span><span class="n">choice</span><span class="o">.</span><span class="n">variant</span><span class="si">}</span><span class="s1">): &#39;</span>
+        <span class="sa">f</span><span class="s1">&#39;Correlation Comparison (L=</span><span class="si">{</span><span class="n">args</span><span class="o">.</span><span class="n">size</span><span class="si">}</span><span class="s1">)&#39;</span>
+    <span class="p">)</span>
 
     <span class="n">output_dir</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">ensure_results_dir</span><span class="p">(</span><span class="n">directory</span><span class="o">=</span><span class="n">args</span><span class="o">.</span><span class="n">output_dir</span><span class="p">)</span>
     <span class="n">save_plot</span><span class="p">(</span><span class="n">filename</span><span class="o">=</span><span class="s1">&#39;correlation_comparison.png&#39;</span><span class="p">,</span> <span class="n">directory</span><span class="o">=</span><span class="n">output_dir</span><span class="p">)</span>
@@ -247,10 +297,13 @@
         <span class="n">T_ordered</span><span class="o">=</span><span class="n">T_ORDERED</span><span class="p">,</span>
         <span class="n">T_quasi</span><span class="o">=</span><span class="n">T_QUASI</span><span class="p">,</span>
         <span class="n">T_disordered</span><span class="o">=</span><span class="n">T_DISORDERED</span><span class="p">,</span>
-        <span class="n">T1</span><span class="o">=</span><span class="n">T1_CLOCK6</span><span class="p">,</span>
-        <span class="n">T2</span><span class="o">=</span><span class="n">T2_CLOCK6</span><span class="p">,</span>
+        <span class="c1"># The reference transition temperatures belong to the discrete q=6</span>
+        <span class="c1"># model and are NaN for any other choice.</span>
+        <span class="n">T1</span><span class="o">=</span><span class="n">T1_CLOCK6</span> <span class="k">if</span> <span class="n">default_model</span> <span class="k">else</span> <span class="n">np</span><span class="o">.</span><span class="n">nan</span><span class="p">,</span>
+        <span class="n">T2</span><span class="o">=</span><span class="n">T2_CLOCK6</span> <span class="k">if</span> <span class="n">default_model</span> <span class="k">else</span> <span class="n">np</span><span class="o">.</span><span class="n">nan</span><span class="p">,</span>
         <span class="n">L</span><span class="o">=</span><span class="n">args</span><span class="o">.</span><span class="n">size</span><span class="p">,</span>
         <span class="n">q</span><span class="o">=</span><span class="n">args</span><span class="o">.</span><span class="n">q</span><span class="p">,</span>
+        <span class="n">model_variant</span><span class="o">=</span><span class="n">choice</span><span class="o">.</span><span class="n">variant</span><span class="p">,</span>
         <span class="n">steps</span><span class="o">=</span><span class="n">args</span><span class="o">.</span><span class="n">steps</span><span class="p">,</span>
         <span class="n">eq_probe</span><span class="o">=</span><span class="n">args</span><span class="o">.</span><span class="n">eq_probe</span><span class="p">,</span>
         <span class="n">eq_max</span><span class="o">=</span><span class="n">args</span><span class="o">.</span><span class="n">eq_max</span><span class="p">,</span>

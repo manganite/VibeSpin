@@ -113,9 +113,9 @@
   <section id="XY-Model:-Temperature-Sweep-and-BKT-Crossover">
 <h1>XY Model: Temperature Sweep and BKT Crossover<a class="headerlink" href="#XY-Model:-Temperature-Sweep-and-BKT-Crossover" title="Link to this heading"></a></h1>
 <p>The two-dimensional XY model places a continuous planar spin <span class="math notranslate nohighlight">\(\vec{s}_i = (\cos\theta_i, \sin\theta_i)\)</span> on every site of a square lattice, coupled through <span class="math notranslate nohighlight">\(H = -J \sum_{\langle i,j \rangle} \cos(\theta_i - \theta_j)\)</span>. Unlike the Ising model, the continuous symmetry forbids spontaneous symmetry breaking at any finite temperature (Mermin-Wagner theorem), so there is no conventional ordered phase with a nonzero magnetization <a class="reference internal" href="#Bibliography"><span class="std std-ref">[1]</span></a>. Instead, the system undergoes a
-Berezinskii-Kosterlitz-Thouless (BKT) transition at <span class="math notranslate nohighlight">\(T_{\mathrm{BKT}} \approx 0.893\)</span> between a low-temperature phase with bound vortex-antivortex pairs and algebraically decaying correlations and a high-temperature disordered phase with exponential correlation decay and free vortices <a class="reference internal" href="#Bibliography"><span class="std std-ref">[2]</span></a> <a class="reference internal" href="#Bibliography"><span class="std std-ref">[3]</span></a>.</p>
-<p>This notebook runs a thermodynamic temperature sweep through the BKT crossover region and records the same set of observables used in the Ising sweep: magnetization, energy, susceptibility, specific heat, entropy, and integrated autocorrelation time. The BKT transition is not a standard second-order transition, so the thermodynamic signatures are broader and less singular than those of the Ising model. The susceptibility and specific heat show rounded humps rather than sharp divergences, and the
-entropy curve changes slope gently across a wider temperature interval <a class="reference internal" href="#Bibliography"><span class="std std-ref">[3]</span></a>.</p>
+Berezinskii-Kosterlitz-Thouless (BKT) transition at <span class="math notranslate nohighlight">\(T_{\mathrm{BKT}} \approx 0.893\)</span> between a low-temperature phase with bound vortex-antivortex pairs and algebraically decaying correlations and a high-temperature disordered phase with exponential correlation decay and free vortices <a class="reference internal" href="#Bibliography"><span class="std std-ref">[2]</span></a> <a class="reference internal" href="#Bibliography"><span class="std std-ref">[3]</span></a> <a class="reference internal" href="#Bibliography"><span class="std std-ref">[6]</span></a>.</p>
+<p>This notebook runs a thermodynamic temperature sweep through the BKT region and records the same set of observables used in the Ising sweep: magnetization, energy, susceptibility, specific heat, entropy, and integrated autocorrelation time. The BKT transition is of infinite order. The free energy has only an essential singularity at <span class="math notranslate nohighlight">\(T_{\mathrm{BKT}}\)</span>, so the specific heat shows a smooth maximum above the transition rather than a divergence. The susceptibility, in contrast, is infinite
+throughout the low-temperature phase in the thermodynamic limit, and on a finite lattice it grows as <span class="math notranslate nohighlight">\(L^{2-\eta}\)</span> <a class="reference internal" href="#Bibliography"><span class="std std-ref">[3]</span></a>. On the small lattices used here every one of these features is strongly shifted and rounded by finite size. The stored outputs come from the inline fallback (one seed, <span class="math notranslate nohighlight">\(L = 32\)</span>), so the numbers quoted below describe that run.</p>
 <div class="nbinput docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[1]:
 </pre></div>
@@ -126,34 +126,26 @@ entropy curve changes slope gently across a wider temperature interval <a class=
 
 <span class="kn">import</span><span class="w"> </span><span class="nn">matplotlib.pyplot</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">plt</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">scipy.stats</span><span class="w"> </span><span class="kn">import</span> <span class="n">norm</span>
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">models.xy_model</span><span class="w"> </span><span class="kn">import</span> <span class="n">XYSimulation</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">utils.equilibration</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
     <span class="n">_detect_quasi_steady_stuck</span><span class="p">,</span>
-    <span class="n">convergence_equilibrate</span><span class="p">,</span>
     <span class="n">estimate_relaxation_time_two_start</span><span class="p">,</span>
+    <span class="n">ordered_start_seed</span><span class="p">,</span>
+    <span class="n">prepare_equilibrated_simulation</span><span class="p">,</span>
 <span class="p">)</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">utils.exceptions</span><span class="w"> </span><span class="kn">import</span> <span class="n">ZeroVarianceAutocorrelationError</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">utils.statistics</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
     <span class="n">DEFAULT_CONFIDENCE_LEVEL</span><span class="p">,</span>
     <span class="n">calculate_autocorr</span><span class="p">,</span>
-    <span class="n">summarize_derived_observable</span><span class="p">,</span>
     <span class="n">summarize_entropy_observable</span><span class="p">,</span>
-    <span class="n">summarize_primary_observable</span><span class="p">,</span>
 <span class="p">)</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">utils.sweep_helpers</span><span class="w"> </span><span class="kn">import</span> <span class="n">ThermoPoint</span><span class="p">,</span> <span class="n">simulate_thermo_point</span>
 
-
-<span class="k">def</span><span class="w"> </span><span class="nf">_find_repo_root</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="n">Path</span><span class="p">:</span>
-    <span class="n">cwd</span> <span class="o">=</span> <span class="n">Path</span><span class="o">.</span><span class="n">cwd</span><span class="p">()</span><span class="o">.</span><span class="n">resolve</span><span class="p">()</span>
-    <span class="k">for</span> <span class="n">candidate</span> <span class="ow">in</span> <span class="p">(</span><span class="n">cwd</span><span class="p">,</span> <span class="o">*</span><span class="n">cwd</span><span class="o">.</span><span class="n">parents</span><span class="p">):</span>
-        <span class="k">if</span> <span class="p">(</span><span class="n">candidate</span> <span class="o">/</span> <span class="s1">&#39;pyproject.toml&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">exists</span><span class="p">()</span> <span class="ow">and</span> <span class="p">(</span><span class="n">candidate</span> <span class="o">/</span> <span class="s1">&#39;results&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">exists</span><span class="p">():</span>
-            <span class="k">return</span> <span class="n">candidate</span>
-    <span class="k">return</span> <span class="n">cwd</span>
-
-
-<span class="n">REPO_ROOT</span> <span class="o">=</span> <span class="n">_find_repo_root</span><span class="p">()</span>
 <span class="n">T_BKT</span> <span class="o">=</span> <span class="mf">0.893</span>
-<span class="n">CACHE_PATH</span> <span class="o">=</span> <span class="n">REPO_ROOT</span> <span class="o">/</span> <span class="s1">&#39;results&#39;</span> <span class="o">/</span> <span class="s1">&#39;xy&#39;</span> <span class="o">/</span> <span class="s1">&#39;temperature_sweep_data.npz&#39;</span>
+<span class="c1"># Data paths are relative to notebooks/, the directory the notebook runs from.</span>
+<span class="n">CACHE_PATH</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="s1">&#39;../results/xy/temperature_sweep_data.npz&#39;</span><span class="p">)</span>
 <span class="n">PALETTE</span> <span class="o">=</span> <span class="p">{</span>
     <span class="s1">&#39;mag&#39;</span><span class="p">:</span> <span class="s1">&#39;#4878CF&#39;</span><span class="p">,</span>
     <span class="s1">&#39;eng&#39;</span><span class="p">:</span> <span class="s1">&#39;#6ACC65&#39;</span><span class="p">,</span>
@@ -166,7 +158,7 @@ entropy curve changes slope gently across a wider temperature interval <a class=
 <span class="n">plt</span><span class="o">.</span><span class="n">rcParams</span><span class="p">[</span><span class="s1">&#39;figure.dpi&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="mi">120</span>
 
 <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;T_BKT (theoretical) = </span><span class="si">{</span><span class="n">T_BKT</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
-<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Primary sweep path: </span><span class="si">{</span><span class="n">CACHE_PATH</span><span class="o">.</span><span class="n">relative_to</span><span class="p">(</span><span class="n">REPO_ROOT</span><span class="p">)</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Primary sweep path: </span><span class="si">{</span><span class="n">CACHE_PATH</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
 </pre></div>
 </div>
 </div>
@@ -176,38 +168,24 @@ entropy curve changes slope gently across a wider temperature interval <a class=
 <div class="output_area docutils container">
 <div class="highlight"><pre>
 T_BKT (theoretical) = 0.893
-Primary sweep path: results/xy/temperature_sweep_data.npz
+Primary sweep path: ../results/xy/temperature_sweep_data.npz
 </pre></div></div>
 </div>
 <section id="Ordered-and-Disordered-Configurations">
 <h2>Ordered and Disordered Configurations<a class="headerlink" href="#Ordered-and-Disordered-Configurations" title="Link to this heading"></a></h2>
-<p>The XY model’s phases look quite different from the Ising case. Below <span class="math notranslate nohighlight">\(T_{\mathrm{BKT}}\)</span> the spins form large coherent patches with slowly varying orientation, while above the transition the angle field becomes uncorrelated over short distances. The snapshots below show the local spin angle <span class="math notranslate nohighlight">\(\theta_i\)</span> after equilibration with checkerboard Metropolis updates on a <span class="math notranslate nohighlight">\(48 \times 48\)</span> lattice.</p>
+<p>The XY model’s phases look quite different from the Ising case. The snapshots below show the local spin angle <span class="math notranslate nohighlight">\(\theta_i\)</span> on a cyclic colour scale after equilibration with checkerboard Metropolis updates on a <span class="math notranslate nohighlight">\(48 \times 48\)</span> lattice. At <span class="math notranslate nohighlight">\(T = 0.5\,T_{\mathrm{BKT}} \approx 0.45\)</span> the angle varies slowly across the lattice: most sites lie within a limited range of hues around one direction, modulated by smooth long-wavelength spin waves. At
+<span class="math notranslate nohighlight">\(T = 1.5\,T_{\mathrm{BKT}} \approx 1.34\)</span> the angle field is correlated only over a few lattice spacings, and all orientations appear in small patches.</p>
 <div class="nbinput docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[2]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">_equilibrated_state</span><span class="p">(</span><span class="o">*</span><span class="p">,</span> <span class="n">temp</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">size</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">48</span><span class="p">,</span> <span class="n">seed</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">0</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
-    <span class="n">sim_random</span> <span class="o">=</span> <span class="n">XYSimulation</span><span class="p">(</span>
-        <span class="n">size</span><span class="o">=</span><span class="n">size</span><span class="p">,</span>
-        <span class="n">temp</span><span class="o">=</span><span class="n">temp</span><span class="p">,</span>
-        <span class="n">update</span><span class="o">=</span><span class="s1">&#39;checkerboard&#39;</span><span class="p">,</span>
-        <span class="n">init_state</span><span class="o">=</span><span class="s1">&#39;random&#39;</span><span class="p">,</span>
-        <span class="n">seed</span><span class="o">=</span><span class="n">seed</span><span class="p">,</span>
+    <span class="n">sim</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">prepare_equilibrated_simulation</span><span class="p">(</span>
+        <span class="n">model_cls</span><span class="o">=</span><span class="n">XYSimulation</span><span class="p">,</span> <span class="n">model_kwargs</span><span class="o">=</span><span class="p">{},</span> <span class="n">size</span><span class="o">=</span><span class="n">size</span><span class="p">,</span> <span class="n">temp</span><span class="o">=</span><span class="n">temp</span><span class="p">,</span>
+        <span class="n">seed</span><span class="o">=</span><span class="n">seed</span><span class="p">,</span> <span class="n">chunk_size</span><span class="o">=</span><span class="mi">120</span><span class="p">,</span> <span class="n">max_steps</span><span class="o">=</span><span class="mi">6000</span><span class="p">,</span> <span class="n">detect_stuck</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
     <span class="p">)</span>
-    <span class="n">sim_ordered</span> <span class="o">=</span> <span class="n">XYSimulation</span><span class="p">(</span>
-        <span class="n">size</span><span class="o">=</span><span class="n">size</span><span class="p">,</span>
-        <span class="n">temp</span><span class="o">=</span><span class="n">temp</span><span class="p">,</span>
-        <span class="n">update</span><span class="o">=</span><span class="s1">&#39;checkerboard&#39;</span><span class="p">,</span>
-        <span class="n">init_state</span><span class="o">=</span><span class="s1">&#39;ordered&#39;</span><span class="p">,</span>
-        <span class="n">seed</span><span class="o">=</span><span class="n">seed</span><span class="p">,</span>
-    <span class="p">)</span>
-    <span class="n">convergence_equilibrate</span><span class="p">(</span>
-        <span class="n">sim_random</span><span class="o">=</span><span class="n">sim_random</span><span class="p">,</span>
-        <span class="n">sim_ordered</span><span class="o">=</span><span class="n">sim_ordered</span><span class="p">,</span>
-        <span class="n">chunk_size</span><span class="o">=</span><span class="mi">120</span><span class="p">,</span>
-        <span class="n">max_steps</span><span class="o">=</span><span class="mi">6000</span><span class="p">)</span>
-    <span class="n">sim_random</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="n">n_steps</span><span class="o">=</span><span class="mi">200</span><span class="p">)</span>
-    <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">sim_random</span><span class="o">.</span><span class="n">spins</span><span class="p">,</span> <span class="n">copy</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="n">sim</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="n">n_steps</span><span class="o">=</span><span class="mi">200</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">sim</span><span class="o">.</span><span class="n">get_spin_field</span><span class="p">(),</span> <span class="n">copy</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 
 <span class="n">snapshot_temperatures</span> <span class="o">=</span> <span class="p">[</span><span class="mf">0.5</span> <span class="o">*</span> <span class="n">T_BKT</span><span class="p">,</span> <span class="mf">1.5</span> <span class="o">*</span> <span class="n">T_BKT</span><span class="p">]</span>
 <span class="n">snapshot_titles</span> <span class="o">=</span> <span class="p">[</span><span class="sa">r</span><span class="s1">&#39;Below $T_{\mathrm</span><span class="si">{BKT}</span><span class="s1">}$&#39;</span><span class="p">,</span> <span class="sa">r</span><span class="s1">&#39;Above $T_{\mathrm</span><span class="si">{BKT}</span><span class="s1">}$&#39;</span><span class="p">]</span>
@@ -230,27 +208,20 @@ Primary sweep path: results/xy/temperature_sweep_data.npz
 </pre></div>
 </div>
 </div>
-<div class="nboutput docutils container">
-<div class="prompt empty docutils container">
-</div>
-<div class="output_area stderr docutils container">
-<div class="highlight"><pre>
-convergence_equilibrate: detected quasi-steady stuck state before max_steps=6000; stopping early without convergence.
-convergence_equilibrate: detected quasi-steady stuck state before max_steps=6000; stopping early without convergence.
-</pre></div></div>
-</div>
 <div class="nboutput nblast docutils container">
 <div class="prompt empty docutils container">
 </div>
 <div class="output_area docutils container">
-<img alt="_images/xy_temperature_sweep_3_1.png" src="_images/xy_temperature_sweep_3_1.png" />
+<img alt="_images/xy_temperature_sweep_3_0.png" src="_images/xy_temperature_sweep_3_0.png" />
 </div>
 </div>
 </section>
 <section id="Load-or-Compute-Sweep-Data">
 <h2>Load or Compute Sweep Data<a class="headerlink" href="#Load-or-Compute-Sweep-Data" title="Link to this heading"></a></h2>
-<p>The notebook first looks for the project cache at <code class="docutils literal notranslate"><span class="pre">results/xy/temperature_sweep_data.npz</span></code>. If that file contains a sufficiently dense temperature grid, the plots are built directly from the precomputed data. The cache is produced by <code class="docutils literal notranslate"><span class="pre">scripts/xy/temperature_sweep.py</span></code>, which uses two-start convergence with quasi-steady stuck detection at low temperature and records standardized uncertainty fields for every observable.</p>
-<p>If no valid cache is available, a lightweight fallback sweep runs inline on a small lattice with a reduced number of measurement steps. The fallback results are noisier and cover fewer temperature points, but they are sufficient to show the qualitative shape of each observable curve across the BKT crossover.</p>
+<p>The notebook first looks for the project cache at <code class="docutils literal notranslate"><span class="pre">../results/xy/temperature_sweep_data.npz</span></code>, a path relative to the <code class="docutils literal notranslate"><span class="pre">notebooks/</span></code> directory from which the notebook runs. If that file contains at least ten temperature points and the required uncertainty fields, the plots are built directly from the precomputed data. The cache is produced by <code class="docutils literal notranslate"><span class="pre">scripts/xy/temperature_sweep.py</span></code> and records standardized uncertainty fields for every observable.</p>
+<p>If no valid cache is available, a lightweight fallback sweep runs inline. Each temperature point goes through <code class="docutils literal notranslate"><span class="pre">simulate_thermo_point</span></code>, the worker used by the production sweep: a random-start and an ordered-start simulation with independent seeds evolve until their smoothed magnetization traces satisfy the two-start cross-band criterion, and the point is then measured. For the XY model quasi-steady stuck detection is switched off. The model has no metastable domain states; its slow initial
+relaxation is the gradual annihilation of vortices and the growth of spin-wave order, so an early exit would only discard a run that is still relaxing. Each pair therefore runs until it converges, with a cap of 40 000 sweeps, and a point that does not converge is stored as NaN. The stored fallback uses <span class="math notranslate nohighlight">\(L = 32\)</span>, 21 temperatures between 0.2 and 1.8, 4000 measurement sweeps, and one seed. Its results are noisy, as the later sections show, but they are sufficient to show the qualitative shape
+of each observable curve.</p>
 <div class="nbinput docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[3]:
 </pre></div>
@@ -278,72 +249,42 @@ convergence_equilibrate: detected quasi-steady stuck state before max_steps=6000
     <span class="n">eq_max_steps</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
     <span class="n">seed</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">float</span><span class="p">]:</span>
-    <span class="n">sim_random</span> <span class="o">=</span> <span class="n">XYSimulation</span><span class="p">(</span>
-        <span class="n">size</span><span class="o">=</span><span class="n">size</span><span class="p">,</span>
-        <span class="n">temp</span><span class="o">=</span><span class="n">temp</span><span class="p">,</span>
-        <span class="n">update</span><span class="o">=</span><span class="s1">&#39;checkerboard&#39;</span><span class="p">,</span>
-        <span class="n">init_state</span><span class="o">=</span><span class="s1">&#39;random&#39;</span><span class="p">,</span>
-        <span class="n">seed</span><span class="o">=</span><span class="n">seed</span><span class="p">,</span>
-    <span class="p">)</span>
-    <span class="n">sim_ordered</span> <span class="o">=</span> <span class="n">XYSimulation</span><span class="p">(</span>
-        <span class="n">size</span><span class="o">=</span><span class="n">size</span><span class="p">,</span>
-        <span class="n">temp</span><span class="o">=</span><span class="n">temp</span><span class="p">,</span>
-        <span class="n">update</span><span class="o">=</span><span class="s1">&#39;checkerboard&#39;</span><span class="p">,</span>
-        <span class="n">init_state</span><span class="o">=</span><span class="s1">&#39;ordered&#39;</span><span class="p">,</span>
-        <span class="n">seed</span><span class="o">=</span><span class="n">seed</span><span class="p">,</span>
-    <span class="p">)</span>
-    <span class="n">convergence_equilibrate</span><span class="p">(</span>
-        <span class="n">sim_random</span><span class="o">=</span><span class="n">sim_random</span><span class="p">,</span>
-        <span class="n">sim_ordered</span><span class="o">=</span><span class="n">sim_ordered</span><span class="p">,</span>
-        <span class="n">chunk_size</span><span class="o">=</span><span class="n">eq_probe_steps</span><span class="p">,</span>
-        <span class="n">max_steps</span><span class="o">=</span><span class="n">eq_max_steps</span><span class="p">)</span>
+    <span class="c1"># The production sweep worker: two-start equilibration with independent</span>
+    <span class="c1"># seeds, measurement on the start the equilibration certified, and the</span>
+    <span class="c1"># standard blocking summaries.</span>
+    <span class="c1"># The XY model has no metastable domain states, so stuck detection stays</span>
+    <span class="c1"># off and every point runs until the two starts converge.</span>
+    <span class="n">allow_stuck</span> <span class="o">=</span> <span class="kc">False</span>
+    <span class="n">result</span> <span class="o">=</span> <span class="n">simulate_thermo_point</span><span class="p">(</span><span class="n">ThermoPoint</span><span class="p">(</span>
+        <span class="n">temperature</span><span class="o">=</span><span class="n">temp</span><span class="p">,</span> <span class="n">size</span><span class="o">=</span><span class="n">size</span><span class="p">,</span> <span class="n">meas_steps</span><span class="o">=</span><span class="n">meas_steps</span><span class="p">,</span>
+        <span class="n">eq_probe_steps</span><span class="o">=</span><span class="n">eq_probe_steps</span><span class="p">,</span> <span class="n">eq_max_steps</span><span class="o">=</span><span class="n">eq_max_steps</span><span class="p">,</span>
+        <span class="n">eq_qs_sigma_threshold</span><span class="o">=</span><span class="mf">0.05</span><span class="p">,</span> <span class="n">eq_qs_min_steps</span><span class="o">=</span><span class="mi">1500</span><span class="p">,</span>
+        <span class="n">qs_allow_stuck</span><span class="o">=</span><span class="n">allow_stuck</span><span class="p">,</span> <span class="n">prefer_ordered_start</span><span class="o">=</span><span class="n">allow_stuck</span><span class="p">,</span>
+        <span class="n">temperature_index</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">seed_index</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">seed</span><span class="o">=</span><span class="n">seed</span><span class="p">,</span>
+        <span class="n">model_cls</span><span class="o">=</span><span class="n">XYSimulation</span><span class="p">,</span> <span class="n">model_kwargs</span><span class="o">=</span><span class="p">{},</span>
+        <span class="n">confidence</span><span class="o">=</span><span class="n">DEFAULT_CONFIDENCE_LEVEL</span><span class="p">,</span> <span class="n">derived_method</span><span class="o">=</span><span class="s1">&#39;blocking&#39;</span><span class="p">,</span> <span class="n">bootstrap_resamples</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
+    <span class="p">))</span>
+    <span class="k">if</span> <span class="n">result</span><span class="p">[</span><span class="s1">&#39;equilibrated_flag&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="mf">0.0</span><span class="p">:</span>
+        <span class="c1"># Not equilibrated within the step cap: report NaN rather than a biased value.</span>
+        <span class="n">result</span> <span class="o">=</span> <span class="p">{</span><span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">obs</span><span class="si">}</span><span class="s1">_</span><span class="si">{</span><span class="n">field</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">:</span> <span class="nb">float</span><span class="p">(</span><span class="s1">&#39;nan&#39;</span><span class="p">)</span>
+                  <span class="k">for</span> <span class="n">obs</span> <span class="ow">in</span> <span class="p">(</span><span class="s1">&#39;avg_m&#39;</span><span class="p">,</span> <span class="s1">&#39;avg_e&#39;</span><span class="p">,</span> <span class="s1">&#39;susc&#39;</span><span class="p">,</span> <span class="s1">&#39;spec_h&#39;</span><span class="p">)</span>
+                  <span class="k">for</span> <span class="n">field</span> <span class="ow">in</span> <span class="p">(</span><span class="s1">&#39;value&#39;</span><span class="p">,</span> <span class="s1">&#39;err&#39;</span><span class="p">,</span> <span class="s1">&#39;tau_int&#39;</span><span class="p">,</span> <span class="s1">&#39;n_eff&#39;</span><span class="p">)}</span>
+    <span class="n">z</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">norm</span><span class="o">.</span><span class="n">ppf</span><span class="p">(</span><span class="mf">0.5</span> <span class="o">+</span> <span class="n">DEFAULT_CONFIDENCE_LEVEL</span> <span class="o">/</span> <span class="mf">2.0</span><span class="p">))</span>
+    <span class="n">point</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">float</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="k">for</span> <span class="n">obs</span> <span class="ow">in</span> <span class="p">(</span><span class="s1">&#39;avg_m&#39;</span><span class="p">,</span> <span class="s1">&#39;avg_e&#39;</span><span class="p">,</span> <span class="s1">&#39;susc&#39;</span><span class="p">,</span> <span class="s1">&#39;spec_h&#39;</span><span class="p">):</span>
+        <span class="n">value</span><span class="p">,</span> <span class="n">err</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">result</span><span class="p">[</span><span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">obs</span><span class="si">}</span><span class="s1">_value&#39;</span><span class="p">]),</span> <span class="nb">float</span><span class="p">(</span><span class="n">result</span><span class="p">[</span><span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">obs</span><span class="si">}</span><span class="s1">_err&#39;</span><span class="p">])</span>
+        <span class="n">point</span><span class="p">[</span><span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">obs</span><span class="si">}</span><span class="s1">_value&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">value</span>
+        <span class="n">point</span><span class="p">[</span><span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">obs</span><span class="si">}</span><span class="s1">_ci_low&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">value</span> <span class="o">-</span> <span class="n">z</span> <span class="o">*</span> <span class="n">err</span>
+        <span class="n">point</span><span class="p">[</span><span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">obs</span><span class="si">}</span><span class="s1">_ci_high&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">value</span> <span class="o">+</span> <span class="n">z</span> <span class="o">*</span> <span class="n">err</span>
+    <span class="n">point</span><span class="p">[</span><span class="s1">&#39;avg_m_n_eff&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">result</span><span class="p">[</span><span class="s1">&#39;avg_m_n_eff&#39;</span><span class="p">])</span>
+    <span class="n">point</span><span class="p">[</span><span class="s1">&#39;spec_h_err&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">result</span><span class="p">[</span><span class="s1">&#39;spec_h_err&#39;</span><span class="p">])</span>
+    <span class="n">point</span><span class="p">[</span><span class="s1">&#39;tau_int&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">result</span><span class="p">[</span><span class="s1">&#39;avg_m_tau_int&#39;</span><span class="p">])</span>
+    <span class="c1"># A single run gives no interval for tau_int itself; the band collapses</span>
+    <span class="c1"># onto the point estimate instead of borrowing the error of |M|.</span>
+    <span class="n">point</span><span class="p">[</span><span class="s1">&#39;tau_int_ci_low&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">point</span><span class="p">[</span><span class="s1">&#39;tau_int&#39;</span><span class="p">]</span>
+    <span class="n">point</span><span class="p">[</span><span class="s1">&#39;tau_int_ci_high&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">point</span><span class="p">[</span><span class="s1">&#39;tau_int&#39;</span><span class="p">]</span>
+    <span class="k">return</span> <span class="n">point</span>
 
-    <span class="n">mags</span><span class="p">,</span> <span class="n">engs</span> <span class="o">=</span> <span class="n">sim_random</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="n">n_steps</span><span class="o">=</span><span class="n">meas_steps</span><span class="p">)</span>
-    <span class="n">mags_arr</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">mags</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">float</span><span class="p">)</span>
-    <span class="n">engs_arr</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">engs</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">float</span><span class="p">)</span>
-
-    <span class="n">mag</span> <span class="o">=</span> <span class="n">summarize_primary_observable</span><span class="p">(</span>
-        <span class="n">time_series</span><span class="o">=</span><span class="n">mags_arr</span><span class="p">,</span>
-        <span class="n">confidence</span><span class="o">=</span><span class="n">DEFAULT_CONFIDENCE_LEVEL</span><span class="p">,</span>
-    <span class="p">)</span>
-    <span class="n">eng</span> <span class="o">=</span> <span class="n">summarize_primary_observable</span><span class="p">(</span>
-        <span class="n">time_series</span><span class="o">=</span><span class="n">engs_arr</span><span class="p">,</span>
-        <span class="n">confidence</span><span class="o">=</span><span class="n">DEFAULT_CONFIDENCE_LEVEL</span><span class="p">,</span>
-    <span class="p">)</span>
-    <span class="n">chi</span> <span class="o">=</span> <span class="n">summarize_derived_observable</span><span class="p">(</span>
-        <span class="n">magnetization_series</span><span class="o">=</span><span class="n">mags_arr</span><span class="p">,</span>
-        <span class="n">temperature</span><span class="o">=</span><span class="n">temp</span><span class="p">,</span>
-        <span class="n">L</span><span class="o">=</span><span class="n">size</span><span class="p">,</span>
-        <span class="n">observable</span><span class="o">=</span><span class="s1">&#39;chi&#39;</span><span class="p">,</span>
-        <span class="n">confidence</span><span class="o">=</span><span class="n">DEFAULT_CONFIDENCE_LEVEL</span><span class="p">,</span>
-    <span class="p">)</span>
-    <span class="n">cv</span> <span class="o">=</span> <span class="n">summarize_derived_observable</span><span class="p">(</span>
-        <span class="n">energy_series</span><span class="o">=</span><span class="n">engs_arr</span><span class="p">,</span>
-        <span class="n">temperature</span><span class="o">=</span><span class="n">temp</span><span class="p">,</span>
-        <span class="n">L</span><span class="o">=</span><span class="n">size</span><span class="p">,</span>
-        <span class="n">observable</span><span class="o">=</span><span class="s1">&#39;cv&#39;</span><span class="p">,</span>
-        <span class="n">confidence</span><span class="o">=</span><span class="n">DEFAULT_CONFIDENCE_LEVEL</span><span class="p">,</span>
-    <span class="p">)</span>
-
-    <span class="k">return</span> <span class="p">{</span>
-        <span class="s1">&#39;avg_m_value&#39;</span><span class="p">:</span> <span class="nb">float</span><span class="p">(</span><span class="n">mag</span><span class="p">[</span><span class="s1">&#39;value&#39;</span><span class="p">]),</span>
-        <span class="s1">&#39;avg_m_ci_low&#39;</span><span class="p">:</span> <span class="nb">float</span><span class="p">(</span><span class="n">mag</span><span class="p">[</span><span class="s1">&#39;ci_low&#39;</span><span class="p">]),</span>
-        <span class="s1">&#39;avg_m_ci_high&#39;</span><span class="p">:</span> <span class="nb">float</span><span class="p">(</span><span class="n">mag</span><span class="p">[</span><span class="s1">&#39;ci_high&#39;</span><span class="p">]),</span>
-        <span class="s1">&#39;avg_m_n_eff&#39;</span><span class="p">:</span> <span class="nb">float</span><span class="p">(</span><span class="n">mag</span><span class="p">[</span><span class="s1">&#39;n_eff&#39;</span><span class="p">]),</span>
-        <span class="s1">&#39;avg_e_value&#39;</span><span class="p">:</span> <span class="nb">float</span><span class="p">(</span><span class="n">eng</span><span class="p">[</span><span class="s1">&#39;value&#39;</span><span class="p">]),</span>
-        <span class="s1">&#39;avg_e_ci_low&#39;</span><span class="p">:</span> <span class="nb">float</span><span class="p">(</span><span class="n">eng</span><span class="p">[</span><span class="s1">&#39;ci_low&#39;</span><span class="p">]),</span>
-        <span class="s1">&#39;avg_e_ci_high&#39;</span><span class="p">:</span> <span class="nb">float</span><span class="p">(</span><span class="n">eng</span><span class="p">[</span><span class="s1">&#39;ci_high&#39;</span><span class="p">]),</span>
-        <span class="s1">&#39;susc_value&#39;</span><span class="p">:</span> <span class="nb">float</span><span class="p">(</span><span class="n">chi</span><span class="p">[</span><span class="s1">&#39;value&#39;</span><span class="p">]),</span>
-        <span class="s1">&#39;susc_ci_low&#39;</span><span class="p">:</span> <span class="nb">float</span><span class="p">(</span><span class="n">chi</span><span class="p">[</span><span class="s1">&#39;ci_low&#39;</span><span class="p">]),</span>
-        <span class="s1">&#39;susc_ci_high&#39;</span><span class="p">:</span> <span class="nb">float</span><span class="p">(</span><span class="n">chi</span><span class="p">[</span><span class="s1">&#39;ci_high&#39;</span><span class="p">]),</span>
-        <span class="s1">&#39;spec_h_value&#39;</span><span class="p">:</span> <span class="nb">float</span><span class="p">(</span><span class="n">cv</span><span class="p">[</span><span class="s1">&#39;value&#39;</span><span class="p">]),</span>
-        <span class="s1">&#39;spec_h_err&#39;</span><span class="p">:</span> <span class="nb">float</span><span class="p">(</span><span class="n">cv</span><span class="p">[</span><span class="s1">&#39;err&#39;</span><span class="p">]),</span>
-        <span class="s1">&#39;spec_h_ci_low&#39;</span><span class="p">:</span> <span class="nb">float</span><span class="p">(</span><span class="n">cv</span><span class="p">[</span><span class="s1">&#39;ci_low&#39;</span><span class="p">]),</span>
-        <span class="s1">&#39;spec_h_ci_high&#39;</span><span class="p">:</span> <span class="nb">float</span><span class="p">(</span><span class="n">cv</span><span class="p">[</span><span class="s1">&#39;ci_high&#39;</span><span class="p">]),</span>
-        <span class="s1">&#39;tau_int&#39;</span><span class="p">:</span> <span class="nb">float</span><span class="p">(</span><span class="n">mag</span><span class="p">[</span><span class="s1">&#39;tau_int&#39;</span><span class="p">]),</span>
-        <span class="s1">&#39;tau_int_ci_low&#39;</span><span class="p">:</span> <span class="nb">float</span><span class="p">(</span><span class="n">mag</span><span class="p">[</span><span class="s1">&#39;ci_low&#39;</span><span class="p">])</span> <span class="k">if</span> <span class="ow">not</span> <span class="n">np</span><span class="o">.</span><span class="n">isfinite</span><span class="p">(</span><span class="n">mag</span><span class="p">[</span><span class="s1">&#39;tau_int&#39;</span><span class="p">])</span> <span class="k">else</span> <span class="nb">float</span><span class="p">(</span><span class="nb">max</span><span class="p">(</span><span class="mf">0.0</span><span class="p">,</span> <span class="n">mag</span><span class="p">[</span><span class="s1">&#39;tau_int&#39;</span><span class="p">]</span> <span class="o">-</span> <span class="n">mag</span><span class="p">[</span><span class="s1">&#39;err&#39;</span><span class="p">])),</span>
-        <span class="s1">&#39;tau_int_ci_high&#39;</span><span class="p">:</span> <span class="nb">float</span><span class="p">(</span><span class="n">mag</span><span class="p">[</span><span class="s1">&#39;ci_high&#39;</span><span class="p">])</span> <span class="k">if</span> <span class="ow">not</span> <span class="n">np</span><span class="o">.</span><span class="n">isfinite</span><span class="p">(</span><span class="n">mag</span><span class="p">[</span><span class="s1">&#39;tau_int&#39;</span><span class="p">])</span> <span class="k">else</span> <span class="nb">float</span><span class="p">(</span><span class="n">mag</span><span class="p">[</span><span class="s1">&#39;tau_int&#39;</span><span class="p">]</span> <span class="o">+</span> <span class="n">mag</span><span class="p">[</span><span class="s1">&#39;err&#39;</span><span class="p">]),</span>
-    <span class="p">}</span>
 
 
 <span class="n">cache_loaded</span> <span class="o">=</span> <span class="kc">False</span>
@@ -447,7 +388,9 @@ convergence_equilibrate: detected quasi-steady stuck state before max_steps=6000
             <span class="n">size</span><span class="o">=</span><span class="n">fallback_size</span><span class="p">,</span>
             <span class="n">meas_steps</span><span class="o">=</span><span class="n">fallback_meas_steps</span><span class="p">,</span>
             <span class="n">eq_probe_steps</span><span class="o">=</span><span class="mi">150</span><span class="p">,</span>
-            <span class="n">eq_max_steps</span><span class="o">=</span><span class="mi">12_000</span><span class="p">,</span>
+            <span class="c1"># Without stuck detection the pair runs to convergence, which near</span>
+            <span class="c1"># T_BKT takes several thousand sweeps at this size.</span>
+            <span class="n">eq_max_steps</span><span class="o">=</span><span class="mi">40_000</span><span class="p">,</span>
             <span class="n">seed</span><span class="o">=</span><span class="mi">1_000</span> <span class="o">+</span> <span class="n">idx</span><span class="p">,</span>
         <span class="p">)</span>
         <span class="n">avg_m</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span> <span class="o">=</span> <span class="n">point</span><span class="p">[</span><span class="s1">&#39;avg_m_value&#39;</span><span class="p">]</span>
@@ -528,25 +471,6 @@ convergence_equilibrate: detected quasi-steady stuck state before max_steps=6000
 </pre></div>
 </div>
 </div>
-<div class="nboutput docutils container">
-<div class="prompt empty docutils container">
-</div>
-<div class="output_area stderr docutils container">
-<div class="highlight"><pre>
-convergence_equilibrate: detected quasi-steady stuck state before max_steps=12000; stopping early without convergence.
-convergence_equilibrate: detected quasi-steady stuck state before max_steps=12000; stopping early without convergence.
-convergence_equilibrate: detected quasi-steady stuck state before max_steps=12000; stopping early without convergence.
-convergence_equilibrate: detected quasi-steady stuck state before max_steps=12000; stopping early without convergence.
-convergence_equilibrate: detected quasi-steady stuck state before max_steps=12000; stopping early without convergence.
-convergence_equilibrate: detected quasi-steady stuck state before max_steps=12000; stopping early without convergence.
-convergence_equilibrate: detected quasi-steady stuck state before max_steps=12000; stopping early without convergence.
-convergence_equilibrate: detected quasi-steady stuck state before max_steps=12000; stopping early without convergence.
-convergence_equilibrate: detected quasi-steady stuck state before max_steps=12000; stopping early without convergence.
-convergence_equilibrate: detected quasi-steady stuck state before max_steps=12000; stopping early without convergence.
-convergence_equilibrate: detected quasi-steady stuck state before max_steps=12000; stopping early without convergence.
-convergence_equilibrate: detected quasi-steady stuck state before max_steps=12000; stopping early without convergence.
-</pre></div></div>
-</div>
 <div class="nboutput nblast docutils container">
 <div class="prompt empty docutils container">
 </div>
@@ -561,7 +485,10 @@ Excluded points in thermodynamic plots: 0
 </section>
 <section id="Convergence-Diagnostics">
 <h2>Convergence Diagnostics<a class="headerlink" href="#Convergence-Diagnostics" title="Link to this heading"></a></h2>
-<p>The two-start protocol evolves a random-start and an ordered-start simulation in parallel and declares convergence once their smoothed magnetization traces overlap. Below <span class="math notranslate nohighlight">\(T_{\mathrm{BKT}}\)</span> the quasi-ordered phase presents a slowly relaxing landscape, so the random-start trace may take longer to settle. Near and above <span class="math notranslate nohighlight">\(T_{\mathrm{BKT}}\)</span> the collapse is generally rapid. The panels below show raw and smoothed traces at three representative temperatures.</p>
+<p>The two-start protocol evolves a random-start and an ordered-start simulation with independent seeds and declares convergence once their smoothed magnetization traces overlap. The panels below show raw and smoothed traces on a <span class="math notranslate nohighlight">\(32 \times 32\)</span> lattice for 1500 sweeps at three temperatures. None of the three pairs converges in that window, which is why the sweep worker allows up to 40 000 sweeps.</p>
+<p>At <span class="math notranslate nohighlight">\(0.5\,T_{\mathrm{BKT}}\)</span> the ordered start stays near <span class="math notranslate nohighlight">\(|M| \approx 0.87\)</span>, while the random start climbs slowly from 0.05 to about 0.35. The random initial state has a vortex density of 1/3 per plaquette, and <span class="math notranslate nohighlight">\(|M|\)</span> grows only as vortex-antivortex pairs annihilate and the spin-wave order coarsens. This is slow relaxation, not a metastable trap. The panel label “Stuck (Quasi-steady)” comes from the diagnostic classifier applied to this short window; the sweep worker does not use
+stuck detection for the XY model. Near <span class="math notranslate nohighlight">\(T_{\mathrm{BKT}}\)</span> the random start rises to about 0.55 while the ordered start relaxes from 1 to about 0.66, and the gap has not closed after 1500 sweeps (“Not converged”). At <span class="math notranslate nohighlight">\(1.5\,T_{\mathrm{BKT}}\)</span> the ordered start decays from 1 to below 0.1 over the full window and only reaches the random-start band near the end, again without a certified convergence point. All three panels show relaxation times of order <span class="math notranslate nohighlight">\(10^3\)</span> sweeps at this lattice
+size, below and above the transition.</p>
 <div class="nbinput docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[4]:
 </pre></div>
@@ -574,7 +501,7 @@ Excluded points in thermodynamic plots: 0
 
 <span class="k">for</span> <span class="n">ax</span><span class="p">,</span> <span class="n">t</span><span class="p">,</span> <span class="n">title</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">axes</span><span class="p">,</span> <span class="n">diagnostic_temps</span><span class="p">,</span> <span class="n">diagnostic_titles</span><span class="p">,</span> <span class="n">strict</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
     <span class="n">sim_r</span> <span class="o">=</span> <span class="n">XYSimulation</span><span class="p">(</span><span class="n">size</span><span class="o">=</span><span class="mi">32</span><span class="p">,</span> <span class="n">temp</span><span class="o">=</span><span class="n">t</span><span class="p">,</span> <span class="n">update</span><span class="o">=</span><span class="s1">&#39;checkerboard&#39;</span><span class="p">,</span> <span class="n">init_state</span><span class="o">=</span><span class="s1">&#39;random&#39;</span><span class="p">,</span> <span class="n">seed</span><span class="o">=</span><span class="mi">42</span><span class="p">)</span>
-    <span class="n">sim_o</span> <span class="o">=</span> <span class="n">XYSimulation</span><span class="p">(</span><span class="n">size</span><span class="o">=</span><span class="mi">32</span><span class="p">,</span> <span class="n">temp</span><span class="o">=</span><span class="n">t</span><span class="p">,</span> <span class="n">update</span><span class="o">=</span><span class="s1">&#39;checkerboard&#39;</span><span class="p">,</span> <span class="n">init_state</span><span class="o">=</span><span class="s1">&#39;ordered&#39;</span><span class="p">,</span> <span class="n">seed</span><span class="o">=</span><span class="mi">42</span><span class="p">)</span>
+    <span class="n">sim_o</span> <span class="o">=</span> <span class="n">XYSimulation</span><span class="p">(</span><span class="n">size</span><span class="o">=</span><span class="mi">32</span><span class="p">,</span> <span class="n">temp</span><span class="o">=</span><span class="n">t</span><span class="p">,</span> <span class="n">update</span><span class="o">=</span><span class="s1">&#39;checkerboard&#39;</span><span class="p">,</span> <span class="n">init_state</span><span class="o">=</span><span class="s1">&#39;ordered&#39;</span><span class="p">,</span> <span class="n">seed</span><span class="o">=</span><span class="n">ordered_start_seed</span><span class="p">(</span><span class="n">seed</span><span class="o">=</span><span class="mi">42</span><span class="p">))</span>
 
     <span class="n">m_r_list</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">sim_r</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="n">n_steps</span><span class="o">=</span><span class="n">diagnostic_steps</span><span class="p">)</span>
     <span class="n">m_o_list</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">sim_o</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="n">n_steps</span><span class="o">=</span><span class="n">diagnostic_steps</span><span class="p">)</span>
@@ -625,8 +552,9 @@ Excluded points in thermodynamic plots: 0
 </section>
 <section id="Magnetization-and-Energy">
 <h2>Magnetization and Energy<a class="headerlink" href="#Magnetization-and-Energy" title="Link to this heading"></a></h2>
-<p>The magnetization per spin <span class="math notranslate nohighlight">\(|M|\)</span> in the XY model behaves differently from the Ising case. True long-range order is forbidden at any finite temperature by the Mermin-Wagner theorem, so <span class="math notranslate nohighlight">\(|M|\)</span> never reaches a sharp plateau at unity. Instead, the finite-size magnetization decays gradually from a value set by the system size at low temperature toward zero above <span class="math notranslate nohighlight">\(T_{\mathrm{BKT}}\)</span>. The energy per spin decreases smoothly toward the ground-state limit of <span class="math notranslate nohighlight">\(-2J\)</span> as <span class="math notranslate nohighlight">\(T \to 0\)</span>
-and increases as thermal fluctuations populate higher-energy spin configurations <a class="reference internal" href="#Bibliography"><span class="std std-ref">[1]</span></a> <a class="reference internal" href="#Bibliography"><span class="std std-ref">[2]</span></a>.</p>
+<p>The magnetization per spin <span class="math notranslate nohighlight">\(|M|\)</span> in the XY model behaves differently from the Ising case. True long-range order is forbidden at any finite temperature by the Mermin-Wagner theorem, so the low-temperature value of <span class="math notranslate nohighlight">\(|M|\)</span> is a finite-size effect. Spin-wave theory gives <span class="math notranslate nohighlight">\(|M| \approx L^{-\eta/2}\)</span> with <span class="math notranslate nohighlight">\(\eta = T/(2\pi J)\)</span> at low temperature, which predicts 0.95 at <span class="math notranslate nohighlight">\(T = 0.2\)</span> and <span class="math notranslate nohighlight">\(L = 32\)</span>; the fallback measures 0.94 <a class="reference internal" href="#Bibliography"><span class="std std-ref">[1]</span></a> <a class="reference internal" href="#Bibliography"><span class="std std-ref">[3]</span></a>. The
+curve then decreases steadily to about 0.67 near <span class="math notranslate nohighlight">\(T_{\mathrm{BKT}}\)</span> and 0.57 at <span class="math notranslate nohighlight">\(T = 1.0\)</span>, and collapses between <span class="math notranslate nohighlight">\(T = 1.0\)</span> and <span class="math notranslate nohighlight">\(1.1\)</span>. Above that point the single-seed values scatter (0.18 at <span class="math notranslate nohighlight">\(T = 1.08\)</span>, 0.34 at <span class="math notranslate nohighlight">\(T = 1.16\)</span>) because the effective sample size there is below 10, before settling near 0.06 at <span class="math notranslate nohighlight">\(T = 1.8\)</span>. The energy per spin rises smoothly from <span class="math notranslate nohighlight">\(-1.90\)</span> at <span class="math notranslate nohighlight">\(T = 0.2\)</span> to <span class="math notranslate nohighlight">\(-0.62\)</span> at <span class="math notranslate nohighlight">\(T = 1.8\)</span>. At low temperature it follows
+the spin-wave result <span class="math notranslate nohighlight">\(E \approx -2J + T/2\)</span>, the equipartition value for one quadratic mode per spin.</p>
 <div class="nbinput docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[5]:
 </pre></div>
@@ -665,8 +593,11 @@ and increases as thermal fluctuations populate higher-energy spin configurations
 </section>
 <section id="Susceptibility-and-Specific-Heat">
 <h2>Susceptibility and Specific Heat<a class="headerlink" href="#Susceptibility-and-Specific-Heat" title="Link to this heading"></a></h2>
-<p>In the XY model the susceptibility <span class="math notranslate nohighlight">\(\chi\)</span> and specific heat <span class="math notranslate nohighlight">\(C_v\)</span> both show broad humps near <span class="math notranslate nohighlight">\(T_{\mathrm{BKT}}\)</span> rather than the sharp peaks observed in the Ising model. The BKT transition is driven by vortex unbinding, which is a topological mechanism that does not produce the usual power-law divergences in bulk thermodynamic quantities. The specific heat maximum, in particular, tends to sit slightly above <span class="math notranslate nohighlight">\(T_{\mathrm{BKT}}\)</span> and reflects the energy cost of proliferating
-free vortices rather than a critical-point singularity <a class="reference internal" href="#Bibliography"><span class="std std-ref">[2]</span></a> <a class="reference internal" href="#Bibliography"><span class="std std-ref">[3]</span></a>.</p>
+<p>In the thermodynamic limit the XY susceptibility is infinite at every temperature below <span class="math notranslate nohighlight">\(T_{\mathrm{BKT}}\)</span>. Spin correlations decay as <span class="math notranslate nohighlight">\(r^{-\eta(T)}\)</span> with <span class="math notranslate nohighlight">\(\eta \le 1/4\)</span>, so the sum of correlations over a finite lattice grows as <span class="math notranslate nohighlight">\(L^{2-\eta}\)</span>. Above <span class="math notranslate nohighlight">\(T_{\mathrm{BKT}}\)</span> the susceptibility is finite but diverges on approach as <span class="math notranslate nohighlight">\(\xi^{2-\eta}\)</span>, where the correlation length grows as <span class="math notranslate nohighlight">\(\xi \propto \exp(b/\sqrt{t})\)</span> with <span class="math notranslate nohighlight">\(t = T/T_{\mathrm{BKT}} - 1\)</span>
+<a class="reference internal" href="#Bibliography"><span class="std std-ref">[2]</span></a> <a class="reference internal" href="#Bibliography"><span class="std std-ref">[3]</span></a>. The specific heat has no singularity that can be seen in practice: its maximum is smooth and lies above <span class="math notranslate nohighlight">\(T_{\mathrm{BKT}}\)</span>, where the unbinding of vortex pairs releases most of the energy.</p>
+<p>The plotted estimator <span class="math notranslate nohighlight">\(\chi = N\,\mathrm{Var}(|M|)/T\)</span> subtracts <span class="math notranslate nohighlight">\(\langle |M| \rangle^2\)</span>. In the quasi-ordered phase of a finite lattice <span class="math notranslate nohighlight">\(|M|\)</span> is large and fluctuates little, so this estimator stays small (below 2 for <span class="math notranslate nohighlight">\(T \le T_{\mathrm{BKT}}\)</span> in the fallback) and peaks where <span class="math notranslate nohighlight">\(|M|\)</span> collapses. In the fallback run that happens at <span class="math notranslate nohighlight">\(T \approx 1.16\)</span>, where <span class="math notranslate nohighlight">\(\chi \approx 19\)</span>, well above <span class="math notranslate nohighlight">\(T_{\mathrm{BKT}} = 0.893\)</span>. A shift of this size is expected for a BKT
+transition: the finite lattice loses its quasi-order where <span class="math notranslate nohighlight">\(\xi(T) \approx L\)</span>, and because <span class="math notranslate nohighlight">\(\xi\)</span> grows only exponentially in <span class="math notranslate nohighlight">\(1/\sqrt{t}\)</span>, the apparent transition approaches <span class="math notranslate nohighlight">\(T_{\mathrm{BKT}}\)</span> as slowly as <span class="math notranslate nohighlight">\(1/(\ln L)^2\)</span> <a class="reference internal" href="#Bibliography"><span class="std std-ref">[6]</span></a>. The specific heat rises from about 0.53 at <span class="math notranslate nohighlight">\(T = 0.2\)</span>, close to the spin-wave value <span class="math notranslate nohighlight">\(1/2\)</span>, to a maximum of about 1.6 at the same <span class="math notranslate nohighlight">\(T \approx 1.16\)</span>. The smaller bump near <span class="math notranslate nohighlight">\(T = 0.92\)</span> lies within the
+scatter of a single-seed run with fewer than 20 effective samples per point.</p>
 <div class="nbinput docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[6]:
 </pre></div>
@@ -705,7 +636,8 @@ free vortices rather than a critical-point singularity <a class="reference inter
 </section>
 <section id="Entropy">
 <h2>Entropy<a class="headerlink" href="#Entropy" title="Link to this heading"></a></h2>
-<p>The relative entropy is reconstructed by integrating <span class="math notranslate nohighlight">\(C_v(T)/T\)</span> downward from the highest sampled temperature, following the same procedure used for the Ising sweep. The low-temperature phase carries the entropy of algebraically correlated spin waves, while above <span class="math notranslate nohighlight">\(T_{\mathrm{BKT}}\)</span> entropy rises more steeply as free vortices contribute additional configurational degrees of freedom.</p>
+<p>The relative entropy is reconstructed by integrating <span class="math notranslate nohighlight">\(C_v(T)/T\)</span> downward from the highest sampled temperature, following the same procedure used for the Ising sweep, so the curve is <span class="math notranslate nohighlight">\(S(T) - S(T_{\max})\)</span> with <span class="math notranslate nohighlight">\(T_{\max} = 1.8\)</span>. For classical continuous spins no absolute reference is available from below either: with <span class="math notranslate nohighlight">\(C_v \to 1/2\)</span> as <span class="math notranslate nohighlight">\(T \to 0\)</span>, the entropy behaves as <span class="math notranslate nohighlight">\(\tfrac{1}{2}\ln T\)</span> plus a constant and decreases without bound. The fallback curve reaches
+<span class="math notranslate nohighlight">\(-1.59\)</span> at <span class="math notranslate nohighlight">\(T = 0.2\)</span> and is steepest at the lowest temperatures, where <span class="math notranslate nohighlight">\(C_v/T\)</span> is largest. Across <span class="math notranslate nohighlight">\(T_{\mathrm{BKT}}\)</span> the curve passes smoothly, with no visible change of slope at the transition; the slope stays roughly constant up to <span class="math notranslate nohighlight">\(T \approx 1.2\)</span>, where the <span class="math notranslate nohighlight">\(C_v\)</span> maximum adds a small extra rise, and the curve flattens towards <span class="math notranslate nohighlight">\(T_{\max}\)</span>.</p>
 <div class="nbinput docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[7]:
 </pre></div>
@@ -737,8 +669,10 @@ free vortices rather than a critical-point singularity <a class="reference inter
 </section>
 <section id="Critical-Slowing-Down">
 <h2>Critical Slowing Down<a class="headerlink" href="#Critical-Slowing-Down" title="Link to this heading"></a></h2>
-<p>The integrated autocorrelation time <span class="math notranslate nohighlight">\(\tau_{\mathrm{int}}\)</span> grows near <span class="math notranslate nohighlight">\(T_{\mathrm{BKT}}\)</span> as large-scale spin-wave and vortex fluctuations become harder to decorrelate with local Metropolis updates. The effective sample size <span class="math notranslate nohighlight">\(N_{\mathrm{eff}} \sim N_{\mathrm{meas}} / (2\tau_{\mathrm{int}})\)</span> drops accordingly. Flagged points indicate temperatures where the autocorrelation estimate is undefined (zero-variance window) or unreliable (wide confidence interval or low
-<span class="math notranslate nohighlight">\(N_{\mathrm{eff}}\)</span>). The BKT slowdown is gentler than the Ising divergence because the transition is infinite-order, but it remains the dominant numerical cost factor for equilibrium sampling <a class="reference internal" href="#Bibliography"><span class="std std-ref">[4]</span></a> <a class="reference internal" href="#Bibliography"><span class="std std-ref">[5]</span></a>.</p>
+<p>The integrated autocorrelation time <span class="math notranslate nohighlight">\(\tau_{\mathrm{int}}\)</span> of <span class="math notranslate nohighlight">\(|M|\)</span> sets the effective sample size <span class="math notranslate nohighlight">\(N_{\mathrm{eff}} = N_{\mathrm{meas}} / (2\tau_{\mathrm{int}})\)</span>. In the fallback run <span class="math notranslate nohighlight">\(\tau_{\mathrm{int}}\)</span> lies between about 40 and 400 sweeps at every temperature, so the 4000 measurement sweeps per point give <span class="math notranslate nohighlight">\(N_{\mathrm{eff}}\)</span> between 5 and 50. Twelve of the 21 points fall below the threshold <span class="math notranslate nohighlight">\(N_{\mathrm{eff}} = 20\)</span> and are marked with crosses; these points
+have large statistical errors, and the single-seed curves should be read accordingly.</p>
+<p>Two features stand out. The largest value, about 390 sweeps, sits at <span class="math notranslate nohighlight">\(T \approx 1.16\)</span>, at the same temperature as the <span class="math notranslate nohighlight">\(\chi\)</span> and <span class="math notranslate nohighlight">\(C_v\)</span> maxima, where the finite lattice crosses over from quasi-order to disorder. Below <span class="math notranslate nohighlight">\(T_{\mathrm{BKT}}\)</span> the autocorrelation time does not fall back to small values: the whole low-temperature phase is critical, with <span class="math notranslate nohighlight">\(\xi = \infty\)</span> in the thermodynamic limit, so local updates are slow at every temperature there, not only near a single
+point. The isolated spikes at <span class="math notranslate nohighlight">\(T = 0.52\)</span> and <span class="math notranslate nohighlight">\(0.68\)</span> (about 275 and 330 sweeps) come from series only about 15 autocorrelation times long and are not resolved from their neighbours. Part of the cost at all temperatures is also algorithmic: each Metropolis proposal rotates a spin by at most 0.5 rad, so a spin needs of order <span class="math notranslate nohighlight">\(10^2\)</span> accepted moves to diffuse across its full angular range <a class="reference internal" href="#Bibliography"><span class="std std-ref">[4]</span></a> <a class="reference internal" href="#Bibliography"><span class="std std-ref">[5]</span></a>.</p>
 <div class="nbinput docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[8]:
 </pre></div>
@@ -801,8 +735,10 @@ free vortices rather than a critical-point singularity <a class="reference inter
 </section>
 <section id="Autocorrelation-Function-at-Three-Temperatures">
 <h2>Autocorrelation Function at Three Temperatures<a class="headerlink" href="#Autocorrelation-Function-at-Three-Temperatures" title="Link to this heading"></a></h2>
-<p>The autocorrelation function <span class="math notranslate nohighlight">\(\rho_M(\tau)\)</span> shows how quickly the Markov chain forgets its current magnetization. Below <span class="math notranslate nohighlight">\(T_{\mathrm{BKT}}\)</span> the decay is moderately slow because spin waves carry long-range correlations. Near <span class="math notranslate nohighlight">\(T_{\mathrm{BKT}}\)</span> the decay slows further as vortex-antivortex pairs on all scales couple to the magnetization dynamics. Above the transition, free vortices scatter correlations effectively and <span class="math notranslate nohighlight">\(\rho_M\)</span> drops quickly <a class="reference internal" href="#Bibliography"><span class="std std-ref">[4]</span></a>
-<a class="reference internal" href="#Bibliography"><span class="std std-ref">[5]</span></a>.</p>
+<p>The autocorrelation function <span class="math notranslate nohighlight">\(\rho_M(\tau)\)</span> shows how quickly the Markov chain forgets its current magnetization. The plot uses 1600-sweep trajectories on a <span class="math notranslate nohighlight">\(40 \times 40\)</span> lattice at <span class="math notranslate nohighlight">\(0.5\,T_{\mathrm{BKT}}\)</span>, <span class="math notranslate nohighlight">\(T_{\mathrm{BKT}}\)</span>, and <span class="math notranslate nohighlight">\(1.5\,T_{\mathrm{BKT}}\)</span>. The integrated time is summed up to the self-consistent Madras-Sokal window chosen by <code class="docutils literal notranslate"><span class="pre">calculate_autocorr</span></code>, and only the first 160 lags are plotted.</p>
+<p>All three curves decay slowly, and the estimates (<span class="math notranslate nohighlight">\(\tau_{\mathrm{int}} \approx 59\)</span>, 102, and 80 sweeps) are of the same order as the sweep values. Below <span class="math notranslate nohighlight">\(T_{\mathrm{BKT}}\)</span> the decay reflects long-wavelength spin waves. At <span class="math notranslate nohighlight">\(T_{\mathrm{BKT}}\)</span> the curve flattens near <span class="math notranslate nohighlight">\(\rho_M \approx 0.15\)</span> after lag 100 and turns upward again, a sign that the 1600-sweep series is too short to resolve the tail. The slowest decay within the plotted range occurs at <span class="math notranslate nohighlight">\(1.5\,T_{\mathrm{BKT}}\)</span>,
+where <span class="math notranslate nohighlight">\(\rho_M\)</span> is still 0.47 at lag 160. This is not a contradiction with the disordered phase: at <span class="math notranslate nohighlight">\(T \approx 1.34\)</span> the BKT correlation length is still several lattice spacings, and the bounded angular proposal makes each spin decorrelate by slow diffusion. That the window-limited estimate of 80 sweeps sits below the area under the plotted part of the curve shows that this trajectory, like the one at <span class="math notranslate nohighlight">\(T_{\mathrm{BKT}}\)</span>, is too short for a reliable <span class="math notranslate nohighlight">\(\tau_{\mathrm{int}}\)</span>
+<a class="reference internal" href="#Bibliography"><span class="std std-ref">[4]</span></a> <a class="reference internal" href="#Bibliography"><span class="std std-ref">[5]</span></a>.</p>
 <div class="nbinput docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[9]:
 </pre></div>
@@ -814,34 +750,23 @@ free vortices rather than a critical-point singularity <a class="reference inter
 <span class="n">fig</span><span class="p">,</span> <span class="n">ax</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mf">7.8</span><span class="p">,</span> <span class="mf">4.8</span><span class="p">))</span>
 
 <span class="k">for</span> <span class="n">idx</span><span class="p">,</span> <span class="p">(</span><span class="n">temp</span><span class="p">,</span> <span class="n">label</span><span class="p">,</span> <span class="n">color</span><span class="p">)</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="nb">zip</span><span class="p">(</span><span class="n">autocorr_temperatures</span><span class="p">,</span> <span class="n">autocorr_labels</span><span class="p">,</span> <span class="n">autocorr_colors</span><span class="p">,</span> <span class="n">strict</span><span class="o">=</span><span class="kc">True</span><span class="p">)):</span>
-    <span class="n">sim_random</span> <span class="o">=</span> <span class="n">XYSimulation</span><span class="p">(</span>
-        <span class="n">size</span><span class="o">=</span><span class="mi">40</span><span class="p">,</span>
-        <span class="n">temp</span><span class="o">=</span><span class="nb">float</span><span class="p">(</span><span class="n">temp</span><span class="p">),</span>
-        <span class="n">update</span><span class="o">=</span><span class="s1">&#39;checkerboard&#39;</span><span class="p">,</span>
-        <span class="n">init_state</span><span class="o">=</span><span class="s1">&#39;random&#39;</span><span class="p">,</span>
-        <span class="n">seed</span><span class="o">=</span><span class="mi">5_000</span> <span class="o">+</span> <span class="n">idx</span><span class="p">,</span>
+    <span class="n">sim</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">prepare_equilibrated_simulation</span><span class="p">(</span>
+        <span class="n">model_cls</span><span class="o">=</span><span class="n">XYSimulation</span><span class="p">,</span> <span class="n">model_kwargs</span><span class="o">=</span><span class="p">{},</span> <span class="n">size</span><span class="o">=</span><span class="mi">40</span><span class="p">,</span> <span class="n">temp</span><span class="o">=</span><span class="nb">float</span><span class="p">(</span><span class="n">temp</span><span class="p">),</span>
+        <span class="n">seed</span><span class="o">=</span><span class="mi">5_000</span> <span class="o">+</span> <span class="n">idx</span><span class="p">,</span> <span class="n">chunk_size</span><span class="o">=</span><span class="mi">120</span><span class="p">,</span> <span class="n">max_steps</span><span class="o">=</span><span class="mi">9_000</span><span class="p">,</span> <span class="n">detect_stuck</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
     <span class="p">)</span>
-    <span class="n">sim_ordered</span> <span class="o">=</span> <span class="n">XYSimulation</span><span class="p">(</span>
-        <span class="n">size</span><span class="o">=</span><span class="mi">40</span><span class="p">,</span>
-        <span class="n">temp</span><span class="o">=</span><span class="nb">float</span><span class="p">(</span><span class="n">temp</span><span class="p">),</span>
-        <span class="n">update</span><span class="o">=</span><span class="s1">&#39;checkerboard&#39;</span><span class="p">,</span>
-        <span class="n">init_state</span><span class="o">=</span><span class="s1">&#39;ordered&#39;</span><span class="p">,</span>
-        <span class="n">seed</span><span class="o">=</span><span class="mi">5_000</span> <span class="o">+</span> <span class="n">idx</span><span class="p">,</span>
-    <span class="p">)</span>
-    <span class="n">convergence_equilibrate</span><span class="p">(</span>
-        <span class="n">sim_random</span><span class="o">=</span><span class="n">sim_random</span><span class="p">,</span>
-        <span class="n">sim_ordered</span><span class="o">=</span><span class="n">sim_ordered</span><span class="p">,</span>
-        <span class="n">chunk_size</span><span class="o">=</span><span class="mi">120</span><span class="p">,</span>
-        <span class="n">max_steps</span><span class="o">=</span><span class="mi">9_000</span><span class="p">)</span>
-    <span class="n">mags</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">sim_random</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="n">n_steps</span><span class="o">=</span><span class="mi">1_600</span><span class="p">)</span>
+    <span class="n">mags</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">sim</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="n">n_steps</span><span class="o">=</span><span class="mi">1_600</span><span class="p">)</span>
     <span class="n">mags_arr</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">mags</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">float</span><span class="p">)</span>
     <span class="k">try</span><span class="p">:</span>
-        <span class="n">corr</span><span class="p">,</span> <span class="n">tau_here</span> <span class="o">=</span> <span class="n">calculate_autocorr</span><span class="p">(</span><span class="n">time_series</span><span class="o">=</span><span class="n">mags_arr</span><span class="p">,</span> <span class="n">max_lag</span><span class="o">=</span><span class="mi">160</span><span class="p">)</span>
+        <span class="c1"># No lag cap: the Madras-Sokal window sets the summation range, so tau_int</span>
+        <span class="c1"># is not truncated when rho(t) is still large at the plotted lags.</span>
+        <span class="n">corr</span><span class="p">,</span> <span class="n">tau_here</span> <span class="o">=</span> <span class="n">calculate_autocorr</span><span class="p">(</span><span class="n">time_series</span><span class="o">=</span><span class="n">mags_arr</span><span class="p">)</span>
     <span class="k">except</span> <span class="n">ZeroVarianceAutocorrelationError</span><span class="p">:</span>
         <span class="n">corr</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">np</span><span class="o">.</span><span class="n">nan</span><span class="p">])</span>
         <span class="n">tau_here</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="s1">&#39;nan&#39;</span><span class="p">)</span>
-    <span class="n">lags</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="n">corr</span><span class="o">.</span><span class="n">size</span><span class="p">)</span>
-    <span class="n">ax</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">lags</span><span class="p">,</span> <span class="n">corr</span><span class="p">,</span> <span class="n">lw</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="n">color</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">label</span><span class="si">}</span><span class="s1">  ($</span><span class="se">\\</span><span class="s1">tau_</span><span class="se">{{</span><span class="s1">int</span><span class="se">}}</span><span class="s1"> </span><span class="se">\\</span><span class="s1">approx </span><span class="si">{</span><span class="n">tau_here</span><span class="si">:</span><span class="s1">.1f</span><span class="si">}</span><span class="s1">$)&#39;</span><span class="p">)</span>
+    <span class="c1"># Plot only the first 160 lags so the fast-decaying curves stay readable.</span>
+    <span class="n">corr_plot</span> <span class="o">=</span> <span class="n">corr</span><span class="p">[:</span><span class="mi">161</span><span class="p">]</span>
+    <span class="n">lags</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="n">corr_plot</span><span class="o">.</span><span class="n">size</span><span class="p">)</span>
+    <span class="n">ax</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">lags</span><span class="p">,</span> <span class="n">corr_plot</span><span class="p">,</span> <span class="n">lw</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="n">color</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">label</span><span class="si">}</span><span class="s1">  ($</span><span class="se">\\</span><span class="s1">tau_</span><span class="se">{{</span><span class="s1">int</span><span class="se">}}</span><span class="s1"> </span><span class="se">\\</span><span class="s1">approx </span><span class="si">{</span><span class="n">tau_here</span><span class="si">:</span><span class="s1">.1f</span><span class="si">}</span><span class="s1">$)&#39;</span><span class="p">)</span>
 
 <span class="n">ax</span><span class="o">.</span><span class="n">axhline</span><span class="p">(</span><span class="mf">0.0</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s1">&#39;0.4&#39;</span><span class="p">,</span> <span class="n">ls</span><span class="o">=</span><span class="s1">&#39;--&#39;</span><span class="p">,</span> <span class="n">lw</span><span class="o">=</span><span class="mf">1.0</span><span class="p">)</span>
 <span class="n">ax</span><span class="o">.</span><span class="n">set_xlabel</span><span class="p">(</span><span class="sa">r</span><span class="s1">&#39;Lag $\tau$&#39;</span><span class="p">)</span>
@@ -856,36 +781,27 @@ free vortices rather than a critical-point singularity <a class="reference inter
 </pre></div>
 </div>
 </div>
-<div class="nboutput docutils container">
-<div class="prompt empty docutils container">
-</div>
-<div class="output_area stderr docutils container">
-<div class="highlight"><pre>
-convergence_equilibrate: detected quasi-steady stuck state before max_steps=9000; stopping early without convergence.
-convergence_equilibrate: detected quasi-steady stuck state before max_steps=9000; stopping early without convergence.
-convergence_equilibrate: detected quasi-steady stuck state before max_steps=9000; stopping early without convergence.
-</pre></div></div>
-</div>
 <div class="nboutput nblast docutils container">
 <div class="prompt empty docutils container">
 </div>
 <div class="output_area docutils container">
-<img alt="_images/xy_temperature_sweep_17_1.png" src="_images/xy_temperature_sweep_17_1.png" />
+<img alt="_images/xy_temperature_sweep_17_0.png" src="_images/xy_temperature_sweep_17_0.png" />
 </div>
 </div>
 </section>
 <section id="Synthesis">
 <h2>Synthesis<a class="headerlink" href="#Synthesis" title="Link to this heading"></a></h2>
-<p>The full temperature sweep shows the BKT crossover from several complementary perspectives. The finite-size magnetization decays, the energy curve bends, the susceptibility and specific heat develop broad humps, the entropy slope changes, and the autocorrelation time peaks, all in the vicinity of <span class="math notranslate nohighlight">\(T_{\mathrm{BKT}} \approx 0.893\)</span>. These signatures are less singular than in the Ising model because the BKT mechanism is topological (vortex unbinding) rather than a conventional
-symmetry-breaking transition. The companion BKT Transition notebook examines the vortex density, helicity modulus, and correlation function structure that directly probe this topological content.</p>
+<p>The fallback sweep shows the BKT crossover from several angles. The finite-size magnetization decays and then collapses, the susceptibility and specific heat develop maxima, and the autocorrelation time peaks, all at <span class="math notranslate nohighlight">\(T \approx 1.1\)</span> to <span class="math notranslate nohighlight">\(1.2\)</span> rather than at <span class="math notranslate nohighlight">\(T_{\mathrm{BKT}} \approx 0.893\)</span>. On a <span class="math notranslate nohighlight">\(32 \times 32\)</span> lattice this shift is expected, because the logarithmic finite-size corrections of the BKT transition decay only as <span class="math notranslate nohighlight">\(1/(\ln L)^2\)</span>. The specific heat maximum
+would stay above <span class="math notranslate nohighlight">\(T_{\mathrm{BKT}}\)</span> even for an infinite lattice, and the susceptibility would become infinite throughout the low-temperature phase. Locating <span class="math notranslate nohighlight">\(T_{\mathrm{BKT}}\)</span> itself requires observables that see the topological mechanism directly. The companion BKT Transition notebook examines the vortex density, helicity modulus, and correlation function structure for that purpose.</p>
 </section>
 <section id="Bibliography">
 <h2>Bibliography<a class="headerlink" href="#Bibliography" title="Link to this heading"></a></h2>
 <p><a class="reference internal" href="#Bibliography"><span class="std std-ref">[1]</span></a> N. D. Mermin and H. Wagner, “Absence of Ferromagnetism or Antiferromagnetism in One- or Two-Dimensional Isotropic Heisenberg Models,” <em>Physical Review Letters</em> 17, 1133 (1966). <a class="reference external" href="https://journals.aps.org/prl/abstract/10.1103/PhysRevLett.17.1133">APS</a></p>
-<p><a class="reference internal" href="#Bibliography"><span class="std std-ref">[2]</span></a> J. M. Kosterlitz and D. J. Thouless, “Ordering, metastability and phase transitions in two-dimensional systems,” <em>Journal of Physics C</em> 6, 1181 (1973). <a class="reference external" href="https://iopscience.iop.org/article/10.1088/0022-3719/6/7/010">IoP Open Access</a></p>
-<p><a class="reference internal" href="#Bibliography"><span class="std std-ref">[3]</span></a> J. M. Kosterlitz, “The critical properties of the two-dimensional xy model,” <em>Journal of Physics C</em> 7, 1046 (1974). <a class="reference external" href="https://iopscience.iop.org/article/10.1088/0022-3719/7/6/005">IoP Open Access</a></p>
+<p><a class="reference internal" href="#Bibliography"><span class="std std-ref">[2]</span></a> J. M. Kosterlitz and D. J. Thouless, “Ordering, metastability and phase transitions in two-dimensional systems,” <em>Journal of Physics C</em> 6, 1181 (1973). <a class="reference external" href="https://iopscience.iop.org/article/10.1088/0022-3719/6/7/010">IOP</a></p>
+<p><a class="reference internal" href="#Bibliography"><span class="std std-ref">[3]</span></a> J. M. Kosterlitz, “The critical properties of the two-dimensional xy model,” <em>Journal of Physics C</em> 7, 1046 (1974). <a class="reference external" href="https://iopscience.iop.org/article/10.1088/0022-3719/7/6/005">IOP</a></p>
 <p><a class="reference internal" href="#Bibliography"><span class="std std-ref">[4]</span></a> A. D. Sokal, “Monte Carlo Methods in Statistical Mechanics: Foundations and New Algorithms,” lecture notes (1989), reprinted in <em>Functional Integration: Basics and Applications</em> (1997). <a class="reference external" href="https://link.springer.com/chapter/10.1007/978-1-4899-0319-8_6">Springer Link</a></p>
-<p><a class="reference internal" href="#Bibliography"><span class="std std-ref">[5]</span></a> M. E. J. Newman and G. T. Barkema, <em>Monte Carlo Methods in Statistical Physics</em>, Oxford University Press (1999). <a class="reference external" href="https://arxiv.org/abs/0905.1629">Lecture notes summary</a></p>
+<p><a class="reference internal" href="#Bibliography"><span class="std std-ref">[5]</span></a> M. E. J. Newman and G. T. Barkema, <em>Monte Carlo Methods in Statistical Physics</em>, Oxford University Press (1999). Textbook; no open-access edition. For an open introduction to the same methods, see H. G. Katzgraber, “Introduction to Monte Carlo Methods,” lecture notes (2009). <a class="reference external" href="https://arxiv.org/abs/0905.1629">arXiv:0905.1629</a></p>
+<p><a class="reference internal" href="#Bibliography"><span class="std std-ref">[6]</span></a> Y. Tomita and Y. Okabe, “Probability-changing cluster algorithm for two-dimensional XY and clock models” (2002). Gives <span class="math notranslate nohighlight">\(T_{\mathrm{BKT}} = 0.8933(6)\)</span> and the finite-size form <span class="math notranslate nohighlight">\(T_{\mathrm{BKT}}(L) = T_{\mathrm{BKT}} + c^2 T_{\mathrm{BKT}}/(\ln bL)^2\)</span>. <a class="reference external" href="https://arxiv.org/abs/cond-mat/0202161">arXiv:cond-mat/0202161</a></p>
 </section>
 </section>
 

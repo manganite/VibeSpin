@@ -106,10 +106,15 @@
 
 <span class="sd">Comparing raw autocorrelation times across the two algorithms would be</span>
 <span class="sd">meaningless, because one Wolff step touches a cluster and one Metropolis sweep</span>
-<span class="sd">touches the whole lattice.  The work-normalised time multiplies the Wolff</span>
-<span class="sd">autocorrelation time by the mean cluster fraction, putting both on a</span>
-<span class="sd">lattice-sweep footing; the independent-samples-per-second figure sidesteps the</span>
-<span class="sd">question entirely by measuring against the clock.</span>
+<span class="sd">touches the whole lattice.  The Wolff run therefore records one sample every</span>
+<span class="sd">``round(L^2 / &lt;C&gt;)`` cluster flips, roughly one lattice sweep of work, so that</span>
+<span class="sd">both algorithms receive the same measurement budget in sweep units; giving</span>
+<span class="sd">both the same number of raw steps would leave Wolff with a few sweeps of work</span>
+<span class="sd">in the paramagnet, where clusters hold a handful of spins.  ``tau_wolff`` is</span>
+<span class="sd">stored in cluster flips as before, and the work-normalised time multiplies it</span>
+<span class="sd">by the mean cluster fraction, putting both algorithms on a lattice-sweep</span>
+<span class="sd">footing; the independent-samples-per-second figure sidesteps the question</span>
+<span class="sd">entirely by measuring against the clock.</span>
 <span class="sd">&quot;&quot;&quot;</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">__future__</span><span class="w"> </span><span class="kn">import</span> <span class="n">annotations</span>
 
@@ -122,7 +127,7 @@
 <span class="kn">import</span><span class="w"> </span><span class="nn">matplotlib.pyplot</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">plt</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
 
-<span class="kn">from</span><span class="w"> </span><span class="nn">utils.equilibration</span><span class="w"> </span><span class="kn">import</span> <span class="n">convergence_equilibrate</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">utils.equilibration</span><span class="w"> </span><span class="kn">import</span> <span class="n">prepare_equilibrated_simulation</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">utils.exceptions</span><span class="w"> </span><span class="kn">import</span> <span class="n">ZeroVarianceAutocorrelationError</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">utils.observables</span><span class="w"> </span><span class="kn">import</span> <span class="n">calculate_thermodynamics</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">utils.statistics</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
@@ -138,10 +143,12 @@
 <span class="n">_MEASURED_KEYS</span> <span class="o">=</span> <span class="p">(</span>
     <span class="s1">&#39;tau_metro&#39;</span><span class="p">,</span> <span class="s1">&#39;tau_wolff&#39;</span><span class="p">,</span> <span class="s1">&#39;iss_metro&#39;</span><span class="p">,</span> <span class="s1">&#39;iss_wolff&#39;</span><span class="p">,</span>
     <span class="s1">&#39;mean_cluster_frac&#39;</span><span class="p">,</span> <span class="s1">&#39;chi_metro&#39;</span><span class="p">,</span> <span class="s1">&#39;chi_wolff&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;wolff_flips_per_sample&#39;</span><span class="p">,</span> <span class="s1">&#39;converged_metro&#39;</span><span class="p">,</span> <span class="s1">&#39;converged_wolff&#39;</span><span class="p">,</span>
 <span class="p">)</span>
 
 <span class="c1">#: Cluster sizes are measured in a separate short pass so that the timing runs</span>
-<span class="c1">#: stay free of the per-step bookkeeping the cluster record would add.</span>
+<span class="c1">#: stay free of the per-step bookkeeping the cluster record would add. The</span>
+<span class="c1">#: same pass sets how many cluster flips make up one sweep-equivalent sample.</span>
 <span class="n">_CLUSTER_PASS_STEPS</span> <span class="o">=</span> <span class="mi">300</span>
 
 
@@ -173,6 +180,10 @@
 <span class="sd">    model_kwargs : dict[str, typing.Any]</span>
 <span class="sd">        Extra constructor arguments beyond size, temperature, update, start,</span>
 <span class="sd">        and seed.</span>
+<span class="sd">    detect_stuck : bool</span>
+<span class="sd">        Enable quasi-steady stuck detection for both equilibrations; set only</span>
+<span class="sd">        below the ordering temperature of a model with metastable domain</span>
+<span class="sd">        states (default False).</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
     <span class="n">temp_idx</span><span class="p">:</span> <span class="nb">int</span>
@@ -183,13 +194,16 @@
     <span class="n">eq_max_steps</span><span class="p">:</span> <span class="nb">int</span>
     <span class="n">meas_steps</span><span class="p">:</span> <span class="nb">int</span>
     <span class="n">model_cls</span><span class="p">:</span> <span class="nb">type</span>
-    <span class="n">model_kwargs</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]</span></div>
+    <span class="n">model_kwargs</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]</span>
+    <span class="n">detect_stuck</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span></div>
 
 
 
-<span class="k">def</span><span class="w"> </span><span class="nf">_equilibrated_pair</span><span class="p">(</span><span class="o">*</span><span class="p">,</span> <span class="n">point</span><span class="p">:</span> <span class="n">EfficiencyPoint</span><span class="p">,</span> <span class="n">update</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">seed</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Any</span><span class="p">:</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">_equilibrated_simulation</span><span class="p">(</span>
+    <span class="o">*</span><span class="p">,</span> <span class="n">point</span><span class="p">:</span> <span class="n">EfficiencyPoint</span><span class="p">,</span> <span class="n">update</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">seed</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="n">Any</span><span class="p">,</span> <span class="nb">bool</span><span class="p">]:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    Build a two-start pair, equilibrate it, and return the random-start run.</span>
+<span class="sd">    Build a two-start pair, equilibrate it, and return the start to measure.</span>
 
 <span class="sd">    Parameters</span>
 <span class="sd">    ----------</span>
@@ -198,29 +212,68 @@
 <span class="sd">    update : str</span>
 <span class="sd">        Update scheme for both simulations.</span>
 <span class="sd">    seed : int</span>
-<span class="sd">        Seed shared by both starts of this pair.</span>
+<span class="sd">        Seed of the random start; the ordered start derives its own.</span>
 
 <span class="sd">    Returns</span>
 <span class="sd">    -------</span>
-<span class="sd">    typing.Any</span>
-<span class="sd">        The equilibrated random-start simulation, ready to be measured.</span>
+<span class="sd">    tuple[typing.Any, bool]</span>
+<span class="sd">        The simulation to measure (the random start after convergence, the</span>
+<span class="sd">        ordered start otherwise) and whether the pair is certified for</span>
+<span class="sd">        measurement (``TwoStartOutcome.certified``).</span>
 <span class="sd">    &quot;&quot;&quot;</span>
-    <span class="n">common</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span>
-        <span class="n">size</span><span class="o">=</span><span class="n">point</span><span class="o">.</span><span class="n">size</span><span class="p">,</span> <span class="n">temp</span><span class="o">=</span><span class="n">point</span><span class="o">.</span><span class="n">temperature</span><span class="p">,</span> <span class="n">update</span><span class="o">=</span><span class="n">update</span><span class="p">,</span> <span class="o">**</span><span class="n">point</span><span class="o">.</span><span class="n">model_kwargs</span>
-    <span class="p">)</span>
-    <span class="n">sim_random</span> <span class="o">=</span> <span class="n">point</span><span class="o">.</span><span class="n">model_cls</span><span class="p">(</span><span class="n">init_state</span><span class="o">=</span><span class="s1">&#39;random&#39;</span><span class="p">,</span> <span class="n">seed</span><span class="o">=</span><span class="n">seed</span><span class="p">,</span> <span class="o">**</span><span class="n">common</span><span class="p">)</span>
-    <span class="n">sim_ordered</span> <span class="o">=</span> <span class="n">point</span><span class="o">.</span><span class="n">model_cls</span><span class="p">(</span><span class="n">init_state</span><span class="o">=</span><span class="s1">&#39;ordered&#39;</span><span class="p">,</span> <span class="n">seed</span><span class="o">=</span><span class="n">seed</span><span class="p">,</span> <span class="o">**</span><span class="n">common</span><span class="p">)</span>
-    <span class="n">convergence_equilibrate</span><span class="p">(</span>
-        <span class="n">sim_random</span><span class="o">=</span><span class="n">sim_random</span><span class="p">,</span>
-        <span class="n">sim_ordered</span><span class="o">=</span><span class="n">sim_ordered</span><span class="p">,</span>
+    <span class="n">sim</span><span class="p">,</span> <span class="n">outcome</span> <span class="o">=</span> <span class="n">prepare_equilibrated_simulation</span><span class="p">(</span>
+        <span class="n">model_cls</span><span class="o">=</span><span class="n">point</span><span class="o">.</span><span class="n">model_cls</span><span class="p">,</span>
+        <span class="n">model_kwargs</span><span class="o">=</span><span class="n">point</span><span class="o">.</span><span class="n">model_kwargs</span><span class="p">,</span>
+        <span class="n">size</span><span class="o">=</span><span class="n">point</span><span class="o">.</span><span class="n">size</span><span class="p">,</span>
+        <span class="n">temp</span><span class="o">=</span><span class="n">point</span><span class="o">.</span><span class="n">temperature</span><span class="p">,</span>
+        <span class="n">seed</span><span class="o">=</span><span class="n">seed</span><span class="p">,</span>
         <span class="n">chunk_size</span><span class="o">=</span><span class="n">point</span><span class="o">.</span><span class="n">eq_probe_steps</span><span class="p">,</span>
         <span class="n">max_steps</span><span class="o">=</span><span class="n">point</span><span class="o">.</span><span class="n">eq_max_steps</span><span class="p">,</span>
+        <span class="n">update</span><span class="o">=</span><span class="n">update</span><span class="p">,</span>
+        <span class="n">detect_stuck</span><span class="o">=</span><span class="n">point</span><span class="o">.</span><span class="n">detect_stuck</span><span class="p">,</span>
     <span class="p">)</span>
-    <span class="k">return</span> <span class="n">sim_random</span>
+    <span class="k">return</span> <span class="n">sim</span><span class="p">,</span> <span class="nb">bool</span><span class="p">(</span><span class="n">outcome</span><span class="o">.</span><span class="n">certified</span><span class="p">)</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_record_samples</span><span class="p">(</span>
+    <span class="o">*</span><span class="p">,</span> <span class="n">sim</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="n">n_samples</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">steps_per_sample</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="nb">float</span><span class="p">]:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Record magnetisation and energy every ``steps_per_sample`` steps, timed.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    sim : typing.Any</span>
+<span class="sd">        Equilibrated simulation to measure.</span>
+<span class="sd">    n_samples : int</span>
+<span class="sd">        Number of samples to record.</span>
+<span class="sd">    steps_per_sample : int</span>
+<span class="sd">        Steps between two samples; 1 reproduces ``sim.run``.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    tuple[np.ndarray, np.ndarray, float]</span>
+<span class="sd">        Magnetisation series, energy series, and elapsed wall-clock seconds.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">started</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">perf_counter</span><span class="p">()</span>
+    <span class="k">if</span> <span class="n">steps_per_sample</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+        <span class="n">mags</span><span class="p">,</span> <span class="n">engs</span> <span class="o">=</span> <span class="n">sim</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="n">n_steps</span><span class="o">=</span><span class="n">n_samples</span><span class="p">)</span>
+        <span class="n">elapsed</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">perf_counter</span><span class="p">()</span> <span class="o">-</span> <span class="n">started</span>
+        <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">mags</span><span class="p">),</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">engs</span><span class="p">),</span> <span class="n">elapsed</span>
+    <span class="n">mags_arr</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">empty</span><span class="p">(</span><span class="n">n_samples</span><span class="p">)</span>
+    <span class="n">engs_arr</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">empty</span><span class="p">(</span><span class="n">n_samples</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n_samples</span><span class="p">):</span>
+        <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">steps_per_sample</span><span class="p">):</span>
+            <span class="n">sim</span><span class="o">.</span><span class="n">step</span><span class="p">()</span>
+        <span class="n">mags_arr</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="o">=</span> <span class="n">sim</span><span class="o">.</span><span class="n">get_magnetization</span><span class="p">()</span>
+        <span class="n">engs_arr</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="o">=</span> <span class="n">sim</span><span class="o">.</span><span class="n">get_energy</span><span class="p">()</span>
+    <span class="n">elapsed</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">perf_counter</span><span class="p">()</span> <span class="o">-</span> <span class="n">started</span>
+    <span class="k">return</span> <span class="n">mags_arr</span><span class="p">,</span> <span class="n">engs_arr</span><span class="p">,</span> <span class="n">elapsed</span>
 
 
 <span class="k">def</span><span class="w"> </span><span class="nf">_timed_measurement</span><span class="p">(</span>
     <span class="o">*</span><span class="p">,</span> <span class="n">sim</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="n">meas_steps</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">temperature</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">size</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+    <span class="n">steps_per_sample</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">1</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">float</span><span class="p">,</span> <span class="nb">float</span><span class="p">,</span> <span class="nb">float</span><span class="p">]:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Run a timed measurement pass and reduce it to the efficiency quantities.</span>
@@ -230,7 +283,10 @@
 <span class="sd">    sim : typing.Any</span>
 <span class="sd">        Equilibrated simulation to measure.</span>
 <span class="sd">    meas_steps : int</span>
-<span class="sd">        Number of steps to run and time.</span>
+<span class="sd">        Number of samples to record and time.</span>
+<span class="sd">    steps_per_sample : int</span>
+<span class="sd">        Update steps between two samples (default 1). The autocorrelation</span>
+<span class="sd">        time is returned in update steps, i.e. multiplied by this factor.</span>
 <span class="sd">    temperature : float</span>
 <span class="sd">        Temperature, needed for the susceptibility.</span>
 <span class="sd">    size : int</span>
@@ -243,23 +299,23 @@
 <span class="sd">        magnetic susceptibility.  The first two are NaN where the</span>
 <span class="sd">        magnetisation series has no usable variance.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
-    <span class="n">started</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">perf_counter</span><span class="p">()</span>
-    <span class="n">mags</span><span class="p">,</span> <span class="n">engs</span> <span class="o">=</span> <span class="n">sim</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="n">n_steps</span><span class="o">=</span><span class="n">meas_steps</span><span class="p">)</span>
-    <span class="n">elapsed</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">perf_counter</span><span class="p">()</span> <span class="o">-</span> <span class="n">started</span>
-
-    <span class="n">mags_arr</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">mags</span><span class="p">)</span>
-    <span class="n">engs_arr</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">engs</span><span class="p">)</span>
+    <span class="n">mags_arr</span><span class="p">,</span> <span class="n">engs_arr</span><span class="p">,</span> <span class="n">elapsed</span> <span class="o">=</span> <span class="n">_record_samples</span><span class="p">(</span>
+        <span class="n">sim</span><span class="o">=</span><span class="n">sim</span><span class="p">,</span> <span class="n">n_samples</span><span class="o">=</span><span class="n">meas_steps</span><span class="p">,</span> <span class="n">steps_per_sample</span><span class="o">=</span><span class="n">steps_per_sample</span><span class="p">,</span>
+    <span class="p">)</span>
     <span class="k">try</span><span class="p">:</span>
-        <span class="n">_</span><span class="p">,</span> <span class="n">tau_int</span> <span class="o">=</span> <span class="n">calculate_autocorr</span><span class="p">(</span><span class="n">time_series</span><span class="o">=</span><span class="n">mags_arr</span><span class="p">)</span>
+        <span class="n">_</span><span class="p">,</span> <span class="n">tau_samples</span> <span class="o">=</span> <span class="n">calculate_autocorr</span><span class="p">(</span><span class="n">time_series</span><span class="o">=</span><span class="n">mags_arr</span><span class="p">)</span>
     <span class="k">except</span> <span class="n">ZeroVarianceAutocorrelationError</span><span class="p">:</span>
-        <span class="n">tau_int</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="s1">&#39;nan&#39;</span><span class="p">)</span>
+        <span class="n">tau_samples</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="s1">&#39;nan&#39;</span><span class="p">)</span>
+    <span class="c1"># Independent samples per second count samples, so they use the</span>
+    <span class="c1"># autocorrelation time in sample units; the returned time is in steps.</span>
+    <span class="n">tau_int</span> <span class="o">=</span> <span class="n">tau_samples</span> <span class="o">*</span> <span class="n">steps_per_sample</span>
 
     <span class="n">_</span><span class="p">,</span> <span class="n">_</span><span class="p">,</span> <span class="n">chi</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">calculate_thermodynamics</span><span class="p">(</span>
         <span class="n">mags</span><span class="o">=</span><span class="n">mags_arr</span><span class="p">,</span> <span class="n">engs</span><span class="o">=</span><span class="n">engs_arr</span><span class="p">,</span> <span class="n">T</span><span class="o">=</span><span class="n">temperature</span><span class="p">,</span> <span class="n">L</span><span class="o">=</span><span class="n">size</span><span class="p">,</span>
     <span class="p">)</span>
     <span class="n">iss</span> <span class="o">=</span> <span class="p">(</span>
-        <span class="p">(</span><span class="n">meas_steps</span> <span class="o">/</span> <span class="n">elapsed</span><span class="p">)</span> <span class="o">/</span> <span class="n">tau_int</span>
-        <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">isfinite</span><span class="p">(</span><span class="n">tau_int</span><span class="p">)</span> <span class="ow">and</span> <span class="n">tau_int</span> <span class="o">&gt;</span> <span class="mi">0</span>
+        <span class="p">(</span><span class="n">meas_steps</span> <span class="o">/</span> <span class="n">elapsed</span><span class="p">)</span> <span class="o">/</span> <span class="n">tau_samples</span>
+        <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">isfinite</span><span class="p">(</span><span class="n">tau_samples</span><span class="p">)</span> <span class="ow">and</span> <span class="n">tau_samples</span> <span class="o">&gt;</span> <span class="mi">0</span>
         <span class="k">else</span> <span class="nb">float</span><span class="p">(</span><span class="s1">&#39;nan&#39;</span><span class="p">)</span>
     <span class="p">)</span>
     <span class="k">return</span> <span class="n">tau_int</span><span class="p">,</span> <span class="n">iss</span><span class="p">,</span> <span class="n">chi</span>
@@ -272,8 +328,9 @@
 <span class="sd">    Measure local-update and cluster-update efficiency at one grid point.</span>
 
 <span class="sd">    Both algorithms start from their own independently equilibrated state, so</span>
-<span class="sd">    that neither inherits the other&#39;s correlations, and each is timed over the</span>
-<span class="sd">    same number of its own steps.</span>
+<span class="sd">    that neither inherits the other&#39;s correlations. Metropolis records one</span>
+<span class="sd">    sample per sweep; Wolff records one sample every ``round(L^2 / &lt;C&gt;)``</span>
+<span class="sd">    cluster flips, so both receive the same budget in sweep units.</span>
 
 <span class="sd">    Parameters</span>
 <span class="sd">    ----------</span>
@@ -283,29 +340,46 @@
 <span class="sd">    Returns</span>
 <span class="sd">    -------</span>
 <span class="sd">    dict[str, float]</span>
-<span class="sd">        Grid indices, temperature, and the seven measured quantities.</span>
+<span class="sd">        Grid indices, temperature, the measured quantities, and the</span>
+<span class="sd">        ``converged_metro`` and ``converged_wolff`` flags. An algorithm whose</span>
+<span class="sd">        two starts did not converge within ``eq_max_steps`` is not measured,</span>
+<span class="sd">        and its quantities are NaN.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="n">seed</span> <span class="o">=</span> <span class="n">derive_point_seed</span><span class="p">(</span>
         <span class="n">temperature_index</span><span class="o">=</span><span class="n">point</span><span class="o">.</span><span class="n">temp_idx</span><span class="p">,</span> <span class="n">seed_index</span><span class="o">=</span><span class="n">point</span><span class="o">.</span><span class="n">seed_idx</span><span class="p">,</span>
     <span class="p">)</span>
 
-    <span class="n">sim_metro</span> <span class="o">=</span> <span class="n">_equilibrated_pair</span><span class="p">(</span><span class="n">point</span><span class="o">=</span><span class="n">point</span><span class="p">,</span> <span class="n">update</span><span class="o">=</span><span class="s1">&#39;checkerboard&#39;</span><span class="p">,</span> <span class="n">seed</span><span class="o">=</span><span class="n">seed</span><span class="p">)</span>
-    <span class="n">tau_metro</span><span class="p">,</span> <span class="n">iss_metro</span><span class="p">,</span> <span class="n">chi_metro</span> <span class="o">=</span> <span class="n">_timed_measurement</span><span class="p">(</span>
-        <span class="n">sim</span><span class="o">=</span><span class="n">sim_metro</span><span class="p">,</span> <span class="n">meas_steps</span><span class="o">=</span><span class="n">point</span><span class="o">.</span><span class="n">meas_steps</span><span class="p">,</span>
-        <span class="n">temperature</span><span class="o">=</span><span class="n">point</span><span class="o">.</span><span class="n">temperature</span><span class="p">,</span> <span class="n">size</span><span class="o">=</span><span class="n">point</span><span class="o">.</span><span class="n">size</span><span class="p">,</span>
+    <span class="n">nan</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="s1">&#39;nan&#39;</span><span class="p">)</span>
+    <span class="c1"># A pair that never converged is not measured; its quantities stay NaN.</span>
+    <span class="n">sim_metro</span><span class="p">,</span> <span class="n">converged_metro</span> <span class="o">=</span> <span class="n">_equilibrated_simulation</span><span class="p">(</span>
+        <span class="n">point</span><span class="o">=</span><span class="n">point</span><span class="p">,</span> <span class="n">update</span><span class="o">=</span><span class="s1">&#39;checkerboard&#39;</span><span class="p">,</span> <span class="n">seed</span><span class="o">=</span><span class="n">seed</span><span class="p">,</span>
     <span class="p">)</span>
+    <span class="n">tau_metro</span><span class="p">,</span> <span class="n">iss_metro</span><span class="p">,</span> <span class="n">chi_metro</span> <span class="o">=</span> <span class="n">nan</span><span class="p">,</span> <span class="n">nan</span><span class="p">,</span> <span class="n">nan</span>
+    <span class="k">if</span> <span class="n">converged_metro</span><span class="p">:</span>
+        <span class="n">tau_metro</span><span class="p">,</span> <span class="n">iss_metro</span><span class="p">,</span> <span class="n">chi_metro</span> <span class="o">=</span> <span class="n">_timed_measurement</span><span class="p">(</span>
+            <span class="n">sim</span><span class="o">=</span><span class="n">sim_metro</span><span class="p">,</span> <span class="n">meas_steps</span><span class="o">=</span><span class="n">point</span><span class="o">.</span><span class="n">meas_steps</span><span class="p">,</span>
+            <span class="n">temperature</span><span class="o">=</span><span class="n">point</span><span class="o">.</span><span class="n">temperature</span><span class="p">,</span> <span class="n">size</span><span class="o">=</span><span class="n">point</span><span class="o">.</span><span class="n">size</span><span class="p">,</span>
+        <span class="p">)</span>
 
-    <span class="n">sim_wolff</span> <span class="o">=</span> <span class="n">_equilibrated_pair</span><span class="p">(</span><span class="n">point</span><span class="o">=</span><span class="n">point</span><span class="p">,</span> <span class="n">update</span><span class="o">=</span><span class="s1">&#39;wolff&#39;</span><span class="p">,</span> <span class="n">seed</span><span class="o">=</span><span class="n">seed</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span>
-    <span class="n">tau_wolff</span><span class="p">,</span> <span class="n">iss_wolff</span><span class="p">,</span> <span class="n">chi_wolff</span> <span class="o">=</span> <span class="n">_timed_measurement</span><span class="p">(</span>
-        <span class="n">sim</span><span class="o">=</span><span class="n">sim_wolff</span><span class="p">,</span> <span class="n">meas_steps</span><span class="o">=</span><span class="n">point</span><span class="o">.</span><span class="n">meas_steps</span><span class="p">,</span>
-        <span class="n">temperature</span><span class="o">=</span><span class="n">point</span><span class="o">.</span><span class="n">temperature</span><span class="p">,</span> <span class="n">size</span><span class="o">=</span><span class="n">point</span><span class="o">.</span><span class="n">size</span><span class="p">,</span>
+    <span class="n">sim_wolff</span><span class="p">,</span> <span class="n">converged_wolff</span> <span class="o">=</span> <span class="n">_equilibrated_simulation</span><span class="p">(</span>
+        <span class="n">point</span><span class="o">=</span><span class="n">point</span><span class="p">,</span> <span class="n">update</span><span class="o">=</span><span class="s1">&#39;wolff&#39;</span><span class="p">,</span> <span class="n">seed</span><span class="o">=</span><span class="n">seed</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span>
     <span class="p">)</span>
-
-    <span class="n">sim_cluster</span> <span class="o">=</span> <span class="n">_equilibrated_pair</span><span class="p">(</span><span class="n">point</span><span class="o">=</span><span class="n">point</span><span class="p">,</span> <span class="n">update</span><span class="o">=</span><span class="s1">&#39;wolff&#39;</span><span class="p">,</span> <span class="n">seed</span><span class="o">=</span><span class="n">seed</span> <span class="o">+</span> <span class="mi">2</span><span class="p">)</span>
-    <span class="n">_</span><span class="p">,</span> <span class="n">_</span><span class="p">,</span> <span class="n">cluster_sizes</span> <span class="o">=</span> <span class="n">sim_cluster</span><span class="o">.</span><span class="n">run_with_cluster_sizes</span><span class="p">(</span>
-        <span class="n">n_steps</span><span class="o">=</span><span class="nb">min</span><span class="p">(</span><span class="n">point</span><span class="o">.</span><span class="n">meas_steps</span><span class="p">,</span> <span class="n">_CLUSTER_PASS_STEPS</span><span class="p">),</span>
-    <span class="p">)</span>
-    <span class="n">mean_cluster_frac</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">cluster_sizes</span><span class="p">))</span> <span class="o">/</span> <span class="nb">float</span><span class="p">(</span><span class="n">point</span><span class="o">.</span><span class="n">size</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span>
+    <span class="n">tau_wolff</span><span class="p">,</span> <span class="n">iss_wolff</span><span class="p">,</span> <span class="n">chi_wolff</span> <span class="o">=</span> <span class="n">nan</span><span class="p">,</span> <span class="n">nan</span><span class="p">,</span> <span class="n">nan</span>
+    <span class="n">mean_cluster_frac</span><span class="p">,</span> <span class="n">flips_per_sample</span> <span class="o">=</span> <span class="n">nan</span><span class="p">,</span> <span class="n">nan</span>
+    <span class="k">if</span> <span class="n">converged_wolff</span><span class="p">:</span>
+        <span class="c1"># The cluster pass on the equilibrated Wolff run sets the sample</span>
+        <span class="c1"># spacing: one sample per lattice sweep of flipped spins on average.</span>
+        <span class="n">_</span><span class="p">,</span> <span class="n">_</span><span class="p">,</span> <span class="n">cluster_sizes</span> <span class="o">=</span> <span class="n">sim_wolff</span><span class="o">.</span><span class="n">run_with_cluster_sizes</span><span class="p">(</span>
+            <span class="n">n_steps</span><span class="o">=</span><span class="nb">min</span><span class="p">(</span><span class="n">point</span><span class="o">.</span><span class="n">meas_steps</span><span class="p">,</span> <span class="n">_CLUSTER_PASS_STEPS</span><span class="p">),</span>
+        <span class="p">)</span>
+        <span class="n">mean_cluster_frac</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">cluster_sizes</span><span class="p">))</span> <span class="o">/</span> <span class="nb">float</span><span class="p">(</span><span class="n">point</span><span class="o">.</span><span class="n">size</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span>
+        <span class="n">spacing</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="nb">int</span><span class="p">(</span><span class="nb">round</span><span class="p">(</span><span class="mf">1.0</span> <span class="o">/</span> <span class="n">mean_cluster_frac</span><span class="p">)))</span>
+        <span class="n">flips_per_sample</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">spacing</span><span class="p">)</span>
+        <span class="n">tau_wolff</span><span class="p">,</span> <span class="n">iss_wolff</span><span class="p">,</span> <span class="n">chi_wolff</span> <span class="o">=</span> <span class="n">_timed_measurement</span><span class="p">(</span>
+            <span class="n">sim</span><span class="o">=</span><span class="n">sim_wolff</span><span class="p">,</span> <span class="n">meas_steps</span><span class="o">=</span><span class="n">point</span><span class="o">.</span><span class="n">meas_steps</span><span class="p">,</span>
+            <span class="n">temperature</span><span class="o">=</span><span class="n">point</span><span class="o">.</span><span class="n">temperature</span><span class="p">,</span> <span class="n">size</span><span class="o">=</span><span class="n">point</span><span class="o">.</span><span class="n">size</span><span class="p">,</span>
+            <span class="n">steps_per_sample</span><span class="o">=</span><span class="n">spacing</span><span class="p">,</span>
+        <span class="p">)</span>
 
     <span class="k">return</span> <span class="p">{</span>
         <span class="s1">&#39;temp_idx&#39;</span><span class="p">:</span> <span class="nb">float</span><span class="p">(</span><span class="n">point</span><span class="o">.</span><span class="n">temp_idx</span><span class="p">),</span>
@@ -318,6 +392,9 @@
         <span class="s1">&#39;mean_cluster_frac&#39;</span><span class="p">:</span> <span class="n">mean_cluster_frac</span><span class="p">,</span>
         <span class="s1">&#39;chi_metro&#39;</span><span class="p">:</span> <span class="n">chi_metro</span><span class="p">,</span>
         <span class="s1">&#39;chi_wolff&#39;</span><span class="p">:</span> <span class="n">chi_wolff</span><span class="p">,</span>
+        <span class="s1">&#39;wolff_flips_per_sample&#39;</span><span class="p">:</span> <span class="n">flips_per_sample</span><span class="p">,</span>
+        <span class="s1">&#39;converged_metro&#39;</span><span class="p">:</span> <span class="nb">float</span><span class="p">(</span><span class="n">converged_metro</span><span class="p">),</span>
+        <span class="s1">&#39;converged_wolff&#39;</span><span class="p">:</span> <span class="nb">float</span><span class="p">(</span><span class="n">converged_wolff</span><span class="p">),</span>
     <span class="p">}</span></div>
 
 
@@ -506,6 +583,7 @@
     <span class="n">model_kwargs</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">],</span>
     <span class="n">model_label</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
     <span class="n">transitions</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">float</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">stuck_below</span><span class="p">:</span> <span class="nb">float</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Run the efficiency comparison and write its NPZ file and figure.</span>
@@ -525,6 +603,10 @@
 <span class="sd">    transitions : dict[str, float] or None</span>
 <span class="sd">        Temperatures to mark in every panel, keyed by legend label, or None to</span>
 <span class="sd">        omit the markers.  The first by label is drawn dashed, the rest dotted.</span>
+<span class="sd">    stuck_below : float or None</span>
+<span class="sd">        Temperature below which stuck detection is enabled, i.e. the ordering</span>
+<span class="sd">        temperature of a model with metastable domain states. None disables</span>
+<span class="sd">        stuck detection everywhere.</span>
 
 <span class="sd">    Returns</span>
 <span class="sd">    -------</span>
@@ -557,6 +639,7 @@
             <span class="n">meas_steps</span><span class="o">=</span><span class="nb">int</span><span class="p">(</span><span class="n">args</span><span class="o">.</span><span class="n">meas_steps</span><span class="p">),</span>
             <span class="n">model_cls</span><span class="o">=</span><span class="n">model_cls</span><span class="p">,</span>
             <span class="n">model_kwargs</span><span class="o">=</span><span class="n">model_kwargs</span><span class="p">,</span>
+            <span class="n">detect_stuck</span><span class="o">=</span><span class="n">stuck_below</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">temperature</span> <span class="o">&lt;</span> <span class="n">stuck_below</span><span class="p">,</span>
         <span class="p">)</span>
         <span class="k">for</span> <span class="n">temp_idx</span><span class="p">,</span> <span class="n">temperature</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">temperatures</span><span class="p">)</span>
         <span class="k">for</span> <span class="n">seed_idx</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n_seeds</span><span class="p">)</span>

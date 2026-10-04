@@ -112,9 +112,13 @@
              
   <section id="Clock-Model:-Temperature-Sweep-and-Discrete-Symmetry-Breaking">
 <h1>Clock Model: Temperature Sweep and Discrete Symmetry Breaking<a class="headerlink" href="#Clock-Model:-Temperature-Sweep-and-Discrete-Symmetry-Breaking" title="Link to this heading"></a></h1>
-<p>The <span class="math notranslate nohighlight">\(q\)</span>-state clock model restricts the continuous XY angle to <span class="math notranslate nohighlight">\(q\)</span> equally spaced orientations <span class="math notranslate nohighlight">\(\theta_k = 2\pi k/q\)</span>, with the Hamiltonian <span class="math notranslate nohighlight">\(H = -J \sum_{\langle i,j \rangle} \cos(\theta_i - \theta_j) - A \sum_i \cos(q\,\theta_i)\)</span>, where <span class="math notranslate nohighlight">\(A\)</span> is a crystal-field anisotropy strength that favours the discrete directions. For <span class="math notranslate nohighlight">\(q = 2\)</span> the model reduces to the Ising model, while in the limit <span class="math notranslate nohighlight">\(q \to \infty\)</span> it recovers the XY model. The intermediate case
-<span class="math notranslate nohighlight">\(q = 6\)</span> (the default used here) displays rich phase structure: for sufficiently large <span class="math notranslate nohighlight">\(q\)</span> the system undergoes two Berezinskii-Kosterlitz-Thouless-type crossovers rather than a single sharp phase transition. The lower transition is a discrete locking transition at which spins select among the <span class="math notranslate nohighlight">\(q\)</span> preferred axes, and the upper transition is a vortex-unbinding crossover analogous to the XY BKT transition <a class="reference internal" href="#Bibliography"><span class="std std-ref">[1]</span></a> <a class="reference internal" href="#Bibliography"><span class="std std-ref">[2]</span></a>.</p>
-<p>This notebook presents a thermodynamic temperature sweep that records magnetization, energy, susceptibility, specific heat, entropy, and integrated autocorrelation time across these regimes. The high-temperature entropy reference for the clock model is <span class="math notranslate nohighlight">\(S_{\mathrm{ref}} = \ln q\)</span> per site, reflecting equipartition over the <span class="math notranslate nohighlight">\(q\)</span> allowed orientations <a class="reference internal" href="#Bibliography"><span class="std std-ref">[2]</span></a>.</p>
+<p>The <span class="math notranslate nohighlight">\(q\)</span>-state clock model restricts the planar spin of the XY model to <span class="math notranslate nohighlight">\(q\)</span> equally spaced angles <span class="math notranslate nohighlight">\(\theta_i = 2\pi k_i/q\)</span> with <span class="math notranslate nohighlight">\(k_i \in \{0, \dots, q-1\}\)</span>, and keeps the XY coupling <span class="math notranslate nohighlight">\(H = -J \sum_{\langle i,j \rangle} \cos(\theta_i - \theta_j)\)</span>. This notebook uses the discrete implementation <code class="docutils literal notranslate"><span class="pre">DiscreteClockSimulation</span></code>, which stores the integer state <span class="math notranslate nohighlight">\(k_i\)</span> of each site, with <span class="math notranslate nohighlight">\(q = 6\)</span>. The ground state has all spins in one of the <span class="math notranslate nohighlight">\(q\)</span> directions and
+energy <span class="math notranslate nohighlight">\(e_0 = -2J\)</span> per site. For <span class="math notranslate nohighlight">\(q = 2\)</span> the model is the Ising model, for <span class="math notranslate nohighlight">\(q = 3\)</span> it is the three-state Potts model, and for <span class="math notranslate nohighlight">\(q = 4\)</span> it decouples into two Ising models. For <span class="math notranslate nohighlight">\(q \ge 5\)</span> there are two transitions and an intermediate phase. Below <span class="math notranslate nohighlight">\(T_1\)</span> the spins order along one of the <span class="math notranslate nohighlight">\(q\)</span> directions and the discrete <span class="math notranslate nohighlight">\(Z_q\)</span> symmetry is broken. Between <span class="math notranslate nohighlight">\(T_1\)</span> and <span class="math notranslate nohighlight">\(T_2\)</span> the discreteness is irrelevant and the system behaves like the quasi-ordered
+phase of the XY model, with algebraically decaying correlations. Above <span class="math notranslate nohighlight">\(T_2\)</span> vortices unbind and the correlations decay exponentially <a class="reference internal" href="#Bibliography"><span class="std std-ref">[1]</span></a> <a class="reference internal" href="#Bibliography"><span class="std std-ref">[2]</span></a> <a class="reference internal" href="#Bibliography"><span class="std std-ref">[5]</span></a>.</p>
+<p>For <span class="math notranslate nohighlight">\(q = 6\)</span>, Tomita and Okabe locate the transitions at <span class="math notranslate nohighlight">\(T_1 = 0.7014(11)\)</span> and <span class="math notranslate nohighlight">\(T_2 = 0.9008(6)\)</span>, with <span class="math notranslate nohighlight">\(\eta(T_1) = 0.113(3)\)</span>, close to the predicted <span class="math notranslate nohighlight">\(4/q^2 = 1/9\)</span>, and <span class="math notranslate nohighlight">\(\eta(T_2) = 0.243(5)\)</span>, close to <span class="math notranslate nohighlight">\(1/4\)</span> <a class="reference internal" href="#Bibliography"><span class="std std-ref">[5]</span></a>. They treat both transitions as of BKT type, as do Baek and Minnhagen for the upper one <a class="reference internal" href="#Bibliography"><span class="std std-ref">[2]</span></a>, while Lapilli, Pfeifer, and Wexler argued that for <span class="math notranslate nohighlight">\(q = 6\)</span> neither transition is of BKT type
+<a class="reference internal" href="#Bibliography"><span class="std std-ref">[1]</span></a>. The constant <code class="docutils literal notranslate"><span class="pre">T1_CLOCK6</span> <span class="pre">=</span> <span class="pre">0.68</span></code> in the code, below which the sweep accepts a stranded random start and measures the ordered start, is the older estimate of Challa and Landau, who reported <span class="math notranslate nohighlight">\(T_1 = 0.68(2)\)</span> and <span class="math notranslate nohighlight">\(T_2 = 0.92(1)\)</span> <a class="reference internal" href="#Bibliography"><span class="std std-ref">[6]</span></a>.</p>
+<p>This notebook presents a thermodynamic temperature sweep that records magnetization, energy, susceptibility, specific heat, entropy, and integrated autocorrelation time across the three regimes. Because the model has exactly <span class="math notranslate nohighlight">\(q\)</span> states per site, its entropy tends to <span class="math notranslate nohighlight">\(\ln q\)</span> per site as <span class="math notranslate nohighlight">\(T \to \infty\)</span>. The sweep, however, integrates the specific heat from the highest sampled temperature and reports <span class="math notranslate nohighlight">\(S(T) - S(T_{\max})\)</span>. The stored outputs come from the inline fallback (one
+seed, <span class="math notranslate nohighlight">\(L = 32\)</span>), so the numbers quoted below describe that run.</p>
 <div class="nbinput docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[1]:
 </pre></div>
@@ -125,35 +129,30 @@
 
 <span class="kn">import</span><span class="w"> </span><span class="nn">matplotlib.pyplot</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">plt</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">scipy.stats</span><span class="w"> </span><span class="kn">import</span> <span class="n">norm</span>
 
-<span class="kn">from</span><span class="w"> </span><span class="nn">models.clock_model</span><span class="w"> </span><span class="kn">import</span> <span class="n">ClockSimulation</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">models.clock_model</span><span class="w"> </span><span class="kn">import</span> <span class="n">DiscreteClockSimulation</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">utils.equilibration</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
     <span class="n">_detect_quasi_steady_stuck</span><span class="p">,</span>
-    <span class="n">convergence_equilibrate</span><span class="p">,</span>
     <span class="n">estimate_relaxation_time_two_start</span><span class="p">,</span>
+    <span class="n">ordered_start_seed</span><span class="p">,</span>
+    <span class="n">prepare_equilibrated_simulation</span><span class="p">,</span>
 <span class="p">)</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">utils.exceptions</span><span class="w"> </span><span class="kn">import</span> <span class="n">ZeroVarianceAutocorrelationError</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">utils.statistics</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
     <span class="n">DEFAULT_CONFIDENCE_LEVEL</span><span class="p">,</span>
     <span class="n">calculate_autocorr</span><span class="p">,</span>
-    <span class="n">summarize_derived_observable</span><span class="p">,</span>
     <span class="n">summarize_entropy_observable</span><span class="p">,</span>
-    <span class="n">summarize_primary_observable</span><span class="p">,</span>
 <span class="p">)</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">utils.sweep_helpers</span><span class="w"> </span><span class="kn">import</span> <span class="n">ThermoPoint</span><span class="p">,</span> <span class="n">simulate_thermo_point</span>
 
-
-<span class="k">def</span><span class="w"> </span><span class="nf">_find_repo_root</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="n">Path</span><span class="p">:</span>
-    <span class="n">cwd</span> <span class="o">=</span> <span class="n">Path</span><span class="o">.</span><span class="n">cwd</span><span class="p">()</span><span class="o">.</span><span class="n">resolve</span><span class="p">()</span>
-    <span class="k">for</span> <span class="n">candidate</span> <span class="ow">in</span> <span class="p">(</span><span class="n">cwd</span><span class="p">,</span> <span class="o">*</span><span class="n">cwd</span><span class="o">.</span><span class="n">parents</span><span class="p">):</span>
-        <span class="k">if</span> <span class="p">(</span><span class="n">candidate</span> <span class="o">/</span> <span class="s1">&#39;pyproject.toml&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">exists</span><span class="p">()</span> <span class="ow">and</span> <span class="p">(</span><span class="n">candidate</span> <span class="o">/</span> <span class="s1">&#39;results&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">exists</span><span class="p">():</span>
-            <span class="k">return</span> <span class="n">candidate</span>
-    <span class="k">return</span> <span class="n">cwd</span>
-
-
-<span class="n">REPO_ROOT</span> <span class="o">=</span> <span class="n">_find_repo_root</span><span class="p">()</span>
 <span class="n">Q_DEFAULT</span> <span class="o">=</span> <span class="mi">6</span>
+<span class="c1"># Approximate lower BKT temperature of the discrete q=6 clock model, below</span>
+<span class="c1"># which the spins lock into one of the six directions.</span>
+<span class="n">T1_CLOCK6</span> <span class="o">=</span> <span class="mf">0.68</span>
 <span class="n">S_REF</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">Q_DEFAULT</span><span class="p">)</span>
-<span class="n">CACHE_PATH</span> <span class="o">=</span> <span class="n">REPO_ROOT</span> <span class="o">/</span> <span class="s1">&#39;results&#39;</span> <span class="o">/</span> <span class="s1">&#39;clock&#39;</span> <span class="o">/</span> <span class="s1">&#39;temperature_sweep_data.npz&#39;</span>
+<span class="c1"># Data paths are relative to notebooks/, the directory the notebook runs from.</span>
+<span class="n">CACHE_PATH</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="s1">&#39;../results/clock/temperature_sweep_data.npz&#39;</span><span class="p">)</span>
 <span class="n">PALETTE</span> <span class="o">=</span> <span class="p">{</span>
     <span class="s1">&#39;mag&#39;</span><span class="p">:</span> <span class="s1">&#39;#4878CF&#39;</span><span class="p">,</span>
     <span class="s1">&#39;eng&#39;</span><span class="p">:</span> <span class="s1">&#39;#6ACC65&#39;</span><span class="p">,</span>
@@ -167,7 +166,7 @@
 
 <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Clock states q = </span><span class="si">{</span><span class="n">Q_DEFAULT</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
 <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;High-T entropy reference S_ref = ln(</span><span class="si">{</span><span class="n">Q_DEFAULT</span><span class="si">}</span><span class="s1">) = </span><span class="si">{</span><span class="n">S_REF</span><span class="si">:</span><span class="s1">.4f</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
-<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Primary sweep path: </span><span class="si">{</span><span class="n">CACHE_PATH</span><span class="o">.</span><span class="n">relative_to</span><span class="p">(</span><span class="n">REPO_ROOT</span><span class="p">)</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Primary sweep path: </span><span class="si">{</span><span class="n">CACHE_PATH</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
 </pre></div>
 </div>
 </div>
@@ -178,41 +177,24 @@
 <div class="highlight"><pre>
 Clock states q = 6
 High-T entropy reference S_ref = ln(6) = 1.7918
-Primary sweep path: results/clock/temperature_sweep_data.npz
+Primary sweep path: ../results/clock/temperature_sweep_data.npz
 </pre></div></div>
 </div>
 <section id="Ordered-and-Disordered-Configurations">
 <h2>Ordered and Disordered Configurations<a class="headerlink" href="#Ordered-and-Disordered-Configurations" title="Link to this heading"></a></h2>
-<p>Below the lower transition, all spins lock to a single preferred axis and the snapshot is nearly uniform in color. Between the two transitions the system exhibits quasi-long-range order with slowly varying patches (similar to the XY quasi-ordered phase). Above the upper transition the field becomes short-range correlated and the angle distribution fills all <span class="math notranslate nohighlight">\(q\)</span> states. The snapshots below use an HSV colormap on the local angle <span class="math notranslate nohighlight">\(\theta_i\)</span> after equilibration with checkerboard
-Metropolis updates on a <span class="math notranslate nohighlight">\(48 \times 48\)</span> lattice.</p>
+<p>The snapshots below show the local angle <span class="math notranslate nohighlight">\(\theta_i\)</span> on a cyclic colour scale after equilibration with checkerboard Metropolis updates on a <span class="math notranslate nohighlight">\(48 \times 48\)</span> lattice. With <span class="math notranslate nohighlight">\(q = 6\)</span> only six colours can occur, and neighbouring colours on the scale belong to clock states that differ by <span class="math notranslate nohighlight">\(60^\circ\)</span>. At <span class="math notranslate nohighlight">\(T = 0.3\)</span>, deep in the ordered phase, one state covers the whole lattice apart from a handful of isolated sites in an adjacent state. At <span class="math notranslate nohighlight">\(T = 0.70\)</span>, which coincides with
+<span class="math notranslate nohighlight">\(T_1\)</span> within its error bar, one state still dominates, but compact domains of the two adjacent states (<span class="math notranslate nohighlight">\(\pm 60^\circ\)</span>) cover a sizeable fraction of the lattice and the remaining three states are rare. At <span class="math notranslate nohighlight">\(T = 1.2\)</span>, above <span class="math notranslate nohighlight">\(T_2\)</span>, all six states appear in small domains a few lattice spacings across.</p>
 <div class="nbinput docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[2]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">_equilibrated_state</span><span class="p">(</span><span class="o">*</span><span class="p">,</span> <span class="n">temp</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">size</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">48</span><span class="p">,</span> <span class="n">seed</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">0</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
-    <span class="n">sim_random</span> <span class="o">=</span> <span class="n">ClockSimulation</span><span class="p">(</span>
-        <span class="n">size</span><span class="o">=</span><span class="n">size</span><span class="p">,</span>
-        <span class="n">temp</span><span class="o">=</span><span class="n">temp</span><span class="p">,</span>
-        <span class="n">q</span><span class="o">=</span><span class="n">Q_DEFAULT</span><span class="p">,</span>
-        <span class="n">update</span><span class="o">=</span><span class="s1">&#39;checkerboard&#39;</span><span class="p">,</span>
-        <span class="n">init_state</span><span class="o">=</span><span class="s1">&#39;random&#39;</span><span class="p">,</span>
-        <span class="n">seed</span><span class="o">=</span><span class="n">seed</span><span class="p">,</span>
+    <span class="n">sim</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">prepare_equilibrated_simulation</span><span class="p">(</span>
+        <span class="n">model_cls</span><span class="o">=</span><span class="n">DiscreteClockSimulation</span><span class="p">,</span> <span class="n">model_kwargs</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;q&#39;</span><span class="p">:</span> <span class="n">Q_DEFAULT</span><span class="p">},</span> <span class="n">size</span><span class="o">=</span><span class="n">size</span><span class="p">,</span> <span class="n">temp</span><span class="o">=</span><span class="n">temp</span><span class="p">,</span>
+        <span class="n">seed</span><span class="o">=</span><span class="n">seed</span><span class="p">,</span> <span class="n">chunk_size</span><span class="o">=</span><span class="mi">120</span><span class="p">,</span> <span class="n">max_steps</span><span class="o">=</span><span class="mi">6000</span><span class="p">,</span> <span class="n">detect_stuck</span><span class="o">=</span><span class="n">temp</span> <span class="o">&lt;</span> <span class="n">T1_CLOCK6</span><span class="p">,</span>
     <span class="p">)</span>
-    <span class="n">sim_ordered</span> <span class="o">=</span> <span class="n">ClockSimulation</span><span class="p">(</span>
-        <span class="n">size</span><span class="o">=</span><span class="n">size</span><span class="p">,</span>
-        <span class="n">temp</span><span class="o">=</span><span class="n">temp</span><span class="p">,</span>
-        <span class="n">q</span><span class="o">=</span><span class="n">Q_DEFAULT</span><span class="p">,</span>
-        <span class="n">update</span><span class="o">=</span><span class="s1">&#39;checkerboard&#39;</span><span class="p">,</span>
-        <span class="n">init_state</span><span class="o">=</span><span class="s1">&#39;ordered&#39;</span><span class="p">,</span>
-        <span class="n">seed</span><span class="o">=</span><span class="n">seed</span><span class="p">,</span>
-    <span class="p">)</span>
-    <span class="n">convergence_equilibrate</span><span class="p">(</span>
-        <span class="n">sim_random</span><span class="o">=</span><span class="n">sim_random</span><span class="p">,</span>
-        <span class="n">sim_ordered</span><span class="o">=</span><span class="n">sim_ordered</span><span class="p">,</span>
-        <span class="n">chunk_size</span><span class="o">=</span><span class="mi">120</span><span class="p">,</span>
-        <span class="n">max_steps</span><span class="o">=</span><span class="mi">6000</span><span class="p">)</span>
-    <span class="n">sim_random</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="n">n_steps</span><span class="o">=</span><span class="mi">200</span><span class="p">)</span>
-    <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">sim_random</span><span class="o">.</span><span class="n">spins</span><span class="p">,</span> <span class="n">copy</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="n">sim</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="n">n_steps</span><span class="o">=</span><span class="mi">200</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">sim</span><span class="o">.</span><span class="n">get_spin_field</span><span class="p">(),</span> <span class="n">copy</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 
 <span class="n">snapshot_temperatures</span> <span class="o">=</span> <span class="p">[</span><span class="mf">0.3</span><span class="p">,</span> <span class="mf">0.7</span><span class="p">,</span> <span class="mf">1.2</span><span class="p">]</span>
 <span class="n">snapshot_titles</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;Low $T$ (locked)&#39;</span><span class="p">,</span> <span class="s1">&#39;Intermediate $T$ (quasi-ordered)&#39;</span><span class="p">,</span> <span class="s1">&#39;High $T$ (disordered)&#39;</span><span class="p">]</span>
@@ -235,28 +217,19 @@ Metropolis updates on a <span class="math notranslate nohighlight">\(48 \times 4
 </pre></div>
 </div>
 </div>
-<div class="nboutput docutils container">
-<div class="prompt empty docutils container">
-</div>
-<div class="output_area stderr docutils container">
-<div class="highlight"><pre>
-convergence_equilibrate: detected quasi-steady stuck state before max_steps=6000; stopping early without convergence.
-convergence_equilibrate: detected quasi-steady stuck state before max_steps=6000; stopping early without convergence.
-convergence_equilibrate: detected quasi-steady stuck state before max_steps=6000; stopping early without convergence.
-</pre></div></div>
-</div>
 <div class="nboutput nblast docutils container">
 <div class="prompt empty docutils container">
 </div>
 <div class="output_area docutils container">
-<img alt="_images/clock_temperature_sweep_3_1.png" src="_images/clock_temperature_sweep_3_1.png" />
+<img alt="_images/clock_temperature_sweep_3_0.png" src="_images/clock_temperature_sweep_3_0.png" />
 </div>
 </div>
 </section>
 <section id="Load-or-Compute-Sweep-Data">
 <h2>Load or Compute Sweep Data<a class="headerlink" href="#Load-or-Compute-Sweep-Data" title="Link to this heading"></a></h2>
-<p>The notebook first checks for precomputed data at <code class="docutils literal notranslate"><span class="pre">results/clock/temperature_sweep_data.npz</span></code> (produced by <code class="docutils literal notranslate"><span class="pre">scripts/clock/temperature_sweep.py</span></code>). If the cache contains a sufficiently dense temperature grid with all required uncertainty fields, plots are built directly from those arrays. Otherwise a lightweight fallback sweep runs inline on a small lattice with reduced measurement steps. The fallback results are noisier but show the qualitative shape of each observable curve across the two
-crossover regions.</p>
+<p>The notebook first checks for precomputed data at <code class="docutils literal notranslate"><span class="pre">../results/clock/temperature_sweep_data.npz</span></code> (relative to the <code class="docutils literal notranslate"><span class="pre">notebooks/</span></code> directory; produced by <code class="docutils literal notranslate"><span class="pre">scripts/clock/temperature_sweep.py</span></code>). If the cache contains at least ten temperature points with all required uncertainty fields, plots are built directly from those arrays. Otherwise a lightweight fallback sweep runs inline through <code class="docutils literal notranslate"><span class="pre">simulate_thermo_point</span></code>, the worker used by the production sweep. A random-start and an ordered-start
+simulation with independent seeds evolve until their smoothed magnetization traces satisfy the two-start cross-band criterion. Below <code class="docutils literal notranslate"><span class="pre">T1_CLOCK6</span> <span class="pre">=</span> <span class="pre">0.68</span></code> the ordered phase behaves like the Ising model: a random start can be stranded in a domain configuration whose <span class="math notranslate nohighlight">\(|M|\)</span> stays on a plateau. There, quasi-steady stuck detection is enabled, and an accepted stuck state is measured on the ordered start. At higher temperatures both starts must converge, and a point that does not converge within
+12 000 sweeps is stored as NaN. The stored fallback uses <span class="math notranslate nohighlight">\(L = 32\)</span>, 21 temperatures between 0.1 and 1.6, 3000 measurement sweeps, and one seed. The results are noisy, but they show the qualitative shape of each observable across the two transitions.</p>
 <div class="nbinput docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[3]:
 </pre></div>
@@ -284,74 +257,42 @@ crossover regions.</p>
     <span class="n">eq_max_steps</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
     <span class="n">seed</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">float</span><span class="p">]:</span>
-    <span class="n">sim_random</span> <span class="o">=</span> <span class="n">ClockSimulation</span><span class="p">(</span>
-        <span class="n">size</span><span class="o">=</span><span class="n">size</span><span class="p">,</span>
-        <span class="n">temp</span><span class="o">=</span><span class="n">temp</span><span class="p">,</span>
-        <span class="n">q</span><span class="o">=</span><span class="n">Q_DEFAULT</span><span class="p">,</span>
-        <span class="n">update</span><span class="o">=</span><span class="s1">&#39;checkerboard&#39;</span><span class="p">,</span>
-        <span class="n">init_state</span><span class="o">=</span><span class="s1">&#39;random&#39;</span><span class="p">,</span>
-        <span class="n">seed</span><span class="o">=</span><span class="n">seed</span><span class="p">,</span>
-    <span class="p">)</span>
-    <span class="n">sim_ordered</span> <span class="o">=</span> <span class="n">ClockSimulation</span><span class="p">(</span>
-        <span class="n">size</span><span class="o">=</span><span class="n">size</span><span class="p">,</span>
-        <span class="n">temp</span><span class="o">=</span><span class="n">temp</span><span class="p">,</span>
-        <span class="n">q</span><span class="o">=</span><span class="n">Q_DEFAULT</span><span class="p">,</span>
-        <span class="n">update</span><span class="o">=</span><span class="s1">&#39;checkerboard&#39;</span><span class="p">,</span>
-        <span class="n">init_state</span><span class="o">=</span><span class="s1">&#39;ordered&#39;</span><span class="p">,</span>
-        <span class="n">seed</span><span class="o">=</span><span class="n">seed</span><span class="p">,</span>
-    <span class="p">)</span>
-    <span class="n">convergence_equilibrate</span><span class="p">(</span>
-        <span class="n">sim_random</span><span class="o">=</span><span class="n">sim_random</span><span class="p">,</span>
-        <span class="n">sim_ordered</span><span class="o">=</span><span class="n">sim_ordered</span><span class="p">,</span>
-        <span class="n">chunk_size</span><span class="o">=</span><span class="n">eq_probe_steps</span><span class="p">,</span>
-        <span class="n">max_steps</span><span class="o">=</span><span class="n">eq_max_steps</span><span class="p">)</span>
+    <span class="c1"># The production sweep worker: two-start equilibration with independent</span>
+    <span class="c1"># seeds, measurement on the start the equilibration certified, and the</span>
+    <span class="c1"># standard blocking summaries.</span>
+    <span class="c1"># Below T1 the discrete clock model orders like Ising, and a stranded</span>
+    <span class="c1"># random start is replaced by the ordered start, as in the production sweep.</span>
+    <span class="n">allow_stuck</span> <span class="o">=</span> <span class="n">temp</span> <span class="o">&lt;</span> <span class="n">T1_CLOCK6</span>
+    <span class="n">result</span> <span class="o">=</span> <span class="n">simulate_thermo_point</span><span class="p">(</span><span class="n">ThermoPoint</span><span class="p">(</span>
+        <span class="n">temperature</span><span class="o">=</span><span class="n">temp</span><span class="p">,</span> <span class="n">size</span><span class="o">=</span><span class="n">size</span><span class="p">,</span> <span class="n">meas_steps</span><span class="o">=</span><span class="n">meas_steps</span><span class="p">,</span>
+        <span class="n">eq_probe_steps</span><span class="o">=</span><span class="n">eq_probe_steps</span><span class="p">,</span> <span class="n">eq_max_steps</span><span class="o">=</span><span class="n">eq_max_steps</span><span class="p">,</span>
+        <span class="n">eq_qs_sigma_threshold</span><span class="o">=</span><span class="mf">0.05</span><span class="p">,</span> <span class="n">eq_qs_min_steps</span><span class="o">=</span><span class="mi">1500</span><span class="p">,</span>
+        <span class="n">qs_allow_stuck</span><span class="o">=</span><span class="n">allow_stuck</span><span class="p">,</span> <span class="n">prefer_ordered_start</span><span class="o">=</span><span class="n">allow_stuck</span><span class="p">,</span>
+        <span class="n">temperature_index</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">seed_index</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">seed</span><span class="o">=</span><span class="n">seed</span><span class="p">,</span>
+        <span class="n">model_cls</span><span class="o">=</span><span class="n">DiscreteClockSimulation</span><span class="p">,</span> <span class="n">model_kwargs</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;q&#39;</span><span class="p">:</span> <span class="n">Q_DEFAULT</span><span class="p">},</span>
+        <span class="n">confidence</span><span class="o">=</span><span class="n">DEFAULT_CONFIDENCE_LEVEL</span><span class="p">,</span> <span class="n">derived_method</span><span class="o">=</span><span class="s1">&#39;blocking&#39;</span><span class="p">,</span> <span class="n">bootstrap_resamples</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
+    <span class="p">))</span>
+    <span class="k">if</span> <span class="n">result</span><span class="p">[</span><span class="s1">&#39;equilibrated_flag&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="mf">0.0</span><span class="p">:</span>
+        <span class="c1"># Not equilibrated within the step cap: report NaN rather than a biased value.</span>
+        <span class="n">result</span> <span class="o">=</span> <span class="p">{</span><span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">obs</span><span class="si">}</span><span class="s1">_</span><span class="si">{</span><span class="n">field</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">:</span> <span class="nb">float</span><span class="p">(</span><span class="s1">&#39;nan&#39;</span><span class="p">)</span>
+                  <span class="k">for</span> <span class="n">obs</span> <span class="ow">in</span> <span class="p">(</span><span class="s1">&#39;avg_m&#39;</span><span class="p">,</span> <span class="s1">&#39;avg_e&#39;</span><span class="p">,</span> <span class="s1">&#39;susc&#39;</span><span class="p">,</span> <span class="s1">&#39;spec_h&#39;</span><span class="p">)</span>
+                  <span class="k">for</span> <span class="n">field</span> <span class="ow">in</span> <span class="p">(</span><span class="s1">&#39;value&#39;</span><span class="p">,</span> <span class="s1">&#39;err&#39;</span><span class="p">,</span> <span class="s1">&#39;tau_int&#39;</span><span class="p">,</span> <span class="s1">&#39;n_eff&#39;</span><span class="p">)}</span>
+    <span class="n">z</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">norm</span><span class="o">.</span><span class="n">ppf</span><span class="p">(</span><span class="mf">0.5</span> <span class="o">+</span> <span class="n">DEFAULT_CONFIDENCE_LEVEL</span> <span class="o">/</span> <span class="mf">2.0</span><span class="p">))</span>
+    <span class="n">point</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">float</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="k">for</span> <span class="n">obs</span> <span class="ow">in</span> <span class="p">(</span><span class="s1">&#39;avg_m&#39;</span><span class="p">,</span> <span class="s1">&#39;avg_e&#39;</span><span class="p">,</span> <span class="s1">&#39;susc&#39;</span><span class="p">,</span> <span class="s1">&#39;spec_h&#39;</span><span class="p">):</span>
+        <span class="n">value</span><span class="p">,</span> <span class="n">err</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">result</span><span class="p">[</span><span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">obs</span><span class="si">}</span><span class="s1">_value&#39;</span><span class="p">]),</span> <span class="nb">float</span><span class="p">(</span><span class="n">result</span><span class="p">[</span><span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">obs</span><span class="si">}</span><span class="s1">_err&#39;</span><span class="p">])</span>
+        <span class="n">point</span><span class="p">[</span><span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">obs</span><span class="si">}</span><span class="s1">_value&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">value</span>
+        <span class="n">point</span><span class="p">[</span><span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">obs</span><span class="si">}</span><span class="s1">_ci_low&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">value</span> <span class="o">-</span> <span class="n">z</span> <span class="o">*</span> <span class="n">err</span>
+        <span class="n">point</span><span class="p">[</span><span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">obs</span><span class="si">}</span><span class="s1">_ci_high&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">value</span> <span class="o">+</span> <span class="n">z</span> <span class="o">*</span> <span class="n">err</span>
+    <span class="n">point</span><span class="p">[</span><span class="s1">&#39;avg_m_n_eff&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">result</span><span class="p">[</span><span class="s1">&#39;avg_m_n_eff&#39;</span><span class="p">])</span>
+    <span class="n">point</span><span class="p">[</span><span class="s1">&#39;spec_h_err&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">result</span><span class="p">[</span><span class="s1">&#39;spec_h_err&#39;</span><span class="p">])</span>
+    <span class="n">point</span><span class="p">[</span><span class="s1">&#39;tau_int&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">result</span><span class="p">[</span><span class="s1">&#39;avg_m_tau_int&#39;</span><span class="p">])</span>
+    <span class="c1"># A single run gives no interval for tau_int itself; the band collapses</span>
+    <span class="c1"># onto the point estimate instead of borrowing the error of |M|.</span>
+    <span class="n">point</span><span class="p">[</span><span class="s1">&#39;tau_int_ci_low&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">point</span><span class="p">[</span><span class="s1">&#39;tau_int&#39;</span><span class="p">]</span>
+    <span class="n">point</span><span class="p">[</span><span class="s1">&#39;tau_int_ci_high&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">point</span><span class="p">[</span><span class="s1">&#39;tau_int&#39;</span><span class="p">]</span>
+    <span class="k">return</span> <span class="n">point</span>
 
-    <span class="n">mags</span><span class="p">,</span> <span class="n">engs</span> <span class="o">=</span> <span class="n">sim_random</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="n">n_steps</span><span class="o">=</span><span class="n">meas_steps</span><span class="p">)</span>
-    <span class="n">mags_arr</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">mags</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">float</span><span class="p">)</span>
-    <span class="n">engs_arr</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">engs</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">float</span><span class="p">)</span>
-
-    <span class="n">mag</span> <span class="o">=</span> <span class="n">summarize_primary_observable</span><span class="p">(</span>
-        <span class="n">time_series</span><span class="o">=</span><span class="n">mags_arr</span><span class="p">,</span>
-        <span class="n">confidence</span><span class="o">=</span><span class="n">DEFAULT_CONFIDENCE_LEVEL</span><span class="p">,</span>
-    <span class="p">)</span>
-    <span class="n">eng</span> <span class="o">=</span> <span class="n">summarize_primary_observable</span><span class="p">(</span>
-        <span class="n">time_series</span><span class="o">=</span><span class="n">engs_arr</span><span class="p">,</span>
-        <span class="n">confidence</span><span class="o">=</span><span class="n">DEFAULT_CONFIDENCE_LEVEL</span><span class="p">,</span>
-    <span class="p">)</span>
-    <span class="n">chi</span> <span class="o">=</span> <span class="n">summarize_derived_observable</span><span class="p">(</span>
-        <span class="n">magnetization_series</span><span class="o">=</span><span class="n">mags_arr</span><span class="p">,</span>
-        <span class="n">temperature</span><span class="o">=</span><span class="n">temp</span><span class="p">,</span>
-        <span class="n">L</span><span class="o">=</span><span class="n">size</span><span class="p">,</span>
-        <span class="n">observable</span><span class="o">=</span><span class="s1">&#39;chi&#39;</span><span class="p">,</span>
-        <span class="n">confidence</span><span class="o">=</span><span class="n">DEFAULT_CONFIDENCE_LEVEL</span><span class="p">,</span>
-    <span class="p">)</span>
-    <span class="n">cv</span> <span class="o">=</span> <span class="n">summarize_derived_observable</span><span class="p">(</span>
-        <span class="n">energy_series</span><span class="o">=</span><span class="n">engs_arr</span><span class="p">,</span>
-        <span class="n">temperature</span><span class="o">=</span><span class="n">temp</span><span class="p">,</span>
-        <span class="n">L</span><span class="o">=</span><span class="n">size</span><span class="p">,</span>
-        <span class="n">observable</span><span class="o">=</span><span class="s1">&#39;cv&#39;</span><span class="p">,</span>
-        <span class="n">confidence</span><span class="o">=</span><span class="n">DEFAULT_CONFIDENCE_LEVEL</span><span class="p">,</span>
-    <span class="p">)</span>
-
-    <span class="k">return</span> <span class="p">{</span>
-        <span class="s1">&#39;avg_m_value&#39;</span><span class="p">:</span> <span class="nb">float</span><span class="p">(</span><span class="n">mag</span><span class="p">[</span><span class="s1">&#39;value&#39;</span><span class="p">]),</span>
-        <span class="s1">&#39;avg_m_ci_low&#39;</span><span class="p">:</span> <span class="nb">float</span><span class="p">(</span><span class="n">mag</span><span class="p">[</span><span class="s1">&#39;ci_low&#39;</span><span class="p">]),</span>
-        <span class="s1">&#39;avg_m_ci_high&#39;</span><span class="p">:</span> <span class="nb">float</span><span class="p">(</span><span class="n">mag</span><span class="p">[</span><span class="s1">&#39;ci_high&#39;</span><span class="p">]),</span>
-        <span class="s1">&#39;avg_m_n_eff&#39;</span><span class="p">:</span> <span class="nb">float</span><span class="p">(</span><span class="n">mag</span><span class="p">[</span><span class="s1">&#39;n_eff&#39;</span><span class="p">]),</span>
-        <span class="s1">&#39;avg_e_value&#39;</span><span class="p">:</span> <span class="nb">float</span><span class="p">(</span><span class="n">eng</span><span class="p">[</span><span class="s1">&#39;value&#39;</span><span class="p">]),</span>
-        <span class="s1">&#39;avg_e_ci_low&#39;</span><span class="p">:</span> <span class="nb">float</span><span class="p">(</span><span class="n">eng</span><span class="p">[</span><span class="s1">&#39;ci_low&#39;</span><span class="p">]),</span>
-        <span class="s1">&#39;avg_e_ci_high&#39;</span><span class="p">:</span> <span class="nb">float</span><span class="p">(</span><span class="n">eng</span><span class="p">[</span><span class="s1">&#39;ci_high&#39;</span><span class="p">]),</span>
-        <span class="s1">&#39;susc_value&#39;</span><span class="p">:</span> <span class="nb">float</span><span class="p">(</span><span class="n">chi</span><span class="p">[</span><span class="s1">&#39;value&#39;</span><span class="p">]),</span>
-        <span class="s1">&#39;susc_ci_low&#39;</span><span class="p">:</span> <span class="nb">float</span><span class="p">(</span><span class="n">chi</span><span class="p">[</span><span class="s1">&#39;ci_low&#39;</span><span class="p">]),</span>
-        <span class="s1">&#39;susc_ci_high&#39;</span><span class="p">:</span> <span class="nb">float</span><span class="p">(</span><span class="n">chi</span><span class="p">[</span><span class="s1">&#39;ci_high&#39;</span><span class="p">]),</span>
-        <span class="s1">&#39;spec_h_value&#39;</span><span class="p">:</span> <span class="nb">float</span><span class="p">(</span><span class="n">cv</span><span class="p">[</span><span class="s1">&#39;value&#39;</span><span class="p">]),</span>
-        <span class="s1">&#39;spec_h_err&#39;</span><span class="p">:</span> <span class="nb">float</span><span class="p">(</span><span class="n">cv</span><span class="p">[</span><span class="s1">&#39;err&#39;</span><span class="p">]),</span>
-        <span class="s1">&#39;spec_h_ci_low&#39;</span><span class="p">:</span> <span class="nb">float</span><span class="p">(</span><span class="n">cv</span><span class="p">[</span><span class="s1">&#39;ci_low&#39;</span><span class="p">]),</span>
-        <span class="s1">&#39;spec_h_ci_high&#39;</span><span class="p">:</span> <span class="nb">float</span><span class="p">(</span><span class="n">cv</span><span class="p">[</span><span class="s1">&#39;ci_high&#39;</span><span class="p">]),</span>
-        <span class="s1">&#39;tau_int&#39;</span><span class="p">:</span> <span class="nb">float</span><span class="p">(</span><span class="n">mag</span><span class="p">[</span><span class="s1">&#39;tau_int&#39;</span><span class="p">]),</span>
-        <span class="s1">&#39;tau_int_ci_low&#39;</span><span class="p">:</span> <span class="nb">float</span><span class="p">(</span><span class="n">mag</span><span class="p">[</span><span class="s1">&#39;ci_low&#39;</span><span class="p">])</span> <span class="k">if</span> <span class="ow">not</span> <span class="n">np</span><span class="o">.</span><span class="n">isfinite</span><span class="p">(</span><span class="n">mag</span><span class="p">[</span><span class="s1">&#39;tau_int&#39;</span><span class="p">])</span> <span class="k">else</span> <span class="nb">float</span><span class="p">(</span><span class="nb">max</span><span class="p">(</span><span class="mf">0.0</span><span class="p">,</span> <span class="n">mag</span><span class="p">[</span><span class="s1">&#39;tau_int&#39;</span><span class="p">]</span> <span class="o">-</span> <span class="n">mag</span><span class="p">[</span><span class="s1">&#39;err&#39;</span><span class="p">])),</span>
-        <span class="s1">&#39;tau_int_ci_high&#39;</span><span class="p">:</span> <span class="nb">float</span><span class="p">(</span><span class="n">mag</span><span class="p">[</span><span class="s1">&#39;ci_high&#39;</span><span class="p">])</span> <span class="k">if</span> <span class="ow">not</span> <span class="n">np</span><span class="o">.</span><span class="n">isfinite</span><span class="p">(</span><span class="n">mag</span><span class="p">[</span><span class="s1">&#39;tau_int&#39;</span><span class="p">])</span> <span class="k">else</span> <span class="nb">float</span><span class="p">(</span><span class="n">mag</span><span class="p">[</span><span class="s1">&#39;tau_int&#39;</span><span class="p">]</span> <span class="o">+</span> <span class="n">mag</span><span class="p">[</span><span class="s1">&#39;err&#39;</span><span class="p">]),</span>
-    <span class="p">}</span>
 
 
 <span class="n">cache_loaded</span> <span class="o">=</span> <span class="kc">False</span>
@@ -536,29 +477,6 @@ crossover regions.</p>
 </pre></div>
 </div>
 </div>
-<div class="nboutput docutils container">
-<div class="prompt empty docutils container">
-</div>
-<div class="output_area stderr docutils container">
-<div class="highlight"><pre>
-convergence_equilibrate: detected quasi-steady stuck state before max_steps=12000; stopping early without convergence.
-convergence_equilibrate: detected quasi-steady stuck state before max_steps=12000; stopping early without convergence.
-convergence_equilibrate: detected quasi-steady stuck state before max_steps=12000; stopping early without convergence.
-convergence_equilibrate: detected quasi-steady stuck state before max_steps=12000; stopping early without convergence.
-convergence_equilibrate: detected quasi-steady stuck state before max_steps=12000; stopping early without convergence.
-convergence_equilibrate: detected quasi-steady stuck state before max_steps=12000; stopping early without convergence.
-convergence_equilibrate: detected quasi-steady stuck state before max_steps=12000; stopping early without convergence.
-convergence_equilibrate: detected quasi-steady stuck state before max_steps=12000; stopping early without convergence.
-convergence_equilibrate: detected quasi-steady stuck state before max_steps=12000; stopping early without convergence.
-convergence_equilibrate: detected quasi-steady stuck state before max_steps=12000; stopping early without convergence.
-convergence_equilibrate: detected quasi-steady stuck state before max_steps=12000; stopping early without convergence.
-convergence_equilibrate: detected quasi-steady stuck state before max_steps=12000; stopping early without convergence.
-convergence_equilibrate: detected quasi-steady stuck state before max_steps=12000; stopping early without convergence.
-convergence_equilibrate: detected quasi-steady stuck state before max_steps=12000; stopping early without convergence.
-convergence_equilibrate: detected quasi-steady stuck state before max_steps=12000; stopping early without convergence.
-convergence_equilibrate: detected quasi-steady stuck state before max_steps=12000; stopping early without convergence.
-</pre></div></div>
-</div>
 <div class="nboutput nblast docutils container">
 <div class="prompt empty docutils container">
 </div>
@@ -567,13 +485,15 @@ convergence_equilibrate: detected quasi-steady stuck state before max_steps=1200
 Computed a lightweight checkerboard-Metropolis fallback sweep at L=32, 21 temperature points, 3000 measurement steps, 1 seed (reduced for interactive runtime) because cache file not found.
 Temperature points: 21
 retained seeds = 1 / requested seeds = 1, confidence level = 0.68
-Excluded points in thermodynamic plots: 0
+Excluded points in thermodynamic plots: 1
 </pre></div></div>
 </div>
 </section>
 <section id="Convergence-Diagnostics">
 <h2>Convergence Diagnostics<a class="headerlink" href="#Convergence-Diagnostics" title="Link to this heading"></a></h2>
-<p>The two-start protocol runs pairs of random-start and ordered-start simulations until their smoothed magnetization traces overlap. In the locked phase the ordered start is the natural ground state and convergence is fast. Around the intermediate quasi-ordered regime the two traces take longer to merge because the energy landscape has multiple shallow basins associated with different orientational domains. The three panels below show the convergence behavior at representative temperatures.</p>
+<p>The two-start protocol runs a random-start and an ordered-start simulation with independent seeds until their smoothed magnetization traces overlap. The three panels below show 1500 sweeps on a <span class="math notranslate nohighlight">\(32 \times 32\)</span> lattice. At <span class="math notranslate nohighlight">\(T = 0.3\)</span> the ordered start stays at <span class="math notranslate nohighlight">\(|M| \approx 1\)</span>, while the random start coarsens and then stops on a plateau at <span class="math notranslate nohighlight">\(|M| \approx 0.87\)</span> after about 900 sweeps. The plateau is a frozen domain configuration, for example a stripe bounded by straight,
+system-spanning domain walls: such walls have no curvature to drive their removal, and local moves at this temperature cannot remove them on the time scale shown. The diagnostic marks the panel as a quasi-steady stuck state, which is the case where the sweep measures the ordered start. At <span class="math notranslate nohighlight">\(T = 0.7\)</span> the random start needs about 700 sweeps to reach the ordered-start level near <span class="math notranslate nohighlight">\(|M| \approx 0.8\)</span>, and the cross-band criterion is met after about 870 sweeps. At <span class="math notranslate nohighlight">\(T = 1.2\)</span> both traces
+fluctuate between <span class="math notranslate nohighlight">\(|M| \approx 0.05\)</span> and <span class="math notranslate nohighlight">\(0.4\)</span>, and the criterion is met after about 320 sweeps.</p>
 <div class="nbinput docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[4]:
 </pre></div>
@@ -585,8 +505,8 @@ Excluded points in thermodynamic plots: 0
 <span class="n">fig</span><span class="p">,</span> <span class="n">axes</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">14</span><span class="p">,</span> <span class="mf">4.5</span><span class="p">),</span> <span class="n">sharey</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 
 <span class="k">for</span> <span class="n">ax</span><span class="p">,</span> <span class="n">t</span><span class="p">,</span> <span class="n">title</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">axes</span><span class="p">,</span> <span class="n">diagnostic_temps</span><span class="p">,</span> <span class="n">diagnostic_titles</span><span class="p">,</span> <span class="n">strict</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
-    <span class="n">sim_r</span> <span class="o">=</span> <span class="n">ClockSimulation</span><span class="p">(</span><span class="n">size</span><span class="o">=</span><span class="mi">32</span><span class="p">,</span> <span class="n">temp</span><span class="o">=</span><span class="n">t</span><span class="p">,</span> <span class="n">q</span><span class="o">=</span><span class="n">Q_DEFAULT</span><span class="p">,</span> <span class="n">update</span><span class="o">=</span><span class="s1">&#39;checkerboard&#39;</span><span class="p">,</span> <span class="n">init_state</span><span class="o">=</span><span class="s1">&#39;random&#39;</span><span class="p">,</span> <span class="n">seed</span><span class="o">=</span><span class="mi">42</span><span class="p">)</span>
-    <span class="n">sim_o</span> <span class="o">=</span> <span class="n">ClockSimulation</span><span class="p">(</span><span class="n">size</span><span class="o">=</span><span class="mi">32</span><span class="p">,</span> <span class="n">temp</span><span class="o">=</span><span class="n">t</span><span class="p">,</span> <span class="n">q</span><span class="o">=</span><span class="n">Q_DEFAULT</span><span class="p">,</span> <span class="n">update</span><span class="o">=</span><span class="s1">&#39;checkerboard&#39;</span><span class="p">,</span> <span class="n">init_state</span><span class="o">=</span><span class="s1">&#39;ordered&#39;</span><span class="p">,</span> <span class="n">seed</span><span class="o">=</span><span class="mi">42</span><span class="p">)</span>
+    <span class="n">sim_r</span> <span class="o">=</span> <span class="n">DiscreteClockSimulation</span><span class="p">(</span><span class="n">size</span><span class="o">=</span><span class="mi">32</span><span class="p">,</span> <span class="n">temp</span><span class="o">=</span><span class="n">t</span><span class="p">,</span> <span class="n">q</span><span class="o">=</span><span class="n">Q_DEFAULT</span><span class="p">,</span> <span class="n">update</span><span class="o">=</span><span class="s1">&#39;checkerboard&#39;</span><span class="p">,</span> <span class="n">init_state</span><span class="o">=</span><span class="s1">&#39;random&#39;</span><span class="p">,</span> <span class="n">seed</span><span class="o">=</span><span class="mi">42</span><span class="p">)</span>
+    <span class="n">sim_o</span> <span class="o">=</span> <span class="n">DiscreteClockSimulation</span><span class="p">(</span><span class="n">size</span><span class="o">=</span><span class="mi">32</span><span class="p">,</span> <span class="n">temp</span><span class="o">=</span><span class="n">t</span><span class="p">,</span> <span class="n">q</span><span class="o">=</span><span class="n">Q_DEFAULT</span><span class="p">,</span> <span class="n">update</span><span class="o">=</span><span class="s1">&#39;checkerboard&#39;</span><span class="p">,</span> <span class="n">init_state</span><span class="o">=</span><span class="s1">&#39;ordered&#39;</span><span class="p">,</span> <span class="n">seed</span><span class="o">=</span><span class="n">ordered_start_seed</span><span class="p">(</span><span class="n">seed</span><span class="o">=</span><span class="mi">42</span><span class="p">))</span>
 
     <span class="n">m_r_list</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">sim_r</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="n">n_steps</span><span class="o">=</span><span class="n">diagnostic_steps</span><span class="p">)</span>
     <span class="n">m_o_list</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">sim_o</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="n">n_steps</span><span class="o">=</span><span class="n">diagnostic_steps</span><span class="p">)</span>
@@ -637,8 +557,9 @@ Excluded points in thermodynamic plots: 0
 </section>
 <section id="Magnetization-and-Energy">
 <h2>Magnetization and Energy<a class="headerlink" href="#Magnetization-and-Energy" title="Link to this heading"></a></h2>
-<p>The clock-model magnetization <span class="math notranslate nohighlight">\(|M|\)</span> transitions from near-unity in the locked phase through a gradual decay in the quasi-ordered regime to near-zero in the disordered phase, with two inflection regions corresponding to the two crossovers. The energy per spin approaches the ground-state limit of <span class="math notranslate nohighlight">\(-2J\)</span> as <span class="math notranslate nohighlight">\(T \to 0\)</span> (the same ground-state energy as the XY model, since at <span class="math notranslate nohighlight">\(T = 0\)</span> all spins align and the anisotropy term is maximized) and increases smoothly as thermal
-fluctuations excite spin-wave and vortex modes <a class="reference internal" href="#Bibliography"><span class="std std-ref">[1]</span></a> <a class="reference internal" href="#Bibliography"><span class="std std-ref">[2]</span></a>.</p>
+<p>In the fallback run <span class="math notranslate nohighlight">\(|M|\)</span> equals 1 to within <span class="math notranslate nohighlight">\(10^{-2}\)</span> up to <span class="math notranslate nohighlight">\(T \approx 0.4\)</span>, decreases to 0.94 at <span class="math notranslate nohighlight">\(T = 0.55\)</span> and 0.80 at <span class="math notranslate nohighlight">\(T = 0.7\)</span>, and then falls more steeply to 0.53 at <span class="math notranslate nohighlight">\(T = 1.0\)</span> and 0.26 at <span class="math notranslate nohighlight">\(T = 1.15\)</span>, reaching 0.07 at <span class="math notranslate nohighlight">\(T = 1.6\)</span>. The curve has no sharp feature at <span class="math notranslate nohighlight">\(T_1\)</span>. The decrease through the intermediate phase reflects the growth of spin-wave and domain fluctuations on a lattice of fixed size, and the steepest drop lies above
+<span class="math notranslate nohighlight">\(T_2\)</span>, at the finite-size crossover to disorder. The lowest temperature, <span class="math notranslate nohighlight">\(T = 0.1\)</span>, is missing from the plots: the <span class="math notranslate nohighlight">\(|M|\)</span> trace stays exactly at 1 for all 3000 measurement sweeps (an excitation costs <span class="math notranslate nohighlight">\(2J\)</span>, a Boltzmann factor of <span class="math notranslate nohighlight">\(e^{-20}\)</span> at this temperature), so its variance is zero, its autocorrelation is undefined, and the point is excluded rather than given a zero error.</p>
+<p>The energy per site stays at the ground-state value <span class="math notranslate nohighlight">\(-2J\)</span> up to <span class="math notranslate nohighlight">\(T \approx 0.3\)</span> and then rises smoothly to <span class="math notranslate nohighlight">\(-0.72\)</span> at <span class="math notranslate nohighlight">\(T = 1.6\)</span>. The flat start differs from the XY model, where <span class="math notranslate nohighlight">\(E \approx -2J + T/2\)</span> at low temperature. In the discrete model the cheapest excitation, rotating one spin of an ordered region to an adjacent state, costs <span class="math notranslate nohighlight">\(4J(1 - \cos 60^\circ) = 2J\)</span>, so the thermal excitation density is suppressed as <span class="math notranslate nohighlight">\(e^{-2J/T}\)</span>.</p>
 <div class="nbinput docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[5]:
 </pre></div>
@@ -675,8 +596,10 @@ fluctuations excite spin-wave and vortex modes <a class="reference internal" hre
 </section>
 <section id="Susceptibility-and-Specific-Heat">
 <h2>Susceptibility and Specific Heat<a class="headerlink" href="#Susceptibility-and-Specific-Heat" title="Link to this heading"></a></h2>
-<p>The susceptibility <span class="math notranslate nohighlight">\(\chi\)</span> and specific heat <span class="math notranslate nohighlight">\(C_v\)</span> for the <span class="math notranslate nohighlight">\(q = 6\)</span> clock model can show two distinct humps corresponding to the two BKT-like crossovers, although finite-size effects and the smoothness of the BKT mechanism often cause these features to merge into a single broadened peak at small lattice sizes. The lower-temperature feature reflects the discrete locking transition where spins commit to their nearest clock axis, while the upper feature corresponds to vortex
-unbinding <a class="reference internal" href="#Bibliography"><span class="std std-ref">[1]</span></a> <a class="reference internal" href="#Bibliography"><span class="std std-ref">[2]</span></a>.</p>
+<p>The susceptibility <span class="math notranslate nohighlight">\(\chi = N\,\mathrm{Var}(|M|)/T\)</span> is close to zero in the ordered phase, stays near 1 to 1.5 between <span class="math notranslate nohighlight">\(T = 0.7\)</span> and <span class="math notranslate nohighlight">\(0.85\)</span>, and rises to a single peak of about 15 at <span class="math notranslate nohighlight">\(T \approx 1.08\)</span>, above <span class="math notranslate nohighlight">\(T_2 = 0.90\)</span>. As in the XY sweep, the estimator subtracts <span class="math notranslate nohighlight">\(\langle |M| \rangle^2\)</span>, so it peaks where the finite lattice loses its order rather than at the bulk transition, and the shift of a BKT-type transition decays only logarithmically with <span class="math notranslate nohighlight">\(L\)</span>
+<a class="reference internal" href="#Bibliography"><span class="std std-ref">[5]</span></a>.</p>
+<p>The specific heat stays below 0.05 up to <span class="math notranslate nohighlight">\(T = 0.25\)</span>, the activated behaviour described above, and then rises steeply. It shows a broad shoulder of about 1.1 between <span class="math notranslate nohighlight">\(T = 0.55\)</span> and <span class="math notranslate nohighlight">\(0.63\)</span>, below <span class="math notranslate nohighlight">\(T_1\)</span>, and a maximum of about 1.5 at <span class="math notranslate nohighlight">\(T \approx 1.08\)</span> to <span class="math notranslate nohighlight">\(1.15\)</span>, above <span class="math notranslate nohighlight">\(T_2\)</span>. Neither feature marks a transition temperature. At a BKT-type transition the free energy has only an essential singularity, and the specific heat maxima of clock models lie away from
+<span class="math notranslate nohighlight">\(T_1\)</span> and <span class="math notranslate nohighlight">\(T_2\)</span> <a class="reference internal" href="#Bibliography"><span class="std std-ref">[1]</span></a>. The two-hump shape is suggestive of the two energy scales of the model, the cost of domain walls between clock states at low temperature and the unbinding of vortices at high temperature. A single seed at <span class="math notranslate nohighlight">\(L = 32\)</span> cannot establish it.</p>
 <div class="nbinput docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[6]:
 </pre></div>
@@ -713,8 +636,8 @@ unbinding <a class="reference internal" href="#Bibliography"><span class="std st
 </section>
 <section id="Entropy">
 <h2>Entropy<a class="headerlink" href="#Entropy" title="Link to this heading"></a></h2>
-<p>The relative entropy is reconstructed by thermodynamic integration of <span class="math notranslate nohighlight">\(C_v(T)/T\)</span> from the highest sampled temperature downward. For the <span class="math notranslate nohighlight">\(q\)</span>-state clock model, the entropy at infinite temperature approaches <span class="math notranslate nohighlight">\(\ln q\)</span> per site. At low temperature the entropy is reduced by the discrete symmetry breaking; the residual configurational freedom comes from vibrational (spin-wave) excitations around the chosen clock axis. Comparing the low-temperature plateau with the <span class="math notranslate nohighlight">\(\ln q\)</span> limit
-gives a measure of how much entropy the locking transition has removed.</p>
+<p>The relative entropy <span class="math notranslate nohighlight">\(S(T) - S(T_{\max})\)</span> is reconstructed by thermodynamic integration of <span class="math notranslate nohighlight">\(C_v(T)/T\)</span> from the highest sampled temperature, <span class="math notranslate nohighlight">\(T_{\max} = 1.6\)</span>, downward. Its zero is therefore at <span class="math notranslate nohighlight">\(T_{\max}\)</span>, and the dotted line at <span class="math notranslate nohighlight">\(\ln 6 \approx 1.79\)</span> marks the infinite-temperature entropy of the discrete six-state model only as a scale. In the fallback run the curve is flat at about <span class="math notranslate nohighlight">\(-1.50\)</span> below <span class="math notranslate nohighlight">\(T \approx 0.33\)</span>, where the activated specific heat
+vanishes, and rises through both transition regions to zero at <span class="math notranslate nohighlight">\(T_{\max}\)</span>. The ordered state has a ground-state entropy of <span class="math notranslate nohighlight">\((\ln 6)/N\)</span> per site, which is negligible, so the integrated rise of 1.50 is an estimate of <span class="math notranslate nohighlight">\(S(T_{\max})\)</span> itself. It amounts to about 84% of <span class="math notranslate nohighlight">\(\ln 6\)</span>. The remaining 0.29 per site is released above <span class="math notranslate nohighlight">\(T = 1.6\)</span>, as the short-range correlations of the disordered phase decay.</p>
 <div class="nbinput docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[7]:
 </pre></div>
@@ -746,8 +669,9 @@ gives a measure of how much entropy the locking transition has removed.</p>
 </section>
 <section id="Critical-Slowing-Down">
 <h2>Critical Slowing Down<a class="headerlink" href="#Critical-Slowing-Down" title="Link to this heading"></a></h2>
-<p>The integrated autocorrelation time <span class="math notranslate nohighlight">\(\tau_{\mathrm{int}}\)</span> rises near both crossover temperatures. Near the upper crossover the slowing mechanism is the same as in the XY model: large-scale vortex fluctuations become hard to decorrelate with local updates. Near the lower crossover the slowing is caused by domain walls between regions locked to different clock axes. The effective sample size <span class="math notranslate nohighlight">\(N_{\mathrm{eff}} \sim N_{\mathrm{meas}} / (2\tau_{\mathrm{int}})\)</span> drops accordingly, and
-flagged points indicate temperatures where the autocorrelation estimate is undefined or unreliable <a class="reference internal" href="#Bibliography"><span class="std std-ref">[3]</span></a> <a class="reference internal" href="#Bibliography"><span class="std std-ref">[4]</span></a>.</p>
+<p>The integrated autocorrelation time <span class="math notranslate nohighlight">\(\tau_{\mathrm{int}}\)</span> of <span class="math notranslate nohighlight">\(|M|\)</span> is below about 20 sweeps in the ordered phase (<span class="math notranslate nohighlight">\(T \le 0.55\)</span>) and above <span class="math notranslate nohighlight">\(T \approx 1.4\)</span>. Between these limits it rises to between about 30 and 150 sweeps, with the largest values at <span class="math notranslate nohighlight">\(T \approx 0.78\)</span> (about 150) and <span class="math notranslate nohighlight">\(T \approx 1.08\)</span> (about 145). The first lies in the intermediate phase, where correlations decay algebraically and local updates are slow at every temperature, much as in the
+low-temperature phase of the XY model. The second coincides with the <span class="math notranslate nohighlight">\(\chi\)</span> and <span class="math notranslate nohighlight">\(C_v\)</span> maxima at the finite-size crossover to disorder. The values in between scatter strongly from point to point, which is the expected noise of a single 3000-sweep series per temperature. With <span class="math notranslate nohighlight">\(N_{\mathrm{eff}} = N_{\mathrm{meas}} / (2\tau_{\mathrm{int}})\)</span>, the effective sample size drops from about 180 to 340 for <span class="math notranslate nohighlight">\(T \le 0.4\)</span> to about 10 to 15 at four points (<span class="math notranslate nohighlight">\(T = 0.78\)</span>, <span class="math notranslate nohighlight">\(0.85\)</span>,
+<span class="math notranslate nohighlight">\(1.0\)</span>, <span class="math notranslate nohighlight">\(1.08\)</span>), which carry the low-<span class="math notranslate nohighlight">\(N_{\mathrm{eff}}\)</span> cross marker. The “flagged point” entry in the left legend refers to <span class="math notranslate nohighlight">\(T = 0.1\)</span>, where <span class="math notranslate nohighlight">\(\tau_{\mathrm{int}}\)</span> is undefined and no marker can be drawn <a class="reference internal" href="#Bibliography"><span class="std std-ref">[3]</span></a> <a class="reference internal" href="#Bibliography"><span class="std std-ref">[4]</span></a>.</p>
 <div class="nbinput docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[8]:
 </pre></div>
@@ -808,8 +732,8 @@ flagged points indicate temperatures where the autocorrelation estimate is undef
 </section>
 <section id="Autocorrelation-Function-at-Three-Temperatures">
 <h2>Autocorrelation Function at Three Temperatures<a class="headerlink" href="#Autocorrelation-Function-at-Three-Temperatures" title="Link to this heading"></a></h2>
-<p>The autocorrelation function <span class="math notranslate nohighlight">\(\rho_M(\tau)\)</span> reveals how the Markov chain decorrelates its magnetization signal at different temperatures. In the locked phase the system sits in a deep minimum and the decorrelation is modest (relatively few active modes). Near the intermediate crossover, decorrelation slows as the system fluctuates between orientational domains. In the disordered phase the chain is relatively free-moving and <span class="math notranslate nohighlight">\(\rho_M\)</span> decays quickly <a class="reference internal" href="#Bibliography"><span class="std std-ref">[3]</span></a>
-<a class="reference internal" href="#Bibliography"><span class="std std-ref">[4]</span></a>.</p>
+<p>The autocorrelation function <span class="math notranslate nohighlight">\(\rho_M(\tau)\)</span> shows how the Markov chain decorrelates its magnetization at the three snapshot temperatures, using 1600-sweep trajectories on a <span class="math notranslate nohighlight">\(40 \times 40\)</span> lattice. The integrated time is summed up to the self-consistent Madras-Sokal window chosen by <code class="docutils literal notranslate"><span class="pre">calculate_autocorr</span></code>, and only the first 160 lags are plotted. In the ordered phase at <span class="math notranslate nohighlight">\(T = 0.3\)</span> the deviations of <span class="math notranslate nohighlight">\(|M|\)</span> from 1 are isolated thermal excitations that heal within a few sweeps,
+so <span class="math notranslate nohighlight">\(\rho_M\)</span> reaches zero near lag 20 and <span class="math notranslate nohighlight">\(\tau_{\mathrm{int}} \approx 5.6\)</span>. At <span class="math notranslate nohighlight">\(T = 0.7\)</span>, at the lower transition, and at <span class="math notranslate nohighlight">\(T = 1.2\)</span>, in the disordered phase near the crossover, the decay is slow: <span class="math notranslate nohighlight">\(\tau_{\mathrm{int}} \approx 58\)</span> and <span class="math notranslate nohighlight">\(42\)</span> sweeps. At <span class="math notranslate nohighlight">\(T = 0.7\)</span> the correlation is still about 0.13 at lag 160, so the estimate from this short series is uncertain <a class="reference internal" href="#Bibliography"><span class="std std-ref">[3]</span></a> <a class="reference internal" href="#Bibliography"><span class="std std-ref">[4]</span></a>.</p>
 <div class="nbinput docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[9]:
 </pre></div>
@@ -821,36 +745,23 @@ flagged points indicate temperatures where the autocorrelation estimate is undef
 <span class="n">fig</span><span class="p">,</span> <span class="n">ax</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mf">7.8</span><span class="p">,</span> <span class="mf">4.8</span><span class="p">))</span>
 
 <span class="k">for</span> <span class="n">idx</span><span class="p">,</span> <span class="p">(</span><span class="n">temp</span><span class="p">,</span> <span class="n">label</span><span class="p">,</span> <span class="n">color</span><span class="p">)</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="nb">zip</span><span class="p">(</span><span class="n">autocorr_temperatures</span><span class="p">,</span> <span class="n">autocorr_labels</span><span class="p">,</span> <span class="n">autocorr_colors</span><span class="p">,</span> <span class="n">strict</span><span class="o">=</span><span class="kc">True</span><span class="p">)):</span>
-    <span class="n">sim_random</span> <span class="o">=</span> <span class="n">ClockSimulation</span><span class="p">(</span>
-        <span class="n">size</span><span class="o">=</span><span class="mi">40</span><span class="p">,</span>
-        <span class="n">temp</span><span class="o">=</span><span class="nb">float</span><span class="p">(</span><span class="n">temp</span><span class="p">),</span>
-        <span class="n">q</span><span class="o">=</span><span class="n">Q_DEFAULT</span><span class="p">,</span>
-        <span class="n">update</span><span class="o">=</span><span class="s1">&#39;checkerboard&#39;</span><span class="p">,</span>
-        <span class="n">init_state</span><span class="o">=</span><span class="s1">&#39;random&#39;</span><span class="p">,</span>
-        <span class="n">seed</span><span class="o">=</span><span class="mi">6_000</span> <span class="o">+</span> <span class="n">idx</span><span class="p">,</span>
+    <span class="n">sim</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">prepare_equilibrated_simulation</span><span class="p">(</span>
+        <span class="n">model_cls</span><span class="o">=</span><span class="n">DiscreteClockSimulation</span><span class="p">,</span> <span class="n">model_kwargs</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;q&#39;</span><span class="p">:</span> <span class="n">Q_DEFAULT</span><span class="p">},</span> <span class="n">size</span><span class="o">=</span><span class="mi">40</span><span class="p">,</span> <span class="n">temp</span><span class="o">=</span><span class="nb">float</span><span class="p">(</span><span class="n">temp</span><span class="p">),</span>
+        <span class="n">seed</span><span class="o">=</span><span class="mi">6_000</span> <span class="o">+</span> <span class="n">idx</span><span class="p">,</span> <span class="n">chunk_size</span><span class="o">=</span><span class="mi">120</span><span class="p">,</span> <span class="n">max_steps</span><span class="o">=</span><span class="mi">9_000</span><span class="p">,</span> <span class="n">detect_stuck</span><span class="o">=</span><span class="n">temp</span> <span class="o">&lt;</span> <span class="n">T1_CLOCK6</span><span class="p">,</span>
     <span class="p">)</span>
-    <span class="n">sim_ordered</span> <span class="o">=</span> <span class="n">ClockSimulation</span><span class="p">(</span>
-        <span class="n">size</span><span class="o">=</span><span class="mi">40</span><span class="p">,</span>
-        <span class="n">temp</span><span class="o">=</span><span class="nb">float</span><span class="p">(</span><span class="n">temp</span><span class="p">),</span>
-        <span class="n">q</span><span class="o">=</span><span class="n">Q_DEFAULT</span><span class="p">,</span>
-        <span class="n">update</span><span class="o">=</span><span class="s1">&#39;checkerboard&#39;</span><span class="p">,</span>
-        <span class="n">init_state</span><span class="o">=</span><span class="s1">&#39;ordered&#39;</span><span class="p">,</span>
-        <span class="n">seed</span><span class="o">=</span><span class="mi">6_000</span> <span class="o">+</span> <span class="n">idx</span><span class="p">,</span>
-    <span class="p">)</span>
-    <span class="n">convergence_equilibrate</span><span class="p">(</span>
-        <span class="n">sim_random</span><span class="o">=</span><span class="n">sim_random</span><span class="p">,</span>
-        <span class="n">sim_ordered</span><span class="o">=</span><span class="n">sim_ordered</span><span class="p">,</span>
-        <span class="n">chunk_size</span><span class="o">=</span><span class="mi">120</span><span class="p">,</span>
-        <span class="n">max_steps</span><span class="o">=</span><span class="mi">9_000</span><span class="p">)</span>
-    <span class="n">mags</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">sim_random</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="n">n_steps</span><span class="o">=</span><span class="mi">1_600</span><span class="p">)</span>
+    <span class="n">mags</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">sim</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="n">n_steps</span><span class="o">=</span><span class="mi">1_600</span><span class="p">)</span>
     <span class="n">mags_arr</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">mags</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">float</span><span class="p">)</span>
     <span class="k">try</span><span class="p">:</span>
-        <span class="n">corr</span><span class="p">,</span> <span class="n">tau_here</span> <span class="o">=</span> <span class="n">calculate_autocorr</span><span class="p">(</span><span class="n">time_series</span><span class="o">=</span><span class="n">mags_arr</span><span class="p">,</span> <span class="n">max_lag</span><span class="o">=</span><span class="mi">160</span><span class="p">)</span>
+        <span class="c1"># No lag cap: the Madras-Sokal window sets the summation range, so tau_int</span>
+        <span class="c1"># is not truncated when rho(t) is still large at the plotted lags.</span>
+        <span class="n">corr</span><span class="p">,</span> <span class="n">tau_here</span> <span class="o">=</span> <span class="n">calculate_autocorr</span><span class="p">(</span><span class="n">time_series</span><span class="o">=</span><span class="n">mags_arr</span><span class="p">)</span>
     <span class="k">except</span> <span class="n">ZeroVarianceAutocorrelationError</span><span class="p">:</span>
         <span class="n">corr</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">np</span><span class="o">.</span><span class="n">nan</span><span class="p">])</span>
         <span class="n">tau_here</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="s1">&#39;nan&#39;</span><span class="p">)</span>
-    <span class="n">lags</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="n">corr</span><span class="o">.</span><span class="n">size</span><span class="p">)</span>
-    <span class="n">ax</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">lags</span><span class="p">,</span> <span class="n">corr</span><span class="p">,</span> <span class="n">lw</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="n">color</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">label</span><span class="si">}</span><span class="s1">  ($</span><span class="se">\\</span><span class="s1">tau_</span><span class="se">{{</span><span class="s1">int</span><span class="se">}}</span><span class="s1"> </span><span class="se">\\</span><span class="s1">approx </span><span class="si">{</span><span class="n">tau_here</span><span class="si">:</span><span class="s1">.1f</span><span class="si">}</span><span class="s1">$)&#39;</span><span class="p">)</span>
+    <span class="c1"># Plot only the first 160 lags so the fast-decaying curves stay readable.</span>
+    <span class="n">corr_plot</span> <span class="o">=</span> <span class="n">corr</span><span class="p">[:</span><span class="mi">161</span><span class="p">]</span>
+    <span class="n">lags</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="n">corr_plot</span><span class="o">.</span><span class="n">size</span><span class="p">)</span>
+    <span class="n">ax</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">lags</span><span class="p">,</span> <span class="n">corr_plot</span><span class="p">,</span> <span class="n">lw</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="n">color</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">label</span><span class="si">}</span><span class="s1">  ($</span><span class="se">\\</span><span class="s1">tau_</span><span class="se">{{</span><span class="s1">int</span><span class="se">}}</span><span class="s1"> </span><span class="se">\\</span><span class="s1">approx </span><span class="si">{</span><span class="n">tau_here</span><span class="si">:</span><span class="s1">.1f</span><span class="si">}</span><span class="s1">$)&#39;</span><span class="p">)</span>
 
 <span class="n">ax</span><span class="o">.</span><span class="n">axhline</span><span class="p">(</span><span class="mf">0.0</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s1">&#39;0.4&#39;</span><span class="p">,</span> <span class="n">ls</span><span class="o">=</span><span class="s1">&#39;--&#39;</span><span class="p">,</span> <span class="n">lw</span><span class="o">=</span><span class="mf">1.0</span><span class="p">)</span>
 <span class="n">ax</span><span class="o">.</span><span class="n">set_xlabel</span><span class="p">(</span><span class="sa">r</span><span class="s1">&#39;Lag $\tau$&#39;</span><span class="p">)</span>
@@ -865,35 +776,27 @@ flagged points indicate temperatures where the autocorrelation estimate is undef
 </pre></div>
 </div>
 </div>
-<div class="nboutput docutils container">
-<div class="prompt empty docutils container">
-</div>
-<div class="output_area stderr docutils container">
-<div class="highlight"><pre>
-convergence_equilibrate: detected quasi-steady stuck state before max_steps=9000; stopping early without convergence.
-convergence_equilibrate: detected quasi-steady stuck state before max_steps=9000; stopping early without convergence.
-convergence_equilibrate: detected quasi-steady stuck state before max_steps=9000; stopping early without convergence.
-</pre></div></div>
-</div>
 <div class="nboutput nblast docutils container">
 <div class="prompt empty docutils container">
 </div>
 <div class="output_area docutils container">
-<img alt="_images/clock_temperature_sweep_17_1.png" src="_images/clock_temperature_sweep_17_1.png" />
+<img alt="_images/clock_temperature_sweep_17_0.png" src="_images/clock_temperature_sweep_17_0.png" />
 </div>
 </div>
 </section>
 <section id="Synthesis">
 <h2>Synthesis<a class="headerlink" href="#Synthesis" title="Link to this heading"></a></h2>
-<p>The full temperature sweep reveals the three-regime structure of the <span class="math notranslate nohighlight">\(q = 6\)</span> clock model. Below the lower crossover, the system is locked into a single clock direction with high magnetization and low entropy. In the intermediate quasi-ordered phase, correlations decay algebraically and the magnetization softens without vanishing. Above the upper crossover, the system is fully disordered. The susceptibility, specific heat, and autocorrelation time all reflect these two crossover regions,
-although finite-size rounding may blur the double-peak structure into a single broad feature on small lattices. Comparing these curves with the XY Temperature Sweep notebook illustrates how discrete symmetry breaking modifies the BKT crossover and introduces the lower locking transition that has no analog in the continuous-symmetry case.</p>
+<p>The fallback sweep shows the three regimes of the <span class="math notranslate nohighlight">\(q = 6\)</span> clock model. Below <span class="math notranslate nohighlight">\(T_1\)</span> the lattice is ordered along one clock direction, <span class="math notranslate nohighlight">\(|M|\)</span> is close to 1, the energy sits at <span class="math notranslate nohighlight">\(-2J\)</span>, and the specific heat is activated across the <span class="math notranslate nohighlight">\(2J\)</span> gap. In the intermediate phase the magnetization decreases without vanishing on this lattice, and the autocorrelation time is large, as expected for a phase with algebraic correlations. Above <span class="math notranslate nohighlight">\(T_2\)</span> the system disorders, and the
+susceptibility and specific heat maxima together with a second autocorrelation peak sit near <span class="math notranslate nohighlight">\(T \approx 1.1\)</span>, shifted above <span class="math notranslate nohighlight">\(T_2\)</span> by finite size. A single seed at <span class="math notranslate nohighlight">\(L = 32\)</span> resolves neither transition temperature. Comparing these curves with the XY Temperature Sweep notebook shows what discreteness adds: a gapped, truly ordered low-temperature phase that has no counterpart in the continuous-symmetry model.</p>
 </section>
 <section id="Bibliography">
 <h2>Bibliography<a class="headerlink" href="#Bibliography" title="Link to this heading"></a></h2>
-<p><a class="reference internal" href="#Bibliography"><span class="std std-ref">[1]</span></a> C. M. Lapilli, P. Pfeifer, and C. Wexler, “Universality away from critical points in two-dimensional phase transitions,” <em>Physical Review Letters</em> 96, 140603 (2006). <a class="reference external" href="https://arxiv.org/abs/cond-mat/0603308">arXiv:cond-mat/0603308</a></p>
-<p><a class="reference internal" href="#Bibliography"><span class="std std-ref">[2]</span></a> S. K. Baek and P. Minnhagen, “Non-Kosterlitz-Thouless transitions for the q-state clock models,” <em>Physical Review E</em> 82, 031102 (2010). <a class="reference external" href="https://arxiv.org/abs/1005.3maximum">arXiv:1005.3maximum</a> <a class="reference external" href="https://journals.aps.org/pre/abstract/10.1103/PhysRevE.82.031102">APS</a></p>
+<p><a class="reference internal" href="#Bibliography"><span class="std std-ref">[1]</span></a> C. M. Lapilli, P. Pfeifer, and C. Wexler, “Universality away from critical points in two-dimensional phase transitions,” <em>Physical Review Letters</em> 96, 140603 (2006). <a class="reference external" href="https://arxiv.org/abs/cond-mat/0511559">arXiv:cond-mat/0511559</a></p>
+<p><a class="reference internal" href="#Bibliography"><span class="std std-ref">[2]</span></a> S. K. Baek and P. Minnhagen, “Non-Kosterlitz-Thouless transitions for the q-state clock models,” <em>Physical Review E</em> 82, 031102 (2010). <a class="reference external" href="https://arxiv.org/abs/1009.0356">arXiv:1009.0356</a> <a class="reference external" href="https://journals.aps.org/pre/abstract/10.1103/PhysRevE.82.031102">APS</a></p>
 <p><a class="reference internal" href="#Bibliography"><span class="std std-ref">[3]</span></a> A. D. Sokal, “Monte Carlo Methods in Statistical Mechanics: Foundations and New Algorithms,” lecture notes (1989), reprinted in <em>Functional Integration: Basics and Applications</em> (1997). <a class="reference external" href="https://link.springer.com/chapter/10.1007/978-1-4899-0319-8_6">Springer Link</a></p>
-<p><a class="reference internal" href="#Bibliography"><span class="std std-ref">[4]</span></a> M. E. J. Newman and G. T. Barkema, <em>Monte Carlo Methods in Statistical Physics</em>, Oxford University Press (1999). <a class="reference external" href="https://arxiv.org/abs/0905.1629">Lecture notes summary</a></p>
+<p><a class="reference internal" href="#Bibliography"><span class="std std-ref">[4]</span></a> M. E. J. Newman and G. T. Barkema, <em>Monte Carlo Methods in Statistical Physics</em>, Oxford University Press (1999). Textbook; no open-access edition. For an open introduction to the same methods, see H. G. Katzgraber, “Introduction to Monte Carlo Methods,” lecture notes (2009). <a class="reference external" href="https://arxiv.org/abs/0905.1629">arXiv:0905.1629</a></p>
+<p><a class="reference internal" href="#Bibliography"><span class="std std-ref">[5]</span></a> Y. Tomita and Y. Okabe, “Probability-changing cluster algorithm for two-dimensional XY and clock models” (2002). Transition temperatures and <span class="math notranslate nohighlight">\(\eta\)</span> exponents of the <span class="math notranslate nohighlight">\(q = 6, 8, 12\)</span> clock models. <a class="reference external" href="https://arxiv.org/abs/cond-mat/0202161">arXiv:cond-mat/0202161</a></p>
+<p><a class="reference internal" href="#Bibliography"><span class="std std-ref">[6]</span></a> M. S. S. Challa and D. P. Landau, “Critical behavior of the six-state clock model in two dimensions,” <em>Physical Review B</em> 33, 437 (1986).</p>
 </section>
 </section>
 

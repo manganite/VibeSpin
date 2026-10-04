@@ -107,7 +107,8 @@
 <span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">models.clock_model</span><span class="w"> </span><span class="kn">import</span> <span class="n">ClockSimulation</span><span class="p">,</span> <span class="n">DiscreteClockSimulation</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">utils.equilibration</span><span class="w"> </span><span class="kn">import</span> <span class="n">convergence_equilibrate</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">scripts.clock._model_choice</span><span class="w"> </span><span class="kn">import</span> <span class="n">ORDERED_BELOW_DISCRETE</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">utils.equilibration</span><span class="w"> </span><span class="kn">import</span> <span class="n">prepare_equilibrated_simulation</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">utils.observables</span><span class="w"> </span><span class="kn">import</span> <span class="n">calculate_thermodynamics</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">utils.system</span><span class="w"> </span><span class="kn">import</span> <span class="n">parse_args_compat</span><span class="p">,</span> <span class="n">setup_logging</span>
 
@@ -125,11 +126,13 @@
     <span class="n">meas_steps</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
     <span class="n">base_seed</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
     <span class="n">extra_kwargs</span><span class="p">:</span> <span class="nb">dict</span><span class="p">,</span>
+    <span class="n">stuck_below</span><span class="p">:</span> <span class="nb">float</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">list</span><span class="p">[</span><span class="nb">float</span><span class="p">],</span> <span class="nb">list</span><span class="p">[</span><span class="nb">float</span><span class="p">],</span> <span class="nb">list</span><span class="p">[</span><span class="nb">float</span><span class="p">],</span> <span class="nb">list</span><span class="p">[</span><span class="nb">float</span><span class="p">]]:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Sweep one clock-model variant over a temperature grid.</span>
 
 <span class="sd">    For each temperature, runs two-start convergence equilibration and then</span>
-<span class="sd">    measures thermodynamic observables on the random-start simulation.</span>
+<span class="sd">    measures thermodynamic observables on the start it certifies. A point</span>
+<span class="sd">    whose two starts do not converge within ``eq_max_steps`` is stored as NaN.</span>
 
 <span class="sd">    Parameters</span>
 <span class="sd">    ----------</span>
@@ -149,11 +152,15 @@
 <span class="sd">    meas_steps : int</span>
 <span class="sd">        Measurement steps per point.</span>
 <span class="sd">    base_seed : int</span>
-<span class="sd">        Base RNG seed; each temperature point uses</span>
+<span class="sd">        Base RNG seed; each temperature point seeds its random start with</span>
 <span class="sd">        ``base_seed + point_index`` so points are reproducible yet</span>
-<span class="sd">        distinct.</span>
+<span class="sd">        distinct, and its ordered start with a derived partner seed.</span>
 <span class="sd">    extra_kwargs : dict</span>
 <span class="sd">        Extra constructor arguments (e.g. ``{&#39;A&#39;: aniso}``).</span>
+<span class="sd">    stuck_below : float or None</span>
+<span class="sd">        Temperature below which a random start stranded in a domain state is</span>
+<span class="sd">        accepted and the ordered start measured (stuck detection on). None</span>
+<span class="sd">        disables stuck detection at every temperature.</span>
 
 <span class="sd">    Returns</span>
 <span class="sd">    -------</span>
@@ -167,14 +174,19 @@
 
     <span class="k">for</span> <span class="n">t_idx</span><span class="p">,</span> <span class="n">T</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">temperatures</span><span class="p">):</span>
         <span class="n">seed</span> <span class="o">=</span> <span class="n">base_seed</span> <span class="o">+</span> <span class="n">t_idx</span>
-        <span class="n">sim_r</span> <span class="o">=</span> <span class="n">model_cls</span><span class="p">(</span><span class="n">size</span><span class="o">=</span><span class="n">L</span><span class="p">,</span> <span class="n">temp</span><span class="o">=</span><span class="n">T</span><span class="p">,</span> <span class="n">q</span><span class="o">=</span><span class="n">q</span><span class="p">,</span> <span class="n">init_state</span><span class="o">=</span><span class="s1">&#39;random&#39;</span><span class="p">,</span> <span class="n">seed</span><span class="o">=</span><span class="n">seed</span><span class="p">,</span> <span class="o">**</span><span class="n">extra_kwargs</span><span class="p">)</span>
-        <span class="n">sim_o</span> <span class="o">=</span> <span class="n">model_cls</span><span class="p">(</span><span class="n">size</span><span class="o">=</span><span class="n">L</span><span class="p">,</span> <span class="n">temp</span><span class="o">=</span><span class="n">T</span><span class="p">,</span> <span class="n">q</span><span class="o">=</span><span class="n">q</span><span class="p">,</span> <span class="n">init_state</span><span class="o">=</span><span class="s1">&#39;ordered&#39;</span><span class="p">,</span> <span class="n">seed</span><span class="o">=</span><span class="n">seed</span><span class="p">,</span> <span class="o">**</span><span class="n">extra_kwargs</span><span class="p">)</span>
-        <span class="n">convergence_equilibrate</span><span class="p">(</span>
-            <span class="n">sim_random</span><span class="o">=</span><span class="n">sim_r</span><span class="p">,</span> <span class="n">sim_ordered</span><span class="o">=</span><span class="n">sim_o</span><span class="p">,</span>
-            <span class="n">chunk_size</span><span class="o">=</span><span class="n">eq_probe_steps</span><span class="p">,</span> <span class="n">max_steps</span><span class="o">=</span><span class="n">eq_max_steps</span><span class="p">,</span>
+        <span class="c1"># Measure the random start only if it joined the ordered one; a start</span>
+        <span class="c1"># stranded in a domain-wall state would bias |M| and chi.</span>
+        <span class="n">sim</span><span class="p">,</span> <span class="n">outcome</span> <span class="o">=</span> <span class="n">prepare_equilibrated_simulation</span><span class="p">(</span>
+            <span class="n">model_cls</span><span class="o">=</span><span class="n">model_cls</span><span class="p">,</span> <span class="n">model_kwargs</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;q&#39;</span><span class="p">:</span> <span class="n">q</span><span class="p">,</span> <span class="o">**</span><span class="n">extra_kwargs</span><span class="p">},</span> <span class="n">size</span><span class="o">=</span><span class="n">L</span><span class="p">,</span>
+            <span class="n">temp</span><span class="o">=</span><span class="nb">float</span><span class="p">(</span><span class="n">T</span><span class="p">),</span> <span class="n">seed</span><span class="o">=</span><span class="n">seed</span><span class="p">,</span> <span class="n">chunk_size</span><span class="o">=</span><span class="n">eq_probe_steps</span><span class="p">,</span> <span class="n">max_steps</span><span class="o">=</span><span class="n">eq_max_steps</span><span class="p">,</span>
+            <span class="n">detect_stuck</span><span class="o">=</span><span class="n">stuck_below</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">T</span> <span class="o">&lt;</span> <span class="n">stuck_below</span><span class="p">,</span>
         <span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">outcome</span><span class="o">.</span><span class="n">certified</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">values</span> <span class="ow">in</span> <span class="p">(</span><span class="n">avg_m_list</span><span class="p">,</span> <span class="n">avg_e_list</span><span class="p">,</span> <span class="n">susc_list</span><span class="p">,</span> <span class="n">spec_h_list</span><span class="p">):</span>
+                <span class="n">values</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="nb">float</span><span class="p">(</span><span class="s1">&#39;nan&#39;</span><span class="p">))</span>
+            <span class="k">continue</span>
 
-        <span class="n">mags</span><span class="p">,</span> <span class="n">engs</span> <span class="o">=</span> <span class="n">sim_r</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="n">n_steps</span><span class="o">=</span><span class="n">meas_steps</span><span class="p">)</span>
+        <span class="n">mags</span><span class="p">,</span> <span class="n">engs</span> <span class="o">=</span> <span class="n">sim</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="n">n_steps</span><span class="o">=</span><span class="n">meas_steps</span><span class="p">)</span>
         <span class="n">avg_m</span><span class="p">,</span> <span class="n">avg_e</span><span class="p">,</span> <span class="n">susc</span><span class="p">,</span> <span class="n">spec_h</span> <span class="o">=</span> <span class="n">calculate_thermodynamics</span><span class="p">(</span>
             <span class="n">mags</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">mags</span><span class="p">),</span> <span class="n">engs</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">engs</span><span class="p">),</span> <span class="n">T</span><span class="o">=</span><span class="n">T</span><span class="p">,</span> <span class="n">L</span><span class="o">=</span><span class="n">L</span><span class="p">,</span>
         <span class="p">)</span>
@@ -256,6 +268,7 @@
         <span class="n">meas_steps</span><span class="o">=</span><span class="n">meas_steps</span><span class="p">,</span>
         <span class="n">base_seed</span><span class="o">=</span><span class="n">args</span><span class="o">.</span><span class="n">seed</span><span class="p">,</span>
         <span class="n">extra_kwargs</span><span class="o">=</span><span class="p">{},</span>
+        <span class="n">stuck_below</span><span class="o">=</span><span class="n">ORDERED_BELOW_DISCRETE</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">q</span><span class="p">),</span>
     <span class="p">)</span>
     <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;  Done in </span><span class="si">{</span><span class="n">time</span><span class="o">.</span><span class="n">perf_counter</span><span class="p">()</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="n">t0</span><span class="si">:</span><span class="s1">.1f</span><span class="si">}</span><span class="s1">s&#39;</span><span class="p">)</span>
 
