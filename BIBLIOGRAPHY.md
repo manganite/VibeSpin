@@ -90,6 +90,10 @@ Referencing policy is defined in [AGENTS.md](https://github.com/manganite/VibeSp
 
 ## 6. Additional References
 
+### Phase-Ordering Kinetics
+- A. J. Bray, "Theory of phase-ordering kinetics," Advances in Physics, vol. 43, p. 357, 1994. Growth laws for non-conserved dynamics, including L(t) ~ (t / ln t)^{1/2} for the 2D XY model. [arXiv:cond-mat/9501089](https://arxiv.org/abs/cond-mat/9501089)
+- A. J. Bray, A. J. Briant, and D. K. Jervis, "Breakdown of Scaling in the Nonequilibrium Critical Dynamics of the Two-Dimensional XY Model," Physical Review Letters, vol. 84, p. 1503, 2000. [arXiv:cond-mat/9902362](https://arxiv.org/abs/cond-mat/9902362)
+
 - M. E. J. Newman and G. T. Barkema, "Monte Carlo Methods in Statistical Physics," Oxford University Press, 1999. Book; for an open introduction to the same methods see H. G. Katzgraber, "Introduction to Monte Carlo Methods" [arXiv:0905.1629](https://arxiv.org/abs/0905.1629)
 
 ---

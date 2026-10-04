@@ -3,7 +3,8 @@ Comparison of spin-spin correlation functions G(r) for the q-state Clock model.
 Analyzes correlation behavior in ordered, quasi-ordered, and disordered phases.
 
 The q=6 clock model has two Kosterlitz-Thouless transitions at T1 ≈ 0.68
-and T2 ≈ 0.92 (José et al. 1977), yielding three distinct correlation regimes:
+and T2 ≈ 0.92 (Challa and Landau 1986; Tomita and Okabe 2002 obtain 0.7014
+and 0.9008), yielding three distinct correlation regimes:
 long-range order below T1, algebraic (quasi-long-range) order between T1 and T2,
 and exponential decay above T2.
 """
@@ -26,7 +27,8 @@ from utils.observables import (
 from utils.plotting import ensure_results_dir, save_plot
 from utils.system import parallel_sweep, parse_args_compat, setup_logging
 
-# Approximate KT transition temperatures for q=6 (José et al. 1977).
+# Approximate transition temperatures of the discrete q=6 clock model
+# (Challa and Landau 1986, as quoted by Tomita and Okabe 2002).
 T1_CLOCK6: float = 0.68
 T2_CLOCK6: float = 0.92
 
