@@ -23,6 +23,7 @@ from utils.statistics import (
     DEFAULT_CONFIDENCE_LEVEL,
     UNCERTAINTY_METHOD_BLOCKING,
     UNCERTAINTY_METHOD_BOOTSTRAP,
+    summarize_asymmetric_replicate_uncertainty,
     summarize_entropy_observable,
 )
 from utils.sweep_helpers import (
@@ -421,10 +422,23 @@ def run_temperature_sweep(
         bootstrap_resamples=int(args.entropy_bootstrap_resamples),
     )
 
+    # Interval for tau_int itself, from its spread across seed replicas. The
+    # flag used to compare the confidence interval of <|m|> with tau_int,
+    # two quantities in different units; a single seed has no tau interval.
+    tau_grid = extract_grid('avg_m_tau_int')
+    tau_summaries = [
+        summarize_asymmetric_replicate_uncertainty(
+            samples=row, confidence=float(args.confidence_level),
+        )
+        for row in tau_grid
+    ]
+    tau_int_ci_low = np.array([summ['ci_low'] for summ in tau_summaries])
+    tau_int_ci_high = np.array([summ['ci_high'] for summ in tau_summaries])
+
     quality = build_quality_flags(
         tau_int=mag_bundle['tau_int'],
-        ci_low=mag_bundle['ci_low'],
-        ci_high=mag_bundle['ci_high'],
+        ci_low=tau_int_ci_low,
+        ci_high=tau_int_ci_high,
         n_eff=mag_bundle['n_eff'],
         min_effective_samples=float(args.min_effective_samples),
         max_tau_relative_width=float(args.max_tau_relative_width),
@@ -450,6 +464,8 @@ def run_temperature_sweep(
         spec_h=spec_h_bundle['value'],
         entropy=entropy_res['value'],
         tau_int=mag_bundle['tau_int'],
+        tau_int_ci_low=tau_int_ci_low,
+        tau_int_ci_high=tau_int_ci_high,
         # Full uncertainty schema.
         **cast(Any, {
             f'{name}_{k}': v

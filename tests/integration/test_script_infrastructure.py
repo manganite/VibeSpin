@@ -1471,3 +1471,57 @@ class TestXYScriptSeeding:
         worker = getattr(importlib.import_module(module_name), worker_name)
         params = (1.2, 8, 100, 2000, 50, 1234)
         assert worker(params) == worker(params)
+
+
+class TestTauIntervalQualityFlag:
+    """The tau_int interval and its stability flag come from the tau spread."""
+
+    @staticmethod
+    def _run(monkeypatch: pytest.MonkeyPatch, tmp_path: Path, taus: list[float]) -> Any:
+        import scripts.ising.temperature_sweep as ising_sweep
+
+        def _fake(*, worker_func: Any, params: Any, num_processes: Any = None) -> Any:
+            out = []
+            for p in params:
+                tau = taus[p.seed_index % len(taus)]
+                record: dict[str, float] = {
+                    'temperature_index': float(p.temperature_index),
+                    'seed_index': float(p.seed_index),
+                    'equilibrated_flag': 1.0,
+                    'equilibration_steps': 100.0,
+                }
+                for obs in ('avg_m', 'avg_e', 'susc', 'spec_h'):
+                    record.update({
+                        f'{obs}_value': 0.5, f'{obs}_err': 0.01,
+                        f'{obs}_tau_int': tau, f'{obs}_n_eff': 100.0,
+                    })
+                out.append(record)
+            return out
+
+        monkeypatch.setattr(sweep_runner, 'parallel_sweep', _fake)
+        monkeypatch.setattr(sweep_runner, 'plot_temperature_sweep', lambda **kwargs: None)
+        monkeypatch.setattr(sys, 'argv', [
+            'sweep', '--size', '8', '--t-points', '3', '--n-seeds', str(len(taus)),
+            '--output-dir', str(tmp_path),
+        ])
+        ising_sweep.main()
+        return np.load(tmp_path / 'temperature_sweep_data.npz')
+
+    def test_flag_tracks_tau_spread_not_magnetization_interval(
+        self, monkeypatch: pytest.MonkeyPatch, tmp_path: Path,
+    ) -> None:
+        """Consistent tau across seeds: stable; widely scattered tau: unstable."""
+        stable = self._run(monkeypatch, tmp_path, [10.0, 10.5, 9.5])
+        assert 'tau_int_ci_low' in stable.files and 'tau_int_ci_high' in stable.files
+        assert not stable['tau_interval_unstable_flag'].any()
+
+        unstable = self._run(monkeypatch, tmp_path, [2.0, 10.0, 40.0])
+        assert unstable['tau_interval_unstable_flag'].all()
+
+    def test_single_seed_has_no_tau_interval(
+        self, monkeypatch: pytest.MonkeyPatch, tmp_path: Path,
+    ) -> None:
+        """One seed gives no tau interval; the flag must not fire on a NaN width."""
+        data = self._run(monkeypatch, tmp_path, [10.0])
+        assert np.isnan(data['tau_int_ci_low']).all()
+        assert not data['tau_interval_unstable_flag'].any()

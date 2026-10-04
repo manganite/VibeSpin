@@ -426,11 +426,16 @@ def test_blocking_error_iid_agrees_with_naive():
 
 
 def test_summarize_primary_observable_zero_variance_policy():
-    """Constant series should return zero error and undefined tau diagnostics."""
+    """Constant series: exact value, but NaN for every undefined uncertainty field.
+
+    AGENTS.md section 8 forbids coercing undefined uncertainties to zero.
+    """
     x = np.ones(256)
     summary = summarize_primary_observable(time_series=x)
     assert summary['value'] == pytest.approx(1.0)
-    assert summary['err'] == pytest.approx(0.0)
+    assert np.isnan(summary['err'])
+    assert np.isnan(summary['ci_low'])
+    assert np.isnan(summary['ci_high'])
     assert np.isnan(summary['tau_int'])
     assert np.isnan(summary['n_eff'])
 
@@ -860,10 +865,10 @@ class TestPhysicsHelpersValidation:
             _as_1d_float_array(time_series=np.array([1.0]), name='test')
 
     def test_blocking_error_zero_variance(self) -> None:
-        """blocking_error should handle zero-variance input by returning 0 error."""
+        """blocking_error reports an undefined (NaN) error for zero-variance input."""
         x = np.ones(100)
         res = blocking_error(time_series=x)
-        assert res['stderr'] == 0.0
+        assert np.isnan(res['stderr'])
         assert np.isnan(res['tau_int_from_blocking'])
 
     def test_summarize_primary_observable_empty_or_nan(self) -> None:
@@ -873,3 +878,125 @@ class TestPhysicsHelpersValidation:
         summary = summarize_primary_observable(time_series=x)
         assert np.isnan(summary['value'])
         assert np.isnan(summary['err'])
+
+
+# ---------------------------------------------------------------------------
+# Calibration: the estimators must deliver their nominal accuracy on series
+# whose true answer is known. These tests use fixed seeds, so they are
+# deterministic; the tolerances leave room for the binomial noise of a few
+# hundred replicates.
+# ---------------------------------------------------------------------------
+
+
+def _ar1_series(*, n: int, tau_int: float, rng: np.random.Generator) -> np.ndarray:
+    """AR(1) series with unit innovations and integrated time tau_int."""
+    from scipy.signal import lfilter
+
+    phi = (2.0 * tau_int - 1.0) / (2.0 * tau_int + 1.0)
+    noise = rng.standard_normal(n)
+    noise[0] /= np.sqrt(1.0 - phi * phi)  # start in the stationary distribution
+    return lfilter([1.0], [1.0, -phi], noise)
+
+
+@pytest.mark.parametrize('tau_int, n', [(5.0, 5000), (20.0, 5000), (50.0, 20000)])
+def test_blocking_interval_coverage_on_correlated_series(tau_int, n):
+    """The nominal 68 % blocking interval covers the true mean about 68 % of the time.
+
+    With a Gaussian multiplier the coverage fell to 0.54-0.62 for tau_int of
+    20 to 100 because the plateau often rests on few blocks; the Student-t
+    multiplier restores it.
+    """
+    rng = np.random.default_rng(int(tau_int) * 7 + n)
+    replicates = 300
+    covered = 0
+    for _ in range(replicates):
+        x = _ar1_series(n=n, tau_int=tau_int, rng=rng)
+        s = summarize_primary_observable(time_series=x)
+        covered += s['ci_low'] <= 0.0 <= s['ci_high']
+    coverage = covered / replicates
+    assert 0.60 <= coverage <= 0.78, coverage
+
+
+def test_seed_ensemble_error_matches_spread_of_the_mean():
+    """For independent seeds the reported error equals the SD of the seed mean.
+
+    Adding the within-seed variance to the between-seed spread counted the
+    same noise twice and inflated the error by about sqrt(2).
+    """
+    rng = np.random.default_rng(5)
+    n_seeds, n_samples, repeats = 5, 400, 2000
+    means = np.empty(repeats)
+    errs = np.empty(repeats)
+    for r in range(repeats):
+        data = rng.standard_normal((n_seeds, n_samples))
+        values = data.mean(axis=1)
+        within = data.std(axis=1, ddof=1) / np.sqrt(n_samples)
+        summary = summarize_seed_ensemble(values=values, within_seed_errors=within)
+        means[r] = summary['value']
+        errs[r] = summary['err']
+    ratio = float(np.sqrt(np.mean(errs**2)) / np.std(means))
+    assert ratio == pytest.approx(1.0, abs=0.08)
+
+
+def test_seed_ensemble_single_seed_uses_within_error():
+    """One seed has no spread; its blocking error is the only information."""
+    summary = summarize_seed_ensemble(values=np.array([1.5]), within_seed_errors=np.array([0.2]))
+    assert summary['err'] == pytest.approx(0.2)
+
+
+def test_entropy_error_propagation_matches_monte_carlo():
+    """Propagated entropy errors agree with the scatter of perturbed integrals.
+
+    Treating the two trapezoids that share a point as independent dropped
+    their covariance and gave about 0.73 of the true error.
+    """
+    from utils.observables import calculate_entropy
+    from utils.statistics import _propagate_entropy_uncertainty_from_cv_errors
+
+    rng = np.random.default_rng(11)
+    temps = np.linspace(0.5, 3.0, 26)
+    cv = 1.0 + np.exp(-((temps - 1.5) ** 2))
+    cv_err = 0.05 + 0.02 * temps
+    propagated = _propagate_entropy_uncertainty_from_cv_errors(
+        temperatures=temps, specific_heat_err=cv_err,
+    )
+    draws = np.array([
+        calculate_entropy(
+            temperatures=temps, specific_heat=cv + cv_err * rng.standard_normal(temps.size),
+        )
+        for _ in range(4000)
+    ])
+    empirical = draws.std(axis=0)
+    assert propagated[-1] == 0.0
+    np.testing.assert_allclose(propagated[:-1], empirical[:-1], rtol=0.06)
+
+
+def test_derived_bootstrap_interval_contains_point_estimate():
+    """The block-bootstrap interval for chi must bracket the full-series value."""
+    rng = np.random.default_rng(3)
+    mags = 0.5 + 0.1 * _ar1_series(n=20000, tau_int=60.0, rng=rng)
+    summary = summarize_derived_observable(
+        magnetization_series=mags, temperature=2.0, L=16, observable='chi',
+        method='bootstrap', bootstrap_resamples=400,
+    )
+    assert summary['ci_low'] <= summary['value'] <= summary['ci_high']
+
+
+def test_derived_observable_nan_input_returns_nan_fields():
+    """A NaN-poisoned series yields NaN fields instead of crashing."""
+    x = np.array([0.1, np.nan, 0.3, 0.2] * 10)
+    summary = summarize_derived_observable(
+        magnetization_series=x, temperature=1.0, L=4, observable='chi',
+    )
+    assert np.isnan(summary['value'])
+    assert np.isnan(summary['err'])
+
+
+def test_derived_observable_zero_variance_policy():
+    """A constant series gives chi = 0 but undefined (NaN) uncertainty fields."""
+    summary = summarize_derived_observable(
+        magnetization_series=np.ones(128), temperature=1.0, L=4, observable='chi',
+    )
+    assert summary['value'] == pytest.approx(0.0)
+    assert np.isnan(summary['err'])
+    assert np.isnan(summary['ci_low'])
