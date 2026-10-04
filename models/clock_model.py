@@ -365,7 +365,7 @@ class ClockSimulation(VectorSpinObservablesMixin, MonteCarloSimulation):
             Whether to use parallelized Numba kernels (only for
             checkerboard). Parallel kernels are NOT seed-reproducible:
             only the calling thread's Numba RNG is seeded, so two runs
-            with the same seed may differ.
+            with the same seed may differ. Requires an even ``size``.
         seed : int | None
             Optional random seed for reproducibility.
 
@@ -396,6 +396,7 @@ class ClockSimulation(VectorSpinObservablesMixin, MonteCarloSimulation):
         self.A = A
         self.q = q
         self.update = update
+        self._validate_parallel_checkerboard(parallel=parallel, update=update)
         self.parallel = parallel
 
         if self.init_state == 'ordered':
@@ -987,7 +988,7 @@ class DiscreteClockSimulation(VectorSpinObservablesMixin, MonteCarloSimulation):
             Whether to use parallelized Numba kernels (only for
             checkerboard). Parallel kernels are NOT seed-reproducible:
             only the calling thread's Numba RNG is seeded, so two runs
-            with the same seed may differ.
+            with the same seed may differ. Requires an even ``size``.
         seed : int | None
             Optional random seed for reproducibility.
 
@@ -1007,6 +1008,7 @@ class DiscreteClockSimulation(VectorSpinObservablesMixin, MonteCarloSimulation):
         self.J = J
         self.q = q
         self.update = update
+        self._validate_parallel_checkerboard(parallel=parallel, update=update)
         self.parallel = parallel
 
         # Pre-compute lookup tables (no trig inside kernels)
