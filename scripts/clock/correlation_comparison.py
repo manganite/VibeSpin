@@ -16,7 +16,7 @@ from typing import Any
 import matplotlib.pyplot as plt
 import numpy as np
 
-from models.clock_model import ClockSimulation
+from scripts.clock._model_choice import add_clock_model_arguments, resolve_clock_model
 from utils.observables import (
     CorrelationPoint,
     fit_correlation_exponent,
@@ -30,6 +30,11 @@ from utils.system import parallel_sweep, parse_args_compat, setup_logging
 T1_CLOCK6: float = 0.68
 T2_CLOCK6: float = 0.92
 
+# Anisotropy of the continuous model when --continuous is given without
+# --aniso; it matches the ClockSimulation constructor default used before the
+# discrete model became the default.
+_DEFAULT_CONTINUOUS_ANISO = 1.0
+
 
 def main() -> None:
     """Run the clock model correlation comparison analysis."""
@@ -38,6 +43,7 @@ def main() -> None:
     )
     parser.add_argument('--size', type=int, default=128, help='Linear lattice size L')
     parser.add_argument('--q', type=int, default=6, help='Number of clock states')
+    add_clock_model_arguments(parser=parser, default_aniso=_DEFAULT_CONTINUOUS_ANISO)
     parser.add_argument('--steps', type=int, default=4000, help='Measurement steps')
     parser.add_argument('--eq-probe', type=int, default=200, help='Convergence probe chunk size')
     parser.add_argument('--eq-max', type=int, default=50000, help='Max equilibration steps')
@@ -51,6 +57,9 @@ def main() -> None:
     parser.add_argument('--verbose', action='store_true', help='Enable verbose logging')
 
     args = parse_args_compat(parser=parser)
+    choice = resolve_clock_model(
+        parser=parser, args=args, default_aniso=_DEFAULT_CONTINUOUS_ANISO,
+    )
 
     log_level = logging.DEBUG if args.verbose else logging.INFO
     logger = setup_logging(level=log_level, log_file=args.log_file)
@@ -62,14 +71,14 @@ def main() -> None:
 
     logger.info(
         f'Starting clock correlation comparison '
-        f'(q={args.q}, L={args.size}, steps={args.steps})'
+        f'(q={args.q}, {choice.variant}, L={args.size}, steps={args.steps})'
     )
     logger.info(
         f'Temperatures: ordered={T_ORDERED}, quasi={T_QUASI}, disordered={T_DISORDERED}'
     )
 
     common: dict[str, Any] = dict(
-        model_cls=ClockSimulation, model_kwargs={'q': args.q}, size=args.size,
+        model_cls=choice.model_cls, model_kwargs=choice.model_kwargs, size=args.size,
         seed=args.seed, eq_probe=args.eq_probe, eq_max=args.eq_max,
         meas_steps=args.steps, interval=args.interval,
     )
@@ -134,7 +143,10 @@ def main() -> None:
     ax2.legend()
     ax2.grid(True, which='both', ls='-', alpha=0.5)
 
-    fig.suptitle(f'{args.q}-state Clock Model: Correlation Comparison (L={args.size})')
+    fig.suptitle(
+        f'{args.q}-state Clock Model ({choice.variant}): '
+        f'Correlation Comparison (L={args.size})'
+    )
 
     output_dir: str = ensure_results_dir(directory=args.output_dir)
     save_plot(filename='correlation_comparison.png', directory=output_dir)
@@ -154,6 +166,7 @@ def main() -> None:
         T2=T2_CLOCK6,
         L=args.size,
         q=args.q,
+        model_variant=choice.variant,
         steps=args.steps,
         eq_probe=args.eq_probe,
         eq_max=args.eq_max,

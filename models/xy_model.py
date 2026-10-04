@@ -302,12 +302,14 @@ class XYSimulation(VectorSpinObservablesMixin, MonteCarloSimulation):
         Raises
         ------
         ValueError
-            If ``update`` is not one of the recognised schemes.
+            If ``update`` is not one of the recognised schemes or ``J`` is
+            negative.
         """
         super().__init__(size=size, temp=temp, init_state=init_state, seed=seed)
         if update not in self._VALID_UPDATES:
             valid_opts = sorted(self._VALID_UPDATES)
             raise ValueError(f'Unknown update scheme {update!r}. Valid options: {valid_opts}')
+        self._validate_coupling(J=J)
         self.J = J
         self.update = update
         self.parallel = parallel

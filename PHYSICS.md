@@ -41,7 +41,9 @@ See also the [Clock model (Vector Potts model) article on Wikipedia](https://en.
 
 $$E = -J \sum_{\langle i,j \rangle} \cos(\theta_i - \theta_j) \;-\; A \sum_i \cos(q\,\theta_i).$$
 
-The **discrete** form evaluates the same interaction directly on integer state indices $k_i \in \{0,\dots,q-1\}$ using precomputed cosine lookup tables, eliminating per-site trigonometric calls. For large $q$ the model exhibits two successive BKT-type crossovers, one for the onset of quasi-long-range order and a lower one for the discrete locking transition, while for small $q$ the behavior collapses to an Ising-like single transition.
+The **discrete** form evaluates the same interaction directly on integer state indices $k_i \in \{0,\dots,q-1\}$ using precomputed cosine lookup tables, eliminating per-site trigonometric calls. It is the clock model proper, and the clock scripts use it by default; `--continuous` selects the anisotropic form instead. The two are different Hamiltonians. At $A = 0$ the continuous form is exactly the XY model, and it approaches the discrete model only as $A \to \infty$, so its transition temperatures depend on $A$ and literature values for the discrete model do not apply to it.
+
+The phase behaviour of the discrete model depends on $q$. For $q = 2$ it is the Ising model with $T_c = 2J/\ln(1+\sqrt{2}) \approx 2.269\,J$. For $q = 3$ it maps onto the 3-state Potts model with coupling $3J/2$, giving $T_c = 3J/[2\ln(1+\sqrt{3})] \approx 1.492\,J$. For $q = 4$ it decouples into two Ising models with coupling $J/2$, so $T_c = J/\ln(1+\sqrt{2}) \approx 1.135\,J$. For $q \geq 5$ there are two BKT transitions: below $T_1$ the spins lock to one of the $q$ directions with true long-range order, between $T_1$ and $T_2$ the discreteness is irrelevant at long distances and correlations decay algebraically as in the XY model, and above $T_2$ they decay exponentially. For $q = 6$, Tomita and Okabe [[13]](#Bibliography) obtain $T_1 = 0.7014(11)\,J$ and $T_2 = 0.9008(6)\,J$ from a cluster study, against the earlier Monte Carlo estimates $T_1 = 0.68(2)\,J$ and $T_2 = 0.92(1)\,J$ that they quote; the scripts mark the older pair as approximate crossovers.
 
 ## 2. The Metropolis-Hastings Algorithm
 
@@ -124,13 +126,19 @@ After the cluster $\mathcal{C}$ is fully grown, all spins in $\mathcal{C}$ are f
 For the Wolff-Evertz generalization to $O(2)$ models, see Wolff [[9]](#Bibliography) and Newman and Barkema [[10]](#Bibliography).
 See also the [Wolff algorithm](https://en.wikipedia.org/wiki/Wolff_algorithm) article on Wikipedia.
 
-$$P_{\mathrm{add}} = 1 - e^{-2\beta J\,\sigma_i \sigma_j}.$$
+A reflection axis $\hat{r}$ is drawn uniformly from the unit circle, and $\sigma_i = \mathbf{s}_i \cdot \hat{r}$ denotes the projection of spin $i$ onto it. A bond between neighbours is activated with probability
+
+$$P_{\mathrm{add}} = 1 - e^{\min(0,\,-2\beta J\,\sigma_i \sigma_j)},$$
+
+which vanishes unless the two projections share a sign.
 
 Once the cluster is formed, every cluster spin is reflected through the hyperplane perpendicular to $\hat{r}$:
 
 $$\mathbf{s}_i \to \mathbf{s}_i - 2(\mathbf{s}_i \cdot \hat{r})\,\hat{r}.$$
 
-This reflection preserves the Euclidean norm $|\mathbf{s}_i| = 1$ exactly, requires no renormalisation, and satisfies detailed balance for the pure Heisenberg exchange term $-J \mathbf{s}_i \cdot \mathbf{s}_j$. For the **continuous clock model**, which includes an additional crystal-field anisotropy $-A\cos(q\theta_i)$, the reflection symmetry required by the FK bond construction holds only for the exchange part of the Hamiltonian; the anisotropy term breaks this symmetry and falls outside the standard Wolff-Evertz derivation. The Wolff kernel therefore satisfies detailed balance exactly only when $A = 0$, and converges to an approximation of the correct equilibrium distribution for $A > 0$. Its use in the clock model is most appropriate when $A \ll J$, or as a diagnostic in the XY-like regime.
+This reflection preserves the Euclidean norm $|\mathbf{s}_i| = 1$ exactly, requires no renormalisation, and satisfies detailed balance for the planar exchange term $-J\, \mathbf{s}_i \cdot \mathbf{s}_j$. For the **continuous clock model**, which adds the crystal-field anisotropy $-A\cos(q\theta_i)$, the bond construction sees only the exchange part. A chain built from these reflections alone samples the $A = 0$ Hamiltonian, which is the XY model, whatever value of $A$ is set. `ClockSimulation` therefore rejects `update='wolff'` for $A \neq 0$ with a `ValueError` rather than producing XY statistics under a clock label.
+
+The **discrete clock model** admits an exact cluster update because reflections can be restricted to its symmetry group. The axis is drawn from the $q$ mirror axes of the regular $q$-gon, at angles $\varphi_m = \pi m / q$ for $m = 0, \dots, q-1$. Reflecting $\theta_s = 2\pi s/q$ about $\varphi_m$ gives $2\varphi_m - \theta_s$, the allowed state $s' = (m - s) \bmod q$, so no spin ever leaves the discrete state space. Tomita and Okabe [[13]](#Bibliography) restrict the embedding axis to the same set of directions for their cluster study of the clock model. The projection perpendicular to the mirror axis is $\sigma_i = \sin(\theta_{s_i} - \varphi_m)$, the bond probability is the same expression as above, and because each reflection is an involution chosen with probability $1/q$ in both directions, detailed balance holds for the full discrete Hamiltonian. A single-site cluster can reach every state $s'$ from $s$, so the chain is ergodic. The test suite checks both properties on the exact transition matrix of a $2 \times 2$ lattice.
 
 ### Practical Semantics
 
@@ -200,3 +208,5 @@ In the deep ordered phase (low $T$), configurations can be nearly frozen and $\t
 [[11]](#Bibliography) J. Villain, "Theory of one- and two-dimensional magnets with an easy magnetization plane. II. The planar, classical, two-dimensional magnet," *J. Phys. France* 36, 581-590 (1975). [Open Access](https://doi.org/10.1051/jphys:01975003606058100)
 
 [[12]](#Bibliography) A. D. Sokal, \"Monte Carlo Methods in Statistical Mechanics: Foundations and New Algorithms,\" lecture notes (1989), published in *Functional Integration: Basics and Applications* (C. DeWitt-Morette, P. Cartier, A. Folacci, eds.), Springer, 1997, pp. 131–192. [Springer Link](https://link.springer.com/chapter/10.1007/978-1-4899-0319-8_6)
+
+[[13]](#Bibliography) Y. Tomita and Y. Okabe, "Probability-changing cluster algorithm for two-dimensional XY and clock models," 2002. [arXiv:cond-mat/0202161](https://arxiv.org/abs/cond-mat/0202161)

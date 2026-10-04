@@ -70,3 +70,44 @@ def test_clock_main(mock_plt, mock_os):
     assert mock_s.called
     assert mock_save.called
     assert mock_os.called
+
+
+def test_clock_main_defaults_to_discrete_model(mock_plt, mock_os):
+    """Clock main() must build the discrete model unless --continuous is given."""
+    import models.clock_model as clock_module
+
+    with patch('sys.argv', ['clock_model.py', '--size', '4', '--steps', '3']), \
+         patch.object(
+             clock_module, 'DiscreteClockSimulation',
+             wraps=clock_module.DiscreteClockSimulation,
+         ) as discrete_cls, \
+         patch.object(
+             clock_module, 'ClockSimulation', wraps=clock_module.ClockSimulation,
+         ) as continuous_cls:
+        clock_main()
+    assert discrete_cls.called
+    assert not continuous_cls.called
+
+
+def test_clock_main_discrete_wolff(mock_plt, mock_os):
+    """The discrete model supports the Wolff update from the CLI."""
+    with patch(
+        'sys.argv', ['clock_model.py', '--size', '4', '--steps', '3', '--update', 'wolff'],
+    ):
+        clock_main()
+
+
+def test_clock_main_continuous_wolff_rejected(mock_plt, mock_os):
+    """Continuous model with the default A=1.0 must refuse the Wolff update."""
+    with patch(
+        'sys.argv',
+        ['clock_model.py', '--size', '4', '--steps', '3', '--update', 'wolff', '--continuous'],
+    ), pytest.raises(ValueError, match='requires A=0.0'):
+        clock_main()
+
+
+def test_clock_main_aniso_requires_continuous(mock_plt, mock_os):
+    """--aniso without --continuous is a usage error."""
+    with patch('sys.argv', ['clock_model.py', '--size', '4', '--aniso', '0.5']), \
+         pytest.raises(SystemExit):
+        clock_main()

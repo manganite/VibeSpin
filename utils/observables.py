@@ -21,6 +21,8 @@ class _Sim(Protocol):
 
     def calculate_correlation_function(self) -> tuple[np.ndarray, np.ndarray]: ...
 
+    def get_spin_field(self) -> np.ndarray: ...
+
 
 def derived_thermo_estimate(
     *, series: np.ndarray, temperature: float, L: int, observable: str
@@ -650,7 +652,8 @@ def compute_kinetics_metrics(*, sim: _Sim) -> dict[str, float]:
         return {'R_sk': 0.0, 'xi': 0.0}
 
     # 1. R_sk from structure factor first moment
-    kvals, S_radial = radial_average_sk(spins=sim.spins)
+    spin_field = sim.get_spin_field()
+    kvals, S_radial = radial_average_sk(spins=spin_field)
     S_k = S_radial[1:]
     K_k = kvals[1:]
     denom = float(np.sum(K_k * S_k))
@@ -658,7 +661,7 @@ def compute_kinetics_metrics(*, sim: _Sim) -> dict[str, float]:
 
     # 2. xi from G(r) 1/e decay; no crossing means the correlation extends
     # beyond the accessible range, so fall back to the largest distance.
-    r_vals, G = pair_correlation_x(spins=sim.spins)
+    r_vals, G = pair_correlation_x(spins=spin_field)
     xi = correlation_length_1e(r=r_vals, G=G)
     if not np.isfinite(xi):
         xi = float(r_vals[-1])

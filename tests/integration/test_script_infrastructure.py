@@ -1130,3 +1130,180 @@ class TestMiscScriptsMain:
             ],
         )
         corr_comp.main()
+
+
+class TestClockModelChoice:
+    """Clock scripts must run the discrete model unless --continuous is given.
+
+    A refactor once reduced ``--discrete`` to a label while the sweep kept
+    building ``ClockSimulation`` with ``A=0``, which is the XY model. These
+    tests pin the model class each clock script actually instantiates.
+    """
+
+    @staticmethod
+    def _sweep_model(monkeypatch: pytest.MonkeyPatch, argv: list[str]) -> tuple[Any, Any]:
+        """Run the clock sweep main() with a fake pool; return (model_cls, model_kwargs)."""
+        import scripts.clock.temperature_sweep as clock_sweep
+
+        captured: list[Any] = []
+
+        def _fake_parallel_sweep(*, worker_func: Any, params: Any, num_processes: Any = None):
+            captured.extend(params)
+            raise _StopSweep
+
+        class _StopSweep(Exception):
+            pass
+
+        monkeypatch.setattr(sweep_runner, 'parallel_sweep', _fake_parallel_sweep)
+        monkeypatch.setattr(sys, 'argv', ['clock_temperature_sweep', *argv])
+        with pytest.raises(_StopSweep):
+            clock_sweep.main()
+        return captured[0].model_cls, captured[0].model_kwargs
+
+    def test_sweep_defaults_to_discrete(
+        self, monkeypatch: pytest.MonkeyPatch, tmp_path: Path,
+    ) -> None:
+        """Without flags the sweep must build DiscreteClockSimulation."""
+        from models.clock_model import DiscreteClockSimulation
+
+        model_cls, kwargs = self._sweep_model(
+            monkeypatch, ['--size', '8', '--t-points', '2', '--output-dir', str(tmp_path)],
+        )
+        assert model_cls is DiscreteClockSimulation
+        assert kwargs == {'q': 6}
+
+    def test_sweep_explicit_discrete_flag(
+        self, monkeypatch: pytest.MonkeyPatch, tmp_path: Path,
+    ) -> None:
+        """--discrete is accepted and selects the discrete model."""
+        from models.clock_model import DiscreteClockSimulation
+
+        model_cls, _ = self._sweep_model(
+            monkeypatch,
+            ['--discrete', '--q', '4', '--t-points', '2', '--output-dir', str(tmp_path)],
+        )
+        assert model_cls is DiscreteClockSimulation
+
+    def test_sweep_continuous_uses_non_zero_anisotropy(
+        self, monkeypatch: pytest.MonkeyPatch, tmp_path: Path,
+    ) -> None:
+        """--continuous selects ClockSimulation with a non-zero default A."""
+        model_cls, kwargs = self._sweep_model(
+            monkeypatch, ['--continuous', '--t-points', '2', '--output-dir', str(tmp_path)],
+        )
+        assert model_cls is ClockSimulation
+        assert kwargs == {'q': 6, 'A': 1.0}
+
+        model_cls, kwargs = self._sweep_model(
+            monkeypatch,
+            ['--continuous', '--aniso', '0.3', '--t-points', '2', '--output-dir', str(tmp_path)],
+        )
+        assert kwargs == {'q': 6, 'A': 0.3}
+
+    def test_sweep_ordered_start_fallback_follows_model(
+        self, monkeypatch: pytest.MonkeyPatch, tmp_path: Path,
+    ) -> None:
+        """
+        The discrete q=6 sweep enables the ordered-start fallback below T1,
+        as the Ising sweep does below T_c; the continuous sweep never does.
+        """
+        import scripts.clock.temperature_sweep as clock_sweep
+
+        def _points(argv: list[str]) -> list[Any]:
+            captured: list[Any] = []
+
+            class _Stop(Exception):
+                pass
+
+            def _fake(*, worker_func: Any, params: Any, num_processes: Any = None):
+                captured.extend(params)
+                raise _Stop
+
+            monkeypatch.setattr(sweep_runner, 'parallel_sweep', _fake)
+            monkeypatch.setattr(sys, 'argv', ['clock_temperature_sweep', *argv])
+            with pytest.raises(_Stop):
+                clock_sweep.main()
+            return captured
+
+        common = ['--t-min', '0.3', '--t-max', '1.2', '--t-points', '4',
+                  '--output-dir', str(tmp_path)]
+        discrete = _points(common)
+        assert [p.prefer_ordered_start for p in discrete] == [
+            p.temperature < clock_sweep._T1_CLOCK6_APPROX for p in discrete
+        ]
+        assert any(p.qs_allow_stuck for p in discrete)
+        continuous = _points(['--continuous', *common])
+        assert not any(p.prefer_ordered_start or p.qs_allow_stuck for p in continuous)
+
+    @pytest.mark.parametrize(
+        'argv',
+        [['--aniso', '0.5'], ['--discrete', '--continuous']],
+    )
+    def test_sweep_rejects_inconsistent_flags(
+        self, monkeypatch: pytest.MonkeyPatch, argv: list[str],
+    ) -> None:
+        """--aniso without --continuous and --discrete with --continuous are usage errors."""
+        import scripts.clock.temperature_sweep as clock_sweep
+
+        monkeypatch.setattr(sys, 'argv', ['clock_temperature_sweep', *argv])
+        with pytest.raises(SystemExit):
+            clock_sweep.main()
+
+    @pytest.mark.parametrize(
+        'module_name, call_target',
+        [
+            ('scripts.clock.ordering_kinetics', 'run_ordering_kinetics'),
+            ('scripts.clock.ordering_evolution', 'run_ordering_evolution'),
+        ],
+    )
+    def test_kinetics_scripts_default_to_discrete(
+        self, monkeypatch: pytest.MonkeyPatch, module_name: str, call_target: str,
+    ) -> None:
+        """Ordering kinetics and evolution must default to the discrete model."""
+        import importlib
+
+        from models.clock_model import DiscreteClockSimulation
+
+        module = importlib.import_module(module_name)
+        captured: dict[str, Any] = {}
+        monkeypatch.setattr(module, call_target, lambda **kwargs: captured.update(kwargs))
+        monkeypatch.setattr(sys, 'argv', [module_name])
+        module.main()
+        assert captured['model_cls'] is DiscreteClockSimulation
+        assert 'A' not in captured['model_kwargs']
+
+    def test_wolff_efficiency_uses_discrete_model(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        """The clock Wolff comparison must not run the A=0 (XY) continuous model."""
+        import scripts.clock.wolff_efficiency as clock_wolff
+        from models.clock_model import DiscreteClockSimulation
+
+        captured: dict[str, Any] = {}
+        monkeypatch.setattr(
+            clock_wolff, 'run_wolff_efficiency', lambda **kwargs: captured.update(kwargs),
+        )
+        monkeypatch.setattr(sys, 'argv', ['clock_wolff_efficiency'])
+        clock_wolff.main()
+        assert captured['model_cls'] is DiscreteClockSimulation
+        assert captured['model_kwargs'] == {'q': 6}
+
+    def test_correlation_comparison_uses_discrete_model(
+        self, monkeypatch: pytest.MonkeyPatch, tmp_path: Path,
+    ) -> None:
+        """The clock correlation comparison must default to the discrete model."""
+        import scripts.clock.correlation_comparison as clock_corr
+        from models.clock_model import DiscreteClockSimulation
+
+        captured: list[Any] = []
+
+        class _Stop(Exception):
+            pass
+
+        def _fake_parallel_sweep(*, worker_func: Any, params: Any, num_processes: Any = None):
+            captured.extend(params)
+            raise _Stop
+
+        monkeypatch.setattr(clock_corr, 'parallel_sweep', _fake_parallel_sweep)
+        monkeypatch.setattr(sys, 'argv', ['clock_corr', '--output-dir', str(tmp_path)])
+        with pytest.raises(_Stop):
+            clock_corr.main()
+        assert {p.model_cls for p in captured} == {DiscreteClockSimulation}

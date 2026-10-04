@@ -233,8 +233,8 @@ def o2_wolff_step_numba(
     this project shares this update unchanged.  Where the Hamiltonian adds a
     single-site term that breaks the reflection symmetry, such as the
     crystal-field anisotropy of the clock model, detailed balance then holds
-    for the exchange part alone, and ``ClockSimulation`` warns when it is asked
-    to combine this update with a non-zero anisotropy.
+    for the exchange part alone, so ``ClockSimulation`` rejects this update
+    when combined with a non-zero anisotropy.
 
     One call constitutes one cluster sweep.  ``parallel=True`` is silently
     ignored.
@@ -467,6 +467,31 @@ class MonteCarloSimulation(ABC):
         self._nr_pre = np.bincount(self._r_int_pre)
         self._r_range_pre = np.arange(center)
 
+    @staticmethod
+    def _validate_coupling(*, J: float) -> None:
+        """Reject couplings the kernels cannot sample correctly.
+
+        The Metropolis acceptance tables and the Wolff bond probability
+        ``1 - exp(-2 beta J ...)`` are derived for ferromagnetic exchange.
+        With ``J < 0`` the precomputed Boltzmann factors exceed one and the
+        cluster bond probability turns negative, so the chains would no longer
+        satisfy detailed balance.
+
+        Parameters
+        ----------
+        J : float
+            Exchange coupling constant.
+
+        Raises
+        ------
+        ValueError
+            If ``J`` is negative or not finite.
+        """
+        if not np.isfinite(J) or J < 0.0:
+            raise ValueError(
+                f'J must be a finite, non-negative (ferromagnetic) coupling, got {J}'
+            )
+
     def _reseed_numba_for_step(self) -> None:
         """Reseed Numba's RNG deterministically for the upcoming sweep.
 
@@ -532,6 +557,29 @@ class MonteCarloSimulation(ABC):
 
         center = self.size // 2
         return self._r_range_pre, radial_profile[:center]
+
+    def get_spin_field(self) -> np.ndarray:
+        """Return the spin configuration in its physical representation.
+
+        Scalar models return the ``(L, L)`` array of spins; vector models
+        return ``(L, L, 2)`` unit vectors. Models that store an internal
+        encoding (the discrete clock model keeps integer state indices)
+        override this method, so analysis helpers never misread state
+        indices as scalar spin values.
+
+        Returns
+        -------
+        np.ndarray
+            Spin field suitable for structure-factor and correlation analysis.
+
+        Raises
+        ------
+        RuntimeError
+            If the lattice has not been initialised.
+        """
+        if self.spins is None:
+            raise RuntimeError('Simulation lattice is uninitialized (spins is None).')
+        return self.spins
 
     def get_magnetization(self) -> float:
         """Return the current absolute magnetization per site.

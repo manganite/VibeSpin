@@ -24,6 +24,7 @@ Referencing policy is defined in [AGENTS.md](https://github.com/manganite/VibeSp
 
 ### q-state Clock Model
 - J. Lapilli, P. Pfeifer, and C. Wexler, "Universality away from critical points in two-dimensional phase transitions," Physical Review Letters, vol. 96, no. 14, 140603, 2006. [APS Open Access](https://journals.aps.org/prl/abstract/10.1103/PhysRevLett.96.140603)
+- Y. Tomita and Y. Okabe, "Probability-changing cluster algorithm for two-dimensional XY and clock models," 2002. Transition temperatures of the q = 6, 8, 12 clock models and the mirror-axis choice for cluster updates. [arXiv:cond-mat/0202161](https://arxiv.org/abs/cond-mat/0202161)
 - [Clock model (Vector Potts model) on Wikipedia](https://en.wikipedia.org/wiki/Potts_model#Vector_Potts_model)
 
 ---
