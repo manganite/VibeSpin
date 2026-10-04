@@ -33,9 +33,9 @@ uv sync --all-extras
 uv run pre-commit install --hook-type pre-commit --hook-type pre-push
 ```
 
-`uv sync` creates `.venv/` in the repository and installs VibeSpin in editable mode with the development, notebook, and documentation extras. Prefix commands with `uv run`, or activate the environment with `source .venv/bin/activate`. JupyterLab starts with `uv run jupyter lab`. In VS Code, open the folder through the WSL extension and select `.venv/bin/python` as the interpreter.
+`uv sync` creates `.venv/` in the repository and installs VibeSpin in editable mode with the development, notebook, and documentation extras. Prefix commands with `uv run`, or activate the environment with `source .venv/bin/activate`. JupyterLab starts with `uv run jupyter lab`. In VS Code, select `.venv/bin/python` as the interpreter; under WSL, open the folder through the WSL extension first.
 
-Git and GitHub access are configured directly in WSL, either with `gh auth login` or with an SSH key in `~/.ssh`.
+GitHub access needs no project-specific setup: use `gh auth login` or an SSH key in `~/.ssh`, on Windows inside WSL rather than in Windows itself.
 
 Without uv, the same pinned set installs with pip from `requirements.txt`, which a pre-commit hook exports from `uv.lock`:
 
