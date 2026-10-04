@@ -108,13 +108,18 @@
 <span class="kn">from</span><span class="w"> </span><span class="nn">models.xy_model</span><span class="w"> </span><span class="kn">import</span> <span class="n">XYSimulation</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">utils.equilibration</span><span class="w"> </span><span class="kn">import</span> <span class="n">prepare_equilibrated_simulation</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">utils.plotting</span><span class="w"> </span><span class="kn">import</span> <span class="n">ensure_results_dir</span><span class="p">,</span> <span class="n">save_plot</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">utils.sweep_helpers</span><span class="w"> </span><span class="kn">import</span> <span class="n">derive_point_seed</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">utils.statistics</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
+    <span class="n">DEFAULT_CONFIDENCE_LEVEL</span><span class="p">,</span>
+    <span class="n">UNCERTAINTY_METHOD_BLOCKING</span><span class="p">,</span>
+    <span class="n">summarize_primary_observable</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">utils.sweep_helpers</span><span class="w"> </span><span class="kn">import</span> <span class="n">SUMMARY_FIELDS</span><span class="p">,</span> <span class="n">build_single_run_schema</span><span class="p">,</span> <span class="n">derive_point_seed</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">utils.system</span><span class="w"> </span><span class="kn">import</span> <span class="n">parallel_sweep</span><span class="p">,</span> <span class="n">parse_args_compat</span><span class="p">,</span> <span class="n">setup_logging</span>
 
 
 <div class="viewcode-block" id="simulate_bkt_point">
 <a class="viewcode-back" href="../../../api/vibespin.scripts.xy.html#scripts.xy.bkt_transition.simulate_bkt_point">[docs]</a>
-<span class="k">def</span><span class="w"> </span><span class="nf">simulate_bkt_point</span><span class="p">(</span><span class="n">params</span><span class="p">:</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">float</span><span class="p">,</span> <span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">simulate_bkt_point</span><span class="p">(</span><span class="n">params</span><span class="p">:</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">float</span><span class="p">,</span> <span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">float</span><span class="p">]:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Worker function to simulate a single temperature and measure average vortex density.</span>
 
@@ -126,9 +131,11 @@
 
 <span class="sd">    Returns</span>
 <span class="sd">    -------</span>
-<span class="sd">    float</span>
-<span class="sd">        Average vortex density n_v, or NaN when the two starts did not</span>
-<span class="sd">        converge within ``eq_max_steps``.</span>
+<span class="sd">    dict[str, float]</span>
+<span class="sd">        Blocking summary of the vortex density n_v (``value``, ``err``,</span>
+<span class="sd">        ``ci_low``, ``ci_high``, ``tau_int``, ``n_eff``, ``samples``). All</span>
+<span class="sd">        fields are NaN when the two starts did not converge within</span>
+<span class="sd">        ``eq_max_steps``.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="n">T</span><span class="p">,</span> <span class="n">L</span><span class="p">,</span> <span class="n">eq_probe_steps</span><span class="p">,</span> <span class="n">eq_max_steps</span><span class="p">,</span> <span class="n">meas_steps</span><span class="p">,</span> <span class="n">seed</span> <span class="o">=</span> <span class="n">params</span>
     <span class="c1"># The XY model has no metastable domain states, but its random start can</span>
@@ -140,14 +147,16 @@
         <span class="n">chunk_size</span><span class="o">=</span><span class="n">eq_probe_steps</span><span class="p">,</span> <span class="n">max_steps</span><span class="o">=</span><span class="n">eq_max_steps</span><span class="p">,</span> <span class="n">detect_stuck</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
     <span class="p">)</span>
     <span class="k">if</span> <span class="ow">not</span> <span class="n">outcome</span><span class="o">.</span><span class="n">certified</span><span class="p">:</span>
-        <span class="k">return</span> <span class="nb">float</span><span class="p">(</span><span class="s1">&#39;nan&#39;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="nb">dict</span><span class="o">.</span><span class="n">fromkeys</span><span class="p">(</span><span class="n">SUMMARY_FIELDS</span><span class="p">,</span> <span class="nb">float</span><span class="p">(</span><span class="s1">&#39;nan&#39;</span><span class="p">))</span>
 
     <span class="n">densities</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">empty</span><span class="p">(</span><span class="n">meas_steps</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">)</span>
     <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">meas_steps</span><span class="p">):</span>
         <span class="n">sim</span><span class="o">.</span><span class="n">step</span><span class="p">()</span>
         <span class="n">densities</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="o">=</span> <span class="n">sim</span><span class="o">.</span><span class="n">get_vortex_density</span><span class="p">()</span>
 
-    <span class="k">return</span> <span class="nb">float</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">densities</span><span class="p">))</span></div>
+    <span class="k">return</span> <span class="n">summarize_primary_observable</span><span class="p">(</span>
+        <span class="n">time_series</span><span class="o">=</span><span class="n">densities</span><span class="p">,</span> <span class="n">confidence</span><span class="o">=</span><span class="n">DEFAULT_CONFIDENCE_LEVEL</span><span class="p">,</span>
+    <span class="p">)</span></div>
 
 
 
@@ -197,13 +206,18 @@
         <span class="p">)</span>
         <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">T</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">temperatures</span><span class="p">)</span>
     <span class="p">]</span>
-    <span class="n">vortex_densities</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span> <span class="o">=</span> <span class="n">parallel_sweep</span><span class="p">(</span>
+    <span class="n">summaries</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">float</span><span class="p">]]</span> <span class="o">=</span> <span class="n">parallel_sweep</span><span class="p">(</span>
         <span class="n">worker_func</span><span class="o">=</span><span class="n">simulate_bkt_point</span><span class="p">,</span> <span class="n">params</span><span class="o">=</span><span class="n">sweep_params</span>
     <span class="p">)</span>
+    <span class="n">vortex_densities</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">s</span><span class="p">[</span><span class="s1">&#39;value&#39;</span><span class="p">]</span> <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="n">summaries</span><span class="p">])</span>
+    <span class="n">density_err</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">s</span><span class="p">[</span><span class="s1">&#39;err&#39;</span><span class="p">]</span> <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="n">summaries</span><span class="p">])</span>
 
     <span class="c1"># Plotting results</span>
     <span class="n">plt</span><span class="o">.</span><span class="n">figure</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">10</span><span class="p">,</span> <span class="mi">6</span><span class="p">))</span>
-    <span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">temperatures</span><span class="p">,</span> <span class="n">vortex_densities</span><span class="p">,</span> <span class="s1">&#39;o-&#39;</span><span class="p">,</span> <span class="n">markersize</span><span class="o">=</span><span class="mi">5</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s1">&#39;Vortex Density $n_v$&#39;</span><span class="p">)</span>
+    <span class="n">plt</span><span class="o">.</span><span class="n">errorbar</span><span class="p">(</span>
+        <span class="n">temperatures</span><span class="p">,</span> <span class="n">vortex_densities</span><span class="p">,</span> <span class="n">yerr</span><span class="o">=</span><span class="n">density_err</span><span class="p">,</span> <span class="n">fmt</span><span class="o">=</span><span class="s1">&#39;o-&#39;</span><span class="p">,</span> <span class="n">markersize</span><span class="o">=</span><span class="mi">5</span><span class="p">,</span>
+        <span class="n">capsize</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s1">&#39;Vortex Density $n_v$&#39;</span><span class="p">,</span>
+    <span class="p">)</span>
 
     <span class="n">plt</span><span class="o">.</span><span class="n">axvline</span><span class="p">(</span>
         <span class="n">x</span><span class="o">=</span><span class="n">T_BKT_THEORETICAL</span><span class="p">,</span>
@@ -226,10 +240,15 @@
     <span class="n">np</span><span class="o">.</span><span class="n">savez_compressed</span><span class="p">(</span>
         <span class="n">npz_path</span><span class="p">,</span>
         <span class="n">temperatures</span><span class="o">=</span><span class="n">temperatures</span><span class="p">,</span>
-        <span class="n">vortex_densities</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">vortex_densities</span><span class="p">),</span>
+        <span class="n">vortex_densities</span><span class="o">=</span><span class="n">vortex_densities</span><span class="p">,</span>
         <span class="c1"># The worker returns NaN only for points whose equilibration hit</span>
         <span class="c1"># eq_max_steps without convergence.</span>
-        <span class="n">equilibrated</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">isfinite</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">vortex_densities</span><span class="p">)),</span>
+        <span class="n">equilibrated</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">isfinite</span><span class="p">(</span><span class="n">vortex_densities</span><span class="p">),</span>
+        <span class="o">**</span><span class="n">build_single_run_schema</span><span class="p">(</span>
+            <span class="n">prefix</span><span class="o">=</span><span class="s1">&#39;vortex_density&#39;</span><span class="p">,</span> <span class="n">summaries</span><span class="o">=</span><span class="n">summaries</span><span class="p">,</span>
+            <span class="n">uncertainty_method</span><span class="o">=</span><span class="n">UNCERTAINTY_METHOD_BLOCKING</span><span class="p">,</span>
+            <span class="n">confidence</span><span class="o">=</span><span class="n">DEFAULT_CONFIDENCE_LEVEL</span><span class="p">,</span>
+        <span class="p">),</span>
         <span class="n">T_BKT_theoretical</span><span class="o">=</span><span class="n">T_BKT_THEORETICAL</span><span class="p">,</span>
         <span class="n">L</span><span class="o">=</span><span class="n">args</span><span class="o">.</span><span class="n">size</span><span class="p">,</span>
         <span class="n">eq_probe_steps</span><span class="o">=</span><span class="n">args</span><span class="o">.</span><span class="n">eq_probe_steps</span><span class="p">,</span>

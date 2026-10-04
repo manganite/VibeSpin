@@ -613,6 +613,37 @@
                 <span class="sa">f</span><span class="s1">&#39;J must be a finite, non-negative (ferromagnetic) coupling, got </span><span class="si">{</span><span class="n">J</span><span class="si">}</span><span class="s1">&#39;</span>
             <span class="p">)</span>
 
+    <span class="k">def</span><span class="w"> </span><span class="nf">_validate_parallel_checkerboard</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">parallel</span><span class="p">:</span> <span class="nb">bool</span><span class="p">,</span> <span class="n">update</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Reject the parallel checkerboard kernel on lattices with odd L.</span>
+
+<span class="sd">        The two sublattices are independent only when L is even. For odd L</span>
+<span class="sd">        the periodic wrap makes rows 0 and L - 1 (and columns 0 and L - 1)</span>
+<span class="sd">        nearest neighbours of the same parity, and the ``prange`` loop may</span>
+<span class="sd">        update them on different threads at the same time, so a site can</span>
+<span class="sd">        read a neighbour that is being rewritten. The serial checkerboard</span>
+<span class="sd">        sweep stays valid for odd L, because it is an ordinary sequential</span>
+<span class="sd">        single-site update.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        parallel : bool</span>
+<span class="sd">            Whether the parallel kernel was requested.</span>
+<span class="sd">        update : str</span>
+<span class="sd">            Update scheme; only ``&#39;checkerboard&#39;`` uses the parallel kernel.</span>
+
+<span class="sd">        Raises</span>
+<span class="sd">        ------</span>
+<span class="sd">        ValueError</span>
+<span class="sd">            If ``parallel`` is set with the checkerboard update on odd ``L``.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">parallel</span> <span class="ow">and</span> <span class="n">update</span> <span class="o">==</span> <span class="s1">&#39;checkerboard&#39;</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">size</span> <span class="o">%</span> <span class="mi">2</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s1">&#39;parallel=True with the checkerboard update needs an even lattice size, &#39;</span>
+                <span class="sa">f</span><span class="s1">&#39;got L=</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">size</span><span class="si">}</span><span class="s1">: for odd L the periodic boundary joins same-parity &#39;</span>
+                <span class="s1">&#39;sites and the parallel sublattice sweep would race. Use an even L or &#39;</span>
+                <span class="s1">&#39;parallel=False.&#39;</span>
+            <span class="p">)</span>
+
     <span class="k">def</span><span class="w"> </span><span class="nf">_reseed_numba_for_step</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Reseed Numba&#39;s RNG deterministically for the upcoming sweep.</span>
 

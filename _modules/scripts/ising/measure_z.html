@@ -317,8 +317,19 @@
         <span class="n">tau_wolff_err</span><span class="o">=</span><span class="n">wolff_summary</span><span class="p">[</span><span class="s1">&#39;err&#39;</span><span class="p">],</span>
         <span class="n">tau_wolff_ci_low</span><span class="o">=</span><span class="n">wolff_summary</span><span class="p">[</span><span class="s1">&#39;ci_low&#39;</span><span class="p">],</span>
         <span class="n">tau_wolff_ci_high</span><span class="o">=</span><span class="n">wolff_summary</span><span class="p">[</span><span class="s1">&#39;ci_high&#39;</span><span class="p">],</span>
+        <span class="c1"># The observable is itself an autocorrelation time summarised over</span>
+        <span class="c1"># independent seeds, so no autocorrelation time or effective sample</span>
+        <span class="c1"># size of its own applies; the fields are NaN to complete the schema.</span>
+        <span class="n">tau_metro_tau_int</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">full</span><span class="p">(</span><span class="n">n_sizes</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">nan</span><span class="p">),</span>
+        <span class="n">tau_metro_n_eff</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">full</span><span class="p">(</span><span class="n">n_sizes</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">nan</span><span class="p">),</span>
+        <span class="n">tau_wolff_tau_int</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">full</span><span class="p">(</span><span class="n">n_sizes</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">nan</span><span class="p">),</span>
+        <span class="n">tau_wolff_n_eff</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">full</span><span class="p">(</span><span class="n">n_sizes</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">nan</span><span class="p">),</span>
         <span class="n">uncertainty_method</span><span class="o">=</span><span class="n">UNCERTAINTY_METHOD_REPLICATE</span><span class="p">,</span>
         <span class="n">confidence_level</span><span class="o">=</span><span class="n">DEFAULT_CONFIDENCE_LEVEL</span><span class="p">,</span>
+        <span class="n">bootstrap_resamples</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
+        <span class="n">nan_or_undefined_count</span><span class="o">=</span><span class="nb">int</span><span class="p">(</span>
+            <span class="n">np</span><span class="o">.</span><span class="n">isnan</span><span class="p">(</span><span class="n">tau_metro_samples</span><span class="p">)</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span> <span class="o">+</span> <span class="n">np</span><span class="o">.</span><span class="n">isnan</span><span class="p">(</span><span class="n">tau_wolff_samples</span><span class="p">)</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span>
+        <span class="p">),</span>
     <span class="p">)</span>
     <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Data saved to </span><span class="si">{</span><span class="n">npz_path</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span></div>
 
