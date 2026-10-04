@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "vibespin"
-version = "0.1.0"
+version = "0.2.0"
 description = "Vibe-coded simulation of statistical mechanics spin models: A Vibe-Coded Journey through Statistical Mechanics"
 readme = "README.md"
 requires-python = ">=3.12"
