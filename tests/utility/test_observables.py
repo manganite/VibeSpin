@@ -312,6 +312,42 @@ def test_discrete_clock_vorticity_detection():
     assert vort[0, 0] == 1.0
 
 
+@pytest.mark.parametrize('q', [2, 4, 6, 8])
+def test_discrete_clock_total_vorticity_vanishes(q):
+    """
+    On a torus every bond is shared by two plaquettes with opposite
+    orientation, so the winding numbers must sum to zero. Even q produces
+    exactly antiparallel neighbours; wrapping each traversal independently
+    used to send both directions of such a bond to -pi and biased the
+    vorticity towards negative windings.
+    """
+    sim = DiscreteClockSimulation(size=32, temp=1.0, q=q, seed=q)
+    vort = sim.calculate_vorticity()
+    assert vort.sum() == 0.0
+    assert np.count_nonzero(vort > 0) == np.count_nonzero(vort < 0)
+
+
+def test_xy_total_vorticity_vanishes_and_random_density():
+    """Random XY spins: zero net winding and n_v close to the exact value 1/3."""
+    sim = XYSimulation(size=64, temp=1.0, seed=8)
+    vort = sim.calculate_vorticity()
+    assert vort.sum() == 0.0
+    assert sim.get_vortex_density() == pytest.approx(1.0 / 3.0, abs=0.03)
+
+
+def test_discrete_clock_antiparallel_tie_is_antisymmetric():
+    """
+    A single antiparallel bond must not create net winding: the two
+    plaquettes sharing it see the tie with opposite signs.
+    """
+    size, q = 4, 2
+    sim = DiscreteClockSimulation(size=size, temp=1.0, q=q)
+    sim.spins = np.zeros((size, size), dtype=np.int32)
+    sim.spins[1, 1] = 1  # one flipped spin: four antiparallel bonds
+    vort = sim.calculate_vorticity()
+    assert vort.sum() == 0.0
+
+
 def test_base_structure_factor():
     """Verify structure factor via base class method."""
     size = 8

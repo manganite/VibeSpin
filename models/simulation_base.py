@@ -48,8 +48,56 @@ def _derive_step_seed(*, seed: int, step: int) -> int:
 
 
 @njit(cache=True, fastmath=True)
+def _wrap_bond_angle_numba(delta: float) -> float:
+    """
+    Wrap a bond angle difference into the half-open interval (-pi, pi].
+
+    The tie at exactly antiparallel neighbours is resolved to ``+pi``. A
+    tolerance absorbs the rounding of ``arctan2`` on discrete clock angles, so
+    a difference of pi is never split between ``+pi`` and ``-pi`` at random.
+
+    Parameters
+    ----------
+    delta : float
+        Raw angle difference in radians.
+
+    Returns
+    -------
+    float
+        Wrapped difference in (-pi, pi].
+    """
+    wrapped = (delta + np.pi) % (2.0 * np.pi) - np.pi
+    if wrapped <= -np.pi + 1e-9:
+        wrapped = np.pi
+    return wrapped
+
+
+@njit(cache=True, fastmath=True)
 def _calculate_vorticity_angles_numba(angles: np.ndarray, idx_next: np.ndarray) -> np.ndarray:
-    """Fast kernel to calculate vorticity from a 2D array of angles."""
+    """
+    Calculate the winding number of every plaquette from a 2D array of angles.
+
+    Each bond difference is wrapped once in its canonical lattice direction
+    (+x or +y) and negated when the plaquette loop traverses the bond
+    backwards. This keeps the bond contribution exactly antisymmetric, so the
+    winding numbers of the two plaquettes sharing a bond cancel and the total
+    vorticity on the torus is zero. Wrapping the backward differences
+    independently breaks this for antiparallel neighbours, which occur
+    routinely in the discrete clock model with even q: both directions then
+    wrap to the same value and bias the vorticity towards one sign.
+
+    Parameters
+    ----------
+    angles : np.ndarray
+        (N, N) array of spin angles in radians.
+    idx_next : np.ndarray
+        Pre-calculated next-neighbor indices.
+
+    Returns
+    -------
+    np.ndarray
+        (N, N) array of winding numbers.
+    """
     N = angles.shape[0]
     vorticity = np.zeros((N, N))
     for i in range(N):
@@ -62,10 +110,12 @@ def _calculate_vorticity_angles_numba(angles: np.ndarray, idx_next: np.ndarray) 
             t3 = angles[inxt, jnxt]
             t4 = angles[inxt, j]
 
-            d1 = (t2 - t1 + np.pi) % (2 * np.pi) - np.pi
-            d2 = (t3 - t2 + np.pi) % (2 * np.pi) - np.pi
-            d3 = (t4 - t3 + np.pi) % (2 * np.pi) - np.pi
-            d4 = (t1 - t4 + np.pi) % (2 * np.pi) - np.pi
+            # Loop (i,j) -> (i,j+1) -> (i+1,j+1) -> (i+1,j) -> (i,j); the last
+            # two legs run against the canonical bond direction.
+            d1 = _wrap_bond_angle_numba(t2 - t1)
+            d2 = _wrap_bond_angle_numba(t3 - t2)
+            d3 = -_wrap_bond_angle_numba(t3 - t4)
+            d4 = -_wrap_bond_angle_numba(t4 - t1)
 
             vorticity[i, j] = np.round((d1 + d2 + d3 + d4) / (2 * np.pi))
     return vorticity
